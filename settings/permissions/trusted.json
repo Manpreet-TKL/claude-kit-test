@@ -1,0 +1,18 @@
+{
+  "defaultMode": "dontAsk",
+  "allow": [
+    "Read",
+    "Edit",
+    "Write",
+    "Bash"
+  ],
+  "deny": [
+    "Bash(git push *)",
+    "Bash(git commit *)",
+    "Read(./.env)",
+    "Read(./.env.*)",
+    "Read(~/.ssh/**)",
+    "Bash(rm -rf /*)",
+    "Bash(rm -rf ~*)"
+  ]
+}

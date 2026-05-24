@@ -1,0 +1,185 @@
+# claude-kit
+
+A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` in one shot, idempotently.
+
+```
+~/claude-kit/
+├── install.sh              # the only entry point
+├── README.md               # this file
+├── claude-md/
+│   └── CLAUDE.md           # global instructions; wholesale-copied to ~/.claude/CLAUDE.md
+├── settings/
+│   ├── permissions/
+│   │   ├── safe.json       # tier 1 — read-mostly
+│   │   ├── standard.json   # tier 2 — day-to-day (default)
+│   │   ├── trusted.json    # tier 3 — no prompts (deny still wins)
+│   │   └── yolo.json       # tier 4 — git mutations + `rm -rf` still denied, secrets reads go through (container/VM only)
+│   ├── shift-enter.json    # newline-on-shift-enter fragment
+│   └── mcp-atlassian.json  # Atlassian Remote MCP fragment (opt-in)
+├── skills/
+│   ├── bash-style/         # styling (auto-loads when relevant)
+│   ├── create-oe-module/
+│   ├── note-style/
+│   ├── yiic-command-style/
+│   ├── notes/              # repo-specific (disable-model-invocation: true)
+│   ├── oe_code/            # OpenEyes — code & frameworks
+│   ├── oe_components/      # OpenEyes — runtime containers
+│   ├── oe_db_schema/       # OpenEyes — DB / domain model
+│   ├── oe_coding_standards/# OpenEyes — invariants & lint layout
+│   ├── oe-deploy/          # OE deploy template (pantry/recipe/chef)
+│   └── oeimagebuilder/     # OE image hierarchy & build args
+└── docs/
+    ├── permissions.md      # how the 4 tiers work, deny → ask → allow
+    ├── skills.md           # CLAUDE.md vs SKILL.md, sub-skills, naming
+    ├── statusline.md       # how the status line script works
+    ├── sandbox.md          # running without prompts in a container/VM
+    └── atlassian.md        # Jira + Confluence via Atlassian MCP — setup + teardown
+```
+
+The installer writes / merges:
+
+- `~/.claude/settings.json` — status line, autocompact env vars, permissions block, shift-enter binding.
+- `~/.claude/statusline.sh` — the status line renderer.
+- `~/.claude/CLAUDE.md` — **wholesale-overwritten** from `claude-md/CLAUDE.md` in this kit (never-commit/push rules + condensed Karpathy guidelines).
+- `~/.claude/skills/<name>` — symlinked to `skills/<name>` in this kit.
+
+It backs up the pre-existing `settings.json` to `settings.json.bak` and (if changed) the pre-existing `CLAUDE.md` to `CLAUDE.md.bak` before writing. `settings.json` is edited as JSON via `jq` (never blind text-append).
+
+---
+
+## Quick start
+
+```bash
+cd ~/claude-kit
+./install.sh                                # interactive tier choice (default standard)
+./install.sh --permissions safe             # explicit tier
+./install.sh -p trusted -y                  # non-interactive
+./install.sh --reset -p standard -y         # archive bloat → reinstall
+AUTOCOMPACT_PCT=50 ./install.sh -p standard -y
+./install.sh --help
+```
+
+Re-running is safe — settings are merged, `CLAUDE.md` is rewritten wholesale from `claude-md/CLAUDE.md` (with a `.bak` of the prior file if it differed), the status line script is rewritten in place, and skill symlinks are refreshed (real directories under `~/.claude/skills/` are left alone, not clobbered).
+
+---
+
+## The features
+
+### 1. Permission tier (`--permissions safe|standard|trusted|yolo`)
+
+Each tier lives as a standalone JSON file at `settings/permissions/<tier>.json`. The installer reads the file and copies it whole into `permissions:` — no inline construction.
+
+| Tier       | `defaultMode` | Behaviour                                                                                  |
+| ---        | ---           | ---                                                                                        |
+| `safe`     | `default`     | Reads + inspection allowed; asks for edits/writes/shell; denies git mutations and secrets. |
+| `standard` | `acceptEdits` | Auto-accept edits; allow common dev/test commands; still ask for arbitrary shell.          |
+| `trusted`  | `dontAsk`     | Nothing prompts; broad allow + extra `rm -rf` denies + git mutations + secrets.            |
+| `yolo`     | `dontAsk`     | Nothing prompts; `git push` / `git commit` and `rm -rf /*` / `rm -rf ~*` still denied (those denies are a hard floor across every tier); `.env`/`.ssh` reads go through. **Container/VM only.** |
+
+Full explanation including evaluation order (`deny → ask → allow`) and what each tier denies: **[docs/permissions.md](docs/permissions.md)**. `bypassPermissions` is intentionally avoided — `yolo` is as wide as this kit goes; see [docs/sandbox.md](docs/sandbox.md) for the safe envelope.
+
+### 2. Status line
+
+A `statusLine.command` pointing at `~/.claude/statusline.sh`. The script reads the session-context JSON from stdin, sums token usage from `~/.claude/projects/*.jsonl` over a 5-hour and 7-day rolling window, and renders:
+
+```
+⛭ <model> · <dir> · [<effort> · ]5h <pct|count> · wk <pct|count>
+```
+
+Each window segment shows a **percentage** if you set a budget (`FIVE_HOUR_BUDGET`, `WEEKLY_BUDGET` — see env-overrides table below) and a humanised **raw count** otherwise. The optional `<effort>` segment (e.g. `xhigh`) reflects the reasoning-effort level — `$CLAUDE_EFFORT` from the live session, falling back to `.effortLevel` in `~/.claude/settings.json`; omitted if neither is set. Results are cached to `/tmp/claude-statusline-{5h,wk}-<uid>.cache` (30s / 5min TTL) so the bar renders in ~40ms after the first cold walk.
+
+The figures are a **local proxy**: Claude Code's GUI `/usage` % comes from Anthropic's server-side rate-limit accounting (held in-memory, not persisted), so the bar will diverge — calibrate budgets against the GUI if you want them to roughly agree. See **[docs/statusline.md](docs/statusline.md)**.
+
+### 3. Shift+Enter newline
+
+`settings/shift-enter.json` is merged into `settings.json` to bind Shift+Enter for newline. If your terminal still won't honour it, run `/terminal-setup` once interactively or bind the key sequence in your terminal app.
+
+### 4. Auto-compact env vars
+
+```
+AUTOCOMPACT_PCT      → env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE   (default 60)
+AUTOCOMPACT_WINDOW   → env.CLAUDE_CODE_AUTO_COMPACT_WINDOW   (default 200000)
+FIVE_HOUR_BUDGET     → env.CLAUDE_5H_TOKEN_BUDGET            (unset — status line shows raw count; set to flip to a 5h %)
+WEEKLY_BUDGET        → env.CLAUDE_WEEKLY_TOKEN_BUDGET        (unset — status line shows raw count; set to flip to a wk %)
+```
+
+- `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` only **lowers** the trigger; values above the internal cap (~83%) are clamped.
+- The percentage applies to the original window, not the reduced one — `CLAUDE_CODE_AUTO_COMPACT_WINDOW` is the lever for the absolute token budget.
+- Don't use `"autoCompactEnabled": false` — that key is silently ignored.
+- Token budgets aren't published by Anthropic per-plan; pick numbers from observed usage or calibrate against the Claude Code GUI's `/usage`. Example: `FIVE_HOUR_BUDGET=2000000 WEEKLY_BUDGET=20000000`.
+
+### 5. Git + secret deny rules
+
+`Bash(git push *)` and `Bash(git commit *)` are denied on **every tier including `yolo`** — that's a hard floor. The human raises commits and pushes; Claude doesn't. The two `rm -rf /*` / `rm -rf ~*` denies are also universal.
+
+Reads of `.env*` and `~/.ssh/**` are denied on `safe` / `standard` / `trusted`. `yolo` drops only the secrets reads — use it only in a throwaway container/VM. Deny rules live inside each tier JSON file — to change them, edit the relevant `settings/permissions/<tier>.json` and re-run.
+
+### 6. Global CLAUDE.md
+
+`~/.claude/CLAUDE.md` is **wholesale-overwritten** from `claude-md/CLAUDE.md` in this kit. The shipped file is short and opinionated:
+
+- Hard rules at the top: never `git commit`, never `git push`, never `--no-verify` / `--amend` / `git reset --hard` without explicit instruction.
+- Condensed Karpathy-style coding guidelines (think first, simplicity, surgical changes, goal-driven execution).
+- Output discipline (no emojis, no trailing summaries, no planning docs unless asked).
+
+Edit `claude-md/CLAUDE.md` and re-run `install.sh` to roll the change out. The previous `~/.claude/CLAUDE.md` is preserved at `~/.claude/CLAUDE.md.bak` whenever it differs from what's being written.
+
+### 7. Skills
+
+`install.sh` symlinks each directory under `skills/` into `~/.claude/skills/<name>`. Edit a skill in this kit and the change is live without re-installing.
+
+- **Auto-loading style skills** (no `disable-model-invocation`): `bash-style`, `create-oe-module`, `note-style`, `yiic-command-style`.
+- **Explicit-invocation skills** (with `disable-model-invocation: true`): `notes`, `oe_code`, `oe_components`, `oe_db_schema`, `oe_coding_standards`, `oe-deploy`, `oeimagebuilder`. These are large, repo-specific, and only loaded when invoked by name.
+
+Each repo-specific skill follows the **stable mental model in `SKILL.md`, volatile detail in `subs/*.md`** convention. See **[docs/skills.md](docs/skills.md)**.
+
+If a destination `~/.claude/skills/<name>` already exists as a **real directory** (not a symlink), the installer skips it and prints a warning — your hand-edits are never clobbered.
+
+### 8. Reset to first-install state (`--reset`)
+
+`./install.sh --reset` archives Claude Code's auto-generated state — `file-history`, `paste-cache`, `backups`, `shell-snapshots`, `stats-cache`, `session-env`, `plugins`, `tasks` — into `~/.claude-backups/<timestamp>/`, then proceeds with the normal install. Preserved in place: `.credentials.json` (don't lose your auth), `history.jsonl`, and `projects/`. The reset runs **before** `settings.json` is backed up to `.bak`, so a single `--reset` run leaves you with a clean state plus one snapshot archive you can rummage through later. Combine with `-p <tier>` and `-y` to do it non-interactively.
+
+### 9. Jira + Confluence (`--with-atlassian` / `--without-atlassian`)
+
+Merge or remove the Atlassian Remote MCP server entry in `settings.json`:
+
+```bash
+./install.sh --with-atlassian    -p standard -y    # opt in
+./install.sh --without-atlassian -p standard -y    # tear down
+```
+
+Authentication is OAuth-based and happens inside Claude Code via `/mcp` — no tokens stored in this repo. Full setup + teardown (including revoking the OAuth grant on Atlassian's side) lives in **[docs/atlassian.md](docs/atlassian.md)**.
+
+Neither flag = `mcpServers.atlassian` is left exactly as-is on re-runs (the installer never silently flips it on or off).
+
+---
+
+## Verification
+
+After applying, `install.sh` runs the checks and prints `[PASS]` / `[FAIL]` / `[INFO]` per feature. Re-run them by hand at any time:
+
+```bash
+jq '.statusLine'                                       ~/.claude/settings.json   # status line
+jq '.permissions.defaultMode'                          ~/.claude/settings.json   # tier
+jq '.env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE,
+    .env.CLAUDE_CODE_AUTO_COMPACT_WINDOW'              ~/.claude/settings.json   # autocompact
+jq '.permissions.deny'                                 ~/.claude/settings.json   # deny rules
+jq '.shiftEnterKeyBindingInstalled'                    ~/.claude/settings.json   # shift-enter
+cmp -s ~/claude-kit/claude-md/CLAUDE.md ~/.claude/CLAUDE.md && echo match        # CLAUDE.md
+ls -l ~/.claude/skills/                                                          # symlinks
+```
+
+---
+
+## Restoring a previous settings.json or CLAUDE.md
+
+```bash
+cp ~/.claude/settings.json.bak ~/.claude/settings.json
+cp ~/.claude/CLAUDE.md.bak     ~/.claude/CLAUDE.md
+```
+
+Each `.bak` is overwritten on every run, so it always reflects the state immediately before the most recent install. `CLAUDE.md.bak` is only written when the previous file differed from what's being installed.
+
+## Restoring data from a `--reset` archive
+
+If `--reset` archived directories you turn out to need, they're at `~/.claude-backups/<timestamp>/<dir>/`. Move the ones you want back into `~/.claude/` manually — the installer never auto-restores.

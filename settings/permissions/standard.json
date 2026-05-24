@@ -1,0 +1,26 @@
+{
+  "defaultMode": "acceptEdits",
+  "allow": [
+    "Read",
+    "Edit",
+    "Write",
+    "Bash(npm *)",
+    "Bash(npx *)",
+    "Bash(git status)",
+    "Bash(git diff *)",
+    "Bash(git log *)",
+    "Bash(ls *)",
+    "Bash(cat *)",
+    "Bash(grep *)"
+  ],
+  "ask": [
+    "Bash"
+  ],
+  "deny": [
+    "Bash(git push *)",
+    "Bash(git commit *)",
+    "Read(./.env)",
+    "Read(./.env.*)",
+    "Read(~/.ssh/**)"
+  ]
+}
