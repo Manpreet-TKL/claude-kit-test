@@ -56,12 +56,17 @@ lines are NOT quoted; the text under each is.>
 > Every line of this body prefixed with `> `; the heading above is not.
 
 ## Steps to reproduce
-> Numbered, against a clean OE (sample DB, default seeds, admin / admin), so a
-> reviewer on a fresh stack lands on the same symptom and can confirm it's gone
-> after the change. If the bug needs config / module-state / data not in the
-> sample DB, say so and include the setup commands (yiic, SQL, etc.).
+> Numbered and instance-agnostic. This is release-notes-facing, so NEVER name a
+> specific instance's credentials, seed data, or the OE sample DB (no "log in as
+> admin / admin", no "from the sample DB"). Describe the actor by role ("a
+> logged-in user", "a clinician with access to a patient record") and the actions
+> in product terms a reader at any trust would recognise. A version or config
+> condition the symptom needs is fine — it holds for every such install, not one
+> instance (e.g. "On OE v26, where X defaults to ON"). Concrete, stack-specific
+> verification (cache-clear commands, container names) belongs in Notes for the
+> reviewer, not here.
 > Every line of this body prefixed with `> `; the heading above is not.
-> 1. Log in as admin / admin.
+> 1. As a logged-in user, ...
 > 2. ...
 > 3. Observed: <symptom>. Expected: <correct behaviour>.
 
@@ -95,9 +100,11 @@ files/ at its repo-relative path; this list is just the map.>
 
 Notes for the reviewer:
 <anything that saves the reviewer a question — clinical-safety invariants touched
-and how you handled them, and any related occurrences of the same problem you
-found but did not fix here (file:line + recommended approach). Omit only if there
-is genuinely nothing to add.>
+and how you handled them, any stack-specific verification steps that don't belong
+in the release-notes-facing Steps to reproduce (cache-clear commands, container
+names, how to confirm the before/after on a running env), and any related
+occurrences of the same problem you found but did not fix here (file:line +
+recommended approach). Omit only if there is genuinely nothing to add.>
 ```
 
 ### Multiple commits
