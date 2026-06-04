@@ -1,158 +1,188 @@
 ---
 name: create-oe-pr
-description: Prepare a pull request against an OpenEyes repo. Same shape as [[create-pr]] (problem → fix → changes → handoff) but adds OE-specific fields the reviewers expect — release-notes-style title, non-client-specific problem statement, reproduction steps against a clean OE, OE version the issue was raised in, and either a unit test or a written justification why none. Stops at staging; never commits, never pushes. Invoke explicitly when the user says "create OE PR", "write up this OE PR", or "prep this OpenEyes change for review". Does NOT trigger for generic non-OE work — use [[create-pr]] for that.
+description: Load the instructions for packaging an already-decided OpenEyes change into a review-ready PR folder. Same writeup shape as [[create-pr]] (problem → fix → changes → handoff) plus the OE-specific fields reviewers expect — release-notes-style title, non-client-specific problem statement, reproduction against a clean OE, the OE version the issue was raised in, and either a unit test or a written justification why none. This skill does NOT scan, survey, or discover changes — the caller already knows what changed; the skill only tells you how to write it up and where to put it. Output is a self-contained folder (changed files + a single .md) and supports multiple commits in one PR. Stops at the folder; never commits, never pushes. Invoke explicitly when the user says "create OE PR", "write up this OE PR", or "prep this OpenEyes change for review". Does NOT trigger for generic non-OE work — use [[create-pr]] for that.
 disable-model-invocation: true
 ---
 
 # Create-OE-PR playbook
 
-OpenEyes PRs face stricter review than a typical OSS repo: they're shipped across NHS trusts and private clinics, the title becomes a line in the customer-facing release notes, and the problem statement is read by people without context for the original reporter. This skill enforces the OE conventions on top of the [[create-pr]] base.
+This skill is **instructions only**. It does not look at the working tree, it does not run `git status`, it does not go hunting for what changed. The change to write up is whatever the current task already produced or decided — you bring that in; the skill tells you how to package it.
+
+OpenEyes PRs face stricter review than a typical OSS repo: they ship across NHS trusts and private clinics, the title becomes a line in the customer-facing release notes, and the problem statement is read by people with no context for the original reporter. This skill enforces the OE conventions on top of the [[create-pr]] writeup.
 
 Hard rules — same as [[create-pr]]:
 
-- **Never `git commit`, never `git push`, never `--no-verify`.** Output a `.md` artifact and a staged diff; the human raises the PR.
-- **Suggest the [[oe_coding_standards]] skill** before writing any code in this skill's flow. If the change predates the suggestion, suggest it now and let the user review the diff against those rules before staging.
+- **Never `git commit`, never `git push`, never `--no-verify`.** You produce a folder of files plus one `.md`; the human raises the PR.
+- **Suggest the [[oe_coding_standards]] skill** before any OE code is written. If the change predates that suggestion, suggest it now so the user can review the change against those rules before they commit.
 
-## 1. Survey the working tree
+## The deliverable: one folder, always
 
-Same as [[create-pr]] step 1. Additionally identify:
+Every invocation produces exactly one folder. Never a loose `.md` at the repo root, never an in-place staged diff — a self-contained folder the user can read, apply, and raise from. Default its location to the user's home (`~/oe-pr-<slug>/`) unless the user names a path. Prefer the ticket ref in the slug if there is one (e.g. `oe-pr-OE-12345-archive-race/`).
 
-- **Which OE repo:** `openeyes/openeyes` (PHP / Yii core) or one of the satellites (`openeyes/oe-frontend`, etc.). The PR template differs.
-- **The OE version the issue was raised against.** Look in `package.json`, `protected/config/local/common.php` (`'version' => …`), or ask the user. Record it verbatim — e.g. `v26.0.0-rc3`, not `26`.
-- **Whether the change touches clinical persistence / calculations / units / display.** If yes, surface clinical-safety invariants from [[oe_coding_standards]] before staging — the reviewer will block on this.
+```
+oe-pr-<slug>/
+  PR.md                 # the single writeup — title, problem, repro, fix, changes,
+                        #   the commit plan, test, manual verify, OE version,
+                        #   how-to-raise, reviewer notes
+  files/                # every changed and new file, full content, mirrored at its
+                        #   repo-relative path so the user can see exactly where each
+                        #   one goes — e.g. files/protected/models/Patient.php
+  patches/              # one patch per commit, in commit order, named NN-<slug>.patch
+    01-<slug>.patch     #   the user runs `git apply` then commits with the message
+    02-<slug>.patch     #   from PR.md's commit plan. Omit only for a brand-new repo
+                        #   with no base to diff against.
+```
 
-## 2. Isolate the change
+`files/` mirrors the **repo-relative path** of each file, so `PR.md` never has to describe placement in prose for existing files — the path is the placement. For genuinely *new* files, the mirrored path is also where they go; call that out explicitly in PR.md's commit plan anyway, since a reviewer can't tell a new file from a moved one by looking at the folder.
 
-Same triage as [[create-pr]] step 2 (`core` / `incidental` / `unrelated` / `accidental`). Two OE-specific calls:
+## PR.md structure
 
-- **Migrations.** Schema migrations are *always* `core` even if the user calls them "supporting" — they're load-bearing for the reviewer.
-- **`local/common.php` edits.** These are *almost never* `core`. Module switches belong in `<module>/config/common.php`; if the diff touches `local/common.php`, double-check that the module's own `config/common.php` carries the real config and `local/common.php` is just the on-switch. See [[oe_coding_standards]].
-
-## 3. Describe — write the `pr-<slug>.md` artifact
-
-Write a single file at the repo root: `pr-<slug>.md`. Prefer the ticket ref if there is one (e.g. `pr-OE-12345-archive-race.md`).
-
-OpenEyes PR structure (this is what reviewers expect — don't omit sections):
+This is what reviewers expect — don't omit sections. The **Commit plan** section is what carries multiple commits; everything else describes the PR as a whole.
 
 ```markdown
 # <release-notes title>
 
-The title doubles as a customer-facing release-notes entry. Make it generic and outcome-shaped.
+The title doubles as a customer-facing release-notes entry. Generic, outcome-shaped,
+imperative mood, under 70 chars, no trailing punctuation. No client names, no internal
+jargon, no ticket numbers in the title itself.
 
   Good: "Fix archived patients reappearing in the default worklist after refresh"
   Bad:  "Fix bug Foo Clinic reported in ticket #1421"
-  Bad:  "tweak"
-
-No client names. No internal jargon. Imperative mood, under 70 chars, no trailing punctuation.
 
 ## Problem
 
-State the problem in **generic, non-client-specific** terms. A reader at a different trust
-should be able to recognise the symptom. Lead with the user-visible behavior, not the
-implementation detail.
+State it in **generic, non-client-specific** terms — a reader at a different trust should
+recognise the symptom. Lead with user-visible behavior, not implementation. If there's a
+ticket / incident link, put it on its own line at the end of the section.
 
   Good: "When a patient is archived from the worklist, the row reappears on the next page
          refresh until the user logs out. Affects clinics with >100 active patients."
   Bad:  "Foo Clinic reported that patient X is broken."
 
-If there's a ticket / incident link, put it on its own line at the end of the section.
-
 ## Reproduction
 
 Numbered, against a **clean OE** (sample DB, default seeds, `admin` / `admin`). A reviewer
-running through these steps on a fresh stack should land on the same symptom.
+on a fresh stack should land on the same symptom. If the bug needs config / module-state /
+data not in the sample DB, say so and include the setup commands (`yiic`, SQL, etc.).
 
   1. Log in as `admin` / `admin`.
   2. Go to /worklist.
   3. Click "Archive" on any patient row.
   4. Refresh the page.
   5. Observed: archived patient still in default list.
-     Expected: archived patient hidden from default list; visible under `?showArchived=1`.
-
-If the bug requires specific config / module-state / data not present in the sample DB,
-say so and include the setup commands (`yiic` invocations, SQL, etc.).
+     Expected: archived patient hidden; visible under `?showArchived=1`.
 
 ## Fix
 
 What the change does, in plain language. Name the approach, not the diff. Mention the one
-judgement call that mattered.
+judgement call that mattered (and, if relevant, the approach you rejected and why).
 
 ## Changes
 
-File-by-file. Group by layer — model / migration / controller / view / module config / test.
-Each bullet says *what* and *why*.
+File-by-file, grouped by layer — model / migration / controller / view / module config /
+test. Each bullet says *what* and *why*. Mark new files as (new) and incidental files as
+(incidental).
 
   - `protected/models/Patient.php` — added `scopes()['default']` excluding archived rows.
-    Reviewers: this is the root-cause fix; the controller-level filter (now removed) was
-    incomplete because it didn't apply to the AJAX paginator.
-  - `protected/migrations/m260524_120000_patient_archived_idx.php` — composite index on
-    `(deleted, archived)` to keep the default scope fast on large tables.
-  - (incidental) `composer.lock` — bumped alongside the dependency change above.
+    Root-cause fix; the controller filter (now removed) missed the AJAX paginator.
+  - (new) `protected/migrations/m260524_120000_patient_archived_idx.php` — composite index
+    on `(deleted, archived)` to keep the default scope fast on large tables.
+
+## Commit plan
+
+The PR may be one commit or several. List them **in order**. Each commit must be
+self-contained and leave the tree green (tests pass, app boots) — never split a fix from
+the test that proves it across two commits, and never leave a commit that won't build on
+its own. Split by independent concern, not by file type.
+
+For each commit give: the exact commit message (the release-notes title is the message of
+the commit that carries the headline fix), the files it includes, and an apply command.
+
+  ### Commit 1 — <message, imperative, matches the PR title for the headline fix>
+
+    Files:
+      - protected/models/Patient.php
+      - protected/tests/unit/models/PatientArchivedScopeTest.php   (new)
+
+    Apply & commit:
+      git apply oe-pr-<slug>/patches/01-<slug>.patch
+      git add protected/models/Patient.php \
+              protected/tests/unit/models/PatientArchivedScopeTest.php
+      git commit -m "Fix archived patients reappearing in the default worklist after refresh"
+
+  ### Commit 2 — <message>
+
+    Files:
+      - (new) protected/migrations/m260524_120000_patient_archived_idx.php
+          New file → goes at protected/migrations/ (mirrored in files/).
+
+    Apply & commit:
+      git apply oe-pr-<slug>/patches/02-<slug>.patch
+      git add protected/migrations/m260524_120000_patient_archived_idx.php
+      git commit -m "Add composite index for the default patient scope"
+
+For a single-commit PR, give one block and skip the numbering ceremony.
 
 ## Test
 
 Either a unit / functional test, or a justification. Pick exactly one:
 
-  **Test added:** `tests/unit/models/PatientArchivedScopeTest.php`. Run with:
+  **Test added:** `protected/tests/unit/models/PatientArchivedScopeTest.php`. Run with:
 
-      vendor/bin/phpunit tests/unit/models/PatientArchivedScopeTest.php
+      vendor/bin/phpunit protected/tests/unit/models/PatientArchivedScopeTest.php
 
-  **No test, justification:** <one paragraph>. Acceptable reasons include: UI-only change
-  with no model logic; copy / translation change; migration with no behavioural surface
-  that isn't already covered. Unacceptable reasons: "ran out of time", "the codebase
-  doesn't have tests for this area" (add the first one).
+  **No test, justification:** <one paragraph>. Acceptable: UI-only change with no model
+  logic; copy / translation change; migration with no behavioural surface not already
+  covered. Unacceptable: "ran out of time"; "this area has no tests" (add the first one).
 
 ## How to verify manually
 
-Walk-through against a clean OE. This is what QA will follow.
+Walk-through against a clean OE. This is what QA follows.
 
   1. Log in as `admin` / `admin`.
-  2. Go to /worklist.
-  3. Click "Archive" on any patient row.
-  4. Refresh the page.
-  5. Verify the archived patient is hidden from the default list.
-  6. Visit `?showArchived=1` and verify the patient reappears.
+  2. … land on the symptom from Reproduction, apply the change, confirm it's gone.
 
 ## OE version
 
-Issue raised in: **<version>** (e.g. `v26.0.0-rc3`, `v25.4.1`).
-Fix targeted at: **<branch>** (e.g. `master`, `release/26.0`).
-
-If you're back-porting, list both: targeted at `master`, will need cherry-pick to `release/25.4`.
+Issue raised in: **<version>** (verbatim — e.g. `v26.0.0-rc3`, `v25.4.1`).
+Fix targeted at: **<branch>** (e.g. `master`, `release/26.0.x`).
+Back-port? List both: targeted at `master`, cherry-pick to `release/25.4`.
 
 ## How to raise the PR
 
-    git commit -m "<title from above>"
-    git push -u origin <branch>
-    gh pr create --base <base> --title "<title>" --body-file pr-<slug>.md
+After running the per-commit apply & commit blocks above, in order:
 
-Do not run these yourself. They go in the artifact for the user to copy.
+    git push -u origin <branch>
+    gh pr create --base <base> --title "<title>" --body-file oe-pr-<slug>/PR.md
+
+Do not run any of these yourself — they're for the user to copy.
 
 ## Notes for the reviewer
 
-Anything that would save the reviewer a question. Mention if the change touches a clinical
-invariant from [[oe_coding_standards]] and how you handled it (audit writes, soft-delete
-preserved, unit kept, etc.). Skip if nothing to add.
+Anything that saves the reviewer a question. If the change touches a clinical invariant
+from [[oe_coding_standards]], say so and how you handled it (audit writes kept, soft-delete
+preserved, transaction boundaries respected). Also call out any *related occurrences of the
+same problem you found but did not fix here*, with file:line and a recommended approach, so
+they can be tracked. Skip the section only if there is genuinely nothing to add.
 ```
 
-## 4. Stage — don't commit
+## OE field rules (apply while writing PR.md)
 
-Same as [[create-pr]] step 4. Stage the core + incidental files + the `pr-<slug>.md`, show `git diff --staged --stat`, then stop. Never `git commit`, never `git push`.
+These replace the "go survey the tree" steps a generic PR flow would have — they're judgements about the change you're *already* writing up, not a hunt for changes:
 
-## 5. Hand off
+- **OE version, recorded verbatim.** The version the issue was raised against — from `package.json`, `protected/config/local/common.php` (`'version' => …`), `git describe --tags`, or the user. Write `v26.0.0-rc3`, never `26`.
+- **Which OE repo.** `openeyes/openeyes` (PHP / Yii core) vs a satellite (`openeyes/oe-frontend`, …). The base branch and template differ; state both in the OE version section.
+- **Migrations are always `core`** — never list a schema migration as "supporting"; it's load-bearing for the reviewer.
+- **`local/common.php` edits are almost never the real change.** Module switches belong in `<module>/config/common.php`; `local/common.php` is just the on-switch. If the change is there, double-check the module's own `config/common.php` carries the real config.
 
-End with:
+## OE gotchas worth catching before you finalise the folder
 
-> Staged on `<branch>` (base `<base>`, OE `<version>`): N files + `pr-<slug>.md`. Run the three commands at the bottom of the artifact to raise the PR.
-
-## OE-specific gotchas worth catching before staging
-
-- **Clinical-safety invariants** — if the diff touches persistence, calculations, units, or display of clinical values without an explicit ask, **stop and flag it**. This is the single most common reason an OE PR gets rejected. Refer to [[oe_coding_standards]].
-- **Audit writes** — any new clinical CRUD path needs an audit. Don't bypass `AuditService`.
+- **Clinical-safety invariants** — if the change touches persistence, calculations, units, or display of clinical values without an explicit ask, **stop and flag it in reviewer notes**. Single most common reason an OE PR gets rejected. See [[oe_coding_standards]].
+- **Audit writes** — any new clinical CRUD path needs an audit; don't bypass `AuditService`.
 - **`core/common.php`** — never edited from a module install. Module config lives in the module's own `config/common.php`; `local/common.php` is the on-switch only.
-- **`voiceControl` / `aiSearch`** — these two modules stay independent. No runtime dependency between them.
+- **`voiceControl` / `aiSearch`** — stay independent. No runtime dependency between them.
 - **`TestHelper` module** — never enabled in `OE_MODE=live`. Don't loosen that check.
-- **`set_frontend_passwords.sh`** — not for sample-DB demos (they ship `admin` / `admin`). Don't recommend it in the reproduction steps.
+- **`set_frontend_passwords.sh`** — not for sample-DB demos (they ship `admin` / `admin`). Don't put it in the reproduction steps.
 
 ## When to invoke this skill
 
@@ -164,11 +194,12 @@ End with:
 | "Create a PR" (no OE context) | no — use [[create-pr]] |
 | "Commit this OE change" | no — this skill doesn't commit |
 
-The skill is `disable-model-invocation: true` — Claude will not auto-load it. Invoke by name.
+`disable-model-invocation: true` — Claude will not auto-load it. Invoke by name.
 
 ## What this skill is **not**
 
+- **Not a change-finder.** It does not scan, survey, `git status`, or diff the working tree to discover what to raise. The caller supplies the change; the skill only formats and places it.
 - Not a substitute for [[oe_coding_standards]] — suggest that skill *before* the code is written, not at PR time.
-- Not a commit / push tool. Boundary stops at `git add`.
-- Not for non-OE repos — use the generic [[create-pr]] instead.
-- Not for multi-issue branches. If the branch fixes two unrelated tickets, split it; the release-notes title can only describe one change.
+- Not a commit / push tool. The boundary is the folder; the human commits and pushes.
+- Not for non-OE repos — use [[create-pr]].
+- Not for multi-*issue* branches. Multiple commits for **one** logical change/issue: yes (that's the commit plan). Two unrelated tickets on one branch: split them — the release-notes title can only describe one change.
