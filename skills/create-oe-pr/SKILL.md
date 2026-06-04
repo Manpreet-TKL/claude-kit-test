@@ -1,6 +1,6 @@
 ---
 name: create-oe-pr
-description: Load the instructions for packaging an already-decided OpenEyes change into a review-ready PR folder. Produces a form-style PR.md whose top always carries four labels — Jira ticket title, Fix version, Commit title(s), and the GitHub PR description — followed by the GitHub PR description itself: a markdown body of quote-blocked sections (Description, Steps to reproduce, Solution, Files changed, Test, Notes for reviewer; each `##` heading kept OUT of the blockquote, each section body quoted), with the lighter sections skippable when the change is self-evident. This skill does NOT scan, survey, or discover changes — the caller already knows what changed; the skill only tells you how to write it up and where to put it. Output is a self-contained folder — the changed files mirrored at their repo-relative paths plus the single PR.md form, no patches. Supports multiple commits in one PR. Stops at the folder; never commits, never pushes. Invoke explicitly when the user says "create OE PR", "write up this OE PR", or "prep this OpenEyes change for review". Does NOT trigger for generic non-OE work — use [[create-pr]] for that.
+description: Write up an already-decided OpenEyes change as a review-ready PR folder (PR.md form + files/). Invoke by name.
 disable-model-invocation: true
 ---
 
@@ -21,10 +21,11 @@ Every invocation produces exactly one folder. Never a loose `.md` at the repo ro
 
 ```
 oe-pr-<slug>/
-  PR.md                 # the form — top labels (Jira ticket title, Fix version,
-                        #   Commit title(s), GitHub PR description) then the PR
-                        #   description's quote-blocked sections (Description, Steps
-                        #   to reproduce, Solution, Files changed, Test, Notes)
+  PR.md                 # the form — top labels (Jira ticket title, Jira ticket type,
+                        #   Affects version, Fix version, Commit title(s), GitHub PR
+                        #   description) then the description's quote-blocked sections
+                        #   (Description, Steps to Reproduce, Current Outcome, Expected
+                        #   Outcome, Solution, Files changed, Test, Notes)
   files/                # every changed and new file, full content, mirrored at its
                         #   repo-relative path so the user can copy each into place
                         #   — e.g. files/protected/models/Patient.php
@@ -34,9 +35,11 @@ oe-pr-<slug>/
 
 ## PR.md structure
 
-`PR.md` is a **form**, not a prose document — the user copies each labelled field straight into Jira / GitHub. The **top of PR.md always carries these four labels, in this order**, so the copy-paste fields are never buried:
+`PR.md` is a **form**, not a prose document — the user copies each labelled field straight into Jira / GitHub. Everything above the GitHub PR description is plain **`label: value`** metadata (one field per label, value on the same line or indented below it). The **top of PR.md always carries these labels, in this order**, so the copy-paste fields are never buried:
 
 - **Jira ticket title** — the release-notes-style title (it is also the GitHub PR title).
+- **Jira ticket type** — exactly one of Bug / New Feature / Improvement / Internal Improvement / Story / Epic / Regression / EyeDraw Spec. See the classification table below; for an OE client-reported fault the answer is most often **Regression**.
+- **Affects version** — the OE version the client is experiencing the problem on (verbatim). Where the symptom manifests, not where the fix lands.
 - **Fix version** — the OE version the fix targets (verbatim), the repo, and the target branch.
 - **Commit title** — the exact, verbatim `git commit -m` message, on its own indented line, ready to copy straight into `git commit -m "<commit title>"`. Could be multiple: one block per commit, in order. Never leave the commit message implicit or buried in prose.
 - **GitHub PR description** — the PR body that follows (could be multiple, if the branch raises more than one PR).
@@ -44,13 +47,15 @@ oe-pr-<slug>/
 The **GitHub PR description** is the only markdown-formatted field. It is a sequence of `##` sections; **each `##` heading stays OUT of the blockquote** (they render as real markdown headings) and **only the body under each heading is a single blockquote** — every body line prefixed with `> ` — so each section pastes as one quoted block under a plain heading. The sections, in order:
 
 1. **Description** — required; what the change does and why.
-2. **Steps to reproduce** — numbered, instance-agnostic.
-3. **Solution** — the approach taken, named not diffed.
-4. **Files changed** — one bullet per file, one sentence on why each file changed.
-5. **Test** — the test added, or why one is not applicable.
-6. **Notes for reviewer** — very simple bullet points for edge cases to check.
+2. **Steps to Reproduce** — numbered, client-agnostic (Bug / Regression).
+3. **Current Outcome** — the wrong behaviour the steps produce today.
+4. **Expected Outcome** — the correct behaviour the steps should produce.
+5. **Solution** — the approach taken, named not diffed.
+6. **Files changed** — one bullet per file, one sentence on why each file changed.
+7. **Test** — the test added, or why one is not applicable.
+8. **Notes for reviewer** — very simple bullet points for edge cases to check.
 
-Description is always present. The lighter sections may be **skipped when the change is self-evident** (e.g. a slow page load fixed by a missing index needs little more than Description + Files changed) — include a section only when it carries information, and never pad.
+Description is always present. The **Steps to Reproduce / Current Outcome / Expected Outcome** triad fits Bug and Regression tickets; for the feature and planning ticket types (New Feature, Improvement, Internal Improvement, Story, Epic, EyeDraw Spec) there is often nothing to reproduce — drop the triad and let Description + Solution carry the writeup. The other lighter sections may also be **skipped when the change is self-evident** (e.g. a slow page load fixed by a missing index needs little more than Description + Files changed) — include a section only when it carries information, and never pad. Sometimes the triad cannot be followed cleanly even for a fault (intermittent, data-dependent, or environment-specific symptoms) — say what you can and don't fabricate steps.
 
 ```
 Jira ticket title:
@@ -59,6 +64,17 @@ Generic, outcome-shaped, imperative, under 70 chars, no trailing punctuation, no
 client names, no ticket numbers. Reused as the GitHub PR title.
   Good: Fix archived patients reappearing in the default worklist after refresh
   Bad:  Fix bug Foo Clinic reported in ticket #1421>
+
+Jira ticket type:
+<exactly one of: Bug | New Feature | Improvement | Internal Improvement | Story |
+Epic | Regression | EyeDraw Spec. For an OE client-reported fault this is most often
+Regression — see "Jira ticket type — classify" below. Get it right; it drives triage.>
+
+Affects version:
+<the version the client is experiencing the problem on, verbatim — e.g. v25.4.1.
+Where the symptom manifests, not where the fix lands. If a range, name the earliest
+confirmed. Leave blank only for ticket types with no affected install (e.g. a New
+Feature that never shipped).>
 
 Fix version:
 Raised in <version, verbatim — e.g. v26.0.0-rc3, v25.4.1>. Repo <openeyes/openeyes
@@ -75,8 +91,9 @@ block per commit if there are several; see "Multiple commits" below.)
 GitHub PR description:
 (The PR body — paste into the pull request's description box, or pass via
 `gh pr create --body-file`. The "##" lines are real markdown headings and stay OUT
-of the blockquotes; only each section body is quoted. Skip a lighter section when
-the change is self-evident; never drop Description.)
+of the blockquotes; only each section body is quoted. Skip the triad for non-fault
+ticket types, and skip a lighter section when the change is self-evident; never drop
+Description.)
 
 ## Description
 > What the change does and why, in plain language. Lead with the user-visible
@@ -84,18 +101,28 @@ the change is self-evident; never drop Description.)
 > a different trust should recognise it.
 > Every line of this body prefixed with `> `; the heading above is not.
 
-## Steps to reproduce
-> Numbered and instance-agnostic. This is release-notes-facing, so NEVER name a
-> specific instance's credentials, seed data, or the OE sample DB (no "log in as
-> admin / admin", no "from the sample DB"). Describe the actor by role ("a
-> logged-in user", "a clinician with access to a patient record") and the actions
-> in product terms a reader at any trust would recognise. A version or config
-> condition the symptom needs is fine — it holds for every such install, not one
-> instance (e.g. "On OE v26, where X defaults to ON").
+## Steps to Reproduce
+> Numbered and client-agnostic. This is release-notes- and Jira-facing, so NEVER name
+> a specific client, their credentials, seed data, or the OE sample DB (no "log in as
+> admin / admin", no "from the sample DB", no client / trust names). Describe the
+> actor by role ("a logged-in user", "a clinician with access to a patient record")
+> and the actions in product terms a reader at any client would recognise. Keep the
+> steps generic enough to reproduce on any install — not always possible; if the
+> symptom needs particular data, say what *kind* of data, not whose. A version or
+> config condition the symptom needs is fine — it holds for every such install, not
+> one client (e.g. "On OE v26, where X defaults to ON").
 > Every line of this body prefixed with `> `; the heading above is not.
 > 1. As a logged-in user, ...
 > 2. ...
-> 3. Observed: <symptom>. Expected: <correct behaviour>.
+
+## Current Outcome
+> The wrong behaviour as it stands today — what actually happens at the end of the
+> steps. One or two lines, client-agnostic.
+> Every line of this body prefixed with `> `; the heading above is not.
+
+## Expected Outcome
+> The correct behaviour the steps should produce instead. One or two lines.
+> Every line of this body prefixed with `> `; the heading above is not.
 
 ## Solution
 > The approach taken, named not diffed — the mechanism of the fix and the one
@@ -121,12 +148,31 @@ the change is self-evident; never drop Description.)
 ## Notes for reviewer
 > Very simple bullet points — edge cases to check, clinical-safety invariants touched
 > and how you handled them, any stack-specific verification that doesn't belong in the
-> release-notes-facing Steps to reproduce (cache-clear commands, container names), and
+> release-notes-facing Steps to Reproduce (cache-clear commands, container names), and
 > any related occurrence of the same problem found but not fixed here (file:line +
 > recommended approach). Skip if there is genuinely nothing to add.
 > - <edge case to check>
 > - <invariant / verification note>
 ```
+
+### Jira ticket type — classify, pick exactly one
+
+Every PR.md sets a `Jira ticket type:` label to exactly one value. Choose the best fit:
+
+| Type | Use when |
+|---|---|
+| **Regression** | Worked in an earlier OE version and broke in a later one. **The default for OE client-reported faults** — most client tickets are regressions. |
+| **Bug** | A defect that was never correct (no known prior-working version), or a fault with no earlier baseline to regress from. |
+| **New Feature** | Net-new capability that did not exist before. |
+| **Improvement** | Enhancement to existing, user-visible behaviour. |
+| **Internal Improvement** | Refactor, tech-debt, tooling, or dev-facing change with no user-visible behaviour change. |
+| **Story** | A planned unit of requirement work (an agile story). |
+| **Epic** | A large body of work spanning several stories. |
+| **EyeDraw Spec** | A specification for an EyeDraw doodle / drawing. |
+
+The call you'll make most is **Bug vs Regression**: did a prior OE version behave correctly? If yes → **Regression**; if it never worked → **Bug**. When unsure for a client fault, default to **Regression**. **Improvement vs Internal Improvement** turns on user-visibility: if a clinician would notice the difference it's an Improvement, otherwise Internal Improvement.
+
+The Steps to Reproduce / Current Outcome / Expected Outcome triad fits **Bug** and **Regression**. For the feature and planning types (New Feature, Improvement, Internal Improvement, Story, Epic, EyeDraw Spec) there is often no current outcome to reproduce — drop the triad and let Description + Solution carry the writeup. Match the section shape to the ticket type; do not invent reproduction steps for a feature.
 
 ### Multiple commits
 
@@ -151,16 +197,26 @@ git push -u origin <branch>
 gh pr create --base <base> --title "<Jira ticket title>" --body-file <pr-description.md>
 ```
 
-Do not run any of these yourself — they're for the user to copy. The "GitHub PR description" section of PR.md is the PR body verbatim; the user either pastes it into the PR description box or saves it to a file for `--body-file`.
+Do not run any of these yourself — they're for the user to copy. The "GitHub PR description" section of PR.md is the PR body verbatim; the user either pastes it into the PR description box or saves it to a file for `--body-file`. The Jira ticket title, Jira ticket type, and Affects version labels are for the Jira ticket, not for `gh` — the user transcribes them into Jira.
 
 ## OE field rules (apply while writing PR.md)
 
 These replace the "go survey the tree" steps a generic PR flow would have — they're judgements about the change you're *already* writing up, not a hunt for changes:
 
+- **Jira ticket type, exactly one.** Classify the change as Bug / New Feature / Improvement / Internal Improvement / Story / Epic / Regression / EyeDraw Spec (table above). For an OE client-reported fault the answer is most often **Regression** — get this right, it drives how the ticket is triaged.
+- **Affects version, recorded verbatim.** The version the client is experiencing the problem on — where the symptom manifests, not where the fix lands. Distinct from Fix version. Pick the version the reporter is actually running; if a range, name the earliest confirmed. Write `v25.4.1`, never `25`.
 - **Fix version, recorded verbatim.** The version the issue was raised against — from `package.json`, `protected/config/local/common.php` (`'version' => …`), `git describe --tags`, or the user. Write `v26.0.0-rc3`, never `26`.
 - **Which OE repo.** `openeyes/openeyes` (PHP / Yii core) vs a satellite (`openeyes/oe-frontend`, …). The base branch and template differ; state both in the Fix version field.
 - **Migrations are always `core`** — never list a schema migration as "supporting"; it's load-bearing for the reviewer.
 - **`local/common.php` edits are almost never the real change.** Module switches belong in `<module>/config/common.php`; `local/common.php` is just the on-switch. If the change is there, double-check the module's own `config/common.php` carries the real config.
+
+## Keep it client-agnostic (applies across every field)
+
+The PR.md is read by reviewers and copied into customer-facing release notes, so strip the original reporter's fingerprints from every field, not just the title:
+
+- **No client-specific details.** No client / trust names, no instance hostnames, no real patient or user data, no ticket numbers, no "as Foo Clinic reported".
+- **Generic steps where possible.** Write Steps to Reproduce so any install can follow them. It isn't always possible — when the symptom genuinely depends on a client's data or config, describe the *kind* of data or the config condition, not the client.
+- **The template is a default, not a cage.** When a fault can't be reduced to clean Steps / Current / Expected (intermittent, data-dependent, environment-specific), say what you can and stop — don't fabricate reproduction steps to fill the shape.
 
 ## OE gotchas worth catching before you finalise the folder
 
