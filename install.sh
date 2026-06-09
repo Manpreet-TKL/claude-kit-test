@@ -3,8 +3,12 @@
 # claude-kit installer — configures Claude Code per the handoff brief.
 # Writes ~/.claude/settings.json (statusLine, env, permissions) and
 # wholesale-writes ~/.claude/CLAUDE.md from claude-md/CLAUDE.md in this kit.
-# Idempotent: safe to re-run; existing settings.json + CLAUDE.md are backed up
-# to *.bak before overwriting.
+# Idempotent: safe to re-run. settings.json/CLAUDE.md are backed up to *.bak
+# only when the new content actually differs, so a no-op re-run never clobbers a
+# good backup — your auth, history.jsonl and projects/ are never touched.
+# Skill symlinks are torn down and rebuilt every run (stale/renamed links pruned;
+# real directories left alone). If ~/.claude is absent, Claude Code is installed
+# from scratch first, then this kit's config is laid down on top.
 
 abort() {
     echo >&2 '
@@ -126,6 +130,18 @@ echo "Checking for jq..."
 command -v jq >/dev/null 2>&1 || { echo "jq not found. Install jq (apt install jq) and retry." >&2; exit 1; }
 echo "[OK]"
 
+echo "Checking for an existing Claude install (~/.claude)..."
+if [ ! -d "${claude_dir}" ]; then
+    echo "  ~/.claude not found — this looks like a fresh machine."
+    echo "  Installing Claude Code from scratch..."
+    command -v curl >/dev/null 2>&1 || { echo "curl not found. Install curl (apt install curl) and retry." >&2; exit 1; }
+    curl -fsSL https://claude.ai/install.sh | bash
+    echo "  [OK] Claude Code installed"
+else
+    echo "  found — leaving existing ~/.claude (auth, history, projects/) untouched"
+fi
+echo "[OK]"
+
 echo "Ensuring ${claude_dir} exists..."
 mkdir -p "${claude_dir}"
 echo "[OK]"
@@ -162,12 +178,11 @@ echo "-------------------------------"
 ### FUNCTIONS (See end of script for execution) ##
 ##################################################
 
-# Backup the existing settings.json (overwrites previous .bak to track latest pre-run state).
-backupSettings() {
-    if [ -f "${settings_file}" ]; then
-        cp -p "${settings_file}" "${settings_bak}"
-        echo "  backed up → ${settings_bak}"
-    else
+# Ensure settings.json exists as valid JSON so jq always has a base to merge into.
+# The backup happens in writeSettings — and only when the content really changes —
+# so a no-op re-run never overwrites a good .bak (preserves your prior settings).
+ensureSettings() {
+    if [ ! -f "${settings_file}" ]; then
         # Seed with an empty object so jq operations always start from valid JSON.
         echo '{}' > "${settings_file}"
         echo "  created fresh → ${settings_file}"
@@ -373,6 +388,18 @@ writeSettings() {
 
     # Validate before overwrite — never leave settings.json half-written.
     jq -e . "${tmp}" >/dev/null
+
+    # Idempotent: if the merge is byte-identical to what's already there, do
+    # nothing — no backup churn, the existing .bak (your original) is preserved.
+    if cmp -s "${tmp}" "${settings_file}"; then
+        rm -f "${tmp}"
+        echo "  settings.json already current — no change"
+        return 0
+    fi
+
+    # Back up the about-to-change file (only on a real change).
+    cp -p "${settings_file}" "${settings_bak}"
+    echo "  backed up → ${settings_bak}"
     mv "${tmp}" "${settings_file}"
     echo "  merged → ${settings_file}"
 }
@@ -413,25 +440,43 @@ applyAtlassian() {
     esac
 }
 
-# Symlink each kit skill into ~/.claude/skills/<name>. Skips destinations that
-# already exist as real directories (not symlinks) — never clobbers hand-edits.
+# Rebuild ~/.claude/skills/<name> symlinks from scratch on every run.
+# Step 1 tears down every kit-managed symlink (including dangling ones left by
+# renamed/removed kit skills) so stale links never linger. Step 2 recreates a
+# fresh symlink for each skill currently in the kit. Real directories (not
+# symlinks) are never touched — hand-edited skills are safe.
 syncSkills() {
     [ -d "${skills_src_dir}" ] || { echo "  no skills/ dir in kit — skipped"; return 0; }
     mkdir -p "${claude_skills_dir}"
-    local src name dst
+
+    # 1. Prune kit-managed symlinks (matched by where they point, so dangling
+    #    links to since-renamed skills like oe_deploy/oe_imagebuilder are caught).
+    local dst raw
+    for dst in "${claude_skills_dir}"/*; do
+        [ -L "${dst}" ] || continue
+        raw="$(readlink "${dst}")"
+        case "${raw}" in
+            "${skills_src_dir}"/*)
+                rm -f "${dst}"
+                echo "  unlink→ ${dst}"
+                ;;
+        esac
+    done
+
+    # 2. (Re)create a symlink for every skill currently in the kit.
+    local src name
     for src in "${skills_src_dir}"/*/; do
         [ -d "${src}" ] || continue
         name="$(basename "${src}")"
         dst="${claude_skills_dir}/${name}"
-        if [ -L "${dst}" ]; then
-            ln -sfn "${src%/}" "${dst}"
-            echo "  link  → ${dst}"
-        elif [ -e "${dst}" ]; then
-            echo "  skip  → ${dst} (real dir, not a symlink — leaving alone)"
-        else
-            ln -s "${src%/}" "${dst}"
-            echo "  link  → ${dst}"
+        # A leftover here is either a real dir or a foreign symlink (not ours,
+        # since step 1 removed all kit-managed ones) — leave it untouched.
+        if [ -L "${dst}" ] || [ -e "${dst}" ]; then
+            echo "  skip  → ${dst} (exists and not kit-managed — leaving alone)"
+            continue
         fi
+        ln -s "${src%/}" "${dst}"
+        echo "  link  → ${dst}"
     done
 }
 
@@ -440,11 +485,14 @@ syncSkills() {
 # on each run, same convention as settings.json.bak).
 writeClaudeMd() {
     [ -f "${claude_md_src}" ] || { echo "  missing kit source: ${claude_md_src}" >&2; return 1; }
+    # Idempotent: already matches the kit → leave it (and its .bak) alone.
+    if [ -f "${claude_md_file}" ] && cmp -s "${claude_md_file}" "${claude_md_src}"; then
+        echo "  ~/.claude/CLAUDE.md already current — no change"
+        return 0
+    fi
     if [ -f "${claude_md_file}" ]; then
-        if ! cmp -s "${claude_md_file}" "${claude_md_src}"; then
-            cp -p "${claude_md_file}" "${claude_md_bak}"
-            echo "  backed up → ${claude_md_bak}"
-        fi
+        cp -p "${claude_md_file}" "${claude_md_bak}"
+        echo "  backed up → ${claude_md_bak}"
     fi
     cp "${claude_md_src}" "${claude_md_file}"
     echo "  wrote     → ${claude_md_file}  (from ${claude_md_src})"
@@ -554,8 +602,8 @@ if [ "${DO_RESET}" = "1" ]; then
     echo -e "[Done]\n"
 fi
 
-echo "Backing up settings.json..."
-backupSettings
+echo "Ensuring settings.json exists..."
+ensureSettings
 echo -e "[Done]\n"
 
 echo "Writing statusline script..."
