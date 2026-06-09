@@ -22,7 +22,7 @@ set -e
 
 # Defaults (overridable via env or flag) ------------------------------------
 PERMISSIONS=""                                  # safe | standard | trusted | yolo
-AUTOCOMPACT_PCT="${AUTOCOMPACT_PCT:-60}"        # compact trigger %, clamped to ~83
+AUTOCOMPACT_PCT="${AUTOCOMPACT_PCT:-90}"        # compact trigger %, clamped to ~83
 AUTOCOMPACT_WINDOW="${AUTOCOMPACT_WINDOW:-200000}"  # effective window (tokens)
 FIVE_HOUR_BUDGET="${FIVE_HOUR_BUDGET:-}"        # tokens/5h, surfaced as % in status line; unset = raw count
 WEEKLY_BUDGET="${WEEKLY_BUDGET:-}"              # tokens/week (rolling 7d), surfaced as % in status line; unset = raw count
@@ -83,7 +83,7 @@ Usage: install.sh [--permissions <safe|standard|trusted|yolo>] [--reset]
   --help, -h          This message.
 
 Env overrides:
-  AUTOCOMPACT_PCT      (default 60)      % capacity at which auto-compact triggers.
+  AUTOCOMPACT_PCT      (default 90)      % capacity at which auto-compact triggers.
   AUTOCOMPACT_WINDOW   (default 200000)  effective context window in tokens.
   FIVE_HOUR_BUDGET     (unset)           tokens/5h budget — status line shows 5h N%
                                          instead of a raw count. e.g. FIVE_HOUR_BUDGET=2000000
