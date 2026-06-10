@@ -1,50 +1,47 @@
 ---
 name: oeimagebuilder
-description: OEImageBuilder repo — builds the toukanlabsdocker/{oe-web-base, oe-web-live, oe-web-dev, oe-manager} images that oe-deploy then runs. Invoke explicitly for image work. Volatile detail (build args, multi-stage layout, local-source variant) lives in subs/.
+description: OEImageBuilder repo — builds the OE container images
 disable-model-invocation: true
 ---
 
-# OEImageBuilder — contributor contract
+# OEImageBuilder
 
-This repo produces every OpenEyes container image consumed by `oe-deploy`. It does **not** run anything — it builds and (optionally) pushes.
+When loaded as context with no task, reply only `Context loaded.`
 
-## Image hierarchy
+Builds every image `oe-deploy` runs; it runs nothing itself. There is **no build script** — each top-level folder (`Web-Base/`, `Web-Live/`, `Web-Dev/`, `Manager/`, `Aws-Cli/`) holds a `dockerfile`, built with a plain `docker build` from inside that folder. Detail: `subs/build-args.md` (per-image ARGs), `subs/multistage.md` (the 5-stage live build), `docs/ARM_BUILDS.md` in the repo. Root `docker-compose.yml` is a local test stack, not a deployment artifact.
+
+## Hierarchy
 
 ```
-oe-web-base  ──┬──> oe-web-live  ──> oe-manager
-               │
-               └──> oe-web-dev   (dual personality: oe-web-dev | oe-web-debug)
+oe-web-base ──┬──> oe-web-live ──> oe-manager
+              └──> oe-web-dev   (dual personality: dev | debug)
 ```
 
-- **`oe-web-base`** — OS, PHP, system libs, Apache. The slow-changing layer.
-- **`oe-web-live`** — adds OpenEyes itself via a 5-stage build (git → composer → npm → vite → final). Production-shaped.
-- **`oe-web-dev`** — `oe-web-base` + dev tooling. Switches personality on `PROD_DEBUG=TRUE/FALSE`.
-- **`oe-manager`** — `FROM oe-web-live` + manager-specific bits. **Its tag must match `oe-web-live`** at build time, otherwise oe-deploy's gate refuses to come up.
+- `oe-web-base` — Ubuntu + PHP + Apache + node + Chrome's system libs. Tagged `php<ver>-<os>` (e.g. `php8.4-noble`), never an OE version.
+- `oe-web-live` — adds OpenEyes via 5 stages (git → composer → npm → vite → final). The final image **does** carry `node_modules` incl. puppeteer's Chrome (~600 MB) — that's how in-container PDF rendering works.
+- `oe-web-dev` — dev tooling on a switchable base: `PROD_DEBUG=FALSE` from base = dev image (code mounted from host); `PROD_DEBUG=TRUE` from a live tag = production debug image (`debug-<tag>`).
+- `oe-manager` — `FROM oe-web-live:${OE_VERSION}` + sample-DB repo + cron/maintenance. **Tag must match oe-web-live** — they deploy as a pair or schemas/migrations mismatch.
+- `aws-cli` — standalone cron-runner utility.
 
-## Build philosophy (stable rules)
+## Building
 
-- **Init scripts run in numeric prefix order.** `10_apache.sh`, `20_php.sh`, `30_openeyes.sh`, etc. Child images override parent scripts by **same filename**, not by addition.
-- **Build args are the only configuration.** No `ENV` writes inside the Dockerfile that aren't echoing an `ARG`. If you need a new knob, plumb a new `ARG` through — see `subs/build-args.md`.
-- **Modules are space-separated in `MODULES=`.** The init script clones each into `protected/modules/` at build time. Adding a module = changing the build arg, not editing the Dockerfile.
-- **WROOT is the document root.** Default `/var/www/openeyes`. Don't hardcode the path elsewhere.
+```bash
+eval `ssh-agent -s`        # live/manager clone OE repos over SSH
+cd Web-Live
+docker build -t toukanlabsdocker/oe-web-live:v26.0.0-rc3 \
+  --build-arg BUILD_BRANCH=v26.0.0-rc3 --ssh default --progress=plain --no-cache .
+```
 
-## When the tag doesn't match (and why)
+`BUILD_BRANCH` is mandatory for Web-Live (`oe-checkout.sh` aborts without it); per-module checkouts fall back to `DEFAULT_BRANCH` (master). CI builds/pushes **base, dev, aws-cli** only (amd64+arm64); live/manager are built and pushed by hand.
 
-`oe-manager` and `oe-web-live` are deployed as a pair. If you bump one to `v26.0.0-rc4` and the other stays on `v26.0.0-rc3`, schemas/migrations will mismatch. **Build them together.** `build.sh` in this repo accepts a single `--tag` for the family for exactly this reason.
+## Stable rules
 
-## Tag casing — Docker Hub is case-sensitive
+- Init scripts run in numeric prefix order (`00-banner.sh` … `100-start-apache.sh`): tini → `/init.sh` → `/init_scripts/`; child images add/override by same filename (`Web-Dev` also has `init_scripts_dev_only/`).
+- ARGs are the build knobs, ENVs the runtime contract; re-declare an ARG after every `FROM` whose stage uses it.
+- `MODULES` is comma OR space separated; `eyedraw` is always added.
+- `WROOT` (default `/var/www/openeyes`) is the document root — don't hardcode the path.
+- READMEs are generated: edit `README_template.md` only; CI regenerates and commits `README.md`.
+- Every image writes `/imageinfo.txt`; the live checkout also writes `$WROOT/buildinfo.txt` (debug info panel).
+- Docker Hub tags are case-sensitive — lowercase `rc` always: `v26.0.0-RC3` pushes a wrong tag and manifest-not-founds on pull.
 
-`v26.0.0-rc3` ≠ `v26.0.0-RC3`. Always use lowercase `rc`. This bites in two places:
-
-1. Pushing — `docker push toukanlabsdocker/oe-web-live:v26.0.0-RC3` succeeds and creates the wrong tag.
-2. Pulling from `oe-deploy` — `OE_WEB_TAG=v26.0.0-RC3` will manifest-not-found in production.
-
-## Where the detail lives
-
-- `subs/build-args.md` — current `ARG` names, defaults, what they do. Versions move.
-- `subs/multistage.md` — the 5-stage `oe-web-live` build, why each stage exists, cache implications.
-- `subs/local-source.md` — building from a local OpenEyes checkout (offline / WIP branches).
-
-## Where this fits
-
-You build images here. They get **pulled** by `oe-deploy` on the target host (or pushed from here, then pulled there). For deployment work, switch to the `oe-deploy` skill.
+Deployment work → `oe-deploy` skill.

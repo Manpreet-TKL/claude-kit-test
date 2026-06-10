@@ -13,7 +13,7 @@ Tables that look secondary but quietly drive a lot of behaviour.
 ## Settings
 
 - `Setting` (and `SettingMetadata`) — the settings master table. Backed by `BaseSetting` AR.
-- `settingCache` component caches reads; clear by invalidating the APCu key (see `oe_code`).
+- `settingCache` component caches reads; clear by invalidating the APCu key (see `oe-code`).
 - Settings are typically scoped per `Institution` (`SettingInstallation`, `SettingInstitution`, `SettingUser`, etc. — exact set drifts; grep first).
 
 ## Authentication wiring

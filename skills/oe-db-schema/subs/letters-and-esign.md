@@ -33,4 +33,4 @@ Backed by `BaseSignature` and `BaseEsignElement`. PIN-based signing supported vi
 - `CorrespondenceEmailCommand` — sends emailed letter copies (cron).
 - `DocManDeliveryCommand` / `DocmanRetriever` — external document handoff.
 - `InternalReferralDeliveryCommand` — internal referral routing.
-- Letter PDFs are written to `protected/files/` (bind-mounted, see `oe_components`).
+- Letter PDFs are written to `protected/files/` (bind-mounted, see `oe-components`).

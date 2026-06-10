@@ -22,10 +22,10 @@ A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` 
 │   ├── note-style/
 │   ├── yiic-command-style/
 │   ├── notes/              # repo-specific (disable-model-invocation: true)
-│   ├── oe_code/            # OpenEyes — code & frameworks
-│   ├── oe_components/      # OpenEyes — runtime containers
-│   ├── oe_db_schema/       # OpenEyes — DB / domain model
-│   ├── oe_coding_standards/# OpenEyes — invariants & lint layout
+│   ├── oe-code/            # OpenEyes — code & frameworks
+│   ├── oe-components/      # OpenEyes — runtime containers
+│   ├── oe-db-schema/       # OpenEyes — DB / domain model
+│   ├── oe-coding-standards/# OpenEyes — invariants & lint layout
 │   ├── oe-deploy/          # OE deploy template (pantry/recipe/chef)
 │   └── oeimagebuilder/     # OE image hierarchy & build args
 └── docs/
@@ -129,7 +129,7 @@ Edit `claude-md/CLAUDE.md` and re-run `install.sh` to roll the change out. The p
 `install.sh` symlinks each directory under `skills/` into `~/.claude/skills/<name>`. Edit a skill in this kit and the change is live without re-installing.
 
 - **Auto-loading style skills** (no `disable-model-invocation`): `bash-style`, `create-oe-module`, `note-style`, `yiic-command-style`.
-- **Explicit-invocation skills** (with `disable-model-invocation: true`): `notes`, `oe_code`, `oe_components`, `oe_db_schema`, `oe_coding_standards`, `oe-deploy`, `oeimagebuilder`. These are large, repo-specific, and only loaded when invoked by name.
+- **Explicit-invocation skills** (with `disable-model-invocation: true`): `notes`, `oe-code`, `oe-components`, `oe-db-schema`, `oe-coding-standards`, `oe-deploy`, `oeimagebuilder`. These are large, repo-specific, and only loaded when invoked by name.
 
 Each repo-specific skill follows the **stable mental model in `SKILL.md`, volatile detail in `subs/*.md`** convention. See **[docs/skills.md](docs/skills.md)**.
 

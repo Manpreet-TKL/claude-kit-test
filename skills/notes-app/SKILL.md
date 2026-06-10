@@ -1,48 +1,38 @@
 ---
 name: notes-app
-description: ToukanNotes (notes-test) repo — Laravel 13 + Alpine + MariaDB notes app whose single design goal is speed of writing/finding/sharing notes. Invoke explicitly when working in ~/notes-test/ or anywhere ToukanNotes context is needed. Volatile detail (pinned versions, schema, current gotchas) lives in subs/.
+description: ToukanNotes (notes-test) repo conventions
 disable-model-invocation: true
 ---
 
-# ToukanNotes (notes-test) — contributor contract
+# ToukanNotes (notes-test)
 
-A fast, opinionated notes app for DevOps teams. The single design goal is **speed** — to write, find, and share a note. Everything else is a trade-off in service of that goal.
+When loaded as context with no task, reply only `Context loaded.`
 
-Read the in-app `/help` (`src/resources/views/help/index.blade.php`) before designing any UX change — its 9 strict rules and 10 principles are non-negotiable.
+Laravel + Alpine + MariaDB notes app for DevOps teams; the single design goal is **speed** to write, find, and share a note. Read the in-app `/help` (`src/resources/views/help/index.blade.php`) before any UX change — its rules are non-negotiable. Detail: `subs/stack.md` (pinned versions), `subs/schema-and-domain.md`, `subs/operations.md` (dev/build/deploy), and `docs/codebase-tour.md` in the live repo.
 
-## Where to look first
+## Stable conventions
 
-- `docs/codebase-tour.md` — full annotated tree (in the live repo).
-- `subs/stack.md` — pinned versions (PHP, Laravel, MariaDB, …). These move; check it before assuming.
-- `subs/schema-and-domain.md` — current domain model, container runtime, conventions.
-- `subs/operations.md` — local dev, building images, deploying, things that bite.
+- No SPA framework — Alpine.js + Blade only.
+- Body is plain text in the DB; render only via `Note::renderedBody()` (the one path with ``` rendering AND XSS safety).
+- Search = case-insensitive LIKE on `notes.title` + `sections.name`; body intentionally not searched; SQL wildcards in user terms neutralised.
+- Slugs auto-generate in `Note::boot('creating')`; the uniqueness check includes soft-deleted rows.
+- Resource routes bind on `id`, not slug.
+- Authorisation only via `User::can*()` + `NotePolicy` — never query roles/permissions from views or controllers.
+- Validation in `Http/Requests/Store*/Update*Request`; controllers take typed requests.
+- Forward-only migrations: new columns `nullable()` or defaulted — production has data.
+- Tests hit a real MariaDB; SQLite is not a substitute.
+- `roles.default_on_create` drives pre-ticked roles on the user-create form (`stats_viewer` is on) — flip the flag, don't hardcode a checkbox.
 
-## Stable conventions (do not violate without discussion)
-
-- **No SPA framework.** Alpine.js + Blade only. UX target is "fastest possible page load and search response."
-- **Body is plain text in the DB.** Render via `Note::renderedBody()` — the only path that guarantees both ` ``` ` → `<pre><code>` rendering AND XSS safety.
-- **Search uses case-insensitive LIKE** across `notes.title` and `sections.name`. **Body is not searched** — intentional, the priority is sub-second lookup. SQL wildcards in user terms are neutralised; empty terms return no results.
-- **Slugs auto-generate** in `Note::boot('creating')` and the uniqueness check includes soft-deleted rows — restoring must not collide.
-- **Resource routes bind on `id`**, not slug, for collision-proof URLs.
-- **Authorisation flows through `User::can*()` and `NotePolicy`.** Never query roles/permissions from views or controllers.
-- **Validation lives in `Http/Requests/Store*Request` / `Update*Request`.** Controllers take typed requests, not raw `Request`.
-- **Forward-only migrations.** New columns must be `nullable()` or have a default — production has data.
-- **Tests hit a real MariaDB** (`MATCH … AGAINST`, BLOB, case-insensitive collation). SQLite is not a substitute.
-- **Default-on-create roles**: the `roles` table carries a `default_on_create` flag — the user-create form pre-ticks them. `stats_viewer` is default-on. New roles intended for everyone need that flag flipped, not a hardcoded checkbox.
-
-## Security must-do list (run on every PR)
+## Security greps (every PR — zero new lines vs baseline)
 
 ```bash
-# All three should produce zero new lines vs. the baseline call-sites.
 grep -rnE '\b(eval|exec|system|popen|proc_open|passthru|shell_exec|pcntl_exec|assert|unserialize)\s*\(' src/app/
 grep -rnE '\{!! ' src/resources/views/
 grep -rnE 'whereRaw|DB::raw\(|->raw\(' src/app/
 ```
 
-See `docs/security.md` in the live repo for the full audit and what each known site does.
+Full audit: `docs/security.md` in the live repo.
 
-## Where this app sits in the wider stack
+## Wider stack
 
-This repo only produces the **image** — and note it has **no `build.sh` of its own**; the image is built directly with `docker build --target production` (see `subs/operations.md`).
-
-Actual deployment lives in an `oe-deploy` instance. The live one is `~/octopus` (a `mv oe-deploy octopus` with `appName=notes`, `machineName=test2`): its generated `docker-compose.yml` references the prebuilt `toukanlabsdocker/notes:<NOTES_TAG>` image and publishes it on **:81** (plus Traefik `notes.localhost`). The oe-deploy repo assembles `templates/notes.yml` + `templates/db.yml` + `templates/tfk_only.yml` via *its* `build.sh`. For deployment-repo work, switch to the `oe-deploy` skill; for the concrete rebuild-and-redeploy commands, see `subs/operations.md`.
+This repo only produces the image — no `build.sh`; build with `docker build --target production` (see `subs/operations.md`). Deployment is an oe-deploy instance: the live one is `~/octopus` (`appName=notes`, `machineName=test2`), publishing `toukanlabsdocker/notes:<NOTES_TAG>` on :81 plus Traefik `notes.localhost`. For deployment-repo work, switch to the `oe-deploy` skill.

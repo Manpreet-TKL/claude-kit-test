@@ -39,7 +39,7 @@ Use SKILL.md for:
 
 ## When to set `disable-model-invocation: true`
 
-The kit's `notes`, `oe_code`, `oe_components`, `oe_db_schema`, `oe_coding_standards`, `oe-deploy`, and `oeimagebuilder` skills all set this flag. Reason: they're large, repo-specific, and you don't want the model auto-pulling them in for unrelated tasks. The user (or an agent that knows the repo) invokes them explicitly.
+The kit's `notes`, `oe-code`, `oe-components`, `oe-db-schema`, `oe-coding-standards`, `oe-deploy`, and `oeimagebuilder` skills all set this flag. Reason: they're large, repo-specific, and you don't want the model auto-pulling them in for unrelated tasks. The user (or an agent that knows the repo) invokes them explicitly.
 
 The style skills (`bash-style`, `note-style`, `yiic-command-style`, `create-oe-module`) **don't** set the flag — they auto-load when relevant, because they're guard-rails you want applied whenever the model touches that kind of file.
 
@@ -55,7 +55,7 @@ The model is expected to read the SKILL.md fully and then read whichever sub it 
 ## Skill names — house convention
 
 - Hyphens for styling skills: `bash-style`, `note-style`, `yiic-command-style`, `create-oe-module`.
-- Repo-specific skills mix conventions: underscored (`oe_code`, `oe_components`, `oe_db_schema`, `oe_coding_standards`), hyphenated (`oe-deploy`), and a compound coined name (`oeimagebuilder`). Skill names are case-/separator-sensitive — use the directory name exactly as it sits in `~/.claude/skills/`.
+- Repo-specific skills mix conventions: underscored (`oe-code`, `oe-components`, `oe-db-schema`, `oe-coding-standards`), hyphenated (`oe-deploy`), and a compound coined name (`oeimagebuilder`). Skill names are case-/separator-sensitive — use the directory name exactly as it sits in `~/.claude/skills/`.
 - Project skills group under one prefix so they sort together (`oe_*` here).
 
 ## Where the skills come from
