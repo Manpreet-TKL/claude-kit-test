@@ -200,6 +200,8 @@ return [
 
 The suppression code is in `protected/config/local/common.php` (lines 22–55). It scans both `modules/*/config/common.php` and one level of sub-module configs (`modules/*/modules/*/config/common.php`). When debugging "my menu item doesn't show up," read that file first.
 
+Special modules share a consistent landing-page UI (canonical ribbon, full page width, hidden patient/hotlist panel, cache-busted module CSS) — see `subs/special-module-ui.md` for the recipe, and the `oe-ui` skill for the core CSS mechanics behind it.
+
 ---
 
 ## 5. Menu bar item shape
@@ -333,7 +335,7 @@ So when you edit a config file (`core/common.php`, `local/common.php`, or any mo
 3. Write a `README.md` at the module root (what it is, usage, dependencies, config) and put any longer design/format docs under `docs/`. Keep the module self-contained — its docs and any vendored assets live inside the module, not at the repo root.
 4. Write `config/common.php` (params, components, sub-modules as needed).
 5. Add the explicit-class entry to `$modules` in `protected/config/core/common.php` (or `local/common.php` for testing).
-6. If you need a top-nav entry: add `params.menu_bar_items` AND set `params.oe_special_module = true` — but only if this is an admin/infra tool. Clinical modules don't.
+6. If you need a top-nav entry: add `params.menu_bar_items` AND set `params.oe_special_module = true` — but only if this is an admin/infra tool. Clinical modules don't. Build the landing page per `subs/special-module-ui.md`.
 7. Write a timestamped migration in `protected/modules/OphXxFoo/migrations/` that creates tables, inserts the `event_type` and `element_type` rows (event-type modules), and any `authitem` permissions.
 8. Clear APCu: `curl http://localhost/apc_clear.php`.
 9. Run `./protected/yiic migrate --all`.
