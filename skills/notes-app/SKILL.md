@@ -1,12 +1,14 @@
 ---
 name: notes-app
-description: ToukanNotes (notes-test) repo conventions
+description: opennotes (formerly ToukanNotes / notes-test) repo conventions
 disable-model-invocation: true
 ---
 
-# ToukanNotes (notes-test)
+# opennotes (formerly notes-test)
 
 When loaded as context with no task, reply only `Context loaded.`
+
+The repo and app are now called **opennotes** — `~/opennotes`, GitHub `ToukanLabs/opennotes` (renamed June 2026; a stale `~/notes-test` checkout of the old repo may still exist — don't work in it). The **Docker image and deploy plumbing keep the `notes` name**: image `toukanlabsdocker/notes`, oe-deploy `appName=notes`, `templates/notes.yml`, `NOTES_*` env vars. In-repo branding (README, `APP_NAME`) may still say ToukanNotes in places.
 
 Laravel + Alpine + MariaDB notes app for DevOps teams; the single design goal is **speed** to write, find, and share a note. Read the in-app `/help` (`src/resources/views/help/index.blade.php`) before any UX change — its rules are non-negotiable. Detail: `subs/stack.md` (pinned versions), `subs/schema-and-domain.md`, `subs/operations.md` (dev/build/deploy), and `docs/codebase-tour.md` in the live repo.
 
@@ -35,4 +37,4 @@ Full audit: `docs/security.md` in the live repo.
 
 ## Wider stack
 
-This repo only produces the image — no `build.sh`; build with `docker build --target production` (see `subs/operations.md`). Deployment is an oe-deploy instance: the live one is `~/octopus` (`appName=notes`, `machineName=test2`), publishing `toukanlabsdocker/notes:<NOTES_TAG>` on :81 plus Traefik `notes.localhost`. For deployment-repo work, switch to the `oe-deploy` skill.
+This repo only produces the image — no `build.sh`; build with `docker build --target production` (see `subs/operations.md`). Deployment is an oe-deploy instance: the live one is `~/octopus` (`appName=notes`, `machineName=test2`), publishing `toukanlabsdocker/notes:<NOTES_TAG>` on :81 plus Traefik `notes.localhost` — the deploy side is untouched by the opennotes rename. For deployment-repo work, switch to the `oe-deploy` skill.

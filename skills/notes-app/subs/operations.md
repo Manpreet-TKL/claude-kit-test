@@ -3,7 +3,7 @@
 ## Local dev (host)
 
 ```bash
-cd ~/notes-test/src
+cd ~/opennotes/src
 composer install
 npm ci
 cp .env.example .env
@@ -16,17 +16,17 @@ npm run dev   # in another terminal, for HMR
 Tests:
 
 ```bash
-cd ~/notes-test/src
+cd ~/opennotes/src
 php artisan test                       # full suite
 php artisan test --filter=NoteSearch   # focused
 ```
 
 ## Build the image
 
-There is **no `build.sh` in `~/notes-test`** (the old docs were wrong). Build the multi-stage `docker/Dockerfile` directly — the `production` target bakes `composer install` + `npm run build` (compiled `public/build/` assets) into a self-contained image:
+There is **no `build.sh` in `~/opennotes`** (the old docs were wrong). Build the multi-stage `docker/Dockerfile` directly — the `production` target bakes `composer install` + `npm run build` (compiled `public/build/` assets) into a self-contained image:
 
 ```bash
-cd ~/notes-test
+cd ~/opennotes
 docker build --target production \
   --build-arg BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
   -f docker/Dockerfile \
@@ -43,8 +43,8 @@ The tag comes from the **`VERSION` file** (currently `1.0.0`), *not* `git descri
 
 ```bash
 # safety: keep a rollback image before overwriting the tag
-docker tag toukanlabsdocker/notes:"$(cat ~/notes-test/VERSION)" \
-           toukanlabsdocker/notes:"$(cat ~/notes-test/VERSION)"-pre-redeploy-$(date +%Y%m%d)
+docker tag toukanlabsdocker/notes:"$(cat ~/opennotes/VERSION)" \
+           toukanlabsdocker/notes:"$(cat ~/opennotes/VERSION)"-pre-redeploy-$(date +%Y%m%d)
 
 # hot-swap just notes (db already up):
 docker compose --project-directory ~/octopus -p octopus -f ~/octopus/docker-compose.yml \
@@ -61,7 +61,13 @@ Notes on behaviour, verified:
 - `RUN_MIGRATIONS=true` runs migrations on boot; `RUN_SEEDERS=auto` seeds **only if the users table is empty** — existing data in the `octopus_oe-db` volume is preserved across redeploys.
 - Verify after: `docker inspect -f '{{.State.Health.Status}}' octopus-notes-1` → `healthy`, then `curl -s -o /dev/null -w '%{http_code}' http://localhost:81/` → `302` (redirects to `/login`).
 
-Running `oe-deploy`'s own `build.sh` (gates on disk/env/mariadb version, `yes`-gated disruptive ops) is only needed when the *compose itself* must be regenerated — e.g. after changing `SERVICES`/`MODS`/tags in `~/octopus/.env`. A plain image redeploy does not need it.
+Running `oe-deploy`'s own `build.sh` (gates on disk/env/mariadb version, `yes`-gated disruptive ops) is only needed when the *compose itself* must be regenerated — e.g. after changing `SERVICES`/`MODS`/tags in `~/octopus/.env` — or to cold-start the whole stack when it's been `compose down`'d. A plain hot-swap redeploy does not need it.
+
+When you *do* deploy via `build.sh` with a **locally-built, unpushed** image, two things bite (both verified 2026-06-10):
+
+- **Always pass `-np` (no-pull).** A plain `build.sh` runs `docker-compose pull` (step 6 of the script) and replaces your fresh local `toukanlabsdocker/notes:1.0.0` with the **stale registry `1.0.0`** before bringing it up. `-np` keeps the local image. The `yes` confirmation reads from stdin (lowercased), so `printf 'yes\n' | bash build.sh -np` works; only `-n`/`-d` skip the prompt. Run it from `~/octopus` (the script uses relative paths).
+- **The trailing `failed to resolve digest … denied/unauthorized` + an empty `old-files/image-hashes-*.txt` are harmless.** `saveImageHashes` can't resolve a *registry* digest for an unpushed local image; the `| jq` swallows the error so the deploy still completes (`*** DONE ***`, exit 0). If you want the registry digest recorded (and other hosts to get the build), `docker push toukanlabsdocker/notes:1.0.0` first.
+- `build.sh -d` (dry-run) currently aborts on a `printf "--…": invalid option` bug in `showDryRunDiff` — but only **after** every gate has run and printed `[OK]`, so it still works as a gate validator. (Upstream `oe-deploy` bug, not a per-instance fix.)
 
 ## Things that bite (current)
 

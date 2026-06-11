@@ -1,36 +1,71 @@
 # oe-deploy — per-app recipes (volatile)
 
-The list of apps and the SERVICES/MODS each needs evolves. Always cross-check `templates/` and `.env.example` before assuming a service still exists or that its variables haven't been renamed.
+The list of apps and the SERVICES/MODS each needs evolves. Always cross-check `templates/` and the per-app `templates/<app>.env` before assuming a service still exists or that its variables haven't been renamed. Snapshot below taken against the `cat` checkout (appName=openeyes, MASTER_TAG 26.0.0).
 
-## Apps and their recipes
+## The recipe lives in `.env` (copied from `templates/<appName>.env`)
 
-| App        | `SERVICES`               | `MODS`            | Image tag var(s) | Notes |
-|---         |---                       |---                |---               |---    |
-| openeyes   | `db web`                 | _(none)_          | `OE_WEB_TAG`, `MASTER_TAG`, `BL_TAG` | Plain ref-app. Bridgelink is part of the stack. |
-| notes      | `db notes`               | `tfk_only`        | `NOTES_TAG`      | TFK-only network band. No OE images. |
-| openers    | `db web`                 | `tfk`             | `OE_WEB_TAG`, `MASTER_TAG`, `BL_TAG` | TFK internal OE. |
+Four space-separated lists, each mapping to a template path:
+
+| List          | Path it expands to                |
+|---            |---                                |
+| `SERVICES`    | `templates/<svc>.yml`             |
+| `MODS`        | `templates/modules/<mod>.yml`     |
+| `HEALTHCHECKS`| `templates/healthchecks/<svc>.yml`|
+| `AWSLOGS`     | `templates/awslogs/<svc>.yml`     |
+
+`build.sh` builds a `-f …` string from all four and runs `docker compose … config`.
+
+## Apps and their recipes (cross-check before trusting)
+
+| App      | `SERVICES`                       | `MODS` | DB-pass secret file | Notes |
+|---       |---                               |---     |---                  |---    |
+| openeyes | `db web`                         | _(none)_ | `secrets/DATABASE_PASS` | Plain ref-app. `oe-manager` ships inside `web.yml`. Mirth/BridgeLink is optional (`mc`/`mcbl`), not in the base stack. |
+| notes    | `db notes tfk`                   | _(none)_ | `secrets/DB_PASSWORD`   | Uses the real `tfk` service, not the `tfk_only` mod. No OE images. |
+| openers  | `db mc-ers ers min tfk-ers cla`  | _(none)_ | `secrets/DB_PASSWORD` (+ `OPENERS_DATABASE_PASS`) | WIP recipe: `mc-ers ers min tfk-ers cla` have **no** matching `templates/*.yml` in this checkout — it will not render as-is. |
 
 ## What each template does
 
-| Template               | Purpose |
-|---                     |---      |
-| `templates/db.yml`     | MariaDB service + named volume + my.cnf bind. |
-| `templates/web.yml`    | OE web container + Apache. Anchor: `&web`. |
-| `templates/notes.yml`  | The Notes app container. |
-| `templates/tfk.yml`    | TFK overlay network band (production). |
-| `templates/tfk_only.yml` | TFK-only band, no public exposure. |
-| `templates/manager.yml`| OE Manager sidecar — present when `OE_MANAGER_TAG` is set. |
-| `templates/master.yml` | OE Master cron container. |
+Service fragments (`templates/<svc>.yml`):
+
+| Template      | Service(s) / purpose |
+|---            |---      |
+| `db.yml`      | MariaDB + named data volume + `my.cnf.d` bind. Anchor for the db service. |
+| `db2.yml`     | Second MariaDB container (`-db2` in db-setup). |
+| `mys.yml`     | MySQL container instead of MariaDB (`-mys`). |
+| `web.yml`     | `web` (anchor `&web`, image `toukanlabsdocker/oe-web-live`) **and** `oe-manager` (`<<: *web`, image `toukanlabsdocker/oe-manager`). No separate manager/master template. |
+| `mc.yml`      | NextGen Connect (Mirth) container — service name `mc`. |
+| `mcbl.yml`    | BridgeLink drop-in for `mc` — `innovarhealthcare/bridgelink:${MIRTH_IMAGE_TAG}`. Set `MIRTH_SSL=false`, `MIRTH_PKRET=true`, `VMOPTIONS=-Xmx512m`. |
+| `notes.yml`   | The Notes app container. |
+| `iol.yml`     | IOL Master — import DICOM to OE. |
+| `pay.yml`     | Payload Processor (image processing). |
+| `pen.yml`     | Pentaho data-migration pipelines. |
+| `red.yml`     | Redis cache. |
+| `rmq.yml`     | RabbitMQ. |
+| `rtf.yml`     | RTF document conversion. |
+| `sig.yml`     | Signature processor. |
+| `ss.yml`      | MS SQL Server container. |
+| `tfk.yml`     | Traefik reverse proxy (public frontend). |
+| `tfk_only.yml`| Traefik network band only, no public exposure. |
+| `whi.yml`     | Whiskers monitoring. |
+| `bkp.yml`     | Backup features on oe-manager (local DB only). |
+| `portal.yml`  | Optometry portal (Laravel). |
+| `du_pay.yml`  | Document-upload payment helper. |
+| `aws.yml`     | AWS CLI sidecar for S3 sync. |
+| `dev.yml` / `debug.yml` | Dev / xdebug variants of web. |
+
+Mods (`templates/modules/<mod>.yml`) overlay extra env/config onto `web`: `apache`, `cito`, `cocoa`, `csd`, `debug`, `dev`, `hie`, `international`, `mailer`, `optom`, `pfbackup`, `tfk`, `wcrs`, `worklist`.
 
 ## Image tag conventions (current)
 
-- **OE web/manager RC tag casing** — lowercase `rc` suffix only (`v26.0.0-rc3`, not `v26.0.0-RC3`). Docker Hub is case-sensitive and the latter does not resolve.
-- **BridgeLink** has no bare `4.6` tag. Pin a patch like `4.6.1` or you'll get a manifest-not-found at compose-time.
-- **OpenMRS first boot is slow** — initial WAR deploy can take ~73 min on a monkey-spec host. Don't quote "5–10 min" to users; quote the real number.
+- `MASTER_TAG` (e.g. `26.0.0`) is the umbrella — `OE_WEB_TAG`, `OE_MANAGER_TAG`, `OE_RTF_TAG`, `IOL_MASTER_IMPORT_TAG`, `PAYLOAD_IMAGE_TAG`, `SIGNATURE_PROCESSOR_TAG` all default to `${MASTER_TAG}`. There is **no** `BL_TAG`.
+- **Mirth / BridgeLink** is `MIRTH_IMAGE_TAG` (default `4.6.1`). There's no bare `4.6` tag — pin a patch.
+- **DB** is `DB_IMAGE`/`DB_TAG` (default `mariadb`/`11.8`); **Traefik** is `TFK_TAG` (`v3.6`).
+- **RC tag casing** — lowercase `rc` only (`v26.0.0-rc3`, not `-RC3`); Docker Hub is case-sensitive.
+- **OpenMRS first boot is slow** — initial WAR deploy can take ~73 min on a monkey-spec host. Quote the real number.
 
 ## Adding a new app
 
-1. Pick `SERVICES` and `MODS` from existing templates. Resist the urge to add a new template.
-2. Add a stanza to `.env.example` documenting any new variables.
-3. Add the app to `.oedeploy`'s allowed `appName` values in `build.sh`.
+1. Pick `SERVICES`/`MODS` from existing templates. Resist adding a new template.
+2. Create `templates/<app>.env` documenting all its variables (build.sh diffs `.env` against it).
+3. Add the app to the allowed `appName` values / per-app branches in `environment-setup.sh` and `db-setup.sh`.
 4. Update this table.
