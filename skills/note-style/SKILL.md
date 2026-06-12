@@ -37,3 +37,4 @@ For Manpreet's knowledge-base notes — not code comments, commit messages, READ
 - Search before writing — extend the existing note, don't fork it.
 - Mark unfinished notes `***Not Finished***` at the top; a stub beats no note.
 - As short as correct: procedural prose is a smell — convert it to numbered steps.
+- No blank lines between numbered steps — steps run flush; blank lines appear only after the title line and after the description block.
