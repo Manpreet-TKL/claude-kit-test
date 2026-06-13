@@ -1,7 +1,7 @@
 ---
 name: devopstickets
-description: Interactive JIRA DevOps triage menu for the TKLS service desk — pick a filter, then run one of 5 workflows (easiest-to-close, KB-note mining, suggested replies, single-ticket summary, SQL-fix hunt). Notes/SQL are read from full comment threads. MCP only, never the REST API.
-argument-hint: "[option#] [filter#] | <TICKET-KEY>"
+description: Interactive JIRA DevOps triage menu for the TKLS service desk — pick a filter, then run one of 6 workflows (easiest-to-close, KB-note mining, suggested replies, single-ticket summary, SQL-fix hunt, keyword fix-clustering). Notes/SQL are read from full comment threads. MCP only, never the REST API.
+argument-hint: "[option#] [filter#] | <TICKET-KEY> | 6 <keyword>"
 disable-model-invocation: true
 ---
 
@@ -11,7 +11,7 @@ disable-model-invocation: true
 
 ## Step 1 — Present the menu, then wait
 
-If invoked with `$ARGUMENTS`, parse them and skip the prompt: first token = option#, optional second token = filter#. A bare `TKLS-1234`-style key means option 4 for that ticket. Otherwise print exactly:
+If invoked with `$ARGUMENTS`, parse them and skip the prompt: first token = option#, optional second token = filter#. A bare `TKLS-1234`-style key means option 4 for that ticket. For option 6 the second token is the search keyword (quote a multi-word phrase) and an optional trailing number is the filter#. Otherwise print exactly:
 
 ```
 Filters (TKLS):
@@ -26,9 +26,10 @@ Options:
 3.) Output suggested replies for 10 tickets
 4.) Summarise one ticket: numbered history + suggested next steps
 5.) Hunt SQL-query fixes (with proof the SQL worked) → file in $HOME
+6.) Hunt a keyword across tickets: summarise each fix, then cluster & count the unique fixes → file in $HOME
 ```
 
-Then: "Reply with `<option#>` and optionally `<filter#>`. For option 4 give the ticket key." Filter default is **1**, except options **2 and 5 default to filter 2** (the all-time DevOps scope, which includes the resolved tickets those options mine).
+Then: "Reply with `<option#>` and optionally `<filter#>`. For option 4 give the ticket key; for option 6 give the keyword." Filter default is **1**, except options **2, 5 and 6 default to filter 2** (the all-time DevOps scope, which includes the resolved tickets those options mine).
 
 Filter table — each filter is a raw JQL **where-clause** (no `ORDER BY`); options append their own `ORDER BY`. Appending `ORDER BY` to `filter = 19720` overrides that saved filter's own sort.
 
@@ -48,5 +49,6 @@ Once the option is known, **read the matching sub-file from this skill's directo
 - Option 3 → `subs/option3.md`
 - Option 4 → `subs/option4.md`
 - Option 5 → `subs/option5.md`
+- Option 6 → `subs/option6.md`
 
-Options 1, 2, 3 and 5 fetch ticket lists, and 2/3/5 read full comment threads — those subs begin by telling you to also read `subs/shared.md` (the light-list fetch + per-ticket deep-dive engine). Read `subs/shared.md` only when the chosen option calls for it. Option 4 is self-contained. `<filter JQL>` in any sub = the JQL where-clause of the chosen filter from the table above.
+Options 1, 2, 3, 5 and 6 fetch ticket lists, and 2/3/5/6 read full comment threads — those subs begin by telling you to also read `subs/shared.md` (the light-list fetch + per-ticket deep-dive engine). Read `subs/shared.md` only when the chosen option calls for it. Option 4 is self-contained. `<filter JQL>` in any sub = the JQL where-clause of the chosen filter from the table above.
