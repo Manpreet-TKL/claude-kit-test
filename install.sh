@@ -33,12 +33,26 @@ WEEKLY_BUDGET="${WEEKLY_BUDGET:-}"              # tokens/week (rolling 7d), surf
 ASSUME_YES=0                                    # -y: accept default tier non-interactively
 DO_VERIFY=1                                     # --no-verify: skip the 6 checks
 DO_RESET=0                                      # --reset: archive bloat then install
-ATLASSIAN_MODE=""                               # --with-atlassian / --without-atlassian / "" (leave alone)
+JIRA_MODE=""                                    # -j / --with-jira / "" (leave alone)
+CONFLUENCE_MODE=""                              # -c / --with-confluence / "" (leave alone)
+ATLASSIAN_REMOVE=0                              # --without-atlassian sets to 1
 
 # Argument parsing ---------------------------------------------------------
 while [[ $# -gt 0 ]]; do
     p="$1"
     case $p in
+    -[!-]?*)
+        # Bundled short flags: explode -jc into -j -c (a single dash followed
+        # by 2+ chars, never a --long form). A value-taking flag like -p must be
+        # last in the bundle, per getopt convention.
+        rest="${p#-}"
+        exploded=()
+        for ((i = 0; i < ${#rest}; i++)); do
+            exploded+=("-${rest:i:1}")
+        done
+        set -- "${exploded[@]}" "${@:2}"
+        continue
+        ;;
     -p | --permissions)
         PERMISSIONS="${2}"
         shift
@@ -46,45 +60,67 @@ while [[ $# -gt 0 ]]; do
     -y | --yes)
         ASSUME_YES=1
         ;;
-    --no-verify)
+    -n | --no-verify)
         DO_VERIFY=0
         ;;
-    --reset)
+    -r | --reset)
         DO_RESET=1
         ;;
-    --with-atlassian)
-        ATLASSIAN_MODE="on"
+    -j | --with-jira)
+        JIRA_MODE="on"
         ;;
-    --without-atlassian)
-        ATLASSIAN_MODE="off"
+    -c | --with-confluence)
+        CONFLUENCE_MODE="on"
+        ;;
+    -a | --with-atlassian)
+        JIRA_MODE="on"
+        CONFLUENCE_MODE="on"
+        ;;
+    -A | --without-atlassian)
+        ATLASSIAN_REMOVE=1
         ;;
     -h | --help)
         cat <<'USAGE'
-Usage: install.sh [--permissions <safe|standard|trusted|yolo>] [--reset]
-                  [--with-atlassian | --without-atlassian] [-y] [--no-verify]
+Usage: install.sh [-p <safe|standard|trusted|yolo>] [-r] [-n] [-y]
+                  [-j] [-c] [-a | -A]
 
-  --permissions, -p   Permission tier to install (default: standard).
+  Every option has a single-letter (-x) and a long (--word) form.
+  Short flags may be bundled: -jc == -j -c (value-taking -p must be last).
+
+  -p, --permissions   Permission tier to install (default: standard).
                       safe      = read-mostly; ask before edits/writes/shell.
                       standard  = day-to-day; auto-accept edits; ask for shell.
                       trusted   = dontAsk; nothing prompts but deny still wins.
                       yolo      = dontAsk; only git push/commit + rm -rf
                                   denies remain (secrets reads ALLOWED).
                                   Container/VM only — see docs/sandbox.md.
-  --reset             Archive Claude Code's auto-generated state directories
+  -r, --reset         Archive Claude Code's auto-generated state directories
                       (file-history, paste-cache, backups, shell-snapshots,
                       stats-cache, session-env, plugins, tasks) into
                       ~/.claude-backups/<timestamp>/, then run the install.
                       Auth (.credentials.json), history.jsonl, and projects/
                       are preserved in place.
-  --with-atlassian    Merge settings/mcp-atlassian.json into settings.json so
-                      Claude Code talks to the Atlassian Remote MCP (Jira +
-                      Confluence). You authenticate once via /mcp inside Claude
-                      Code. See docs/atlassian.md.
-  --without-atlassian Remove the atlassian MCP server entry from settings.json
-                      (does not log you out — clear the OAuth cache separately).
-  --yes, -y           Non-interactive; accept default tier if not provided.
-  --no-verify         Skip the 6 verification checks after writing.
-  --help, -h          This message.
+  -j, --with-jira     Configure the Jira section of the mcp-atlassian stdio
+                      server. Prompts for JIRA_URL, JIRA_USERNAME,
+                      JIRA_API_TOKEN, JIRA_PROJECTS_FILTER; saves to
+                      settings/.atlassian.env (gitignored). With -y, reads the
+                      env file silently instead of prompting.
+  -c, --with-confluence
+                      Configure the Confluence section of the mcp-atlassian
+                      stdio server. Prompts for CONFLUENCE_URL,
+                      CONFLUENCE_USERNAME, CONFLUENCE_API_TOKEN,
+                      CONFLUENCE_SPACES_FILTER; defaults to Jira values where
+                      they match. Saves to settings/.atlassian.env.
+  -a, --with-atlassian
+                      Shorthand for -j -c (configure both).
+  -A, --without-atlassian
+                      Deregister the atlassian MCP server (claude mcp remove,
+                      user scope). Credentials file is left in place.
+  -y, --yes           Non-interactive; accept default tier if not provided.
+                      With -j/-c, reads settings/.atlassian.env instead of
+                      prompting (errors if the file or required vars are absent).
+  -n, --no-verify     Skip the 6 verification checks after writing.
+  -h, --help          This message.
 
 Env overrides:
   AUTOCOMPACT_PCT      (default 90)      % capacity at which auto-compact triggers.
@@ -108,7 +144,7 @@ done
 kit_root="$(dirname "$(realpath "$0")")"
 permissions_dir="${kit_root}/settings/permissions"
 shift_enter_file="${kit_root}/settings/shift-enter.json"
-atlassian_fragment="${kit_root}/settings/mcp-atlassian.json"
+atlassian_secrets="${kit_root}/settings/.atlassian.env"
 skills_src_dir="${kit_root}/skills"
 claude_md_src="${kit_root}/claude-md/CLAUDE.md"
 claude_dir="${HOME}/.claude"
@@ -345,7 +381,9 @@ permissionsJsonFor() {
 
 # Idempotent merge of statusLine + env + permissions + shift-enter into settings.json.
 # permissions is fully replaced (so tier changes drop old keys); env/statusLine
-# and the shift-enter fragment are merged so unrelated keys survive.
+# and the shift-enter fragment are merged so unrelated keys survive. Any stale
+# mcpServers block is stripped — Claude Code reads MCP servers from ~/.claude.json
+# (claude mcp add), never from settings.json, so a block here is dead config.
 writeSettings() {
     local perms_json shift_json
     perms_json="$(permissionsJsonFor "${PERMISSIONS}")"
@@ -384,6 +422,7 @@ writeSettings() {
             ),
             permissions: $perms
         }
+        | del(.mcpServers)
         ' "${settings_file}" > "${tmp}"
 
     # Validate before overwrite — never leave settings.json half-written.
@@ -404,40 +443,166 @@ writeSettings() {
     echo "  merged → ${settings_file}"
 }
 
-# Merge or remove the Atlassian MCP server entry in settings.json based on
-# ATLASSIAN_MODE: "on" merges settings/mcp-atlassian.json; "off" deletes the
-# atlassian entry; "" leaves whatever's already there.
+# Configure or remove the atlassian MCP server via the claude CLI at user scope
+# (registered in ~/.claude.json, NOT settings.json — Claude Code does not read
+# mcpServers from settings.json). Driven by JIRA_MODE, CONFLUENCE_MODE, ATLASSIAN_REMOVE.
 applyAtlassian() {
-    case "${ATLASSIAN_MODE}" in
-        on)
-            [ -f "${atlassian_fragment}" ] || { echo "  missing fragment: ${atlassian_fragment}" >&2; return 1; }
-            jq -e . "${atlassian_fragment}" >/dev/null || { echo "  invalid JSON: ${atlassian_fragment}" >&2; return 1; }
-            local tmp frag
-            tmp="$(mktemp)"
-            frag="$(cat "${atlassian_fragment}")"
-            jq --argjson frag "${frag}" '
-                .mcpServers = ((.mcpServers // {}) + ($frag.mcpServers // {}))
-            ' "${settings_file}" > "${tmp}"
-            jq -e . "${tmp}" >/dev/null
-            mv "${tmp}" "${settings_file}"
-            echo "  added atlassian MCP → ${settings_file}"
-            echo "  next step: run /mcp inside Claude Code to OAuth-authenticate (see docs/atlassian.md)"
-            ;;
-        off)
-            local tmp
-            tmp="$(mktemp)"
-            jq 'if .mcpServers? then .mcpServers |= del(.atlassian) else . end
-                | if (.mcpServers? // {}) == {} then del(.mcpServers) else . end
-            ' "${settings_file}" > "${tmp}"
-            jq -e . "${tmp}" >/dev/null
-            mv "${tmp}" "${settings_file}"
-            echo "  removed atlassian MCP from ${settings_file}"
-            echo "  note: this does not log you out — see docs/atlassian.md for the OAuth cache"
-            ;;
-        "")
-            : # unchanged
-            ;;
-    esac
+    # --without-atlassian: deregister the server (user scope) and return.
+    if [ "${ATLASSIAN_REMOVE}" = "1" ]; then
+        command -v claude >/dev/null 2>&1 || {
+            echo "  claude CLI not found — cannot remove the atlassian MCP server" >&2
+            return 1
+        }
+        if claude mcp remove atlassian -s user >/dev/null 2>&1; then
+            echo "  removed atlassian MCP server (user scope)"
+        else
+            echo "  atlassian MCP server not registered at user scope — nothing to remove"
+        fi
+        echo "  credentials file ${atlassian_secrets} left in place — delete manually to clear tokens"
+        return
+    fi
+
+    [ "${JIRA_MODE}" = "on" ] || [ "${CONFLUENCE_MODE}" = "on" ] || return 0
+
+    command -v docker >/dev/null 2>&1 || {
+        echo "  docker not found — the atlassian MCP runs as a container (ghcr.io/sooperset/mcp-atlassian)" >&2
+        echo "  install Docker and retry" >&2
+        return 1
+    }
+    command -v claude >/dev/null 2>&1 || {
+        echo "  claude CLI not found — needed to register the MCP server (claude mcp add-json)" >&2
+        return 1
+    }
+
+    # Load whatever is already saved so partial re-runs preserve the other service.
+    local jira_url jira_user jira_token jira_filter
+    local conf_url conf_user conf_token conf_filter
+    if [ -f "${atlassian_secrets}" ]; then
+        # shellcheck source=/dev/null
+        . "${atlassian_secrets}"
+        jira_url="${JIRA_URL:-}"
+        jira_user="${JIRA_USERNAME:-}"
+        jira_token="${JIRA_API_TOKEN:-}"
+        jira_filter="${JIRA_PROJECTS_FILTER:-}"
+        conf_url="${CONFLUENCE_URL:-}"
+        conf_user="${CONFLUENCE_USERNAME:-}"
+        conf_token="${CONFLUENCE_API_TOKEN:-}"
+        conf_filter="${CONFLUENCE_SPACES_FILTER:-}"
+    fi
+
+    local noninteractive=0
+    [ "${ASSUME_YES}" = "1" ] || [ ! -t 0 ] && noninteractive=1
+
+    # --- Jira ---
+    if [ "${JIRA_MODE}" = "on" ]; then
+        if [ "${noninteractive}" = "1" ]; then
+            [ -n "${jira_token}" ] || {
+                echo "  JIRA_API_TOKEN missing in ${atlassian_secrets} — cannot configure Jira non-interactively" >&2
+                return 1
+            }
+            echo "  Jira: loaded from ${atlassian_secrets}"
+        else
+            echo ""
+            echo "  Jira credentials (saved to settings/.atlassian.env, gitignored)"
+            read -r -p "  JIRA_URL [${jira_url:-https://openeyes.atlassian.net}]: " _in
+            jira_url="${_in:-${jira_url:-https://openeyes.atlassian.net}}"
+            read -r -p "  JIRA_USERNAME [${jira_user:-manpreet.singh@toukanlabs.com}]: " _in
+            jira_user="${_in:-${jira_user:-manpreet.singh@toukanlabs.com}}"
+            read -r -s -p "  JIRA_API_TOKEN (hidden$([ -n "${jira_token}" ] && echo ', enter to keep existing')): " _in
+            echo ""
+            [ -n "${_in}" ] && jira_token="${_in}"
+            [ -n "${jira_token}" ] || { echo "  JIRA_API_TOKEN cannot be empty" >&2; return 1; }
+            read -r -p "  JIRA_PROJECTS_FILTER [${jira_filter:-TKLS,OE}]: " _in
+            jira_filter="${_in:-${jira_filter:-TKLS,OE}}"
+        fi
+    fi
+
+    # --- Confluence ---
+    if [ "${CONFLUENCE_MODE}" = "on" ]; then
+        if [ "${noninteractive}" = "1" ]; then
+            [ -n "${conf_token}" ] || {
+                echo "  CONFLUENCE_API_TOKEN missing in ${atlassian_secrets} — cannot configure Confluence non-interactively" >&2
+                return 1
+            }
+            echo "  Confluence: loaded from ${atlassian_secrets}"
+        else
+            echo ""
+            echo "  Confluence credentials (defaults to Jira values where they match)"
+            read -r -p "  CONFLUENCE_URL [${conf_url:-${jira_url}}]: " _in
+            conf_url="${_in:-${conf_url:-${jira_url}}}"
+            read -r -p "  CONFLUENCE_USERNAME [${conf_user:-${jira_user}}]: " _in
+            conf_user="${_in:-${conf_user:-${jira_user}}}"
+            read -r -s -p "  CONFLUENCE_API_TOKEN (hidden$([ -n "${conf_token}" ] && echo ', enter to keep existing')): " _in
+            echo ""
+            if [ -n "${_in}" ]; then
+                conf_token="${_in}"
+            elif [ -z "${conf_token}" ]; then
+                conf_token="${jira_token}"
+                echo "  (using Jira token for Confluence)"
+            fi
+            [ -n "${conf_token}" ] || { echo "  CONFLUENCE_API_TOKEN cannot be empty" >&2; return 1; }
+            read -r -p "  CONFLUENCE_SPACES_FILTER [${conf_filter:-OPD}]: " _in
+            conf_filter="${_in:-${conf_filter:-OPD}}"
+        fi
+    fi
+
+    # Save all non-empty vars back to the secrets file.
+    {
+        [ -n "${jira_url}" ]    && echo "JIRA_URL=${jira_url}"
+        [ -n "${jira_user}" ]   && echo "JIRA_USERNAME=${jira_user}"
+        [ -n "${jira_token}" ]  && echo "JIRA_API_TOKEN=${jira_token}"
+        [ -n "${jira_filter}" ] && echo "JIRA_PROJECTS_FILTER=${jira_filter}"
+        [ -n "${conf_url}" ]    && echo "CONFLUENCE_URL=${conf_url}"
+        [ -n "${conf_user}" ]   && echo "CONFLUENCE_USERNAME=${conf_user}"
+        [ -n "${conf_token}" ]  && echo "CONFLUENCE_API_TOKEN=${conf_token}"
+        [ -n "${conf_filter}" ] && echo "CONFLUENCE_SPACES_FILTER=${conf_filter}"
+    } > "${atlassian_secrets}"
+    chmod 600 "${atlassian_secrets}"
+    echo "  saved → ${atlassian_secrets}"
+
+    # Build the env object — include whichever service vars are populated.
+    local env_json='{}'
+    if [ "${JIRA_MODE}" = "on" ]; then
+        env_json="$(jq -n \
+            --arg url   "${jira_url}" \
+            --arg user  "${jira_user}" \
+            --arg token "${jira_token}" \
+            --arg filt  "${jira_filter}" \
+            '{JIRA_URL: $url, JIRA_USERNAME: $user, JIRA_API_TOKEN: $token, JIRA_PROJECTS_FILTER: $filt}')"
+    fi
+    if [ "${CONFLUENCE_MODE}" = "on" ]; then
+        local conf_json
+        conf_json="$(jq -n \
+            --arg url   "${conf_url}" \
+            --arg user  "${conf_user}" \
+            --arg token "${conf_token}" \
+            --arg filt  "${conf_filter}" \
+            '{CONFLUENCE_URL: $url, CONFLUENCE_USERNAME: $user, CONFLUENCE_API_TOKEN: $token, CONFLUENCE_SPACES_FILTER: $filt}')"
+        env_json="$(jq -n --argjson a "${env_json}" --argjson b "${conf_json}" '$a + $b')"
+    fi
+    # Strip empty-string values so mcp-atlassian sees only what's set.
+    env_json="$(jq 'with_entries(select(.value != ""))' <<< "${env_json}")"
+
+    # Docker args: one bare "-e VAR" per set env key (docker reads the value from
+    # its own env, which Claude Code populates from the "env" block — so tokens
+    # never appear on the command line), then the image.
+    local image="ghcr.io/sooperset/mcp-atlassian:latest"
+    local args_json
+    args_json="$(jq -n --argjson env "${env_json}" --arg img "${image}" \
+        '["run","-i","--rm"] + [$env | keys[] | ("-e", .)] + [$img]')"
+
+    # Register at user scope via the claude CLI (writes ~/.claude.json so the
+    # server auto-loads in every session/project). Remove any prior registration
+    # first so re-runs are idempotent — add-json errors if the name already exists.
+    local server_json
+    server_json="$(jq -n --argjson args "${args_json}" --argjson env "${env_json}" \
+        '{command: "docker", args: $args, env: $env}')"
+    claude mcp remove atlassian -s user >/dev/null 2>&1 || true
+    claude mcp add-json atlassian "${server_json}" -s user >/dev/null
+    echo "  registered atlassian MCP (docker/${image##*/}) at user scope (~/.claude.json)"
+    [ "${JIRA_MODE}" = "on" ]       && echo "  Jira projects filter: ${jira_filter}"
+    [ "${CONFLUENCE_MODE}" = "on" ] && echo "  Confluence spaces filter: ${conf_filter:-none}"
+    echo "  restart Claude Code to pick up the new MCP server"
 }
 
 # Rebuild ~/.claude/skills/<name> symlinks from scratch on every run.
@@ -618,8 +783,8 @@ echo "Writing ~/.claude/CLAUDE.md from kit source..."
 writeClaudeMd
 echo -e "[Done]\n"
 
-if [ -n "${ATLASSIAN_MODE}" ]; then
-    echo "Applying Atlassian MCP setting (${ATLASSIAN_MODE})..."
+if [ "${JIRA_MODE}" = "on" ] || [ "${CONFLUENCE_MODE}" = "on" ] || [ "${ATLASSIAN_REMOVE}" = "1" ]; then
+    echo "Applying Atlassian MCP settings..."
     applyAtlassian
     echo -e "[Done]\n"
 fi

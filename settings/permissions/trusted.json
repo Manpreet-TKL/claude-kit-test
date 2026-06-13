@@ -4,7 +4,8 @@
     "Read",
     "Edit",
     "Write",
-    "Bash"
+    "Bash",
+    "mcp__atlassian"
   ],
   "deny": [
     "Bash(git push *)",

@@ -1,94 +1,155 @@
-# Jira + Confluence via the Atlassian MCP
+# Jira via the mcp-atlassian Docker image
 
-This kit can wire Claude Code into Atlassian's hosted MCP server so the model can search issues, read pages, and post comments without you copying URLs around. Setup is opt-in, OAuth-based, and easy to tear down.
+This kit wires Claude Code into Jira using the community `mcp-atlassian` server,
+run as a container (`docker run -i --rm … ghcr.io/sooperset/mcp-atlassian:latest`)
+over MCP's stdio transport. Nothing Python-related is installed on the host — only
+Docker is required. Credentials are kept in a gitignored env file, not in the kit
+repo itself.
 
 ## What you get
 
-Once authenticated, Claude Code can call tools like:
+Once configured, Claude Code can call tools like:
 
 - `searchJiraIssues`, `getJiraIssue`, `addJiraComment`, `transitionJiraIssue`
-- `searchConfluencePages`, `getConfluencePage`, `createConfluencePage`
+- `createJiraIssue`, `updateJiraIssue`
 
-…against any Atlassian Cloud workspace your account can reach.
+…scoped to whichever Jira projects you set in `JIRA_PROJECTS_FILTER`.
+
+## Prerequisites
+
+Docker. install.sh checks for it and stops with a clear message if it's missing.
+The image (`ghcr.io/sooperset/mcp-atlassian:latest`) is public on GHCR — no `docker
+login` needed — and is pulled automatically by Docker the first time Claude Code
+starts the MCP server.
+
+You also need a Jira API token. See the notes app: search "Atlassian - Generate an API token".
 
 ## Setup
 
+Configure Jira only:
+
 ```bash
 cd ~/claude-kit
-./install.sh --with-atlassian -p standard -y
+./install.sh -j -p standard
 ```
 
-This merges `settings/mcp-atlassian.json` into `~/.claude/settings.json`:
+Configure Confluence only:
 
-```json
-{
-  "mcpServers": {
-    "atlassian": {
-      "type": "sse",
-      "url": "https://mcp.atlassian.com/v1/sse"
-    }
-  }
-}
+```bash
+./install.sh -c -p standard
 ```
 
-Then, inside an interactive Claude Code session, run:
+Configure both at once:
 
+```bash
+./install.sh --with-atlassian -p standard   # shorthand for -j -c
 ```
-/mcp
+
+If `settings/.atlassian.env` does not already contain the relevant values,
+install.sh prompts interactively:
+
+**Jira** (`-j`): `JIRA_URL`, `JIRA_USERNAME`, `JIRA_API_TOKEN`, `JIRA_PROJECTS_FILTER`
+
+**Confluence** (`-c`): `CONFLUENCE_URL`, `CONFLUENCE_USERNAME`, `CONFLUENCE_API_TOKEN`,
+`CONFLUENCE_SPACES_FILTER` — defaults to the Jira values entered in the same run, since
+for Atlassian Cloud the URL and credentials are usually the same.
+
+All values are saved to `settings/.atlassian.env` (mode 600, gitignored). install.sh
+then registers the server at **user scope** via `claude mcp add-json atlassian … -s user`
+(stored in `~/.claude.json`, not `settings.json` — Claude Code reads MCP servers only
+from there). Running `-j` alone preserves any previously configured Confluence vars in
+the file, and vice versa. Restart Claude Code to pick up the changes.
+
+## Token rotation
+
+Edit `settings/.atlassian.env` to replace the old token, then re-run with `-y` to
+apply silently:
+
+```bash
+./install.sh -j -p standard -y   # re-applies Jira from env file
+./install.sh -c -p standard -y   # re-applies Confluence from env file
 ```
-
-Select `atlassian` and follow the browser prompt. Atlassian will OAuth-auth you against your workspace; the cached token lives in Claude Code's own credentials store (separately from this kit).
-
-Once `/mcp` reports the server as `connected`, you're done. Test with:
-
-> "Search Jira for tickets assigned to me with `status = "In Progress"` in the ENG project."
-
-## Choosing the workspace
-
-The Atlassian Remote MCP server is account-scoped. If you have access to multiple workspaces, the OAuth flow will let you pick which one to grant. You can re-run the OAuth flow (`/mcp` → `atlassian` → re-authenticate) to swap workspaces later.
-
-## Permissions on the Atlassian side
-
-The MCP only sees what your Atlassian account sees. The OAuth scopes Atlassian requests are read+write for Jira and Confluence; if your org restricts OAuth apps, an admin may need to approve the integration once. Without that approval the auth flow will fail with a clear error in the browser.
 
 ## Teardown
 
-To remove the MCP server from this kit's settings:
-
 ```bash
-./install.sh --without-atlassian -p <your-tier> -y
+./install.sh --without-atlassian -p standard -y
 ```
 
-This deletes the `atlassian` entry from `settings.json`'s `mcpServers` block. If `mcpServers` becomes empty, it's removed entirely so the file stays tidy.
+Deregisters the server (`claude mcp remove atlassian -s user`). The credentials file
+`settings/.atlassian.env` is left in place — delete it manually to clear tokens.
 
-**Important:** `--without-atlassian` only deletes the config. The cached OAuth token still lives in Claude Code's credentials store. To revoke it fully:
+## The credentials file
 
-1. Inside Claude Code, run `/mcp` → select `atlassian` → choose "disconnect" or "remove credentials" (label varies by version).
-2. **And** revoke the app on Atlassian's side: <https://id.atlassian.com/manage-profile/security/connected-apps> → find "Claude" / "Anthropic" → Remove access.
+`settings/.atlassian.env` is plain shell:
 
-Step 2 is the one that actually invalidates the token server-side. Step 1 just clears the local cache.
+```bash
+JIRA_URL=https://toukanlabs.atlassian.net
+JIRA_USERNAME=you@toukanlabs.com
+JIRA_API_TOKEN=your-token-here
+JIRA_PROJECTS_FILTER=TKLS,OE
+```
+
+It is listed in `.gitignore` and never committed. It is also never touched by
+`--without-atlassian` — only a manual `rm settings/.atlassian.env` removes it.
 
 ## Troubleshooting
 
 | Symptom | Likely cause |
 |---|---|
-| `/mcp` lists `atlassian` as `disconnected` | OAuth not completed yet — select the entry and follow the prompt. |
-| Browser shows "App not approved for this workspace" | Your org's Atlassian admin needs to approve the Anthropic OAuth app. |
-| `searchJiraIssues` returns nothing for queries you know match | The OAuth grant landed on a different workspace than you expected. Re-auth via `/mcp`. |
-| MCP server stays `connected` but every tool call 401s | Cached token has expired or been revoked. Disconnect in `/mcp` and re-auth. |
-| `settings.json` has `mcpServers` but Claude Code says "no servers" | Restart Claude Code — MCP config is read at startup. |
+| `docker not found` | Install Docker, then re-run install.sh. |
+| First call to the server is slow / hangs briefly | Docker is pulling the image on first use. Pre-pull with `docker pull ghcr.io/sooperset/mcp-atlassian:latest`. |
+| MCP server shows as `failed` in `/mcp` | Bad token or wrong URL — check `settings/.atlassian.env` and re-run `--with-atlassian`. |
+| `401` from Jira even though the token shows as recently "accessed" in id.atlassian.com | The token is a **scoped** API token. Scoped tokens are refused at the site URL (`https://<site>.atlassian.net`) and only work through the gateway (`https://api.atlassian.com/ex/jira/<cloudId>`), which this server's basic-auth mode never calls. The gateway returns `{"code":401,"message":"Unauthorized; scope does not match"}` rather than a bad-credential error. Use a **classic (unscoped)** API token, or switch to OAuth 2.0 (see "Using a scoped token instead" below). |
+| `searchJiraIssues` returns nothing for known tickets | Project key not in `JIRA_PROJECTS_FILTER` — add it and re-run `--with-atlassian -y`. |
+| Settings applied but Claude Code says "no servers" | Restart Claude Code — MCP config is read at startup. |
 
-## Why the SSE transport (and not stdio)
+## Using a scoped token instead (OAuth 2.0)
 
-Two MCP shapes exist for Atlassian:
+A *scoped* (least-privilege) Atlassian API token will **not** work with the
+basic-auth setup above: scoped tokens are rejected at the site URL and only
+authenticate through Atlassian's gateway (`https://api.atlassian.com/ex/jira/<cloudId>`),
+which this server's API-token mode never calls. The server's scoped path is
+OAuth 2.0 — note this is a *different credential* (an OAuth app, not the API
+token you generated), and a heavier one-time setup:
 
-- **SSE (used here):** `type: "sse", url: "https://mcp.atlassian.com/v1/sse"`. Hosted by Atlassian, OAuth-authed in the browser, zero local dependencies.
-- **Stdio (community):** `command: "uvx", args: ["mcp-atlassian"]` with API-token env vars. Useful for self-hosted Server / Data Center instances and air-gapped setups.
+1. Create an OAuth 2.0 (3LO) app at https://developer.atlassian.com/console/myapps
+   — enable the Jira (and Confluence) APIs, add scopes
+   `read:jira-work write:jira-work read:jira-user offline_access` (add
+   `read:confluence-content.all write:confluence-content` for Confluence), and
+   set the callback URL to `http://localhost:8080/callback`. Copy the **Client
+   ID** and **Secret**.
 
-The kit ships the SSE variant because it works for Atlassian Cloud out of the box and avoids storing long-lived API tokens in `settings.json`. If you need the stdio variant for a Data Center instance, swap `settings/mcp-atlassian.json` for the stdio config (the Sooperset `mcp-atlassian` repo has a worked example) and re-run `./install.sh --with-atlassian`.
+2. Run the one-time setup wizard (opens a browser to authorize). It needs the
+   port published and a volume mounted, and it writes a refresh token into
+   `~/.mcp-atlassian/`:
 
-## What this kit doesn't touch
+   ```bash
+   docker run --rm -i -p 8080:8080 \
+     -v "${HOME}/.mcp-atlassian:/home/app/.mcp-atlassian" \
+     ghcr.io/sooperset/mcp-atlassian:latest --oauth-setup -v
+   ```
 
-- `~/.config/claude/mcp.json`, `~/.claude/mcp.json`, or any other MCP config file Claude Code may add in future versions. The kit only edits `~/.claude/settings.json` because that's the documented schema today.
-- Your Atlassian API tokens. The SSE path uses OAuth; tokens never appear in this repo or in `settings.json`.
-- `claude mcp add` / `claude mcp remove` — those manage a different config scope and are unaffected.
+3. The MCP entry changes shape. Instead of `JIRA_API_TOKEN` it carries the OAuth
+   vars, and it **must mount the token cache** so the `--rm` container keeps the
+   refresh token between runs:
+
+   - args: add `-v`, `${HOME}/.mcp-atlassian:/home/app/.mcp-atlassian` to the
+     `docker run` list
+   - env: `ATLASSIAN_OAUTH_CLIENT_ID`, `ATLASSIAN_OAUTH_CLIENT_SECRET`,
+     `ATLASSIAN_OAUTH_REDIRECT_URI`, `ATLASSIAN_OAUTH_SCOPE`,
+     `ATLASSIAN_OAUTH_CLOUD_ID`, `ATLASSIAN_OAUTH_ENABLE=true` — get the cloud id
+     from `https://<site>.atlassian.net/_edge/tenant_info`
+
+The refresh token auto-renews while the `offline_access` scope is present; if it
+goes stale, re-run the wizard. `install.sh` does not yet wire this mode — it
+configures the classic-token path only.
+
+## Why Docker stdio over SSE
+
+The previous SSE approach (`type: "sse", url: "https://mcp.atlassian.com/v1/sse"`)
+used Atlassian's hosted OAuth server. The Docker stdio approach runs
+`ghcr.io/sooperset/mcp-atlassian` locally with API-token env vars — no host Python
+install, and you pin exactly which projects/spaces are visible to Claude via
+`JIRA_PROJECTS_FILTER` / `CONFLUENCE_SPACES_FILTER`. The bare `-e VAR` args mean the
+tokens live only in the `env` block, never on the `docker` command line.
