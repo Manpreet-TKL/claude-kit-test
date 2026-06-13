@@ -14,7 +14,8 @@
     "Bash(ls *)",
     "Bash(cat *)",
     "Bash(grep *)",
-    "mcp__atlassian"
+    "mcp__atlassian",
+    "mcp__github"
   ],
   "ask": [
     "Bash"

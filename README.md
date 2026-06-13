@@ -15,7 +15,8 @@ A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` 
 │   │   ├── trusted.json    # tier 3 — no prompts (deny still wins)
 │   │   └── yolo.json       # tier 4 — git mutations + `rm -rf` still denied, secrets reads go through (container/VM only)
 │   ├── shift-enter.json    # newline-on-shift-enter fragment
-│   └── mcp-atlassian.json  # Atlassian Remote MCP fragment (opt-in)
+│   ├── mcp-atlassian.json  # Atlassian Remote MCP fragment (opt-in)
+│   └── .github.env.example # GitHub read-only PAT template → copy to .github.env (gitignored)
 ├── skills/
 │   ├── bash-style/         # styling (auto-loads when relevant)
 │   ├── create-oe-module/
@@ -27,13 +28,15 @@ A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` 
 │   ├── oe-db-schema/       # OpenEyes — DB / domain model
 │   ├── oe-coding-standards/# OpenEyes — invariants & lint layout
 │   ├── oe-deploy/          # OE deploy template (pantry/recipe/chef)
-│   └── oeimagebuilder/     # OE image hierarchy & build args
+│   ├── oeimagebuilder/     # OE image hierarchy & build args
+│   └── githubmcp/          # read-only GitHub MCP preflight (disable-model-invocation)
 └── docs/
     ├── permissions.md      # how the 4 tiers work, deny → ask → allow
     ├── skills.md           # CLAUDE.md vs SKILL.md, sub-skills, naming
     ├── statusline.md       # how the status line script works
     ├── sandbox.md          # running without prompts in a container/VM
-    └── atlassian.md        # Jira + Confluence via Atlassian MCP — setup + teardown
+    ├── atlassian.md        # Jira + Confluence via Atlassian MCP — setup + teardown
+    └── github.md           # GitHub (read-only) via github-mcp-server — setup + teardown
 ```
 
 The installer writes / merges:
@@ -129,7 +132,7 @@ Edit `claude-md/CLAUDE.md` and re-run `install.sh` to roll the change out. The p
 `install.sh` symlinks each directory under `skills/` into `~/.claude/skills/<name>`. Edit a skill in this kit and the change is live without re-installing.
 
 - **Auto-loading style skills** (no `disable-model-invocation`): `bash-style`, `create-oe-module`, `note-style`, `yiic-command-style`.
-- **Explicit-invocation skills** (with `disable-model-invocation: true`): `notes`, `oe-code`, `oe-components`, `oe-db-schema`, `oe-coding-standards`, `oe-deploy`, `oeimagebuilder`. These are large, repo-specific, and only loaded when invoked by name.
+- **Explicit-invocation skills** (with `disable-model-invocation: true`): `notes`, `oe-code`, `oe-components`, `oe-db-schema`, `oe-coding-standards`, `oe-deploy`, `oeimagebuilder`, `githubmcp`. These are large, repo-specific, and only loaded when invoked by name. `githubmcp` is a read-only MCP preflight — run it before GitHub work.
 
 Each repo-specific skill follows the **stable mental model in `SKILL.md`, volatile detail in `subs/*.md`** convention. See **[docs/skills.md](docs/skills.md)**.
 
@@ -151,6 +154,30 @@ Merge or remove the Atlassian Remote MCP server entry in `settings.json`:
 Authentication is OAuth-based and happens inside Claude Code via `/mcp` — no tokens stored in this repo. Full setup + teardown (including revoking the OAuth grant on Atlassian's side) lives in **[docs/atlassian.md](docs/atlassian.md)**.
 
 Neither flag = `mcpServers.atlassian` is left exactly as-is on re-runs (the installer never silently flips it on or off).
+
+### 10. GitHub — read-only (`--with-github` / `--without-github`)
+
+Register or remove GitHub's official `github-mcp-server`, run as a Docker stdio server
+(`ghcr.io/github/github-mcp-server`) at user scope — the same shape as Atlassian:
+
+```bash
+./install.sh --with-github    -p standard -y    # opt in  (-g)
+./install.sh --without-github -p standard -y    # tear down (-G)
+```
+
+**Read-only is enforced and not configurable.** install.sh bakes `GITHUB_READ_ONLY=1`
+into the registration, so the server exposes only read tools — creating PRs/branches,
+pushing, commenting, and merging are impossible by construction. This is the GitHub-API
+analogue of the never-`git push`/never-`git commit` hard floor. The human raises PRs
+(see the `create-oe-pr` skill).
+
+Authentication is a **fine-grained, read-only** personal access token (with `openeyes`
+org access), stored in `settings/.github.env` (mode 600, gitignored) — never on the
+`docker` command line. After opting in, restart Claude Code and run `/githubmcp` to
+verify. Full setup, token minting, rotation, and teardown live in
+**[docs/github.md](docs/github.md)**.
+
+Neither flag = `mcpServers.github` is left exactly as-is on re-runs.
 
 ---
 

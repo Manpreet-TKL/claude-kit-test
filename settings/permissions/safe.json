@@ -10,7 +10,8 @@
     "Bash(git status)",
     "Bash(git diff *)",
     "Bash(git log *)",
-    "mcp__atlassian"
+    "mcp__atlassian",
+    "mcp__github"
   ],
   "ask": [
     "Edit",

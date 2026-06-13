@@ -36,6 +36,8 @@ DO_RESET=0                                      # --reset: archive bloat then in
 JIRA_MODE=""                                    # -j / --with-jira / "" (leave alone)
 CONFLUENCE_MODE=""                              # -c / --with-confluence / "" (leave alone)
 ATLASSIAN_REMOVE=0                              # --without-atlassian sets to 1
+GITHUB_MODE=""                                  # -g / --with-github / "" (leave alone)
+GITHUB_REMOVE=0                                 # --without-github sets to 1
 
 # Argument parsing ---------------------------------------------------------
 while [[ $# -gt 0 ]]; do
@@ -79,10 +81,16 @@ while [[ $# -gt 0 ]]; do
     -A | --without-atlassian)
         ATLASSIAN_REMOVE=1
         ;;
+    -g | --with-github)
+        GITHUB_MODE="on"
+        ;;
+    -G | --without-github)
+        GITHUB_REMOVE=1
+        ;;
     -h | --help)
         cat <<'USAGE'
 Usage: install.sh [-p <safe|standard|trusted|yolo>] [-r] [-n] [-y]
-                  [-j] [-c] [-a | -A]
+                  [-j] [-c] [-a | -A] [-g | -G]
 
   Every option has a single-letter (-x) and a long (--word) form.
   Short flags may be bundled: -jc == -j -c (value-taking -p must be last).
@@ -116,9 +124,20 @@ Usage: install.sh [-p <safe|standard|trusted|yolo>] [-r] [-n] [-y]
   -A, --without-atlassian
                       Deregister the atlassian MCP server (claude mcp remove,
                       user scope). Credentials file is left in place.
+  -g, --with-github   Configure the read-only github-mcp-server stdio server.
+                      Prompts for GITHUB_PERSONAL_ACCESS_TOKEN (a fine-grained
+                      read-only PAT) and an optional GITHUB_TOOLSETS filter;
+                      saves to settings/.github.env (gitignored). Read-only is
+                      enforced (GITHUB_READ_ONLY=1) and is NOT configurable —
+                      the server never exposes write tools. With -y, reads the
+                      env file silently instead of prompting.
+  -G, --without-github
+                      Deregister the github MCP server (claude mcp remove,
+                      user scope). Credentials file is left in place.
   -y, --yes           Non-interactive; accept default tier if not provided.
                       With -j/-c, reads settings/.atlassian.env instead of
                       prompting (errors if the file or required vars are absent).
+                      With -g, reads settings/.github.env the same way.
   -n, --no-verify     Skip the 6 verification checks after writing.
   -h, --help          This message.
 
@@ -145,6 +164,7 @@ kit_root="$(dirname "$(realpath "$0")")"
 permissions_dir="${kit_root}/settings/permissions"
 shift_enter_file="${kit_root}/settings/shift-enter.json"
 atlassian_secrets="${kit_root}/settings/.atlassian.env"
+github_secrets="${kit_root}/settings/.github.env"
 skills_src_dir="${kit_root}/skills"
 claude_md_src="${kit_root}/claude-md/CLAUDE.md"
 claude_dir="${HOME}/.claude"
@@ -605,6 +625,107 @@ applyAtlassian() {
     echo "  restart Claude Code to pick up the new MCP server"
 }
 
+# Configure or remove the github MCP server via the claude CLI at user scope
+# (registered in ~/.claude.json, like atlassian). Read-only by construction:
+# GITHUB_READ_ONLY=1 is baked in below so the server never exposes write tools —
+# the GitHub-API analogue of the never-push/never-commit hard floor. Driven by
+# GITHUB_MODE, GITHUB_REMOVE.
+applyGitHub() {
+    # --without-github: deregister the server (user scope) and return.
+    if [ "${GITHUB_REMOVE}" = "1" ]; then
+        command -v claude >/dev/null 2>&1 || {
+            echo "  claude CLI not found — cannot remove the github MCP server" >&2
+            return 1
+        }
+        if claude mcp remove github -s user >/dev/null 2>&1; then
+            echo "  removed github MCP server (user scope)"
+        else
+            echo "  github MCP server not registered at user scope — nothing to remove"
+        fi
+        echo "  credentials file ${github_secrets} left in place — delete manually to clear the token"
+        return
+    fi
+
+    [ "${GITHUB_MODE}" = "on" ] || return 0
+
+    command -v docker >/dev/null 2>&1 || {
+        echo "  docker not found — the github MCP runs as a container (ghcr.io/github/github-mcp-server)" >&2
+        echo "  install Docker and retry" >&2
+        return 1
+    }
+    command -v claude >/dev/null 2>&1 || {
+        echo "  claude CLI not found — needed to register the MCP server (claude mcp add-json)" >&2
+        return 1
+    }
+
+    # Load whatever is already saved so a re-run can keep the existing token.
+    local gh_token gh_toolsets
+    if [ -f "${github_secrets}" ]; then
+        # shellcheck source=/dev/null
+        . "${github_secrets}"
+        gh_token="${GITHUB_PERSONAL_ACCESS_TOKEN:-}"
+        gh_toolsets="${GITHUB_TOOLSETS:-}"
+    fi
+
+    local noninteractive=0
+    [ "${ASSUME_YES}" = "1" ] || [ ! -t 0 ] && noninteractive=1
+
+    if [ "${noninteractive}" = "1" ]; then
+        [ -n "${gh_token}" ] || {
+            echo "  GITHUB_PERSONAL_ACCESS_TOKEN missing in ${github_secrets} — cannot configure GitHub non-interactively" >&2
+            return 1
+        }
+        echo "  GitHub: loaded from ${github_secrets}"
+    else
+        echo ""
+        echo "  GitHub credentials (saved to settings/.github.env, gitignored)"
+        echo "  Use a fine-grained read-only PAT with access to the openeyes org."
+        read -r -s -p "  GITHUB_PERSONAL_ACCESS_TOKEN (hidden$([ -n "${gh_token}" ] && echo ', enter to keep existing')): " _in
+        echo ""
+        [ -n "${_in}" ] && gh_token="${_in}"
+        [ -n "${gh_token}" ] || { echo "  GITHUB_PERSONAL_ACCESS_TOKEN cannot be empty" >&2; return 1; }
+        read -r -p "  GITHUB_TOOLSETS (optional, blank = server default) [${gh_toolsets}]: " _in
+        gh_toolsets="${_in:-${gh_toolsets}}"
+    fi
+
+    # Save non-empty vars back to the secrets file.
+    {
+        [ -n "${gh_token}" ]    && echo "GITHUB_PERSONAL_ACCESS_TOKEN=${gh_token}"
+        [ -n "${gh_toolsets}" ] && echo "GITHUB_TOOLSETS=${gh_toolsets}"
+    } > "${github_secrets}"
+    chmod 600 "${github_secrets}"
+    echo "  saved → ${github_secrets}"
+
+    # Build the env object. GITHUB_READ_ONLY=1 is a fixed constant — not sourced
+    # from the file — so read-only can never be turned off by editing creds.
+    local env_json
+    env_json="$(jq -n \
+        --arg token "${gh_token}" \
+        --arg ts    "${gh_toolsets}" \
+        '{GITHUB_PERSONAL_ACCESS_TOKEN: $token, GITHUB_READ_ONLY: "1", GITHUB_TOOLSETS: $ts}')"
+    # Strip empty-string values (drops GITHUB_TOOLSETS when unset; READ_ONLY="1" survives).
+    env_json="$(jq 'with_entries(select(.value != ""))' <<< "${env_json}")"
+
+    # Docker args: one bare "-e VAR" per set env key (docker reads the value from
+    # its own env, which Claude Code populates from the "env" block — so the token
+    # never appears on the command line), then the image.
+    local image="ghcr.io/github/github-mcp-server"
+    local args_json
+    args_json="$(jq -n --argjson env "${env_json}" --arg img "${image}" \
+        '["run","-i","--rm"] + [$env | keys[] | ("-e", .)] + [$img]')"
+
+    # Register at user scope (writes ~/.claude.json). Remove any prior registration
+    # first so re-runs are idempotent — add-json errors if the name already exists.
+    local server_json
+    server_json="$(jq -n --argjson args "${args_json}" --argjson env "${env_json}" \
+        '{command: "docker", args: $args, env: $env}')"
+    claude mcp remove github -s user >/dev/null 2>&1 || true
+    claude mcp add-json github "${server_json}" -s user >/dev/null
+    echo "  registered github MCP (docker/${image##*/}, read-only) at user scope (~/.claude.json)"
+    echo "  GitHub toolsets: ${gh_toolsets:-server default}"
+    echo "  restart Claude Code to pick up the new MCP server"
+}
+
 # Rebuild ~/.claude/skills/<name> symlinks from scratch on every run.
 # Step 1 tears down every kit-managed symlink (including dangling ones left by
 # renamed/removed kit skills) so stale links never linger. Step 2 recreates a
@@ -786,6 +907,12 @@ echo -e "[Done]\n"
 if [ "${JIRA_MODE}" = "on" ] || [ "${CONFLUENCE_MODE}" = "on" ] || [ "${ATLASSIAN_REMOVE}" = "1" ]; then
     echo "Applying Atlassian MCP settings..."
     applyAtlassian
+    echo -e "[Done]\n"
+fi
+
+if [ "${GITHUB_MODE}" = "on" ] || [ "${GITHUB_REMOVE}" = "1" ]; then
+    echo "Applying GitHub MCP settings..."
+    applyGitHub
     echo -e "[Done]\n"
 fi
 

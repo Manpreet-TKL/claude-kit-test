@@ -6,3 +6,4 @@
 .vscode/
 .idea/
 settings/.atlassian.env
+settings/.github.env
