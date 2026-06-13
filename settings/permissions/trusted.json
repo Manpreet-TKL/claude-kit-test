@@ -3,9 +3,7 @@
   "allow": [
     "Read",
     "Edit",
-    "Edit(/home/toukan/**)",
     "Write",
-    "Write(/home/toukan/**)",
     "Bash",
     "mcp__atlassian",
     "mcp__github"

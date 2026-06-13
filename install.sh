@@ -167,6 +167,7 @@ atlassian_secrets="${kit_root}/settings/.atlassian.env"
 github_secrets="${kit_root}/settings/.github.env"
 skills_src_dir="${kit_root}/skills"
 claude_md_src="${kit_root}/claude-md/CLAUDE.md"
+statusline_src="${kit_root}/settings/statusline.sh"
 claude_dir="${HOME}/.claude"
 claude_skills_dir="${claude_dir}/skills"
 settings_file="${claude_dir}/settings.json"
@@ -174,6 +175,7 @@ settings_bak="${settings_file}.bak"
 claude_md_file="${claude_dir}/CLAUDE.md"
 claude_md_bak="${claude_md_file}.bak"
 statusline_file="${claude_dir}/statusline.sh"
+statusline_bak="${statusline_file}.bak"
 
 ##################################################
 ### CHECKS (See end of script for execution)    ##
@@ -270,123 +272,27 @@ resetBloat() {
     fi
 }
 
-# Write ~/.claude/statusline.sh (chmod +x).
-# Segments: ⛭ model · dir · 5h <pct|count> · wk <pct|count>
-# 5h + wk are computed by summing token usage in ~/.claude/projects/*.jsonl over
-# a 5-hour and 7-day rolling window (UTC). Budgets in settings.json.env turn the
-# segments into percentages; unset = raw count. The figures are a LOCAL PROXY —
-# Claude Code's GUI percentage comes from Anthropic rate-limit headers held
-# in-memory and won't match exactly; this bar is the best a status-line
-# subprocess can do without API access.
+# Symlink ~/.claude/statusline.sh → the kit's settings/statusline.sh, so the live
+# status line always tracks the kit (its source of truth) and can never drift from
+# a stale copy. Same idiom as the skill symlinks. A pre-existing real file (e.g.
+# from an older copy-install or a hand-written status line) is backed up to *.bak
+# before being replaced by the link; an already-correct link is left untouched.
+# This assumes the kit stays put — a moved or deleted repo leaves a dangling link.
 writeStatusline() {
-    cat > "${statusline_file}" <<'SL_EOF'
-#!/usr/bin/env bash
-# Renders the Claude Code status line.
-# Bar: ⛭ <model> · <dir> · [<effort> · ] 5h <pct|count> · wk <pct|count>
-# Token usage is summed from JSONL transcripts under ~/.claude/projects.
-# This is a local proxy; Claude Code's GUI figure (from Anthropic rate-limit
-# headers) won't match exactly.
-# Effort comes from $CLAUDE_EFFORT (in-session current) or the persisted
-# .effortLevel in ~/.claude/settings.json; segment is omitted if neither is set.
-# Optional budgets (set in settings.json.env by install.sh):
-#   CLAUDE_5H_TOKEN_BUDGET      → 5h segment shows percentage instead of raw count
-#   CLAUDE_WEEKLY_TOKEN_BUDGET  → wk segment shows percentage instead of raw count
-
-set -u
-input=$(cat)
-model=$(printf '%s' "$input" | jq -r '.model.display_name // .model.id // "claude"')
-dir=$(printf '%s' "$input"  | jq -r '.workspace.current_dir // .cwd // "."')
-dir=$(basename "$dir")
-
-projects_dir="${HOME}/.claude/projects"
-
-# Sum input + output + cache_creation for assistant lines whose timestamp is
-# >= the ISO cutoff. Cache *reads* are intentionally excluded — they're billed
-# at ~10% rate and would inflate the tally past anything actionable. The
-# find-prefilter (-mmin/-mtime) keeps the walk cheap; jq errors on malformed
-# lines are swallowed so a single bad line never breaks the status line.
-sum_tokens_since() {
-    local cutoff_iso="$1" find_filter="$2"
-    [ -d "${projects_dir}" ] || { echo 0; return; }
-    # shellcheck disable=SC2086
-    find "${projects_dir}" -type f -name '*.jsonl' ${find_filter} -print0 2>/dev/null \
-      | xargs -0 -r cat 2>/dev/null \
-      | jq -r --arg since "${cutoff_iso}" '
-          select(.type == "assistant"
-                 and (.timestamp // "") >= $since
-                 and (.message.usage? // null) != null)
-          | (.message.usage.input_tokens // 0)
-            + (.message.usage.output_tokens // 0)
-            + (.message.usage.cache_creation_input_tokens // 0)
-        ' 2>/dev/null \
-      | awk '{s+=$1} END {print s+0}'
-}
-
-# Cached recompute: avoid scanning hundreds of MB of JSONLs on every render.
-# 5h window refreshes every 30s; weekly every 5min — both vastly shorter
-# than the windows themselves, so freshness loss is negligible.
-cached_tokens_since() {
-    local cutoff_iso="$1" find_filter="$2" cache_key="$3" ttl_sec="$4"
-    local cache_file="/tmp/claude-statusline-${cache_key}-$(id -u).cache"
-    if [ -f "${cache_file}" ]; then
-        local age
-        age=$(( $(date +%s) - $(stat -c %Y "${cache_file}" 2>/dev/null || echo 0) ))
-        if [ "${age}" -lt "${ttl_sec}" ]; then
-            cat "${cache_file}"
-            return
-        fi
+    [ -f "${statusline_src}" ] || { echo "  missing kit source: ${statusline_src}" >&2; return 1; }
+    chmod +x "${statusline_src}"
+    # Idempotent: already the right symlink → nothing to do.
+    if [ -L "${statusline_file}" ] && [ "$(readlink "${statusline_file}")" = "${statusline_src}" ]; then
+        echo "  statusline.sh already linked — no change"
+        return 0
     fi
-    local val
-    val=$(sum_tokens_since "${cutoff_iso}" "${find_filter}")
-    printf '%s' "${val}" > "${cache_file}"
-    printf '%s' "${val}"
-}
-
-cutoff_5h=$(date -u -d '5 hours ago' '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || echo '')
-cutoff_wk=$(date -u -d '7 days ago' '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || echo '')
-
-tokens_5h=0
-tokens_wk=0
-[ -n "${cutoff_5h}" ] && tokens_5h=$(cached_tokens_since "${cutoff_5h}" "-mmin -310" "5h" 30)
-[ -n "${cutoff_wk}" ] && tokens_wk=$(cached_tokens_since "${cutoff_wk}" "-mtime -8"  "wk" 300)
-
-humanise() {
-    awk -v n="$1" 'BEGIN {
-        if (n+0 >= 1000000)   printf "%.1fM", n/1000000
-        else if (n+0 >= 1000) printf "%.0fk", n/1000
-        else                  printf "%d", n
-    }'
-}
-
-# Segment renderer: percentage if budget is a positive integer, raw count otherwise.
-seg() {
-    local label="$1" tokens="$2" budget="${3:-}"
-    if [ -n "${budget}" ] && [ "${budget}" -gt 0 ] 2>/dev/null; then
-        local pct
-        pct=$(awk -v t="${tokens}" -v b="${budget}" 'BEGIN {
-            p = (t / b) * 100
-            if (p > 999) p = 999
-            printf "%.0f", p
-        }')
-        printf '%s %s%%' "${label}" "${pct}"
-    else
-        printf '%s %s' "${label}" "$(humanise "${tokens}")"
+    # Replacing a real file (older copy-install or hand-written) — back it up first.
+    if [ -e "${statusline_file}" ] && [ ! -L "${statusline_file}" ]; then
+        cp -p "${statusline_file}" "${statusline_bak}"
+        echo "  backed up → ${statusline_bak}"
     fi
-}
-
-effort="${CLAUDE_EFFORT:-}"
-if [ -z "${effort}" ] && [ -f "${HOME}/.claude/settings.json" ]; then
-    effort=$(jq -r '.effortLevel // empty' "${HOME}/.claude/settings.json" 2>/dev/null)
-fi
-
-bar="⛭ ${model} · ${dir}"
-[ -n "${effort}" ] && bar="${bar} · ${effort}"
-bar="${bar} · $(seg 5h "${tokens_5h}" "${CLAUDE_5H_TOKEN_BUDGET:-}")"
-bar="${bar} · $(seg wk "${tokens_wk}" "${CLAUDE_WEEKLY_TOKEN_BUDGET:-}")"
-printf '%s' "$bar"
-SL_EOF
-    chmod +x "${statusline_file}"
-    echo "  wrote → ${statusline_file}"
+    ln -sfn "${statusline_src}" "${statusline_file}"
+    echo "  linked    → ${statusline_file} → ${statusline_src}"
 }
 
 # Read the permissions JSON for the chosen tier from settings/permissions/<tier>.json
@@ -766,22 +672,26 @@ syncSkills() {
     done
 }
 
-# Wholesale-write ~/.claude/CLAUDE.md from the kit's claude-md/CLAUDE.md.
-# If a pre-existing CLAUDE.md exists, copy it to CLAUDE.md.bak first (overwritten
-# on each run, same convention as settings.json.bak).
+# Symlink ~/.claude/CLAUDE.md → the kit's claude-md/CLAUDE.md, so the live global
+# guidelines always track the kit (their source of truth). Same idiom as the
+# statusline and skill symlinks. A pre-existing real file (e.g. from an older
+# copy-install or hand edits) is backed up to *.bak before being replaced by the
+# link; an already-correct link is left untouched. Assumes the kit stays put — a
+# moved or deleted repo leaves a dangling link.
 writeClaudeMd() {
     [ -f "${claude_md_src}" ] || { echo "  missing kit source: ${claude_md_src}" >&2; return 1; }
-    # Idempotent: already matches the kit → leave it (and its .bak) alone.
-    if [ -f "${claude_md_file}" ] && cmp -s "${claude_md_file}" "${claude_md_src}"; then
-        echo "  ~/.claude/CLAUDE.md already current — no change"
+    # Idempotent: already the right symlink → nothing to do.
+    if [ -L "${claude_md_file}" ] && [ "$(readlink "${claude_md_file}")" = "${claude_md_src}" ]; then
+        echo "  ~/.claude/CLAUDE.md already linked — no change"
         return 0
     fi
-    if [ -f "${claude_md_file}" ]; then
+    # Replacing a real file (older copy-install or hand-written) — back it up first.
+    if [ -e "${claude_md_file}" ] && [ ! -L "${claude_md_file}" ]; then
         cp -p "${claude_md_file}" "${claude_md_bak}"
         echo "  backed up → ${claude_md_bak}"
     fi
-    cp "${claude_md_src}" "${claude_md_file}"
-    echo "  wrote     → ${claude_md_file}  (from ${claude_md_src})"
+    ln -sfn "${claude_md_src}" "${claude_md_file}"
+    echo "  linked    → ${claude_md_file} → ${claude_md_src}"
 }
 
 # Shift+Enter for newline is now merged from settings/shift-enter.json by writeSettings().
@@ -870,8 +780,8 @@ printSummary() {
     echo "-------------------------------"
     echo "  tier        : ${PERMISSIONS}"
     echo "  settings    : ${settings_file}  (backup: ${settings_bak})"
-    echo "  statusline  : ${statusline_file}"
-    echo "  guidelines  : ${claude_md_file}  (backup: ${claude_md_bak})"
+    echo "  statusline  : ${statusline_file}  (symlinked from ${statusline_src})"
+    echo "  guidelines  : ${claude_md_file}  (symlinked from ${claude_md_src})"
     echo "  skills      : ${claude_skills_dir}/  (symlinked from ${skills_src_dir})"
     echo "  autocompact : ${AUTOCOMPACT_PCT}% / ${AUTOCOMPACT_WINDOW} tokens"
     echo "-------------------------------"

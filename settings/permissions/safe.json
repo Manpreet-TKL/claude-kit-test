@@ -2,8 +2,6 @@
   "defaultMode": "default",
   "allow": [
     "Read",
-    "Edit(/home/toukan/**)",
-    "Write(/home/toukan/**)",
     "Bash(ls *)",
     "Bash(cat *)",
     "Bash(grep *)",

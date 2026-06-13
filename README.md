@@ -29,6 +29,7 @@ A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` 
 │   ├── oe-coding-standards/# OpenEyes — invariants & lint layout
 │   ├── oe-deploy/          # OE deploy template (pantry/recipe/chef)
 │   ├── oeimagebuilder/     # OE image hierarchy & build args
+│   ├── jiramcp/            # Jira + Confluence MCP preflight (disable-model-invocation)
 │   └── githubmcp/          # read-only GitHub MCP preflight (disable-model-invocation)
 └── docs/
     ├── permissions.md      # how the 4 tiers work, deny → ask → allow
@@ -132,7 +133,7 @@ Edit `claude-md/CLAUDE.md` and re-run `install.sh` to roll the change out. The p
 `install.sh` symlinks each directory under `skills/` into `~/.claude/skills/<name>`. Edit a skill in this kit and the change is live without re-installing.
 
 - **Auto-loading style skills** (no `disable-model-invocation`): `bash-style`, `create-oe-module`, `note-style`, `yiic-command-style`.
-- **Explicit-invocation skills** (with `disable-model-invocation: true`): `notes`, `oe-code`, `oe-components`, `oe-db-schema`, `oe-coding-standards`, `oe-deploy`, `oeimagebuilder`, `githubmcp`. These are large, repo-specific, and only loaded when invoked by name. `githubmcp` is a read-only MCP preflight — run it before GitHub work.
+- **Explicit-invocation skills** (with `disable-model-invocation: true`): `notes`, `oe-code`, `oe-components`, `oe-db-schema`, `oe-coding-standards`, `oe-deploy`, `oeimagebuilder`, `jiramcp`, `githubmcp`. These are large or context-loading, repo-specific, and only loaded when invoked by name. `jiramcp` / `githubmcp` are MCP preflight checks — run them before Jira/Confluence or GitHub work.
 
 Each repo-specific skill follows the **stable mental model in `SKILL.md`, volatile detail in `subs/*.md`** convention. See **[docs/skills.md](docs/skills.md)**.
 

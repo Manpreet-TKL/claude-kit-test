@@ -55,36 +55,6 @@ registers the server at **user scope** via `claude mcp add-json github … -s us
 (stored in `~/.claude.json`, not `settings.json` — Claude Code reads MCP servers only
 from there). Restart Claude Code to pick up the changes, then run `/githubmcp` to verify.
 
-## The registered MCP server JSON
-
-There is no committed `settings/mcp-github.json` fragment. Atlassian ships a static
-`settings/mcp-atlassian.json` that is jq-merged into `settings.json`, but GitHub can't:
-the server JSON embeds the secret PAT, which must never be committed. So `install.sh`
-builds the object and registers it into `~/.claude.json` (user scope) via
-`claude mcp add-json github … -s user`. For reference, the registered object looks like:
-
-```json
-{
-  "command": "docker",
-  "args": [
-    "run", "-i", "--rm",
-    "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
-    "-e", "GITHUB_READ_ONLY",
-    "ghcr.io/github/github-mcp-server"
-  ],
-  "env": {
-    "GITHUB_PERSONAL_ACCESS_TOKEN": "github_pat_…",
-    "GITHUB_READ_ONLY": "1"
-  }
-}
-```
-
-`GITHUB_READ_ONLY` is always `"1"` — baked in, never sourced from the env file. If
-`GITHUB_TOOLSETS` is set in `settings/.github.env` it is added both as an
-`-e GITHUB_TOOLSETS` arg and an `env` key; when blank it is dropped entirely. The bare
-`-e VAR` args mean each value is read from the `env` block, so the token never appears on
-the `docker` command line. Inspect the live registration with `claude mcp get github`.
-
 ## Token rotation
 
 Edit `settings/.github.env` to replace the old token, then re-run with `-y` to apply
