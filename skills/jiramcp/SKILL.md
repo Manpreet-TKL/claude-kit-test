@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Jira + Confluence MCP preflight
 
-Confirm the Atlassian MCP server is connected, fail fast if it isn't, then load the project context that downstream skills (e.g. `devopstickets`) rely on. Everything goes through the `mcp__atlassian__*` MCP tools — never the JIRA/Confluence REST API, never `curl` an Atlassian endpoint, never read `~/claude-kit/settings/.atlassian.env`.
+Confirm the Atlassian MCP server is connected, fail fast if it isn't, then load the project context that downstream skills (e.g. `devopstickets`) rely on. Everything goes through the `mcp__atlassian__*` MCP tools — never the JIRA/Confluence REST API, never `curl` an Atlassian endpoint, never read `~/claude-kit/generated/.atlassian.env`.
 
 ## Check — fail fast (run both pings in ONE message, in parallel)
 

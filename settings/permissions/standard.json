@@ -13,7 +13,8 @@
     "Bash(cat *)",
     "Bash(grep *)",
     "mcp__atlassian",
-    "mcp__github"
+    "mcp__github",
+    "mcp__codex"
   ],
   "ask": [
     "Bash"

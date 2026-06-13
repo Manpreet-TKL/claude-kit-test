@@ -45,7 +45,7 @@ Configure both at once:
 ./install.sh --with-atlassian -p standard   # shorthand for -j -c
 ```
 
-If `settings/.atlassian.env` does not already contain the relevant values,
+If `generated/.atlassian.env` does not already contain the relevant values,
 install.sh prompts interactively:
 
 **Jira** (`-j`): `JIRA_URL`, `JIRA_USERNAME`, `JIRA_API_TOKEN`, `JIRA_PROJECTS_FILTER`
@@ -54,7 +54,7 @@ install.sh prompts interactively:
 `CONFLUENCE_SPACES_FILTER` — defaults to the Jira values entered in the same run, since
 for Atlassian Cloud the URL and credentials are usually the same.
 
-All values are saved to `settings/.atlassian.env` (mode 600, gitignored). install.sh
+All values are saved to `generated/.atlassian.env` (mode 600, gitignored). install.sh
 then registers the server at **user scope** via `claude mcp add-json atlassian … -s user`
 (stored in `~/.claude.json`, not `settings.json` — Claude Code reads MCP servers only
 from there). Running `-j` alone preserves any previously configured Confluence vars in
@@ -62,7 +62,7 @@ the file, and vice versa. Restart Claude Code to pick up the changes.
 
 ## Token rotation
 
-Edit `settings/.atlassian.env` to replace the old token, then re-run with `-y` to
+Edit `generated/.atlassian.env` to replace the old token, then re-run with `-y` to
 apply silently:
 
 ```bash
@@ -77,11 +77,11 @@ apply silently:
 ```
 
 Deregisters the server (`claude mcp remove atlassian -s user`). The credentials file
-`settings/.atlassian.env` is left in place — delete it manually to clear tokens.
+`generated/.atlassian.env` is left in place — delete it manually to clear tokens.
 
 ## The credentials file
 
-`settings/.atlassian.env` is plain shell:
+`generated/.atlassian.env` is plain shell:
 
 ```bash
 JIRA_URL=https://toukanlabs.atlassian.net
@@ -91,7 +91,7 @@ JIRA_PROJECTS_FILTER=TKLS,OE
 ```
 
 It is listed in `.gitignore` and never committed. It is also never touched by
-`--without-atlassian` — only a manual `rm settings/.atlassian.env` removes it.
+`--without-atlassian` — only a manual `rm generated/.atlassian.env` removes it.
 
 ## Troubleshooting
 
@@ -99,7 +99,7 @@ It is listed in `.gitignore` and never committed. It is also never touched by
 |---|---|
 | `docker not found` | Install Docker, then re-run install.sh. |
 | First call to the server is slow / hangs briefly | Docker is pulling the image on first use. Pre-pull with `docker pull ghcr.io/sooperset/mcp-atlassian:latest`. |
-| MCP server shows as `failed` in `/mcp` | Bad token or wrong URL — check `settings/.atlassian.env` and re-run `--with-atlassian`. |
+| MCP server shows as `failed` in `/mcp` | Bad token or wrong URL — check `generated/.atlassian.env` and re-run `--with-atlassian`. |
 | `401` from Jira even though the token shows as recently "accessed" in id.atlassian.com | The token is a **scoped** API token. Scoped tokens are refused at the site URL (`https://<site>.atlassian.net`) and only work through the gateway (`https://api.atlassian.com/ex/jira/<cloudId>`), which this server's basic-auth mode never calls. The gateway returns `{"code":401,"message":"Unauthorized; scope does not match"}` rather than a bad-credential error. Use a **classic (unscoped)** API token, or switch to OAuth 2.0 (see "Using a scoped token instead" below). |
 | `searchJiraIssues` returns nothing for known tickets | Project key not in `JIRA_PROJECTS_FILTER` — add it and re-run `--with-atlassian -y`. |
 | Settings applied but Claude Code says "no servers" | Restart Claude Code — MCP config is read at startup. |

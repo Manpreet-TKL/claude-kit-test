@@ -6,7 +6,8 @@
     "Write",
     "Bash",
     "mcp__atlassian",
-    "mcp__github"
+    "mcp__github",
+    "mcp__codex"
   ],
   "deny": [
     "Bash(git push *)",

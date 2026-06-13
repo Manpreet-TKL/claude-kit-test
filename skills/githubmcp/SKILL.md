@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # GitHub MCP preflight (read-only)
 
-Confirm the GitHub MCP server is connected, fail fast if it isn't, then load the project context for GitHub work. Everything goes through the `mcp__github__*` MCP tools — never `curl` the GitHub API, never read `~/claude-kit/settings/.github.env`.
+Confirm the GitHub MCP server is connected, fail fast if it isn't, then load the project context for GitHub work. Everything goes through the `mcp__github__*` MCP tools — never `curl` the GitHub API, never read `~/claude-kit/generated/.github.env`.
 
 The server is registered **read-only** (`GITHUB_READ_ONLY=1`): it exposes only read tools, so creating PRs/branches, pushing, commenting, and merging are impossible by construction. This mirrors the hard rule "never write out to GitHub." The human raises PRs — see the `create-oe-pr` skill; never use `gh` or `git push`/`git commit` to do it for them.
 
@@ -19,7 +19,7 @@ Interpret the call:
 - **Returns the user with no error** → healthy.
 - **Permission denied** → the `mcp__github` allow rule is missing from settings. Tell the user to re-run `~/claude-kit/install.sh -p <tier> -y` (or add `mcp__github` to `permissions.allow`) and stop.
 - **Connection error / "not connected" / timeout** → run the remediation block, tell the user to restart, and stop.
-- **401 / bad credentials** → the PAT in `settings/.github.env` is missing, expired, or lacks access. Tell the user to mint a fresh fine-grained read-only PAT and re-run `~/claude-kit/install.sh -g -p <tier> -y`, then stop.
+- **401 / bad credentials** → the PAT in `generated/.github.env` is missing, expired, or lacks access. Tell the user to mint a fresh fine-grained read-only PAT and re-run `~/claude-kit/install.sh -g -p <tier> -y`, then stop.
 
 **Fail fast:** if the ping fails, stop here — do not fall back to `curl` or the REST API. Only when it succeeds, print a one-line `GitHub ✔` and the project context below, then proceed to whatever the user asked for.
 

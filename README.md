@@ -16,7 +16,13 @@ A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` 
 │   │   └── yolo.json       # tier 4 — git mutations + `rm -rf` still denied, secrets reads go through (container/VM only)
 │   ├── shift-enter.json    # newline-on-shift-enter fragment
 │   ├── mcp-atlassian.json  # Atlassian Remote MCP fragment (opt-in)
-│   └── .github.env.example # GitHub read-only PAT template → copy to .github.env (gitignored)
+│   ├── .atlassian.env.example # Jira/Confluence creds template → copy to generated/.atlassian.env
+│   ├── .github.env.example # GitHub read-only PAT template → copy to generated/.github.env
+│   └── .codex.env.example  # Codex agent defaults template → copy to generated/.codex.env
+├── generated/              # ALL machine-local creds/config (gitignored wholesale; back this up)
+│   ├── .atlassian.env      #   real Jira/Confluence creds (created by install.sh -j/-c)
+│   ├── .github.env         #   real GitHub PAT          (created by install.sh -g)
+│   └── .codex.env          #   Codex model/sandbox knobs (created by install.sh -x; no secret)
 ├── skills/
 │   ├── bash-style/         # styling (auto-loads when relevant)
 │   ├── create-oe-module/
@@ -30,14 +36,16 @@ A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` 
 │   ├── oe-deploy/          # OE deploy template (pantry/recipe/chef)
 │   ├── oeimagebuilder/     # OE image hierarchy & build args
 │   ├── jiramcp/            # Jira + Confluence MCP preflight (disable-model-invocation)
-│   └── githubmcp/          # read-only GitHub MCP preflight (disable-model-invocation)
+│   ├── githubmcp/          # read-only GitHub MCP preflight (disable-model-invocation)
+│   └── codexmcp/           # OpenAI Codex agent preflight + fan-out (disable-model-invocation)
 └── docs/
     ├── permissions.md      # how the 4 tiers work, deny → ask → allow
     ├── skills.md           # CLAUDE.md vs SKILL.md, sub-skills, naming
     ├── statusline.md       # how the status line script works
     ├── sandbox.md          # running without prompts in a container/VM
     ├── atlassian.md        # Jira + Confluence via Atlassian MCP — setup + teardown
-    └── github.md           # GitHub (read-only) via github-mcp-server — setup + teardown
+    ├── github.md           # GitHub (read-only) via github-mcp-server — setup + teardown
+    └── codex.md            # OpenAI Codex agents via codex mcp-server — setup + teardown
 ```
 
 The installer writes / merges:
@@ -46,6 +54,8 @@ The installer writes / merges:
 - `~/.claude/statusline.sh` — the status line renderer.
 - `~/.claude/CLAUDE.md` — **wholesale-overwritten** from `claude-md/CLAUDE.md` in this kit (never-commit/push rules + condensed Karpathy guidelines).
 - `~/.claude/skills/<name>` — symlinked to `skills/<name>` in this kit.
+
+Machine-local credentials and config the installer generates (Atlassian / GitHub / Codex) all land in **one gitignored folder, `generated/`**, so you can back up that single folder, `git reset --hard` + `git clean -fdx` the whole kit, and drop it back in — see [Backing up generated config](#backing-up-generated-config). MCP server registrations themselves are written by the `claude` CLI to `~/.claude.json` (not `settings.json`).
 
 It backs up the pre-existing `settings.json` to `settings.json.bak` and (if changed) the pre-existing `CLAUDE.md` to `CLAUDE.md.bak` before writing. `settings.json` is edited as JSON via `jq` (never blind text-append).
 
@@ -133,7 +143,7 @@ Edit `claude-md/CLAUDE.md` and re-run `install.sh` to roll the change out. The p
 `install.sh` symlinks each directory under `skills/` into `~/.claude/skills/<name>`. Edit a skill in this kit and the change is live without re-installing.
 
 - **Auto-loading style skills** (no `disable-model-invocation`): `bash-style`, `create-oe-module`, `note-style`, `yiic-command-style`.
-- **Explicit-invocation skills** (with `disable-model-invocation: true`): `notes`, `oe-code`, `oe-components`, `oe-db-schema`, `oe-coding-standards`, `oe-deploy`, `oeimagebuilder`, `jiramcp`, `githubmcp`. These are large or context-loading, repo-specific, and only loaded when invoked by name. `jiramcp` / `githubmcp` are MCP preflight checks — run them before Jira/Confluence or GitHub work.
+- **Explicit-invocation skills** (with `disable-model-invocation: true`): `notes`, `oe-code`, `oe-components`, `oe-db-schema`, `oe-coding-standards`, `oe-deploy`, `oeimagebuilder`, `jiramcp`, `githubmcp`, `codexmcp`. These are large or context-loading, repo-specific, and only loaded when invoked by name. `jiramcp` / `githubmcp` are MCP preflight checks — run them before Jira/Confluence or GitHub work; `codexmcp` is the Codex preflight — run it before delegating coding to Codex agents.
 
 Each repo-specific skill follows the **stable mental model in `SKILL.md`, volatile detail in `subs/*.md`** convention. See **[docs/skills.md](docs/skills.md)**.
 
@@ -173,12 +183,41 @@ analogue of the never-`git push`/never-`git commit` hard floor. The human raises
 (see the `create-oe-pr` skill).
 
 Authentication is a **fine-grained, read-only** personal access token (with `openeyes`
-org access), stored in `settings/.github.env` (mode 600, gitignored) — never on the
+org access), stored in `generated/.github.env` (mode 600, gitignored) — never on the
 `docker` command line. After opting in, restart Claude Code and run `/githubmcp` to
 verify. Full setup, token minting, rotation, and teardown live in
 **[docs/github.md](docs/github.md)**.
 
 Neither flag = `mcpServers.github` is left exactly as-is on re-runs.
+
+### 11. OpenAI Codex agents (`--with-codex` / `--without-codex`)
+
+Register or remove **OpenAI Codex** as a local MCP server so Claude can spawn one or
+many autonomous Codex coding agents. Unlike Atlassian/GitHub this is **not** a Docker
+image — it runs the host `codex` binary as `codex mcp-server`:
+
+```bash
+./install.sh --with-codex    -p standard    # opt in  (-x)
+./install.sh --without-codex -p standard -y  # tear down (-X)
+```
+
+Needs the **Codex CLI** on PATH (`npm install -g @openai/codex`) and a one-time
+**`codex login`** (ChatGPT sign-in — so **no token is stored in this kit**; auth lives
+in `~/.codex`). The server exposes `mcp__codex__codex` / `mcp__codex__codex-reply`;
+Claude fans agents out by calling them in one message. Run `/codexmcp` to preflight and
+for the fan-out + safety rules.
+
+install.sh pins the agent defaults as `-c` launch overrides — **flagship model
+(`gpt-5.5`) at `high` reasoning effort**, in a **`workspace-write`, network-off
+sandbox** with `approval_policy=never` — recorded (non-secretly) in
+`generated/.codex.env`. **Network-off is the safety floor:** an agent runs its own
+shell *outside* Claude's `deny` rules, so blocking the network is what stops it
+`git push`-ing; the `codexmcp` skill additionally tells agents never to commit (the
+human commits). `mcp__codex` is allowed on `standard`/`trusted`/`yolo` but **prompts on
+`safe`** — spawning a writer is a write action. Full setup, model/sandbox tuning, and
+teardown: **[docs/codex.md](docs/codex.md)**.
+
+Neither flag = `mcpServers.codex` is left exactly as-is on re-runs.
 
 ---
 
@@ -195,6 +234,7 @@ jq '.permissions.deny'                                 ~/.claude/settings.json  
 jq '.shiftEnterKeyBindingInstalled'                    ~/.claude/settings.json   # shift-enter
 cmp -s ~/claude-kit/claude-md/CLAUDE.md ~/.claude/CLAUDE.md && echo match        # CLAUDE.md
 ls -l ~/.claude/skills/                                                          # symlinks
+claude mcp get codex                                                             # codex MCP server (if -x)
 ```
 
 ---
@@ -211,3 +251,25 @@ Each `.bak` is overwritten on every run, so it always reflects the state immedia
 ## Restoring data from a `--reset` archive
 
 If `--reset` archived directories you turn out to need, they're at `~/.claude-backups/<timestamp>/<dir>/`. Move the ones you want back into `~/.claude/` manually — the installer never auto-restores.
+
+## Backing up generated config
+
+Every credential and machine-local setting the installer writes *into the kit* lives in
+one gitignored folder: **`generated/`** (`.atlassian.env`, `.github.env`, `.codex.env`).
+Nothing else in the repo is machine-specific. So you can wipe the kit back to a pristine
+checkout and keep your creds with a back-up / restore around the reset:
+
+```bash
+cp -a ~/claude-kit/generated /tmp/claude-kit-generated.bak   # 1. back up the one folder
+cd ~/claude-kit && git reset --hard && git clean -fdx        # 2. pristine checkout (clears generated/)
+cp -a /tmp/claude-kit-generated.bak/. ~/claude-kit/generated/ # 3. drop creds back in
+./install.sh -p standard -y                                  # 4. re-apply (re-registers MCP servers from the env files)
+```
+
+`git reset --hard` alone won't touch `generated/` (it's ignored); it's `git clean -fdx`
+that removes it — hence the back-up. Step 4 re-reads the env files non-interactively and
+re-registers any MCP servers. An older install with creds still in `settings/.*.env` is
+migrated into `generated/` automatically on the next run.
+
+(MCP server registrations also live in `~/.claude.json`, outside the kit — re-running
+install.sh with the relevant `-j`/`-c`/`-g`/`-x` flags rebuilds them from `generated/`.)
