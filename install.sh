@@ -549,20 +549,25 @@ applyAtlassian() {
     # Strip empty-string values so mcp-atlassian sees only what's set.
     env_json="$(jq 'with_entries(select(.value != ""))' <<< "${env_json}")"
 
-    # Docker args: one bare "-e VAR" per set env key (docker reads the value from
-    # its own env, which Claude Code populates from the "env" block — so tokens
-    # never appear on the command line), then the image.
+    # Run via "sh -c" so each new session first force-removes any container left
+    # by a prior session of the same fixed name, then exec's its own. At most one
+    # mcp-atlassian container ever exists — a new session kills the old one and
+    # takes over (newest wins), instead of a fresh random-named container piling
+    # up per session. One bare "-e VAR" per set env key (docker reads the value
+    # from its own env, which Claude Code populates from the "env" block — so
+    # tokens never appear on the command line), then the image.
     local image="ghcr.io/sooperset/mcp-atlassian:latest"
-    local args_json
-    args_json="$(jq -n --argjson env "${env_json}" --arg img "${image}" \
-        '["run","-i","--rm"] + [$env | keys[] | ("-e", .)] + [$img]')"
+    local cname="claude-mcp-atlassian"
+    local run_cmd
+    run_cmd="$(jq -rn --argjson env "${env_json}" --arg img "${image}" --arg name "${cname}" \
+        '"docker rm -f \($name) >/dev/null 2>&1; exec docker run -i --rm --name \($name) " + ($env | keys | map("-e " + .) | join(" ")) + " " + $img')"
 
     # Register at user scope via the claude CLI (writes ~/.claude.json so the
     # server auto-loads in every session/project). Remove any prior registration
     # first so re-runs are idempotent — add-json errors if the name already exists.
     local server_json
-    server_json="$(jq -n --argjson args "${args_json}" --argjson env "${env_json}" \
-        '{command: "docker", args: $args, env: $env}')"
+    server_json="$(jq -n --arg cmd "${run_cmd}" --argjson env "${env_json}" \
+        '{command: "sh", args: ["-c", $cmd], env: $env}')"
     claude mcp remove atlassian -s user >/dev/null 2>&1 || true
     claude mcp add-json atlassian "${server_json}" -s user >/dev/null
     echo "  registered atlassian MCP (docker/${image##*/}) at user scope (~/.claude.json)"
@@ -652,19 +657,24 @@ applyGitHub() {
     # Strip empty-string values (drops GITHUB_TOOLSETS when unset; READ_ONLY="1" survives).
     env_json="$(jq 'with_entries(select(.value != ""))' <<< "${env_json}")"
 
-    # Docker args: one bare "-e VAR" per set env key (docker reads the value from
-    # its own env, which Claude Code populates from the "env" block — so the token
+    # Run via "sh -c" so each new session first force-removes any container left
+    # by a prior session of the same fixed name, then exec's its own. At most one
+    # github MCP container ever exists — a new session kills the old one and takes
+    # over (newest wins), instead of a fresh random-named container piling up per
+    # session. One bare "-e VAR" per set env key (docker reads the value from its
+    # own env, which Claude Code populates from the "env" block — so the token
     # never appears on the command line), then the image.
     local image="ghcr.io/github/github-mcp-server"
-    local args_json
-    args_json="$(jq -n --argjson env "${env_json}" --arg img "${image}" \
-        '["run","-i","--rm"] + [$env | keys[] | ("-e", .)] + [$img]')"
+    local cname="claude-mcp-github"
+    local run_cmd
+    run_cmd="$(jq -rn --argjson env "${env_json}" --arg img "${image}" --arg name "${cname}" \
+        '"docker rm -f \($name) >/dev/null 2>&1; exec docker run -i --rm --name \($name) " + ($env | keys | map("-e " + .) | join(" ")) + " " + $img')"
 
     # Register at user scope (writes ~/.claude.json). Remove any prior registration
     # first so re-runs are idempotent — add-json errors if the name already exists.
     local server_json
-    server_json="$(jq -n --argjson args "${args_json}" --argjson env "${env_json}" \
-        '{command: "docker", args: $args, env: $env}')"
+    server_json="$(jq -n --arg cmd "${run_cmd}" --argjson env "${env_json}" \
+        '{command: "sh", args: ["-c", $cmd], env: $env}')"
     claude mcp remove github -s user >/dev/null 2>&1 || true
     claude mcp add-json github "${server_json}" -s user >/dev/null
     echo "  registered github MCP (docker/${image##*/}, read-only) at user scope (~/.claude.json)"
@@ -777,10 +787,21 @@ applyCodex() {
            else [] end)
         ')"
 
+    # Run via "sh -c" so each new session first reaps any leftover codex MCP server
+    # process before exec'ing its own — the process-level analogue of the docker
+    # "--name + rm -f" reuse used for github/atlassian. codex runs as a local CLI,
+    # not a container, so there's no container name to reap; instead we match the
+    # "codex mcp-server" cmdline and skip our own shell via $$. Matching on
+    # "mcp-server" leaves an interactive `codex` untouched. Each arg is @sh-quoted
+    # so the shell hands codex the exact same argv (TOML string quotes intact).
+    local run_cmd
+    run_cmd="$(jq -rn --argjson a "${args_json}" \
+        '"for p in $(pgrep -f \"codex mcp-server\"); do [ \"$p\" != \"$$\" ] && kill \"$p\" 2>/dev/null; done; exec codex " + ($a | map(@sh) | join(" "))')"
+
     # Register at user scope (writes ~/.claude.json). Remove any prior registration
     # first so re-runs are idempotent — add-json errors if the name already exists.
     local server_json
-    server_json="$(jq -n --argjson args "${args_json}" '{command: "codex", args: $args}')"
+    server_json="$(jq -n --arg cmd "${run_cmd}" '{command: "sh", args: ["-c", $cmd]}')"
     claude mcp remove codex -s user >/dev/null 2>&1 || true
     claude mcp add-json codex "${server_json}" -s user >/dev/null
     echo "  registered codex MCP (codex mcp-server) at user scope (~/.claude.json)"
