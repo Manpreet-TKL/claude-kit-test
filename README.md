@@ -23,21 +23,17 @@ A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` 
 │   ├── .atlassian.env      #   real Jira/Confluence creds (created by install.sh -j/-c)
 │   ├── .github.env         #   real GitHub PAT          (created by install.sh -g)
 │   └── .codex.env          #   Codex model/sandbox knobs (created by install.sh -x; no secret)
-├── skills/
-│   ├── bash-style/         # styling (auto-loads when relevant)
-│   ├── create-oe-module/
-│   ├── note-style/
-│   ├── yiic-command-style/
-│   ├── notes/              # repo-specific (disable-model-invocation: true)
-│   ├── oe-code/            # OpenEyes — code & frameworks
-│   ├── oe-components/      # OpenEyes — runtime containers
-│   ├── oe-db-schema/       # OpenEyes — DB / domain model
-│   ├── oe-coding-standards/# OpenEyes — invariants & lint layout
-│   ├── oe-deploy/          # OE deploy template (pantry/recipe/chef)
-│   ├── oeimagebuilder/     # OE image hierarchy & build args
-│   ├── jiramcp/            # Jira + Confluence MCP preflight (disable-model-invocation)
-│   ├── githubmcp/          # read-only GitHub MCP preflight (disable-model-invocation)
-│   └── codexmcp/           # OpenAI Codex agent preflight + fan-out (disable-model-invocation)
+├── skills/                 # each dir symlinked into ~/.claude/skills/<name>
+│   │                       #   most are manual (disable-model-invocation: true)
+│   ├── create-oe-module/   #   auto-load ┐ no disable-model-invocation —
+│   ├── note-style/         #   auto-load │ the model pulls these in itself
+│   ├── oe-helm/            #   auto-load │ when the task matches
+│   ├── oe-ui/              #   auto-load ┘
+│   ├── oe-code/ oe_code/ oe-db-schema/ oe-coding-standards/    # OpenEyes — manual
+│   ├── oe-deploy/ oeimagebuilder/ oe-components/ pasapi/ mcc/  # OpenEyes — manual
+│   ├── bash-style/ yiic-command-style/ frontend-design/        # house style — manual
+│   ├── create-pr/ create-oe-pr/ new-feature/ docbuilder-docset/ notes-app/  # workflow/repo — manual
+│   └── jiramcp/ githubmcp/ codexmcp/ devopstickets/            # MCP preflight — manual; no "Context loaded"
 └── docs/
     ├── permissions.md      # how the 4 tiers work, deny → ask → allow
     ├── skills.md           # CLAUDE.md vs SKILL.md, sub-skills, naming
@@ -69,11 +65,13 @@ cd ~/claude-kit
 ./install.sh --permissions safe             # explicit tier
 ./install.sh -p trusted -y                  # non-interactive
 ./install.sh --reset -p standard -y         # archive bloat → reinstall
+./install.sh --fresh -p standard            # back up data → wipe ~/.claude → fresh install
+./install.sh --no-update -p standard -y     # skip the `claude update` step
 AUTOCOMPACT_PCT=50 ./install.sh -p standard -y
 ./install.sh --help
 ```
 
-Re-running is safe — settings are merged, `CLAUDE.md` is rewritten wholesale from `claude-md/CLAUDE.md` (with a `.bak` of the prior file if it differed), the status line script is rewritten in place, and skill symlinks are refreshed (real directories under `~/.claude/skills/` are left alone, not clobbered).
+Re-running is safe — Claude Code itself is installed if it's missing and otherwise updated (`claude update`), settings are merged, `CLAUDE.md` is rewritten wholesale from `claude-md/CLAUDE.md` (with a `.bak` of the prior file if it differed), the status line script is rewritten in place, and skill symlinks are refreshed: real directories under `~/.claude/skills/` are left alone, and symlinks this kit created for skills since removed from the kit are pruned (see [§7](#7-skills)).
 
 ---
 
@@ -111,7 +109,7 @@ The figures are a **local proxy**: Claude Code's GUI `/usage` % comes from Anthr
 ### 4. Auto-compact env vars
 
 ```
-AUTOCOMPACT_PCT      → env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE   (default 60)
+AUTOCOMPACT_PCT      → env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE   (default 90, clamped to ~83)
 AUTOCOMPACT_WINDOW   → env.CLAUDE_CODE_AUTO_COMPACT_WINDOW   (default 200000)
 FIVE_HOUR_BUDGET     → env.CLAUDE_5H_TOKEN_BUDGET            (unset — status line shows raw count; set to flip to a 5h %)
 WEEKLY_BUDGET        → env.CLAUDE_WEEKLY_TOKEN_BUDGET        (unset — status line shows raw count; set to flip to a wk %)
@@ -142,18 +140,46 @@ Edit `claude-md/CLAUDE.md` and re-run `install.sh` to roll the change out. The p
 
 `install.sh` symlinks each directory under `skills/` into `~/.claude/skills/<name>`. Edit a skill in this kit and the change is live without re-installing.
 
-- **Auto-loading style skills** (no `disable-model-invocation`): `bash-style`, `create-oe-module`, `note-style`, `yiic-command-style`.
-- **Explicit-invocation skills** (with `disable-model-invocation: true`): `notes`, `oe-code`, `oe-components`, `oe-db-schema`, `oe-coding-standards`, `oe-deploy`, `oeimagebuilder`, `jiramcp`, `githubmcp`, `codexmcp`. These are large or context-loading, repo-specific, and only loaded when invoked by name. `jiramcp` / `githubmcp` are MCP preflight checks — run them before Jira/Confluence or GitHub work; `codexmcp` is the Codex preflight — run it before delegating coding to Codex agents.
+**How a skill gets its context in front of Claude — two modes:**
+
+- **Auto-load (no `disable-model-invocation`).** Claude reads every skill's `name` + `description` at startup and decides *on its own* to pull the whole `SKILL.md` into context the moment a task matches the description. You don't name these — they load when relevant. Today: **`create-oe-module`, `note-style`, `oe-helm`, `oe-ui`**. For these the **`description:` is the trigger**, so it's written to fire on the right task.
+- **Manual (`disable-model-invocation: true`).** Claude will *never* auto-load these; the body only enters context when you (or a plan) invoke the skill **by name** (`/oe-code`, `/jiramcp`, …). Everything else in the kit is manual — they're large, repo-specific, or preflight checks you want to fire deliberately, not opportunistically.
+
+Either way the **`description:` is a single terminal line** (≤ ~78 chars) so the whole thing is readable when you search skills inside Claude — keep it one line when editing.
+
+**Loading convention — "Context loaded".** Every skill except the four MCP-preflight ones (`codexmcp`, `devopstickets`, `githubmcp`, `jiramcp`) starts its body with:
+
+> When loaded as context with no task, reply only `Context loaded.`
+
+So invoking a skill just to prime context returns a one-word ack instead of a 2,000-token summary you didn't ask for. The four preflight skills are the deliberate exception — they *do* run a check and report. Aim to keep each `SKILL.md` **under ~2,000 tokens** (≈ 8 KB) so loading is cheap; push volatile detail into `subs/*.md` and let Claude open those on demand. Two skills intentionally exceed this — `create-oe-module` (~4.2k) and `oe-coding-standards` (~3.2k) — because they're reference-dense scaffolding/standards docs.
 
 Each repo-specific skill follows the **stable mental model in `SKILL.md`, volatile detail in `subs/*.md`** convention. See **[docs/skills.md](docs/skills.md)**.
 
-If a destination `~/.claude/skills/<name>` already exists as a **real directory** (not a symlink), the installer skips it and prints a warning — your hand-edits are never clobbered.
+**Symlink lifecycle.** `install.sh` records exactly which skills it symlinked in `~/.claude/.claude-kit-skills`. On every run it (1) re-links all current kit skills, and (2) **prunes** any `~/.claude/skills/<name>` *symlink* that this kit created but that has since been removed from `skills/` — so deleting a skill from the kit and re-running cleans it out of `~/.claude`. Two safety floors: a destination that is a **real directory** (your hand-added skill) is skipped with a warning and never touched, and a **symlink pointing somewhere other than this kit** (added by hand or another tool) is left alone. Only kit-created symlinks are ever removed.
 
 ### 8. Reset to first-install state (`--reset`)
 
 `./install.sh --reset` archives Claude Code's auto-generated state — `file-history`, `paste-cache`, `backups`, `shell-snapshots`, `stats-cache`, `session-env`, `plugins`, `tasks` — into `~/.claude-backups/<timestamp>/`, then proceeds with the normal install. Preserved in place: `.credentials.json` (don't lose your auth), `history.jsonl`, and `projects/`. The reset runs **before** `settings.json` is backed up to `.bak`, so a single `--reset` run leaves you with a clean state plus one snapshot archive you can rummage through later. Combine with `-p <tier>` and `-y` to do it non-interactively.
 
-### 9. Jira + Confluence (`--with-atlassian` / `--without-atlassian`)
+### 9. Nuke and pave (`--fresh`)
+
+`./install.sh --fresh` rebuilds `~/.claude` from scratch while **keeping your conversations and staying logged in**. It:
+
+1. Backs up `projects/` (your conversations), `history.jsonl`, and `.credentials.json` (auth) to `~/.claude-backups/<timestamp>-fresh/`.
+2. **Deletes the entire `~/.claude`.**
+3. Reinstalls Claude Code fresh (the from-scratch `curl … | bash`).
+4. Restores those three items, then re-applies the kit (settings, CLAUDE.md, skills) on top.
+
+Everything else — settings, caches, plugins, `shell-snapshots`, MCP registration state — is regenerated clean rather than carried over. Use it when `~/.claude` has accumulated cruft a `--reset` won't shake, or after an upgrade leaves it inconsistent. **`--fresh` supersedes `--reset`** (no point archiving bloat you're about to delete). Because it runs `rm -rf ~/.claude`, an interactive run makes you **type `fresh` to confirm**; `-y` skips that prompt for automation. The full pre-wipe snapshot is kept at `~/.claude-backups/<timestamp>-fresh/` — nothing is deleted that isn't archived first. On a machine with no `~/.claude` yet, `--fresh` simply does a clean install. Restore anything else you want with `cp -a ~/.claude-backups/<timestamp>-fresh/<item> ~/.claude/`.
+
+### 10. Fresh-machine bootstrap + `claude update`
+
+The installer manages the Claude Code CLI itself, so a brand-new machine needs nothing pre-installed beyond `jq`/`curl`:
+
+- **Install if absent.** If `~/.claude` doesn't exist, install.sh runs `curl -fsSL https://claude.ai/install.sh | bash` to install Claude Code before configuring it.
+- **Update if present.** Otherwise it runs **`claude update`** to pull the latest CLI before applying config. Skip with `--no-update` (`-U`) when offline or when the CLI is managed by a package manager; it's auto-skipped right after a from-scratch install (already current) and if `claude` isn't on `PATH`. A failed update warns and continues rather than aborting.
+
+### 11. Jira + Confluence (`--with-atlassian` / `--without-atlassian`)
 
 Merge or remove the Atlassian Remote MCP server entry in `settings.json`:
 
@@ -166,7 +192,7 @@ Authentication is OAuth-based and happens inside Claude Code via `/mcp` — no t
 
 Neither flag = `mcpServers.atlassian` is left exactly as-is on re-runs (the installer never silently flips it on or off).
 
-### 10. GitHub — read-only (`--with-github` / `--without-github`)
+### 12. GitHub — read-only (`--with-github` / `--without-github`)
 
 Register or remove GitHub's official `github-mcp-server`, run as a Docker stdio server
 (`ghcr.io/github/github-mcp-server`) at user scope — the same shape as Atlassian:
@@ -190,7 +216,7 @@ verify. Full setup, token minting, rotation, and teardown live in
 
 Neither flag = `mcpServers.github` is left exactly as-is on re-runs.
 
-### 11. OpenAI Codex agents (`--with-codex` / `--without-codex`)
+### 13. OpenAI Codex agents (`--with-codex` / `--without-codex`)
 
 Register or remove **OpenAI Codex** as a local MCP server so Claude can spawn one or
 many autonomous Codex coding agents. Unlike Atlassian/GitHub this is **not** a Docker
@@ -248,9 +274,11 @@ cp ~/.claude/CLAUDE.md.bak     ~/.claude/CLAUDE.md
 
 Each `.bak` is overwritten on every run, so it always reflects the state immediately before the most recent install. `CLAUDE.md.bak` is only written when the previous file differed from what's being installed.
 
-## Restoring data from a `--reset` archive
+## Restoring data from a `--reset` or `--fresh` archive
 
-If `--reset` archived directories you turn out to need, they're at `~/.claude-backups/<timestamp>/<dir>/`. Move the ones you want back into `~/.claude/` manually — the installer never auto-restores.
+If `--reset` archived directories you turn out to need, they're at `~/.claude-backups/<timestamp>/<dir>/`. Move the ones you want back into `~/.claude/` manually — `--reset` never auto-restores.
+
+`--fresh` archives to `~/.claude-backups/<timestamp>-fresh/` and *does* auto-restore `projects/`, `history.jsonl`, and `.credentials.json`. The archive is the full pre-wipe copy of those three, so anything else you want back you copy by hand: `cp -a ~/.claude-backups/<timestamp>-fresh/<item> ~/.claude/`.
 
 ## Backing up generated config
 

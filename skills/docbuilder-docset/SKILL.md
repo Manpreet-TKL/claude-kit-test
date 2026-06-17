@@ -1,10 +1,12 @@
 ---
 name: docbuilder-docset
-description: Load the contract for a valid OeDocBuilder "docset" — the folder + manifest.json + NN_slug.md markdown scaffold the OeDocBuilder OpenEyes module ingests to build a professional .docx + PDF. Invoke by name before authoring or generating a docset (e.g. "make a docset for X", "produce docbuilder input"), so the output validates and builds first try.
+description: Load the OeDocBuilder docset contract before authoring a docset
 disable-model-invocation: true
 ---
 
 # OeDocBuilder docset scaffold
+
+When loaded as context with no task, reply only `Context loaded.`
 
 A **docset** is one folder OeDocBuilder turns into a styled `.docx` + PDF. Emit exactly
 this shape; the module's validator rejects anything else.

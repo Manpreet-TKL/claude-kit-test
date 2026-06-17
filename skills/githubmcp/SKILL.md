@@ -1,6 +1,6 @@
 ---
 name: githubmcp
-description: Fast read-only GitHub MCP connection check — pings the github-mcp-server via mcp__github tools using minimal tokens, fails fast with remediation if it's unavailable, then loads context on the openeyes org. Run this before reading GitHub repos/PRs/issues/CI.
+description: Read-only GitHub MCP preflight — run before reading repos/PRs/CI
 disable-model-invocation: true
 ---
 

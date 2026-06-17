@@ -1,9 +1,11 @@
 ---
 name: create-oe-module
-description: Use when scaffolding a new OpenEyes module under protected/modules/, registering it in core/common.php (or local/common.php for testing), getting its menu items to appear in the top navigation (oe_special_module flag), clearing APCu so config changes take effect, or understanding how core vs module migrations interleave when run with `yiic migrate --all`.
+description: Scaffold and register a new OpenEyes module under protected/modules/
 ---
 
 # Creating an OpenEyes module
+
+When loaded as context with no task, reply only `Context loaded.`
 
 OpenEyes modules live under `protected/modules/<Name>/` and are loaded by `OEConfig::getMergedConfig()` (see `protected/config/OEConfig.php`). This skill covers the load-bearing pieces that aren't obvious from looking at one module in isolation: registration, the `oe_special_module` menu gate, APCu invalidation, and the cross-module migration runner.
 

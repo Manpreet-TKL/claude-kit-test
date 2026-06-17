@@ -1,6 +1,6 @@
 ---
 name: oe-coding-standards
-description: OpenEyes coding standards index — load on demand before a large OpenEyes PR. User-invoked only.
+description: OpenEyes coding-standards index — load before a large OE PR
 disable-model-invocation: true
 ---
 

@@ -1,9 +1,11 @@
 ---
 name: oe-helm
-description: How the OpenEyes Helm umbrella chart (~/charts/helm/openeyes) works — its factory-template + architecture-matrix mechanism, values/secrets model, the 12 subcharts, and where it diverges from the oe-deploy docker-compose system. Load this when deploying, debugging, reorganising, or extending the OpenEyes Helm chart, or when porting features from oe-deploy to Kubernetes.
+description: OpenEyes Helm umbrella chart — deploy, debug, reorganise, or extend it
 ---
 
 # OpenEyes Helm chart
+
+When loaded as context with no task, reply only `Context loaded.`
 
 A Helm 3 **umbrella chart** that deploys the full OpenEyes stack to Kubernetes.
 It was templated from `~/oe-deploy` (the docker-compose source of truth) and is

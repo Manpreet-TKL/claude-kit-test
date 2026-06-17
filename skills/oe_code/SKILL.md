@@ -1,10 +1,12 @@
 ---
 name: oe_code
-description: OpenEyes codebase — Yii 1.1 owns the bulk under protected/; Laravel 12 sidecar in oe-laravel/ owns only /xapi/* and /l/*; oe-shared/ holds framework-agnostic logic. Invoke explicitly for any work in ~/openeyes/ source. Volatile detail (clinical module catalogue, validator list) lives in subs/.
+description: OpenEyes source map — Yii 1.1 bulk + Laravel sidecar; invoke for ~/openeyes
 disable-model-invocation: true
 ---
 
 # OpenEyes codebase shape
+
+When loaded as context with no task, reply only `Context loaded.`
 
 OpenEyes is event-based: every clinical interaction (examination, surgery, injection, laser, imaging investigation, letter, prescription, CVI certification, virtual clinic) is an "event" attached to an episode attached to a patient. Licence: **AGPL-3.0-only**.
 

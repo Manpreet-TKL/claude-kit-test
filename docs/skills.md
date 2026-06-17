@@ -39,9 +39,16 @@ Use SKILL.md for:
 
 ## When to set `disable-model-invocation: true`
 
-The kit's `notes`, `oe-code`, `oe-components`, `oe-db-schema`, `oe-coding-standards`, `oe-deploy`, and `oeimagebuilder` skills all set this flag. Reason: they're large, repo-specific, and you don't want the model auto-pulling them in for unrelated tasks. The user (or an agent that knows the repo) invokes them explicitly.
+**Most kit skills set this flag** — they're large, repo-specific, or preflight checks you want to fire deliberately, so you don't want the model auto-pulling them in for unrelated tasks. The user (or an agent that knows the repo) invokes them by name.
 
-The style skills (`bash-style`, `note-style`, `yiic-command-style`, `create-oe-module`) **don't** set the flag — they auto-load when relevant, because they're guard-rails you want applied whenever the model touches that kind of file.
+Only four skills **omit** the flag and therefore auto-load when their `description` matches the task: **`create-oe-module`, `note-style`, `oe-helm`, `oe-ui`**. They're guard-rails / mental models you want applied whenever the model touches that kind of work. For an auto-load skill the `description:` *is* the trigger — write it to fire on the right task and nothing else.
+
+## Two body conventions every kit skill follows
+
+1. **"Context loaded" ack.** The body's first line is *"When loaded as context with no task, reply only `Context loaded.`"* So invoking a skill purely to prime context returns a one-word ack instead of a multi-hundred-token summary. The four MCP-preflight skills (`codexmcp`, `devopstickets`, `githubmcp`, `jiramcp`) are the deliberate exception — they actually run a check and report its result.
+2. **One-line `description:`.** Keep it ≤ ~78 chars so the whole thing is readable on one terminal row when you search skills inside Claude.
+
+Keep each `SKILL.md` **under ~2,000 tokens** (≈ 8 KB) so loading is cheap; move volatile detail into `subs/*.md` (below). Two skills intentionally exceed this — `create-oe-module` and `oe-coding-standards` — because they're reference-dense.
 
 ## Sub-skills (`subs/`)
 
@@ -61,3 +68,5 @@ The model is expected to read the SKILL.md fully and then read whichever sub it 
 ## Where the skills come from
 
 Skill source-of-truth lives in this kit at `skills/<name>/`. The installer (`syncSkills`) symlinks each `skills/<name>/` into `~/.claude/skills/<name>/`, so editing in the kit reflects live without re-installing. If a destination `~/.claude/skills/<name>` already exists as a real directory (not a symlink), the installer skips it and warns — it won't clobber hand-edited skills.
+
+**Pruning removed skills.** `syncSkills` records every skill it links in `~/.claude/.claude-kit-skills`. On each run it re-links the current kit skills and then removes any `~/.claude/skills/<name>` **symlink** it had created but that no longer exists in the kit — so deleting a skill from `skills/` and re-running cleans it out of `~/.claude`. It only ever removes symlinks: a real directory (your own skill) and a symlink pointing outside this kit are both left untouched.

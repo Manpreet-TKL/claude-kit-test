@@ -6,9 +6,12 @@
 # Idempotent: safe to re-run. settings.json/CLAUDE.md are backed up to *.bak
 # only when the new content actually differs, so a no-op re-run never clobbers a
 # good backup — your auth, history.jsonl and projects/ are never touched.
-# Skill symlinks are torn down and rebuilt every run (stale/renamed links pruned;
-# real directories left alone). If ~/.claude is absent, Claude Code is installed
-# from scratch first, then this kit's config is laid down on top.
+# Skill symlinks are torn down and rebuilt every run: links for skills that were
+# removed from the kit are pruned (tracked in ~/.claude/.claude-kit-skills, so a
+# removal propagates even if the kit has since moved), while real directories and
+# any hand-added links are left alone. If ~/.claude is absent, Claude Code is
+# installed from scratch; otherwise `claude update` refreshes the CLI to the
+# latest (skippable with --no-update). Then this kit's config is laid down on top.
 
 abort() {
     echo >&2 '
@@ -32,7 +35,10 @@ FIVE_HOUR_BUDGET="${FIVE_HOUR_BUDGET:-}"        # tokens/5h, surfaced as % in st
 WEEKLY_BUDGET="${WEEKLY_BUDGET:-}"              # tokens/week (rolling 7d), surfaced as % in status line; unset = raw count
 ASSUME_YES=0                                    # -y: accept default tier non-interactively
 DO_VERIFY=1                                     # --no-verify: skip the verification checks
+DO_UPDATE=1                                     # --no-update: skip `claude update`
+FRESH_INSTALL=0                                 # set to 1 if we curl-install from scratch this run
 DO_RESET=0                                      # --reset: archive bloat then install
+DO_FRESH=0                                       # --fresh: back up data, wipe ~/.claude, reinstall
 JIRA_MODE=""                                    # -j / --with-jira / "" (leave alone)
 CONFLUENCE_MODE=""                              # -c / --with-confluence / "" (leave alone)
 ATLASSIAN_REMOVE=0                              # --without-atlassian sets to 1
@@ -67,8 +73,14 @@ while [[ $# -gt 0 ]]; do
     -n | --no-verify)
         DO_VERIFY=0
         ;;
+    -U | --no-update)
+        DO_UPDATE=0
+        ;;
     -r | --reset)
         DO_RESET=1
+        ;;
+    -F | --fresh)
+        DO_FRESH=1
         ;;
     -j | --with-jira)
         JIRA_MODE="on"
@@ -97,7 +109,7 @@ while [[ $# -gt 0 ]]; do
         ;;
     -h | --help)
         cat <<'USAGE'
-Usage: install.sh [-p <safe|standard|trusted|yolo>] [-r] [-n] [-y]
+Usage: install.sh [-p <safe|standard|trusted|yolo>] [-r] [-F] [-n] [-U] [-y]
                   [-j] [-c] [-a | -A] [-g | -G] [-x | -X]
 
   Every option has a single-letter (-x) and a long (--word) form.
@@ -116,6 +128,15 @@ Usage: install.sh [-p <safe|standard|trusted|yolo>] [-r] [-n] [-y]
                       ~/.claude-backups/<timestamp>/, then run the install.
                       Auth (.credentials.json), history.jsonl, and projects/
                       are preserved in place.
+  -F, --fresh         NUKE AND PAVE. Back up projects/ (conversations),
+                      history.jsonl, and .credentials.json to
+                      ~/.claude-backups/<timestamp>-fresh/, DELETE the whole
+                      ~/.claude, reinstall Claude Code from scratch, then restore
+                      those three so you keep your conversations and stay logged
+                      in — everything else (settings, caches, plugins, MCP
+                      state) is regenerated clean. The kit is re-applied on top.
+                      Interactive runs ask you to type 'fresh' to confirm; -y
+                      skips that prompt. Supersedes --reset.
   -j, --with-jira     Configure the Jira section of the mcp-atlassian stdio
                       server. Prompts for JIRA_URL, JIRA_USERNAME,
                       JIRA_API_TOKEN, JIRA_PROJECTS_FILTER; saves to
@@ -159,6 +180,10 @@ Usage: install.sh [-p <safe|standard|trusted|yolo>] [-r] [-n] [-y]
                       With -x, reads generated/.codex.env the same way (or uses
                       built-in defaults if absent).
   -n, --no-verify     Skip the verification checks after writing.
+  -U, --no-update     Skip the `claude update` step (don't refresh the Claude
+                      Code CLI to the latest version). By default install.sh
+                      runs `claude update` on an existing install; a fresh
+                      curl-install already pulls the latest, so it's skipped there.
   -h, --help          This message.
 
 Env overrides:
@@ -194,6 +219,7 @@ claude_md_src="${kit_root}/claude-md/CLAUDE.md"
 statusline_src="${kit_root}/settings/statusline.sh"
 claude_dir="${HOME}/.claude"
 claude_skills_dir="${claude_dir}/skills"
+skills_manifest="${claude_dir}/.claude-kit-skills"   # names of skills install.sh symlinked, for prune-on-removal
 settings_file="${claude_dir}/settings.json"
 settings_bak="${settings_file}.bak"
 claude_md_file="${claude_dir}/CLAUDE.md"
@@ -212,22 +238,9 @@ echo "Checking for jq..."
 command -v jq >/dev/null 2>&1 || { echo "jq not found. Install jq (apt install jq) and retry." >&2; exit 1; }
 echo "[OK]"
 
-echo "Checking for an existing Claude install (~/.claude)..."
-if [ ! -d "${claude_dir}" ]; then
-    echo "  ~/.claude not found — this looks like a fresh machine."
-    echo "  Installing Claude Code from scratch..."
-    command -v curl >/dev/null 2>&1 || { echo "curl not found. Install curl (apt install curl) and retry." >&2; exit 1; }
-    curl -fsSL https://claude.ai/install.sh | bash
-    echo "  [OK] Claude Code installed"
-else
-    echo "  found — leaving existing ~/.claude (auth, history, projects/) untouched"
-fi
-echo "[OK]"
-
-echo "Ensuring ${claude_dir} exists..."
-mkdir -p "${claude_dir}"
-echo "[OK]"
-
+# Resolve + validate the permission tier FIRST — before any destructive step
+# (notably --fresh's wipe), so a bad -p aborts cleanly and never leaves a
+# half-torn-down ~/.claude.
 echo "Resolving permission tier..."
 if [ -z "${PERMISSIONS}" ]; then
     if [ "${ASSUME_YES}" = "1" ] || [ ! -t 0 ]; then
@@ -252,6 +265,63 @@ if [ "${PERMISSIONS}" = "yolo" ]; then
     echo "           (git push/commit + rm -rf are still denied — hard floor.)"
     echo "           Run only inside a throwaway container/VM. See docs/sandbox.md."
 fi
+
+# --fresh: NUKE AND PAVE. Archive conversations + auth, then delete the whole
+# ~/.claude so the existing-install check below reinstalls into a clean dir; the
+# archived data is restored right after. fresh_archive stays empty when there's
+# nothing to wipe (never-installed machine), so --fresh degrades to a clean install.
+fresh_archive=""
+if [ "${DO_FRESH}" = "1" ]; then
+    if [ -d "${claude_dir}" ]; then
+        if [ "${ASSUME_YES}" != "1" ] && [ -t 0 ]; then
+            echo ""
+            echo "  --fresh will back up projects/, history.jsonl and .credentials.json,"
+            echo "  then DELETE all of ${claude_dir} and reinstall Claude Code from scratch."
+            read -r -p "  Type 'fresh' to proceed (anything else aborts): " _confirm
+            [ "${_confirm}" = "fresh" ] || { echo "  aborted --fresh — no changes made"; trap : 0; exit 1; }
+        fi
+        fresh_archive="${HOME}/.claude-backups/$(date +%Y%m%d-%H%M%S)-fresh"
+        mkdir -p "${fresh_archive}"
+        for _e in projects history.jsonl .credentials.json; do
+            if [ -e "${claude_dir}/${_e}" ]; then
+                cp -a "${claude_dir}/${_e}" "${fresh_archive}/${_e}"
+                echo "  backed up → ${fresh_archive}/${_e}"
+            fi
+        done
+        rm -rf "${claude_dir}"
+        echo "  wiped ${claude_dir}"
+    else
+        echo "  --fresh: no existing ${claude_dir} — nothing to back up; installing fresh"
+    fi
+fi
+
+echo "Checking for an existing Claude install (~/.claude)..."
+if [ ! -d "${claude_dir}" ]; then
+    echo "  ~/.claude not found — installing Claude Code from scratch..."
+    command -v curl >/dev/null 2>&1 || { echo "curl not found. Install curl (apt install curl) and retry." >&2; exit 1; }
+    curl -fsSL https://claude.ai/install.sh | bash
+    FRESH_INSTALL=1
+    echo "  [OK] Claude Code installed"
+else
+    echo "  found — leaving existing ~/.claude (auth, history, projects/) untouched"
+fi
+echo "[OK]"
+
+# --fresh: restore the archived conversations + auth into the clean install.
+if [ "${DO_FRESH}" = "1" ] && [ -n "${fresh_archive}" ]; then
+    mkdir -p "${claude_dir}"
+    for _e in projects history.jsonl .credentials.json; do
+        if [ -e "${fresh_archive}/${_e}" ]; then
+            cp -a "${fresh_archive}/${_e}" "${claude_dir}/${_e}"
+            echo "  restored → ${claude_dir}/${_e}"
+        fi
+    done
+    echo "  --fresh complete — full archive kept at ${fresh_archive}"
+fi
+
+echo "Ensuring ${claude_dir} exists..."
+mkdir -p "${claude_dir}"
+echo "[OK]"
 
 echo "Checks complete ..."
 echo "-------------------------------"
@@ -309,6 +379,28 @@ resetBloat() {
     else
         echo "  preserved in place: .credentials.json, history.jsonl, projects/"
         echo "  archive root: ${archive}"
+    fi
+}
+
+# Refresh the Claude Code CLI to the latest version via `claude update`. Non-fatal:
+# a fresh curl-install already pulled the latest (skipped), --no-update opts out,
+# and any failure (offline, or a package-manager-managed install that defers the
+# update to npm/brew) only warns — it never aborts the install.
+updateClaude() {
+    if [ "${DO_UPDATE}" != "1" ]; then
+        echo "  --no-update set — skipping 'claude update'"
+        return 0
+    fi
+    if [ "${FRESH_INSTALL}" = "1" ]; then
+        echo "  fresh install already pulled the latest — skipping 'claude update'"
+        return 0
+    fi
+    command -v claude >/dev/null 2>&1 || { echo "  claude CLI not on PATH — skipping update"; return 0; }
+    echo "  running 'claude update'..."
+    if claude update; then
+        echo "  [OK] Claude Code CLI up to date"
+    else
+        echo "  WARNING: 'claude update' failed (offline, or package-manager-managed install?) — continuing" >&2
     fi
 }
 
@@ -809,17 +901,40 @@ applyCodex() {
     echo "  restart Claude Code to pick up the new MCP server"
 }
 
-# Rebuild ~/.claude/skills/<name> symlinks from scratch on every run.
-# Step 1 tears down every kit-managed symlink (including dangling ones left by
-# renamed/removed kit skills) so stale links never linger. Step 2 recreates a
-# fresh symlink for each skill currently in the kit. Real directories (not
-# symlinks) are never touched — hand-edited skills are safe.
+# Rebuild ~/.claude/skills/<name> symlinks from scratch on every run, and keep an
+# explicit record (${skills_manifest}) of which skills install.sh created — so a
+# skill deleted from the kit has its link removed from ~/.claude on the next run.
+#
+# Pruning is two-pronged, and BOTH passes only ever remove symlinks — a real
+# directory you dropped in by hand, or a foreign symlink you made yourself, is
+# never touched, so skills added directly (outside claude-kit) always survive:
+#   1a. Manifest pass — any skill recorded as kit-installed that is no longer in
+#       the kit gets its link removed, even if the kit has since moved and the
+#       link now dangles to a stale path (which the target pass can't match).
+#   1b. Target pass   — also drop any symlink still pointing into this kit's
+#       skills/ dir: catches links from installs predating the manifest, and
+#       skills renamed within the kit.
+# Step 2 then (re)creates a fresh symlink for every skill currently in the kit and
+# rewrites the manifest to that exact set (the source of truth for 1a next run).
 syncSkills() {
     [ -d "${skills_src_dir}" ] || { echo "  no skills/ dir in kit — skipped"; return 0; }
     mkdir -p "${claude_skills_dir}"
 
-    # 1. Prune kit-managed symlinks (matched by where they point, so dangling
-    #    links to since-renamed skills like oe_deploy/oe_imagebuilder are caught).
+    # 1a. Manifest pass — remove links for kit skills that have since been deleted.
+    if [ -f "${skills_manifest}" ]; then
+        local prev mdst
+        while IFS= read -r prev; do
+            [ -n "${prev}" ] || continue
+            [ -d "${skills_src_dir}/${prev}" ] && continue   # still in the kit → keep (re-linked below)
+            mdst="${claude_skills_dir}/${prev}"
+            if [ -L "${mdst}" ]; then
+                rm -f "${mdst}"
+                echo "  unlink→ ${mdst} (removed from kit)"
+            fi
+        done < "${skills_manifest}"
+    fi
+
+    # 1b. Target pass — drop any symlink that points into this kit's skills/.
     local dst raw
     for dst in "${claude_skills_dir}"/*; do
         [ -L "${dst}" ] || continue
@@ -832,20 +947,24 @@ syncSkills() {
         esac
     done
 
-    # 2. (Re)create a symlink for every skill currently in the kit.
+    # 2. (Re)create a symlink for every skill currently in the kit, recording the
+    #    ones we manage into a freshly-rewritten manifest.
     local src name
+    : > "${skills_manifest}"
     for src in "${skills_src_dir}"/*/; do
         [ -d "${src}" ] || continue
         name="$(basename "${src}")"
         dst="${claude_skills_dir}/${name}"
-        # A leftover here is either a real dir or a foreign symlink (not ours,
-        # since step 1 removed all kit-managed ones) — leave it untouched.
+        # A leftover here is a real dir or a foreign symlink (not ours — 1a/1b
+        # removed every kit-managed link) — leave it, and don't claim it in the
+        # manifest, so a hand-added skill is never pruned on a later run.
         if [ -L "${dst}" ] || [ -e "${dst}" ]; then
             echo "  skip  → ${dst} (exists and not kit-managed — leaving alone)"
             continue
         fi
         ln -s "${src%/}" "${dst}"
         echo "  link  → ${dst}"
+        printf '%s\n' "${name}" >> "${skills_manifest}"
     done
 }
 
@@ -992,11 +1111,15 @@ printSummary() {
 ##################################################
 
 echo ""
-if [ "${DO_RESET}" = "1" ]; then
+if [ "${DO_RESET}" = "1" ] && [ "${DO_FRESH}" != "1" ]; then
     echo "Resetting ~/.claude (archiving bloat, preserving auth/history/projects)..."
     resetBloat
     echo -e "[Done]\n"
 fi
+
+echo "Updating Claude Code CLI (claude update)..."
+updateClaude
+echo -e "[Done]\n"
 
 echo "Ensuring settings.json exists..."
 ensureSettings

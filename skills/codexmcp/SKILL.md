@@ -1,6 +1,6 @@
 ---
 name: codexmcp
-description: Codex agent preflight + fan-out — confirms the OpenAI Codex MCP server (codex mcp-server) is connected, fails fast with remediation if not, then explains how to spawn one or many autonomous Codex coding agents at the flagship model. Run this before delegating coding work to Codex.
+description: Preflight the OpenAI Codex MCP, then fan out autonomous Codex coding agents
 disable-model-invocation: true
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: jiramcp
-description: Fast Jira + Confluence MCP connection check — pings both via the mcp-atlassian tools using minimal tokens, fails fast with remediation if either is unavailable, then loads context on the OE, TKLS and OPD projects. Run this before any Jira/Confluence work.
+description: Jira + Confluence MCP preflight — run before any Jira/Confluence work
 disable-model-invocation: true
 ---
 

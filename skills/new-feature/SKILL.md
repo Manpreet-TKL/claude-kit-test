@@ -1,10 +1,12 @@
 ---
 name: new-feature
-description: Spin up a new feature deliberately — start in plan mode, ask up to 10 targeted clarifying questions, divide the work between the right models and subagents, then end with a verification/goal step. Invoke explicitly when the user says "new feature", "let's plan a feature", "scope this work", or hands you a green-field problem that's bigger than a one-shot edit. Do NOT trigger for bugfixes, refactors, doc edits, or "just do X" requests.
+description: Plan a green-field feature — plan mode, scoping Q&A, then verify
 disable-model-invocation: true
 ---
 
 # New-feature playbook
+
+When loaded as context with no task, reply only `Context loaded.`
 
 A green-field feature is the wrong place to start typing. This skill enforces a four-step shape: **plan → question → divide → verify**.
 

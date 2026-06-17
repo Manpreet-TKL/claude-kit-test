@@ -1,6 +1,6 @@
 ---
 name: devopstickets
-description: Interactive JIRA DevOps triage menu for the TKLS service desk — pick a filter, then run one of 6 workflows (easiest-to-close, KB-note mining, suggested replies, single-ticket summary, SQL-fix hunt, keyword fix-clustering). Notes/SQL are read from full comment threads. MCP only, never the REST API.
+description: Interactive JIRA DevOps triage menu for the TKLS service desk
 argument-hint: "[option#] [filter#] | <TICKET-KEY> | 6 <keyword>"
 disable-model-invocation: true
 ---
