@@ -1,7 +1,6 @@
 ---
 name: note-style
 description: TKL knowledge-base note style (runbooks, how-tos)
-disable-model-invocation: true
 ---
 
 # TKL note style
