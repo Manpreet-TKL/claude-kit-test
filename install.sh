@@ -1,11 +1,12 @@
 #!/bin/bash -l
 # Manpreet 24/05/2026
 # claude-kit installer — configures Claude Code per the handoff brief.
-# Writes ~/.claude/settings.json (statusLine, env, permissions) and
-# wholesale-writes ~/.claude/CLAUDE.md from claude-md/CLAUDE.md in this kit.
-# Idempotent: safe to re-run. settings.json/CLAUDE.md are backed up to *.bak
-# only when the new content actually differs, so a no-op re-run never clobbers a
-# good backup — your auth, history.jsonl and projects/ are never touched.
+# Merges ~/.claude/settings.json (statusLine, env, permissions) and symlinks
+# ~/.claude/CLAUDE.md (plus statusline.sh and skills) back into this kit.
+# Idempotent: safe to re-run. settings.json is backed up to *.bak only when the
+# merged content actually differs, so a no-op re-run never clobbers a good backup;
+# a real CLAUDE.md/statusline.sh is backed up once when first replaced by its
+# symlink. Your auth, history.jsonl and projects/ are never touched.
 # Skill symlinks are torn down and rebuilt every run: links for skills that were
 # removed from the kit are pruned (tracked in ~/.claude/.claude-kit-skills, so a
 # removal propagates even if the kit has since moved), while real directories and

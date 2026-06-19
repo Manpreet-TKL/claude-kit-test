@@ -1,7 +1,6 @@
 ---
 name: claude-kit
-description: What ~/claude-kit is and how install.sh builds ~/.claude
-disable-model-invocation: true
+description: How ~/claude-kit works and the rules for authoring its skills
 ---
 
 # claude-kit
@@ -13,7 +12,7 @@ When loaded as context with no task, reply only `Context loaded.`
 ## Layout
 
 - `install.sh` — the only entry point. Lifecycle flags: `-p safe|standard|trusted|yolo`, `-y`, `--reset` (`-r`), `--fresh` (`-F`), `--no-update` (`-U`); MCP flags: `--with/without-atlassian|github|codex`.
-- `claude-md/CLAUDE.md` — wholesale-copied to `~/.claude/CLAUDE.md`.
+- `claude-md/CLAUDE.md` — symlinked into `~/.claude/CLAUDE.md` (editing it is live).
 - `settings/permissions/<tier>.json` — the four permission tiers (deny → ask → allow).
 - `settings/{shift-enter,mcp-atlassian}.json` — jq-merged settings fragments.
 - `skills/<name>/` — each symlinked into `~/.claude/skills/<name>`.
@@ -22,25 +21,26 @@ When loaded as context with no task, reply only `Context loaded.`
 ## What install.sh writes into ~/.claude
 
 - `settings.json` — statusLine, autocompact env, permissions, shift-enter (jq-merged, never text-appended).
-- `statusline.sh` — token-usage status bar (5h / weekly rolling windows).
-- `CLAUDE.md` — global rules (never commit/push; condensed coding guidelines).
+- `statusline.sh` — token-usage status bar (5h / weekly rolling windows); symlinked from the kit.
+- `CLAUDE.md` — global rules (never commit/push; condensed coding guidelines); symlinked from the kit.
 - `skills/*` — symlinks back to this kit, so editing a skill here is live — no re-install.
 - `.claude-kit-skills` — manifest of skill names this script symlinked, used to prune links for skills later removed from the kit.
 
-To change config: edit the file here and re-run `install.sh`. Skills are live symlinks — just edit.
+To change config: `settings.json` is jq-merged, so edit the kit file and re-run `install.sh` to roll it out. `CLAUDE.md`, `statusline.sh`, and skills are live symlinks — just edit the kit file, no re-run needed.
 
 ## Skill loading model
 
 Two ways a skill's `SKILL.md` reaches Claude's context:
 
-- **Auto-load** (no `disable-model-invocation`): Claude reads `name`+`description` at startup and pulls the body in *itself* when a task matches. The `description:` is the trigger. Currently: `create-oe-module`, `note-style`, `oe-helm`, `oe-ui`.
+- **Auto-load** (no `disable-model-invocation`): Claude reads `name`+`description` at startup and pulls the body in *itself* when a task matches. The `description:` is the trigger. Currently: `claude-kit`, `create-oe-module`, `note-style`, `oe-helm`, `oe-ui`. (`claude-kit` is a deliberate auto-load so the authoring rules below surface whenever you work on the kit.)
 - **Manual** (`disable-model-invocation: true`): never auto-loaded; enters context only when invoked by name (`/oe-code`). Everything else in the kit.
 
-Conventions for kit skills:
+Conventions for kit skills — apply these to every new skill:
 
+- **Default to manual** — set `disable-model-invocation: true` so the model never auto-pulls a new skill on its own; omit the flag only for a deliberate auto-load (the named exceptions above).
 - **One-line `description:`** — ≤ ~78 chars so it's fully readable when searching skills in Claude.
-- **"Context loaded" ack** — body starts with *"When loaded as context with no task, reply only `Context loaded.`"* so priming context doesn't dump a summary. The four MCP-preflight skills (`codexmcp`, `devopstickets`, `githubmcp`, `jiramcp`) are the deliberate exception — they actually run a check and report.
-- **Keep it lean** — aim < ~2,000 tokens (≈ 8 KB) per `SKILL.md`; push volatile detail to `subs/*.md`. `create-oe-module` and `oe-coding-standards` intentionally exceed this (reference-dense).
+- **"Context loaded" ack** — a context-only skill's body starts with *"When loaded as context with no task, reply only `Context loaded.`"* so priming context doesn't dump a summary. The four MCP-preflight skills (`codexmcp`, `devopstickets`, `githubmcp`, `jiramcp`) are the deliberate exception — they actually run a check and report.
+- **Keep it lean** — aim < ~2,000 tokens (≈ 8 KB) per `SKILL.md` so loading is cheap; push anything not always needed into `subs/*.md` and let the model open it on demand. `create-oe-module` and `oe-coding-standards` intentionally exceed this (reference-dense).
 
 ## Symlink pruning
 

@@ -39,9 +39,9 @@ Use SKILL.md for:
 
 ## When to set `disable-model-invocation: true`
 
-**Most kit skills set this flag** — they're large, repo-specific, or preflight checks you want to fire deliberately, so you don't want the model auto-pulling them in for unrelated tasks. The user (or an agent that knows the repo) invokes them by name.
+**Setting this flag is the default for a new skill.** Most kit skills set it — they're large, repo-specific, or preflight checks you want to fire deliberately, so you don't want the model auto-pulling them in for unrelated tasks. The user (or an agent that knows the repo) invokes them by name.
 
-Only four skills **omit** the flag and therefore auto-load when their `description` matches the task: **`create-oe-module`, `note-style`, `oe-helm`, `oe-ui`**. They're guard-rails / mental models you want applied whenever the model touches that kind of work. For an auto-load skill the `description:` *is* the trigger — write it to fire on the right task and nothing else.
+Five skills **omit** the flag and therefore auto-load when their `description` matches the task: **`claude-kit`, `create-oe-module`, `note-style`, `oe-helm`, `oe-ui`**. They're guard-rails / mental models you want applied whenever the model touches that kind of work (`claude-kit` auto-loads so its skill-authoring rules surface whenever you work on the kit). For an auto-load skill the `description:` *is* the trigger — write it to fire on the right task and nothing else.
 
 ## Two body conventions every kit skill follows
 

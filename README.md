@@ -7,7 +7,7 @@ A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` 
 ├── install.sh              # the only entry point
 ├── README.md               # this file
 ├── claude-md/
-│   └── CLAUDE.md           # global instructions; wholesale-copied to ~/.claude/CLAUDE.md
+│   └── CLAUDE.md           # global instructions; symlinked into ~/.claude/CLAUDE.md (edits are live)
 ├── settings/
 │   ├── permissions/
 │   │   ├── safe.json       # tier 1 — read-mostly
@@ -24,10 +24,11 @@ A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` 
 │   ├── .github.env         #   real GitHub PAT          (created by install.sh -g)
 │   └── .codex.env          #   Codex model/sandbox knobs (created by install.sh -x; no secret)
 ├── skills/                 # each dir symlinked into ~/.claude/skills/<name>
-│   │                       #   most are manual (disable-model-invocation: true)
-│   ├── create-oe-module/   #   auto-load ┐ no disable-model-invocation —
-│   ├── note-style/         #   auto-load │ the model pulls these in itself
-│   ├── oe-helm/            #   auto-load │ when the task matches
+│   │                       #   manual (disable-model-invocation: true) is the default for a new skill
+│   ├── claude-kit/         #   auto-load ┐ no disable-model-invocation —
+│   ├── create-oe-module/   #   auto-load │ the model pulls these in itself
+│   ├── note-style/         #   auto-load │ when the task matches
+│   ├── oe-helm/            #   auto-load │
 │   ├── oe-ui/              #   auto-load ┘
 │   ├── oe-code/ oe_code/ oe-db-schema/ oe-coding-standards/    # OpenEyes — manual
 │   ├── oe-deploy/ oeimagebuilder/ oe-components/ pasapi/ mcc/  # OpenEyes — manual
@@ -47,13 +48,13 @@ A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` 
 The installer writes / merges:
 
 - `~/.claude/settings.json` — status line, autocompact env vars, permissions block, shift-enter binding.
-- `~/.claude/statusline.sh` — the status line renderer.
-- `~/.claude/CLAUDE.md` — **wholesale-overwritten** from `claude-md/CLAUDE.md` in this kit (never-commit/push rules + condensed Karpathy guidelines).
+- `~/.claude/statusline.sh` — the status line renderer (**symlinked** to `settings/statusline.sh`).
+- `~/.claude/CLAUDE.md` — **symlinked** to `claude-md/CLAUDE.md` in this kit (never-commit/push rules + condensed Karpathy guidelines); editing the kit file is live.
 - `~/.claude/skills/<name>` — symlinked to `skills/<name>` in this kit.
 
 Machine-local credentials and config the installer generates (Atlassian / GitHub / Codex) all land in **one gitignored folder, `generated/`**, so you can back up that single folder, `git reset --hard` + `git clean -fdx` the whole kit, and drop it back in — see [Backing up generated config](#backing-up-generated-config). MCP server registrations themselves are written by the `claude` CLI to `~/.claude.json` (not `settings.json`).
 
-It backs up the pre-existing `settings.json` to `settings.json.bak` and (if changed) the pre-existing `CLAUDE.md` to `CLAUDE.md.bak` before writing. `settings.json` is edited as JSON via `jq` (never blind text-append).
+It backs up the pre-existing `settings.json` to `settings.json.bak` only when the merged content actually differs, so a no-op re-run preserves your existing backup. The first time it converts a real `~/.claude/CLAUDE.md` (or `statusline.sh`) into the kit symlink it backs that file up to `*.bak`; once it's a symlink there's nothing left to back up. `settings.json` is edited as JSON via `jq` (never blind text-append).
 
 ---
 
@@ -71,7 +72,7 @@ AUTOCOMPACT_PCT=50 ./install.sh -p standard -y
 ./install.sh --help
 ```
 
-Re-running is safe — Claude Code itself is installed if it's missing and otherwise updated (`claude update`), settings are merged, `CLAUDE.md` is rewritten wholesale from `claude-md/CLAUDE.md` (with a `.bak` of the prior file if it differed), the status line script is rewritten in place, and skill symlinks are refreshed: real directories under `~/.claude/skills/` are left alone, and symlinks this kit created for skills since removed from the kit are pruned (see [§7](#7-skills)).
+Re-running is safe — Claude Code itself is installed if it's missing and otherwise updated (`claude update`), `settings.json` is re-merged, and the `CLAUDE.md`, status-line, and skill symlinks are refreshed to point back into the kit (so editing any kit file is live; a pre-existing *real* `CLAUDE.md`/`statusline.sh` is backed up to `.bak` the first time it's replaced by a link). Skill links are pruned too: real directories under `~/.claude/skills/` are left alone, and symlinks this kit created for skills since removed from the kit are removed (see [§7](#7-skills)).
 
 ---
 
@@ -128,13 +129,13 @@ Reads of `.env*` and `~/.ssh/**` are denied on `safe` / `standard` / `trusted`. 
 
 ### 6. Global CLAUDE.md
 
-`~/.claude/CLAUDE.md` is **wholesale-overwritten** from `claude-md/CLAUDE.md` in this kit. The shipped file is short and opinionated:
+`~/.claude/CLAUDE.md` is a **symlink** to `claude-md/CLAUDE.md` in this kit. The shipped file is short and opinionated:
 
 - Hard rules at the top: never `git commit`, never `git push`, never `--no-verify` / `--amend` / `git reset --hard` without explicit instruction.
-- Condensed Karpathy-style coding guidelines (think first, simplicity, surgical changes, goal-driven execution).
-- Output discipline (no emojis, no trailing summaries, no planning docs unless asked).
+- Condensed Karpathy-style coding guidelines (think first, simplicity, surgical changes, goal-driven execution with plan-mode-then-verify for complex tasks, and a preference for FOSS/dockerised tooling over host installs).
+- Output discipline (no emojis, no trailing summaries; planning docs only when asked, and complex writeups land under `/home/toukan/`).
 
-Edit `claude-md/CLAUDE.md` and re-run `install.sh` to roll the change out. The previous `~/.claude/CLAUDE.md` is preserved at `~/.claude/CLAUDE.md.bak` whenever it differs from what's being written.
+Because it's a symlink, editing `claude-md/CLAUDE.md` rolls out immediately — no re-install needed. The first time `install.sh` replaces a pre-existing *real* `~/.claude/CLAUDE.md` with the link it preserves the old file at `~/.claude/CLAUDE.md.bak`.
 
 ### 7. Skills
 
@@ -142,8 +143,8 @@ Edit `claude-md/CLAUDE.md` and re-run `install.sh` to roll the change out. The p
 
 **How a skill gets its context in front of Claude — two modes:**
 
-- **Auto-load (no `disable-model-invocation`).** Claude reads every skill's `name` + `description` at startup and decides *on its own* to pull the whole `SKILL.md` into context the moment a task matches the description. You don't name these — they load when relevant. Today: **`create-oe-module`, `note-style`, `oe-helm`, `oe-ui`**. For these the **`description:` is the trigger**, so it's written to fire on the right task.
-- **Manual (`disable-model-invocation: true`).** Claude will *never* auto-load these; the body only enters context when you (or a plan) invoke the skill **by name** (`/oe-code`, `/jiramcp`, …). Everything else in the kit is manual — they're large, repo-specific, or preflight checks you want to fire deliberately, not opportunistically.
+- **Auto-load (no `disable-model-invocation`).** Claude reads every skill's `name` + `description` at startup and decides *on its own* to pull the whole `SKILL.md` into context the moment a task matches the description. You don't name these — they load when relevant. Today: **`claude-kit`, `create-oe-module`, `note-style`, `oe-helm`, `oe-ui`** (`claude-kit` auto-loads so its skill-authoring rules surface whenever you work on the kit). For these the **`description:` is the trigger**, so it's written to fire on the right task.
+- **Manual (`disable-model-invocation: true`).** Claude will *never* auto-load these; the body only enters context when you (or a plan) invoke the skill **by name** (`/oe-code`, `/jiramcp`, …). Everything else in the kit is manual — they're large, repo-specific, or preflight checks you want to fire deliberately, not opportunistically. **Manual is the default for a new skill** — set the flag unless you have a deliberate reason to auto-load.
 
 Either way the **`description:` is a single terminal line** (≤ ~78 chars) so the whole thing is readable when you search skills inside Claude — keep it one line when editing.
 
@@ -272,7 +273,7 @@ cp ~/.claude/settings.json.bak ~/.claude/settings.json
 cp ~/.claude/CLAUDE.md.bak     ~/.claude/CLAUDE.md
 ```
 
-Each `.bak` is overwritten on every run, so it always reflects the state immediately before the most recent install. `CLAUDE.md.bak` is only written when the previous file differed from what's being installed.
+`settings.json.bak` is rewritten only when a re-run actually changes `settings.json`, so it reflects the state immediately before the most recent *content-changing* install (a no-op run leaves it untouched). `CLAUDE.md.bak` is written only once — the first time `install.sh` replaces a *real* `~/.claude/CLAUDE.md` with the kit symlink — and isn't touched on later runs.
 
 ## Restoring data from a `--reset` or `--fresh` archive
 

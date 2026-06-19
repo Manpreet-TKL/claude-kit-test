@@ -23,10 +23,17 @@ Bias toward caution over speed; use judgment on trivial tasks.
 4. **Goal-driven execution.** Turn tasks into verifiable goals ("fix the bug" →
    "write a failing test that reproduces it, then make it pass"). For multi-step
    work, state a brief plan with a verify check per step, then loop until verified.
+   When a task is complicated, offer plan mode first; once the plan is approved,
+   auto-execute it and close with a verification step.
+5. **Tooling & dependencies.** Prefer FOSS and dockerised solutions; reach for a
+   container before installing anything on the host, and call it out when an
+   install is genuinely unavoidable.
 
 ## Output discipline
 
 - No emojis unless asked.
 - No trailing summary of what you just did — the diff speaks.
-- No new `.md` planning docs unless explicitly requested.
+- No new `.md` planning docs in a repo unless explicitly requested. When a complex
+  writeup is genuinely warranted, write it as a `.md` under `/home/toukan/`, not in
+  the working tree.
 - Comments: default none. Only write a comment for a non-obvious *why*.
