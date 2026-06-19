@@ -32,6 +32,7 @@ A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` 
 │   ├── oe-ui/              #   auto-load ┘
 │   ├── oe-code/ oe_code/ oe-db-schema/ oe-coding-standards/    # OpenEyes — manual
 │   ├── oe-deploy/ oeimagebuilder/ oe-components/ pasapi/ mcc/  # OpenEyes — manual
+│   ├── oe-iolmaster-import/ oe-payload-processor/              # OpenEyes file processors — manual
 │   ├── bash-style/ yiic-command-style/ frontend-design/        # house style — manual
 │   ├── create-pr/ create-oe-pr/ new-feature/ docbuilder-docset/ notes-app/  # workflow/repo — manual
 │   └── jiramcp/ githubmcp/ codexmcp/ devopstickets/            # MCP preflight — manual; no "Context loaded"
