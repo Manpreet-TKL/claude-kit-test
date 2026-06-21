@@ -12,10 +12,18 @@ Instructions only — it does not scan the tree, run `git status`, or diff to di
 
 ## The deliverable: one folder, always
 
-Default `~/pullrequests/<repo>-pr-<slug>/` (ticket ref in the slug if there is one, e.g. `notes-pr-ENG-1421-archive-race/`):
+Always under `~/pullrequests/` — `~/pullrequests/<repo>-pr-<slug>/` (ticket ref in the slug if there is one, e.g. `notes-pr-ENG-1421-archive-race/`):
 
 - `PR.md` — a **form**, not prose. Top labels in order: Jira ticket title / Jira ticket type / Affects version / Fix version / Commit title(s) / GitHub PR description. The description is `##` sections (Description, Solution, Files changed, Test, Notes for reviewer); headings stay OUT of the blockquotes, each body is one `> `-quoted block. **No Steps to Reproduce / Current Outcome / Expected Outcome** — fold the user-visible symptom into Description.
-- `files/` — full content of every changed and new file at its repo-relative path, so raising is a copy, not a patch apply. **No `patches/`.** Mark new files `(new)`.
+- `<repo>/` — a **full git clone of the repo**, cloned from its `origin` (so push targets the real remote), checked out on a new branch `<branch>` off the base, with every change applied in the working tree and **left uncommitted** — the human commits and pushes. The clone *is* the change: **no `files/`, no `patches/`.** Mark new files `(new)` in the Files changed list. See `subs/reference.md` → *Building the clone*.
+
+## The shared index: `~/pullrequests.md`
+
+After writing the folder, append **exactly one line** to `~/pullrequests.md` (create it if absent) — a markdown link to the PR folder plus an em-dash, single-line summary (reuse the Jira ticket title). One line per PR, newest at the bottom; never touch existing lines. This file is a shareable register of every PR raised, shared with `create-oe-pr`.
+
+```
+- [<repo>-pr-<slug>](pullrequests/<repo>-pr-<slug>/) — <single-line explanation of the PR>
+```
 
 ## Field judgements
 

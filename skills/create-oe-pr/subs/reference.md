@@ -56,7 +56,8 @@ GitHub PR description:
 
 ## Files changed
 > One bullet per file: repo-relative path + one sentence on why. Mark (new) and
-> (incidental). Full content is in files/ at the same path — this list is the map.
+> (incidental). The applied change lives in the clone at the same path — this list
+> is the map.
 > - protected/models/Patient.php — added a default scope excluding archived rows.
 
 ## Test
@@ -92,10 +93,28 @@ Bug vs Regression: did a prior version behave correctly? Yes → Regression. Uns
 
 One indented message block per commit, in order. Each commit self-contained and green (tests pass, app boots) — never split a fix from its proving test, never a commit that won't build alone. Split by independent concern, not file type. Single commit → one message, no numbering ceremony.
 
+## Building the clone (how the skill assembles the folder)
+
+- **Source:** clone from the repo's `origin` URL — read it from the caller's working copy
+  (`git -C <working-copy> remote get-url origin`) — so the clone's `origin` is the real
+  remote and `git push` from it just works. Full clone, not shallow. OE repos are private,
+  so this relies on the user's configured git auth (askpass / SSH).
+- **Base branch:** resolve the nearest `release/<major>.<minor>.x` from the Fix version —
+  `git ls-remote --heads origin 'release/*'`, match `release/<maj>.<min>.x`, else nearest +
+  say which, else list candidates and let the user pick (see SKILL.md → *Base branch*).
+  Check that release branch out, then `git checkout -b <branch>` off it.
+- **Apply:** write the final content of every changed and new file into the clone's working
+  tree at its repo-relative path — content, not patches. Nothing else in the tree.
+- **Leave it uncommitted.** Never `git commit` / `git push` / `--no-verify`; the human raises
+  it (below). `.git` stays — the clone is a real, pushable repo.
+
 ## How the user raises it (never run these yourself)
 
+The clone is already on `<branch>` (cut from the right `release/*.x`) with the changes in its
+working tree, so raising runs from inside it — no copy step.
+
 ```
-cp -a oe-pr-<slug>/files/. <repo-root>/
+cd ~/pullrequests/oe-pr-<slug>/<repo>
 git add <files for commit 1>
 git commit -m "<commit title 1>"        # repeat per commit
 git push -u origin <branch>

@@ -12,10 +12,22 @@ Instructions only — it does not scan the tree, run `git status`, or diff to di
 
 ## The deliverable: one folder, always
 
-Default `~/oe-pr-<slug>/` (ticket ref in the slug if there is one, e.g. `oe-pr-OE-12345-archive-race/`):
+Always under `~/pullrequests/` — `~/pullrequests/oe-pr-<slug>/` (ticket ref in the slug if there is one, e.g. `oe-pr-OE-12345-archive-race/`):
 
 - `PR.md` — a **form**, not prose. Top labels in order: Jira ticket title / Jira ticket type / Affects version / Fix version / Commit title(s) / GitHub PR description. The description is `##` sections (Description, Steps to Reproduce, Current Outcome, Expected Outcome, Solution, Files changed, Test, Notes for reviewer); headings stay OUT of the blockquotes, each body is one `> `-quoted block.
-- `files/` — full content of every changed and new file at its repo-relative path, so raising is a copy, not a patch apply. **No `patches/`.** Mark new files `(new)`.
+- `<repo>/` — a **fresh full git clone of the OE repo** (`openeyes` or the satellite), cloned from its `origin` (so push targets the real remote), checked out on a new branch `<branch>` cut from the **nearest `release/<major>.<minor>.x` branch** (see below), with every change applied in the working tree and **left uncommitted** — the human commits and pushes. A clean clone per PR so you can copy the folder down and push up with **no dangling files from anything else tried in an earlier clone**. The clone *is* the change: **no `files/`, no `patches/`.** Mark new files `(new)` in the Files changed list. See `subs/reference.md` → *Building the clone*.
+
+## Base branch: the nearest `release/*.x`
+
+OE ships from `release/<major>.<minor>.x` lines (e.g. `release/26.0.x`, `release/11.0.x`). Resolve the clone's base from the **Fix version**: list the remote release branches (`git ls-remote --heads origin 'release/*'`) and check out the matching `release/<major>.<minor>.x`. If there's no exact match, pick the nearest existing line and **say which one and why**; if more than one is plausible (e.g. a back-port spanning the 26.x and 11.x lines), **list the candidates and let the user pick** — never guess silently. Cut the PR `<branch>` from that release branch.
+
+## The shared index: `~/pullrequests.md`
+
+After writing the folder, append **exactly one line** to `~/pullrequests.md` (create it if absent) — a markdown link to the PR folder plus an em-dash, single-line summary (reuse the Jira ticket title). One line per PR, newest at the bottom; never touch existing lines. This file is a shareable register of every PR raised, shared across `create-pr` and `create-oe-pr`.
+
+```
+- [oe-pr-<slug>](pullrequests/oe-pr-<slug>/) — <single-line explanation of the PR>
+```
 
 ## Field judgements
 
