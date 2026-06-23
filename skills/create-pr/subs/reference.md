@@ -1,78 +1,28 @@
 # create-pr — the PR.md form, field rules, and gotchas
 
-## PR.md template (verbatim shape)
+## PR.md shape
 
-Everything above the GitHub PR description is plain `label: value` metadata. The GitHub PR description is the only markdown field: `##` headings stay OUT of the blockquotes; each section body is one `> `-quoted block.
+`PR.md` is a short form with exactly three labelled fields — no blockquote ceremony:
 
 ```
-Jira ticket title:
-<release-notes-style title — doubles as the GitHub PR title. Generic, outcome-shaped,
-imperative, under 70 chars, no trailing punctuation, no client names, no ticket numbers.
-  Good: Fix archived notes reappearing in the default list after refresh
-  Bad:  Fix bug Foo Ltd reported in ticket #1421>
+Branch:
+<branch name — must start `fix/` (defect) or `feature/` (new behaviour), then a short
+slug; e.g. fix/archived-notes-reappear>
 
-Jira ticket type:
-<exactly one of: Bug | New Feature | Improvement | Internal Improvement | Story |
-Epic | Regression — see the table below>
-
-Affects version:
-<the version the problem manifests on, verbatim — e.g. v2.4.1. Where the symptom
-manifests, not where the fix lands. If a range, the earliest confirmed. N/A for
-types with no affected release, or repos that don't cut versions.>
-
-Fix version:
-Raised in <version or branch state, verbatim — e.g. v2.5.0-rc1, or "current master">.
-Repo <org/repo>. Target <branch>. Back-port? list both.
-
-Commit title:
-(verbatim `git commit -m` message, on its own indented line; one block per commit,
-in order; the headline commit reuses the Jira title)
+Commit title(s):
+<verbatim `git commit -m` message(s), one indented line per commit, in order; each
+commit self-contained and green. The headline commit summarises the change.>
 
     <exact commit message>
 
-GitHub PR description:
-
-## Description
-> What the change does and why, plain language. Lead with the user-visible behaviour
-> or the concrete gap it addresses — for a Bug/Regression the symptom lives here
-> (there is no Steps/Current/Expected triad in this form). Always present.
-
-## Solution
-> The approach, named not diffed — the mechanism and the one judgement call that
-> mattered (and the rejected alternative, if relevant).
-
-## Files changed
-> One bullet per file: repo-relative path + one sentence on why. Mark (new) and
-> (incidental). The applied change lives in the clone at the same path — this list
-> is the map.
-> - src/models/Note.js — added a default scope excluding archived rows.
-
-## Test
-> Exactly one of — Test added: <path> (run with `<command>`); or No test,
-> justification: <paragraph — OK for doc-only/config changes with no behavioural
-> surface; not "ran out of time", not "this area has no tests">.
-
-## Notes for reviewer
-> Simple bullets: edge cases, invariants touched and how handled, verification steps
-> that don't fit elsewhere (cache clears, container names), related-but-unfixed
-> occurrences (file:line + recommended approach). Skip if genuinely nothing to add.
+Description:
+<a short what-and-why paragraph: the user-visible behaviour or the gap it addresses,
+and the approach in one or two sentences. Plain language, no client names. Mark new
+files (new) and regenerated artifacts (incidental) if it helps the reviewer, and name
+the test added (or why none).>
 ```
 
-Skip lighter sections when the change is self-evident; never pad; if a fault can't be pinned down cleanly (intermittent, data-dependent), say what you can — don't fabricate.
-
-## Jira ticket type — pick exactly one
-
-| Type | Use when |
-|---|---|
-| **Regression** | Worked in an earlier version, broke later. **Default for client-reported faults.** |
-| **Bug** | Never correct, or no prior-working baseline. |
-| **New Feature** | Net-new capability. |
-| **Improvement** | Enhancement to existing user-visible behaviour. |
-| **Internal Improvement** | Refactor/tooling/tech-debt, no user-visible change. |
-| **Story** | A planned unit of requirement work. |
-| **Epic** | Large body of work spanning stories. |
-
-Bug vs Regression: did a prior version behave correctly? Yes → Regression. Unsure on a client fault → Regression. Improvement vs Internal: would an end user notice?
+Keep it short; never pad. If a fault can't be pinned down cleanly (intermittent, data-dependent), say what you can — don't fabricate.
 
 ## Multiple commits
 
@@ -82,33 +32,19 @@ One indented message block per commit, in order. Each commit self-contained and 
 
 - **Source:** clone from the repo's `origin` URL — read it from the caller's working copy
   (`git -C <working-copy> remote get-url origin`) — so the clone's `origin` is the real
-  remote and `git push` from it just works. Full clone, not shallow.
-- **Branch:** check out the target base branch, then `git checkout -b <branch>` (branch
-  name derived from the slug / ticket).
+  remote and your push just works. Full clone, not shallow.
+- **Branch:** check out the target base branch, then `git checkout -b <branch>` (the
+  `fix/`- or `feature/`-prefixed name).
 - **Apply:** write the final content of every changed and new file into the clone's working
-  tree at its repo-relative path — content, not patches.
-- **Leave it uncommitted.** Never `git commit` / `git push` / `--no-verify`; the human raises
-  it (below). `.git` stays — the clone is a real, pushable repo.
-
-## How the user raises it (never run these yourself)
-
-The clone is already on `<branch>` with the changes in its working tree, so raising runs
-from inside it — no copy step.
-
-```
-cd ~/pullrequests/<repo>-pr-<slug>/<repo>
-git add <files for commit 1>
-git commit -m "<commit title 1>"        # repeat per commit
-git push -u origin <branch>
-gh pr create --base <base> --title "<Jira ticket title>" --body-file <pr-description.md>
-```
-
-Jira title/type/Affects version are transcribed into Jira, not passed to `gh`.
+  tree at its repo-relative path — content, not patches — and **delete every file the change
+  removes** so the working tree reflects additions, edits, and deletions.
+- **Leave it uncommitted.** Never `git commit` / `git push` / `--no-verify` — you push it
+  yourself. `.git` stays and `origin` is the real remote, so the clone is ready to push as-is.
 
 ## Field rules
 
-- **Fix version sources:** the repo's manifest (`package.json`, `composer.json`, …), `git describe --tags`, or the user. Always verbatim (`v2.5.0-rc1`, never `2.5`).
-- **Lockfiles and generated artifacts** regenerated by the change are applied in the clone too, marked (incidental) in Files changed.
+- **Branch prefix:** `fix/` for a defect, `feature/` for new behaviour — nothing else.
+- **Lockfiles and generated artifacts** regenerated by the change are applied in the clone too, noted (incidental) in the Description.
 
 ## Gotchas to catch before finalising
 

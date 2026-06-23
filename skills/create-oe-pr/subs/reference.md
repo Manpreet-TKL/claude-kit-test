@@ -97,42 +97,34 @@ One indented message block per commit, in order. Each commit self-contained and 
 
 - **Source:** clone from the repo's `origin` URL — read it from the caller's working copy
   (`git -C <working-copy> remote get-url origin`) — so the clone's `origin` is the real
-  remote and `git push` from it just works. Full clone, not shallow. OE repos are private,
+  remote and your push just works. Full clone, not shallow. OE repos are private,
   so this relies on the user's configured git auth (askpass / SSH).
 - **Base branch:** resolve the nearest `release/<major>.<minor>.x` from the Fix version —
   `git ls-remote --heads origin 'release/*'`, match `release/<maj>.<min>.x`, else nearest +
   say which, else list candidates and let the user pick (see SKILL.md → *Base branch*).
   Check that release branch out, then `git checkout -b <branch>` off it.
 - **Apply:** write the final content of every changed and new file into the clone's working
-  tree at its repo-relative path — content, not patches. Nothing else in the tree.
-- **Leave it uncommitted.** Never `git commit` / `git push` / `--no-verify`; the human raises
-  it (below). `.git` stays — the clone is a real, pushable repo.
+  tree at its repo-relative path — content, not patches — and **delete every file the change
+  removes** so the working tree reflects additions, edits, and deletions. Nothing else in the tree.
+- **Leave it uncommitted.** Never `git commit` / `git push` / `--no-verify` — you push it
+  yourself. `.git` stays and `origin` is the real remote, so the clone is ready to push as-is.
 
-## How the user raises it (never run these yourself)
+## Jira fields vs the GitHub PR
 
-The clone is already on `<branch>` (cut from the right `release/*.x`) with the changes in its
-working tree, so raising runs from inside it — no copy step.
-
-```
-cd ~/pullrequests/oe-pr-<slug>/<repo>
-git add <files for commit 1>
-git commit -m "<commit title 1>"        # repeat per commit
-git push -u origin <branch>
-gh pr create --base <base> --title "<Jira ticket title>" --body-file <pr-description.md>
-```
-
-Jira title/type/Affects version are transcribed into Jira, not passed to `gh`.
+The Jira ticket title / type / Affects version / Fix version fields are for the Jira ticket —
+they feed the release notes and are transcribed there by the user. Only the **GitHub PR
+description** section becomes the PR body.
 
 ## OE field rules
 
 - **Fix version sources:** `package.json`, `protected/config/local/common.php` (`'version' => …`), `git describe --tags`, or the user. Always verbatim (`v26.0.0-rc3`, never `26`).
-- **Which repo:** `openeyes/openeyes` (PHP/Yii core) vs a satellite (`openeyes/oe-frontend`, …) — base branch and template differ; state both in Fix version.
+- **Which repo:** `openeyes/openeyes` (PHP/Yii core), `openeyes/IOLMasterImport`, or `openeyes/PayloadProcessor` — only `openeyes` cuts `release/*.x`; state the repo and target branch in Fix version.
 - **Migrations are always core** — never "supporting"; load-bearing for the reviewer.
 - **`local/common.php` edits are almost never the real change** — module switches belong in `<module>/config/common.php`.
 
 ## Gotchas to catch before finalising
 
-- **Clinical-safety invariants** — change touches persistence/calculations/units/display of clinical values without an explicit ask → stop and flag in reviewer notes. The most common OE PR rejection. See `oe-coding-standards`.
+- **Clinical-safety invariants** — change touches persistence/calculations/units/display of clinical values without an explicit ask → stop and flag in reviewer notes. The most common OE PR rejection. See `c-oe-coding-standards`.
 - **Audit writes** — new clinical CRUD paths need an audit; don't bypass `AuditService`.
 - **`core/common.php`** — never edited from a module install.
 - **`voiceControl` / `aiSearch`** — stay independent; no runtime dependency between them.

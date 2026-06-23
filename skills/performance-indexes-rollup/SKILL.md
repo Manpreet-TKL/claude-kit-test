@@ -1,6 +1,6 @@
 ---
 name: performance-indexes-rollup
-description: Author the per-version OE performance_indexes_rollup migration
+description: Author the OE performance_indexes_rollup migration
 disable-model-invocation: true
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: new-feature
-description: Plan a green-field feature — plan mode, scoping Q&A, then verify
+description: Plan a green-field feature (plan mode + verify)
 disable-model-invocation: true
 ---
 

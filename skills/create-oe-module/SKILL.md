@@ -1,6 +1,7 @@
 ---
 name: create-oe-module
-description: Scaffold and register a new OpenEyes module under protected/modules/
+description: Scaffold + register a new OpenEyes module
+disable-model-invocation: true
 ---
 
 # Creating an OpenEyes module
@@ -202,7 +203,7 @@ return [
 
 The suppression code is in `protected/config/local/common.php` (lines 22–55). It scans both `modules/*/config/common.php` and one level of sub-module configs (`modules/*/modules/*/config/common.php`). When debugging "my menu item doesn't show up," read that file first.
 
-Special modules share a consistent landing-page UI (canonical ribbon, full page width, hidden patient/hotlist panel, cache-busted module CSS) — see `subs/special-module-ui.md` for the recipe, and the `oe-ui` skill for the core CSS mechanics behind it.
+Special modules share a consistent landing-page UI (canonical ribbon, full page width, hidden patient/hotlist panel, cache-busted module CSS) — see `subs/special-module-ui.md` for the recipe, and the `c-oe-ui` skill for the core CSS mechanics behind it.
 
 ---
 

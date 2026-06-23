@@ -1,6 +1,6 @@
 ---
 name: jiramcp
-description: Jira + Confluence MCP preflight — run before any Jira/Confluence work
+description: Jira + Confluence MCP preflight
 disable-model-invocation: true
 ---
 

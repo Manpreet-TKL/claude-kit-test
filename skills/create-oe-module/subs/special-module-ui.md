@@ -4,7 +4,7 @@ The signed-off UI recipe for `oe_special_module` (admin/infrastructure) modules.
 Reference implementations: **OeDataDictionary** (gold standard, custom-grid layout),
 **OeConfig** (module layout with left-aligned option tabs), **NodAudit** (no layout —
 ribbon partial + per-view chassis). For the underlying core CSS mechanics see the
-`oe-ui` skill.
+`c-oe-ui` skill.
 
 Rules: the OE banner (`//base/_brand`) and top nav (`//base/_header`) are never
 touched; the patient search ("hotlist") panel is hidden; the module spans the full

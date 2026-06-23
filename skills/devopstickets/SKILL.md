@@ -1,7 +1,6 @@
 ---
 name: devopstickets
-description: Interactive JIRA DevOps triage menu for the TKLS service desk
-argument-hint: "[option#] [filter#] | <TICKET-KEY> | 6 <keyword>"
+description: JIRA DevOps triage menu (TKLS service desk)
 disable-model-invocation: true
 ---
 

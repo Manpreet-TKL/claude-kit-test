@@ -1,6 +1,6 @@
 ---
 name: codexmcp
-description: Preflight the OpenAI Codex MCP, then fan out autonomous Codex coding agents
+description: Preflight Codex MCP, then fan out Codex agents
 disable-model-invocation: true
 ---
 

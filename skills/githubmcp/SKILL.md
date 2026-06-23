@@ -1,6 +1,6 @@
 ---
 name: githubmcp
-description: Read-only GitHub MCP preflight — run before reading repos/PRs/CI
+description: Read-only GitHub MCP preflight
 disable-model-invocation: true
 ---
 

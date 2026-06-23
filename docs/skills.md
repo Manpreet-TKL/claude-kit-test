@@ -41,14 +41,14 @@ Use SKILL.md for:
 
 **Setting this flag is the default for a new skill.** Most kit skills set it — they're large, repo-specific, or preflight checks you want to fire deliberately, so you don't want the model auto-pulling them in for unrelated tasks. The user (or an agent that knows the repo) invokes them by name.
 
-Five skills **omit** the flag and therefore auto-load when their `description` matches the task: **`claude-kit`, `create-oe-module`, `note-style`, `oe-helm`, `oe-ui`**. They're guard-rails / mental models you want applied whenever the model touches that kind of work (`claude-kit` auto-loads so its skill-authoring rules surface whenever you work on the kit). For an auto-load skill the `description:` *is* the trigger — write it to fire on the right task and nothing else.
+Three skills **omit** the flag and therefore auto-load when their `description` matches the task: **`c-frontend-design`, `c-oe-helm`, `c-oe-ui`**. They're guard-rails / mental models you want applied whenever the model touches that kind of work. For an auto-load skill the `description:` *is* the trigger — write it to fire on the right task and nothing else.
 
 ## Two body conventions every kit skill follows
 
 1. **"Context loaded" ack.** The body's first line is *"When loaded as context with no task, reply only `Context loaded.`"* So invoking a skill purely to prime context returns a one-word ack instead of a multi-hundred-token summary. The four MCP-preflight skills (`codexmcp`, `devopstickets`, `githubmcp`, `jiramcp`) are the deliberate exception — they actually run a check and report its result.
 2. **One-line `description:`.** Keep it ≤ ~78 chars so the whole thing is readable on one terminal row when you search skills inside Claude.
 
-Keep each `SKILL.md` **under ~2,000 tokens** (≈ 8 KB) so loading is cheap; move volatile detail into `subs/*.md` (below). Two skills intentionally exceed this — `create-oe-module` and `oe-coding-standards` — because they're reference-dense.
+Keep each `SKILL.md` **under ~2,000 tokens** (≈ 8 KB) so loading is cheap; move volatile detail into `subs/*.md` (below). Two skills intentionally exceed this — `create-oe-module` and `c-oe-coding-standards` — because they're reference-dense.
 
 ## Sub-skills (`subs/`)
 
@@ -61,9 +61,8 @@ The model is expected to read the SKILL.md fully and then read whichever sub it 
 
 ## Skill names — house convention
 
-- Hyphens for styling skills: `bash-style`, `note-style`, `yiic-command-style`, `create-oe-module`.
-- Repo-specific skills mix conventions: underscored (`oe-code`, `oe-components`, `oe-db-schema`, `oe-coding-standards`), hyphenated (`oe-deploy`), and a compound coined name (`oeimagebuilder`). Skill names are case-/separator-sensitive — use the directory name exactly as it sits in `~/.claude/skills/`.
-- Project skills group under one prefix so they sort together (`oe_*` here).
+- **`c-` prefix for context skills.** A context-loading (read-only knowledge) skill is named `c-<topic>` — `c-oe-code`, `c-mirth`, `c-note-style`, `c-bash-style`, … — so they sort together and read as *context*, not an action. Action / workflow / preflight skills stay unprefixed: `create-pr`, `create-oe-pr`, `create-oe-module`, `new-feature`, `performance-indexes-rollup`, `jiramcp`, `githubmcp`, `codexmcp`, `devopstickets`.
+- Skill names are case-/separator-sensitive — use the directory name exactly as it sits in `~/.claude/skills/` (e.g. `/c-oe-helm`).
 
 ## Where the skills come from
 

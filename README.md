@@ -24,17 +24,16 @@ A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` 
 │   ├── .github.env         #   real GitHub PAT          (created by install.sh -g)
 │   └── .codex.env          #   Codex model/sandbox knobs (created by install.sh -x; no secret)
 ├── skills/                 # each dir symlinked into ~/.claude/skills/<name>
-│   │                       #   manual (disable-model-invocation: true) is the default for a new skill
-│   ├── claude-kit/         #   auto-load ┐ no disable-model-invocation —
-│   ├── create-oe-module/   #   auto-load │ the model pulls these in itself
-│   ├── note-style/         #   auto-load │ when the task matches
-│   ├── oe-helm/            #   auto-load │
-│   ├── oe-ui/              #   auto-load ┘
-│   ├── oe-code/ oe_code/ oe-db-schema/ oe-coding-standards/    # OpenEyes — manual
-│   ├── oe-deploy/ oeimagebuilder/ oe-components/ pasapi/ mcc/  # OpenEyes — manual
-│   ├── oe-iolmaster-import/ oe-payload-processor/              # OpenEyes file processors — manual
-│   ├── bash-style/ yiic-command-style/ frontend-design/        # house style — manual
-│   ├── create-pr/ create-oe-pr/ new-feature/ docbuilder-docset/ notes-app/  # workflow/repo — manual
+│   │                       #   context skills are prefixed c-; manual (disable-model-invocation) is the default
+│   ├── c-frontend-design/  #   auto-load ┐ no disable-model-invocation —
+│   ├── c-oe-helm/          #   auto-load │ the model pulls these in itself
+│   ├── c-oe-ui/            #   auto-load ┘ when the task matches
+│   ├── c-oe-code/ c-oe-db-schema/ c-oe-coding-standards/ c-oe-components/        # OpenEyes — manual
+│   ├── c-oe-deploy/ c-oeimagebuilder/ c-pasapi/ c-mirth/ c-mcchannels/ c-oe-interop/  # OpenEyes — manual
+│   ├── c-oe-iolmaster-import/ c-oe-payload-processor/          # OpenEyes file processors — manual
+│   ├── c-bash-style/ c-yiic-command-style/ c-note-style/       # house style — manual
+│   ├── c-claude-kit/ c-dblogin/ c-docbuilder-docset/ c-notes-app/  # kit/repo context — manual
+│   ├── create-pr/ create-oe-pr/ create-oe-module/ new-feature/ performance-indexes-rollup/  # workflow — manual
 │   └── jiramcp/ githubmcp/ codexmcp/ devopstickets/            # MCP preflight — manual; no "Context loaded"
 └── docs/
     ├── permissions.md      # how the 4 tiers work, deny → ask → allow
@@ -111,7 +110,7 @@ The figures are a **local proxy**: Claude Code's GUI `/usage` % comes from Anthr
 ### 4. Auto-compact env vars
 
 ```
-AUTOCOMPACT_PCT      → env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE   (default 90, clamped to ~83)
+AUTOCOMPACT_PCT      → env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE   (default 100 — no reduction; only lowers, clamped to ~83)
 AUTOCOMPACT_WINDOW   → env.CLAUDE_CODE_AUTO_COMPACT_WINDOW   (default 200000)
 FIVE_HOUR_BUDGET     → env.CLAUDE_5H_TOKEN_BUDGET            (unset — status line shows raw count; set to flip to a 5h %)
 WEEKLY_BUDGET        → env.CLAUDE_WEEKLY_TOKEN_BUDGET        (unset — status line shows raw count; set to flip to a wk %)
@@ -144,8 +143,8 @@ Because it's a symlink, editing `claude-md/CLAUDE.md` rolls out immediately — 
 
 **How a skill gets its context in front of Claude — two modes:**
 
-- **Auto-load (no `disable-model-invocation`).** Claude reads every skill's `name` + `description` at startup and decides *on its own* to pull the whole `SKILL.md` into context the moment a task matches the description. You don't name these — they load when relevant. Today: **`claude-kit`, `create-oe-module`, `note-style`, `oe-helm`, `oe-ui`** (`claude-kit` auto-loads so its skill-authoring rules surface whenever you work on the kit). For these the **`description:` is the trigger**, so it's written to fire on the right task.
-- **Manual (`disable-model-invocation: true`).** Claude will *never* auto-load these; the body only enters context when you (or a plan) invoke the skill **by name** (`/oe-code`, `/jiramcp`, …). Everything else in the kit is manual — they're large, repo-specific, or preflight checks you want to fire deliberately, not opportunistically. **Manual is the default for a new skill** — set the flag unless you have a deliberate reason to auto-load.
+- **Auto-load (no `disable-model-invocation`).** Claude reads every skill's `name` + `description` at startup and decides *on its own* to pull the whole `SKILL.md` into context the moment a task matches the description. You don't name these — they load when relevant. Today: **`c-frontend-design`, `c-oe-helm`, `c-oe-ui`**. For these the **`description:` is the trigger**, so it's written to fire on the right task.
+- **Manual (`disable-model-invocation: true`).** Claude will *never* auto-load these; the body only enters context when you (or a plan) invoke the skill **by name** (`/c-oe-code`, `/jiramcp`, …). Everything else in the kit is manual — they're large, repo-specific, or preflight checks you want to fire deliberately, not opportunistically. **Manual is the default for a new skill** — set the flag unless you have a deliberate reason to auto-load.
 
 Either way the **`description:` is a single terminal line** (≤ ~78 chars) so the whole thing is readable when you search skills inside Claude — keep it one line when editing.
 
@@ -153,7 +152,7 @@ Either way the **`description:` is a single terminal line** (≤ ~78 chars) so t
 
 > When loaded as context with no task, reply only `Context loaded.`
 
-So invoking a skill just to prime context returns a one-word ack instead of a 2,000-token summary you didn't ask for. The four preflight skills are the deliberate exception — they *do* run a check and report. Aim to keep each `SKILL.md` **under ~2,000 tokens** (≈ 8 KB) so loading is cheap; push volatile detail into `subs/*.md` and let Claude open those on demand. Two skills intentionally exceed this — `create-oe-module` (~4.2k) and `oe-coding-standards` (~3.2k) — because they're reference-dense scaffolding/standards docs.
+So invoking a skill just to prime context returns a one-word ack instead of a 2,000-token summary you didn't ask for. The four preflight skills are the deliberate exception — they *do* run a check and report. Aim to keep each `SKILL.md` **under ~2,000 tokens** (≈ 8 KB) so loading is cheap; push volatile detail into `subs/*.md` and let Claude open those on demand. Two skills intentionally exceed this — `create-oe-module` (~4.2k) and `c-oe-coding-standards` (~3.2k) — because they're reference-dense scaffolding/standards docs.
 
 Each repo-specific skill follows the **stable mental model in `SKILL.md`, volatile detail in `subs/*.md`** convention. See **[docs/skills.md](docs/skills.md)**.
 
