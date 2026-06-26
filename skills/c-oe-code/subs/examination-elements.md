@@ -56,4 +56,14 @@
 
 ## Adding a new element
 
-Creating a new element = migration + model + widget + view + `ElementType` seed entry. Elements extend `BaseEventTypeElement`. See the `create-oe-module` skill for the surrounding scaffolding, and the Strabismus implementation for the modern element pattern (the bar-setter for `HasCorrectionType`, `HasWithHeadPosture`, `HasRelationOptions` traits).
+The element model + view-triad + `element_type` mechanics live in
+`event-element-model.md` (and the UI side in `c-oe-ui`
+`subs/clinical-element-views.md`) — read those first. In short: migration (adds the
+`et_…` table **and** the `element_type` seed row) + model + view triad
+(`form_`/`view_`/`print_`) and/or widget triad. Elements extend
+`BaseEventTypeElement` **directly or via a module-local base** — most
+OphCiExamination elements extend it directly, but some modules interpose their own
+(e.g. OphTrOperationnote's `Element_OpNote`/`Element_OnDemand`). For the modern
+trait-driven pattern see the Strabismus implementation (bar-setter for
+`HasCorrectionType`, `HasWithHeadPosture`, `HasRelationOptions`); for surrounding
+scaffolding see `create-oe-module`.

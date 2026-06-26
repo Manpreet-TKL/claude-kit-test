@@ -11,6 +11,17 @@ How OE pages are put together (Yii side). Facts verified against core CSS and th
 special-module sweep of June 2026. For the end-to-end special-module landing-page
 recipe, see `create-oe-module` → `subs/special-module-ui.md`.
 
+This SKILL covers the **page chrome** (grid, ribbon, theming, asset publishing).
+For the inside of a clinical event — the part clinicians spend their day in — see
+`subs/clinical-element-views.md`. Modern Vue islands → `subs/vue-vite.md`; the
+legacy `OpenEyes.UI.*` interaction layer → `subs/js-toolkit.md`.
+
+Caveat on the CSS: `protected/assets/nxblu/` is a **git submodule**
+(`git@github.com:openeyes/nxblu`) and is **uninitialised in a bare checkout** — the
+compiled `dist/css` below only exists on a built/deployed instance (or after
+`git submodule update --init`). The exact values here were read off a deployed
+instance; if `nxblu/dist` is empty, grep a running container instead.
+
 ## Where the core CSS lives
 
 `protected/assets/nxblu/dist/css/style_openeyes.css` — minified, effectively one
@@ -20,10 +31,12 @@ line, so grep with `-o`:
 grep -o '\.flex-layout[^{]*{[^}]*}' protected/assets/nxblu/dist/css/style_openeyes.css
 ```
 
-Theming is CSS variables (`--bg-title`, `--txt-light`, `--bg-main`, …) switched by
-the `theme-<dark|light>` class on `<html>`, fed from
-`SettingMetadata::model()->getSetting('display_theme')`. Some layouts use
-`data-theme` instead; the class form is the common one.
+Theming is CSS variables (`--bg-title`, `--txt-light`, `--bg-main`, …) keyed off a
+`theme-<dark|light>` class on `<html>`. The flow is two-stage: `main.php` emits the
+server-side preference as `data-theme` on the root element (from
+`SettingMetadata::model()->getSetting('display_theme')`), then client JS reads it
+and adds the actual `theme-<light|dark>` class the CSS selectors target. So write
+CSS against `.theme-dark …` / `.theme-light …`, not `[data-theme]`.
 
 ## Page anatomy (the oe-grid chassis)
 
@@ -42,6 +55,11 @@ the `theme-<dark|light>` class on `<html>`, fed from
 <content>                → .oe-full-content or a custom grid-area:main div
 //base/_footer
 ```
+
+The `<ribbon>` and `<content>` slots are **not** partials that `main.php` renders;
+they are the action's own view output, injected where `main.php` does `echo
+$content`. `main.php` owns the chrome (brand/header/footer/hotlist); your view owns
+the `.oe-full-header` + `.oe-full-content` markup.
 
 A module layout that wants OE styling must be a full document and render
 `//base/head/_meta` + `//base/head/_assets` in `<head>` — without them the page
@@ -146,6 +164,14 @@ Yii::app()->clientScript->registerCssFile($baseUrl . '/<file>.css?v=' . filemtim
   styles for a year (no revalidation). This applies to both idioms above.
 - Config changes (not assets) are cached in APCu — `curl http://localhost/apc_clear.php`.
 
+**Two cache-bust regimes coexist.** Everything above is the **legacy** regime
+(`assetManager->publish` + `?v=<filemtime>`), which is correct for legacy module
+CSS/JS. **Modern Vue bundles** are different: Vite emits content-hashed filenames
+and the page resolves them via `AssetManager::urlForManifestFile()` (reading
+`assets/vue/.vite/manifest.json`) — **no `?v=`**, the hash is the bust. Don't add
+`?v=` to a Vue asset or expect a manifest entry for a legacy one. See
+`subs/vue-vite.md`.
+
 ## House palettes
 
 - Ribbon breadcrumb/meta: 13px, text `#c8d6e5`, links `#c8d6e5` → hover `#fff`
@@ -156,8 +182,22 @@ Yii::app()->clientScript->registerCssFile($baseUrl . '/<file>.css?v=' . filemtim
 
 ## Exemplars to crib from
 
+These four are **special/admin modules** (deployment add-ons, not part of a base
+`protected/modules` core checkout) — grep them on a deployed instance, and treat
+them as landing-page patterns rather than clinical-event UI.
+
 - `OeDataDictionary` — custom-grid layout, dark sidebar, ribbon breadcrumb.
 - `OeConfig` — module layout, left-aligned option tabs, inline-style hotlist hide.
 - `NodAudit` — layoutless approach: shared `_nav.php` ribbon partial + per-view
   `oe-full-content` chassis, view-registered assets.
 - `OeDatabase` — many-tab ribbon (`flex-wrap`), controller-registered assets.
+
+## Subs
+
+- `subs/clinical-element-views.md` — the inside of a clinical event: the
+  `form_`/`view_`/`print_` + widget `_event_edit` render triads, `ElementController`
+  + `AdderDialog` wiring, EyeDraw, TinyMCE.
+- `subs/vue-vite.md` — Vue 3 + Vite islands, the manifest cache-bust seam, and why
+  Tailwind is `oe-laravel`-only.
+- `subs/js-toolkit.md` — the `OpenEyes.UI.*` widget catalogue and the `js-`
+  behaviour-hook convention.

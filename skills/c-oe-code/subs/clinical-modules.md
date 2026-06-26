@@ -1,6 +1,6 @@
 # OpenEyes clinical-module catalogue (volatile)
 
-~49 modules under `protected/modules/`. List drifts as modules are added or merged. Always confirm against `core/common.php`'s `$modules` array (~line 1161).
+~45 modules under `protected/modules/`. List drifts as modules are added or merged. Always confirm against the `$modules` array in `core/common.php` (grep for the `'modules'` key / the `$modules` assignment — don't trust a line number, it moves), and remember a deployment's `local/common.php` + Docker `modules.conf` can switch modules on or off. A handful below are **external/site-specific** and absent from a base core checkout — flagged inline.
 
 ## Encounters & examinations
 
@@ -11,7 +11,8 @@
 ## Correspondence / documents
 
 - **OphCoCorrespondence** — letter generation. `ElementLetter` (TinyMCE HTML body), `LetterMacro[_Firm|_Site|_Subspecialty|_Institution]`, esign via `Element_OphCoCorrespondence_Esign`.
-- **OphLeEpatientletter** — secure patient-facing electronic letter.
+- **OphLeEpatientletter** *(external — not in a base core checkout)* — secure patient-facing electronic letter. There is **no** `OphLe*` dir in core; core letters are `OphCoCorrespondence`.
+- **Referral** — patient referral handling, and the cleanest **replatform exemplar** in the tree: legacy `models/`/`controllers/` alongside PSR-4 `dto/ repositories/ factories/ seeders/`. Reach for it when you want to see the new `OE\…` patterns in a real module.
 - **OphCoDocument** — generic external document attachment event. Uses `FileStorage`.
 - **OphCoMessaging** — secure in-EHR user-to-user messaging on a patient's record.
 - **OphCoRequestForm** — generic request form events (imaging, lab, etc.).
@@ -35,7 +36,7 @@
 - **OphInLabResults** — generic lab result event (e.g. HbA1c).
 - **OphInGeneticresults** — genetic testing results.
 - **OphInDnasample** / **OphInDnaextraction** — sample tracking for genetics.
-- **OphInMehPac** — Moorfields-specific PAC integration event.
+- **OphInMehPac** *(site-specific — may be absent)* — Moorfields PAC integration event.
 - **OphGeneric** — catch-all event type for auto-imported data through Api / payload-processor.
 
 ## Drugs / prescribing
@@ -77,8 +78,8 @@
 - **OESysEvent** — infrastructure for typed system-events (`ClinicalEventSaveCompleteSysEvent`, `SessionSiteChangedSystemEvent`, `UserSavedSystemEvent`, `WebUserLoggedInSysEvent`).
 - **OEExceptionHandler** — error-handling override.
 - **TestHelper** — Cypress seed-data routes. **Never run in production** (`OE_MODE !== 'live'`).
-- **eyedraw** — Eyedraw assets + report-text policy admin.
-- **mehstaffdb** — central staff DB integration.
+- **eyedraw** *(external — not in a base core checkout)* — Eyedraw assets + report-text policy admin; the `OEEyeDrawWidget` renderer.
+- **mehstaffdb** *(external/site-specific)* — central staff DB integration.
 
 ## voiceControl (per memory)
 
