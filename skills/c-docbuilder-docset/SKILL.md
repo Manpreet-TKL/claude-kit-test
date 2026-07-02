@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # OeDocBuilder docset scaffold
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 A **docset** is one folder OeDocBuilder turns into a styled `.docx` + PDF. Emit exactly
 this shape; the module's validator rejects anything else.

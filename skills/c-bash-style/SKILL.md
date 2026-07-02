@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Bash script style
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 House style for new or substantially edited `.sh` scripts (skip one-liners). Reference scripts: `ace/scripts/db_backup.sh`, `proxy.sh`, `disable_ipv6.sh`. **Read `subs/reference.md` before authoring** — it has the verbatim templates (banners, abort block, arg parsing, portable paths).
 

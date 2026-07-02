@@ -32,6 +32,7 @@ Bias toward caution over speed; use judgment on trivial tasks.
 ## Output discipline
 
 - No emojis unless asked.
+- Present choices or options as a numbered list; present any comparison as a table.
 - No trailing summary of what you just did — the diff speaks.
 - No new `.md` planning docs in a repo unless explicitly requested. When a complex
   writeup is genuinely warranted, write it as a `.md` under `/home/toukan/`, not in

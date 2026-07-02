@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # yiic command style
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 For `*Command.php` files in `commands/` (the `commands:/extra_commands` bind-mount on web/oe-manager — drop-in, no image rebuild; canonical home `ace/commands/`). Match `MirthCommand.php` / `DBReportsCommand.php`; don't copy the older `DBACommand.php`. **Read `subs/reference.md` before authoring** — verbatim AGPL header, help heredoc, banners, output snippets, `getMcDbConnection()`.
 

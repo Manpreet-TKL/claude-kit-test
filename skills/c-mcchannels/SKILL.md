@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # OE BridgeLink channels (mc_channels)
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 The three OpenEyes integration channels exported under `~/mc_channels/`, running
 on BridgeLink 4.6.1 (the `mc` container). Generic Mirth/BridgeLink mechanics,

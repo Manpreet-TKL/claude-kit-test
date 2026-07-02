@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # OpenEyes codebase shape
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 OpenEyes is event-based: every clinical interaction (examination, surgery, injection, letter, prescription, CVI, …) is an event on an episode on a patient. Licence AGPL-3.0-only. Clinical safety: never change persistence, calculations, units, or display of clinical values without an explicit ask; never bypass `audit` writes — see `c-oe-coding-standards`.
 

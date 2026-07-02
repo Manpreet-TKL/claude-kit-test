@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # OpenEyes coding standards
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 Index of every OpenEyes coding standard, one line each. Read the linked sub-file
 **only** for the standard(s) you're actually touching — that's where the example,

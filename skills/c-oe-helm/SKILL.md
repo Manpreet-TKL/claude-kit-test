@@ -5,7 +5,7 @@ description: OpenEyes Helm umbrella chart — deploy/debug/extend
 
 # OpenEyes Helm chart
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 A Helm 3 **umbrella chart** that deploys the full OpenEyes stack to Kubernetes.
 It was templated from `~/oe-deploy` (the docker-compose source of truth) and is

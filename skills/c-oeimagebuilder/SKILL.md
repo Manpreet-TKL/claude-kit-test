@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # OEImageBuilder
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 Builds every image `oe-deploy` runs; it runs nothing itself. There is **no build script** — each top-level folder (`Web-Base/`, `Web-Live/`, `Web-Dev/`, `Manager/`, `Aws-Cli/`) holds a `dockerfile`, built with a plain `docker build` from inside that folder. Detail: `subs/build-args.md` (per-image ARGs), `subs/multistage.md` (the 5-stage live build), `docs/ARM_BUILDS.md` in the repo. Root `docker-compose.yml` is a local test stack, not a deployment artifact.
 

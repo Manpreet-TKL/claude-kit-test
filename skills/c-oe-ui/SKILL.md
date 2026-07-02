@@ -5,7 +5,7 @@ description: Building or styling OpenEyes frontend pages
 
 # OpenEyes frontend / UI patterns
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 How OE pages are put together (Yii side). Facts verified against core CSS and the
 special-module sweep of June 2026. For the end-to-end special-module landing-page

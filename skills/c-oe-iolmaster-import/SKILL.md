@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # oe-iolmaster-import
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 `~/IOLMasterImport` (remote `git@github.com:openeyes/IOLMasterImport.git`, branch
 `master`, release line `release/26.0.x`) is a **hybrid PHP + Java** service that

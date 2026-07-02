@@ -1,12 +1,12 @@
 ---
 name: c-oe-nav
-description: OpenEyes frontend navigation — hardcoded UI atlas plus an in-container browser probe for exact click-paths to anything in the app (repro steps, test steps, user guidance)
+description: OpenEyes frontend click-paths — UI atlas + in-container probe
 disable-model-invocation: true
 ---
 
 # OpenEyes frontend navigation
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 For producing **an exact, human-followable click-path to anything in the OpenEyes frontend** at minimum token cost — bug-PR Steps to Reproduce (the flagship use), test instructions, user guidance, or any task that needs to know how the frontend hangs together. Most paths in the app are the same every time, so nearly every journey composes straight from the pre-recorded sources; probe only what's genuinely unknown. Three sources, in cost order; **never invent a label**:
 

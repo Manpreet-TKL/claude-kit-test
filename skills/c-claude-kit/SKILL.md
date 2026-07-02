@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # claude-kit
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 `~/claude-kit` is Manpreet's git-tracked, single-script setup for Claude Code — the **source of truth**; `~/.claude/` is generated from it. **As much as possible the kit links rather than copies** — `CLAUDE.md`, `statusline.sh`, and every skill live in `~/.claude/` as symlinks back into the kit, so editing a kit file is live with no re-install; only `settings.json` (jq-merged) needs an `install.sh` re-run. `install.sh` configures `~/.claude/` idempotently: re-runnable, backs up `settings.json`/`CLAUDE.md` to `.bak` only when content changes, rebuilds skill symlinks every run. It also **manages the CLI itself** — installs Claude Code if `~/.claude` is absent, otherwise runs `claude update` (skip with `--no-update`/`-U`). Auth, `history.jsonl`, and `projects/` are never touched, except by `--fresh`, which backs them up and restores them across a full wipe.
 
@@ -41,7 +41,7 @@ Conventions for kit skills — apply these to every new skill:
 - **`c-` prefix for context skills** — a context-loading (read-only knowledge) skill is named `c-<topic>`; action / workflow / preflight skills (`create-pr`, `create-oe-module`, `new-feature`, the MCP-preflight set) stay unprefixed.
 - **Default to manual** — set `disable-model-invocation: true` so the model never auto-pulls a new skill on its own; omit the flag only for a deliberate auto-load (the named exceptions above).
 - **One-line `description:`** — ≤ ~78 chars so it's fully readable when searching skills in Claude.
-- **"Context loaded" ack** — a context-only skill's body starts with *"When loaded as context with no task, reply only `Context loaded.`"* so priming context doesn't dump a summary. The four MCP-preflight skills (`codexmcp`, `devopstickets`, `githubmcp`, `jiramcp`) are the deliberate exception — they actually run a check and report.
+- **"Context loaded" ack + context-only contract** — a context-only (`c-*`) skill's body starts with *"When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation."* — the ack stops a summary dump, the contract stops unprompted action. Action skills (`create-*`, `new-feature`, `performance-indexes-rollup`) keep only the ack sentence — invoked with a task, they do act. The four MCP-preflight skills (`codexmcp`, `devopstickets`, `githubmcp`, `jiramcp`) are the deliberate exception — they actually run a check and report.
 - **Keep it lean** — aim < ~2,000 tokens (≈ 8 KB) per `SKILL.md` so loading is cheap; push anything not always needed into `subs/*.md` and let the model open it on demand. `create-oe-module` and `c-oe-coding-standards` intentionally exceed this (reference-dense).
 
 ## Symlink pruning

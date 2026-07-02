@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # OpenEyes interoperability
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 OpenEyes integrates with hospital systems (PAS, medical/imaging devices, document management, BI) primarily through a per-server **NextGen Healthcare Connect** integration engine (the rebranded Mirth Connect — ToukanLabs ships BridgeLink, see `c-mirth`). Connect remaps inbound feeds onto OpenEyes' native interfaces, so the same engine can accept HL7 v2, REST, file-drop, etc. without touching OE core. This skill distils the v1.1.1 Interoperability Guide into per-capability config notes; the heavy detail is in `subs/`. Key constraint: **HL7 is always remapped to the native PAS API, so the PAS API is the limiting factor** for what demographic/appointment data can move. Demographics are **inbound-only** — OE cannot push demographic updates back to a PAS, and in-OE demographic editing is disabled to prevent drift.
 

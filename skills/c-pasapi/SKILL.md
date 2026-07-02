@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # OpenEyes PASAPI + PAS flow
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 On monkey, OpenMRS is the patient source-of-truth (a PAS surrogate) feeding OE through BridgeLink — mirroring a real client: *PAS → HL7 → BridgeLink → OE API*. Endpoint detail, HL7 field contract, PASIN routing table: `subs/reference.md`. Generic Mirth mechanics: `c-mirth` skill.
 

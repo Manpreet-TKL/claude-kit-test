@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # OpenEyes database
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 OpenEyes is event-based: every clinical interaction is an `event` row on an `episode` on a `patient` — reports, audit, RBAC, and integrations layer on that spine. 2300+ tables named after frontend/ophthalmology terms: navigate by naming convention, not by listing. Schema changes are clinical-safety changes; never bypass `audit` writes — see `c-oe-coding-standards`.
 

@@ -5,7 +5,7 @@ description: Distinctive, production-grade frontend interfaces
 
 # Frontend design
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 Build real, working frontend code (HTML/CSS/JS, React, Vue, …) with exceptional aesthetic attention — visually striking, cohesive, meticulously refined, and never generic "AI slop".
 

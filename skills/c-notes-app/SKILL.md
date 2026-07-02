@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # opennotes (formerly notes-test)
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 The repo and app are now called **opennotes** — `~/opennotes`, GitHub `ToukanLabs/opennotes` (renamed June 2026; a stale `~/notes-test` checkout of the old repo may still exist — don't work in it). The **Docker image and deploy plumbing keep the `notes` name**: image `toukanlabsdocker/notes`, oe-deploy `appName=notes`, `templates/notes.yml`, `NOTES_*` env vars. In-repo branding (README, `APP_NAME`) may still say ToukanNotes in places.
 

@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # TKL note style
 
-When loaded as context with no task, reply only `Context loaded.`
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
 For Manpreet's knowledge-base notes — not code comments, commit messages, READMEs, or PR text. Canonical examples: `/home/toukan/notes_sample.txt`. Detailed conventions and examples: `subs/reference.md`. Notes are text-only, grep-discoverable, act-on-able in seconds.
 
