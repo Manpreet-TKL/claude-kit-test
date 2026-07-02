@@ -14,20 +14,29 @@ OpenEyes is event-based: every clinical interaction is an `event` row on an `epi
 
 MariaDB: 10.6 for OE v6–v10, **11.8** for v11–v26. The DB is a local container (`<project>-db-1`) or remote AWS RDS — the app only knows `DATABASE_HOST`, so the same SQL works against either.
 
-| Route | Runs as | Works against |
+Interactive host fns (`~/.bash_aliases`; arg = compose-project prefix; each `docker exec -it`s and auto-detects the `mysql`||`mariadb` client):
+
+| Fn | Runs as | Target |
 |---|---|---|
-| Host fn `dba [<proj>]` | root | local container only |
-| Host fn `dbas <proj>` | root, plain prompt | local container only |
-| Web-container fn `dblogin` | app user `openeyes` | local **and** RDS |
-| Direct `docker exec` (below) | root | local container only |
+| `dba [<proj>]` | root, colour prompt | local `*db-1`; falls back to the `*manager-1` container (→ RDS) when there is no local db |
+| `dbas <proj>` | root, plain prompt | local `*db-1` |
+| `dbs <proj>` | app user `openeyes` | local `*db-1` |
+| `dbm [<proj>]` | root | local `*db-1`, **mirthdb** |
 
-The host fns (`~/.bash_aliases`) `docker exec` into `*db-1`, so they need a local DB container. On RDS there is none — exec the web container and run `dblogin` (reads `/run/secrets/DATABASE_*`, connects to `$DATABASE_HOST:$DATABASE_PORT`). Automation:
+The fns open a shell (they forward no args), so for one-shot / scripted queries `docker exec` yourself:
 
 ```
-docker exec -i <project>-db-1 bash -c 'mariadb -uroot -p$(cat $MYSQL_ROOT_PASSWORD_FILE) -A openeyes'
+# local db container, as root (append -N -e "<SQL>" for one-shot):
+docker exec -i <proj>-db-1 bash -c 'mariadb -uroot -p"$(cat "${MYSQL_ROOT_PASSWORD_FILE:-/run/secrets/MYSQL_ROOT_PASSWORD}")" -A openeyes -N -e "<SQL>"'
+
+# from the WEB container — works local AND RDS (uses $DATABASE_HOST), scriptable:
+docker exec <proj>-web-1 sh -c 'mysql -h"$DATABASE_HOST" -P"$DATABASE_PORT" -uopeneyes -p"$(cat /run/secrets/DATABASE_PASS)" "$DATABASE_NAME" -N -e "<SQL>"'
 ```
 
-Append `-N -e "<SQL>"` for one-shot queries.
+**Credential gotchas (these cost time if unknown):**
+- Passwords are Docker **secrets**, not env vars: `/run/secrets/DATABASE_PASS` (app user `openeyes`), `/run/secrets/MYSQL_ROOT_PASSWORD` (root). The `DATABASE_PASS` **env var is a stale placeholder** (often literally `openeyes`) and is rejected with `Access denied` — always read the secret file. Host/port/name come from `$DATABASE_HOST`/`$DATABASE_PORT`/`$DATABASE_NAME`.
+- Client name differs by image: the web container ships `mysql`, the MariaDB db container ships `mariadb` (hence the auto-detect).
+- No client, or you need results in code: PHP PDO from the web container works — `new PDO("mysql:host=".getenv("DATABASE_HOST").";dbname=".getenv("DATABASE_NAME"), "openeyes", trim(file_get_contents("/run/secrets/DATABASE_PASS")))`.
 
 ## Version-dependent schema
 

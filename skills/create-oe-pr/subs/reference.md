@@ -38,11 +38,12 @@ GitHub PR description:
 > user-visible behaviour and the problem it fixes. Always present.
 
 ## Steps to Reproduce
-> Numbered and client-agnostic — release-notes- and Jira-facing, so NEVER name a
-> client, credentials, seed data, or the OE sample DB (no "log in as admin/admin").
-> Actor by role ("a logged-in user"); actions in product terms; if the symptom needs
-> particular data, say what *kind*, not whose. Version/config conditions are fine.
-> 1. As a logged-in user, ...
+> A generic, **frontend-only** click-path any user can follow without knowing what the
+> page does — numbered, **one sentence per step**, each naming the exact control by its
+> on-screen label (quoted) and where it sits. Client-agnostic (actor by role, data by
+> *kind*, never creds/seed/sample-DB). Start at login if a session is needed; end on an
+> observable check. Full rules + worked example below (*Steps to Reproduce — the rules*).
+> 1. Log in as any user with edit permissions.
 
 ## Current Outcome
 > What actually happens at the end of the steps. One or two lines.
@@ -73,6 +74,27 @@ GitHub PR description:
 ```
 
 Section shape by type: the Steps/Current/Expected triad fits Bug and Regression; drop it for feature/planning types. Skip lighter sections when the change is self-evident; never pad; if a fault can't be reduced to clean steps (intermittent, data-dependent), say what you can — don't fabricate.
+
+## Steps to Reproduce — the rules
+
+The one section a reader with no context (QA, support, the next dev) follows blind to see the fault. Write it as instructions for someone who has never used the page.
+
+- **Frontend-only, almost always.** The whole path is clicks in the OE web UI. A repro only rarely reaches outside it (integration engine, PayloadProcessor, IOLM); if it genuinely must, say so — otherwise every step is a browser action.
+- **One sentence per numbered step**, leading with the verb.
+- **Start at login when a session is needed:** "Log in as any user with *<the permission the flow needs>*" (e.g. edit permissions) — state the permission level, never credentials or `admin/admin`.
+- **Name the exact control and where it is.** Quote the on-screen label ('Add Event', 'Save', 'Single file') sourced from the fix-branch view code — never invent one; for icon-only controls give appearance + position ("the lightning-bolt icon in the patient sidebar"). The reader must not need to know what the page is *for*.
+- **Spell out every choice point and mark the free ones.** Say which selectors to touch and that any value works — "choose any subspecialty and context", "search by surname, NHS number or hospital number (any will do)" — so a reader unfamiliar with the screen knows a choice is even required.
+- **Client-agnostic throughout:** no client, credentials, seed data, sample-DB ids, or real patient data; actor by role, data by *kind* ("a multi-page PDF"). Version/config preconditions are fine.
+- **Keep only outcome-shaping parentheticals:** "(one file leaks per page)" tells the reader what to expect; incidental detail is noise.
+- **End on an observable check usable before *and* after the fix.** A bare shell command is fine for a server-side effect — `ls -1 /tmp/oe_pdf* 2>/dev/null | wc -l` — but stop at the command: the deployment may or may not be containerised, so never wrap it in `docker exec`/stack-specific plumbing; say "on the server". Container names and cache clears belong in *Notes for reviewer*, not here.
+
+Worked example (PDF-preview temp-file leak):
+> 1. Log in as any user with edit permissions.
+> 2. Search for any patient by surname, NHS number or hospital number (any will do) and open the record.
+> 3. Click 'Add Event', choose any subspecialty and context, and select 'Document'.
+> 4. Set any 'Event Sub Type', leave 'Single file' selected under 'Upload', attach a multi-page PDF (one file leaks per page), and click 'Save'.
+> 5. Open the patient's lightning viewer (the lightning-bolt icon in the patient sidebar) and select the new event to build its page preview images.
+> 6. Run `ls -1 /tmp/oe_pdf* 2>/dev/null | wc -l` on the server before step 1 and again after step 5 — the count grows by one zero-byte `oe_pdfXXXXXX` stub per PDF page.
 
 ## Jira ticket type — pick exactly one
 
