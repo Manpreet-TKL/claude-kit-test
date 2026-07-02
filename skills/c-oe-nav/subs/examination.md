@@ -1,6 +1,6 @@
 # Examination event — elements and navigation
 
-The Examination (`OphCiExamination`, event_type_id 27) is the densest event: a create/edit form made of **elements** the user adds and removes. Which elements appear initially is decided by the admin-configured workflow for the chosen subspecialty/context, so two contexts show different starting forms — say which subspecialty/context a repro assumes.
+The Examination (`OphCiExamination`, event_type_id 27) is the densest event: a create/edit form made of **elements** the user adds and removes. Which elements appear initially is decided by the admin-configured workflow for the chosen subspecialty/context, so two contexts show different starting forms — say which subspecialty/context a repro assumes. New elements land all the time but the page *structure* (element manager, picker, save flow below) has been stable for years — trust the structure, verify element names.
 
 ## Reaching it
 

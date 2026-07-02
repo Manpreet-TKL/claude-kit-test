@@ -1,32 +1,37 @@
 #!/usr/bin/env node
-// OpenEyes journey driver (Puppeteer): run a JSON action list against a running OE
-// instance and print a compact text dump of what the user sees after every step.
+// OpenEyes journey driver (Playwright, FALLBACK) — run a JSON action list against a
+// running OE instance and print a compact text dump after every step.
+// The primary driver is ../scripts/journey.mjs (Puppeteer, runs inside the web-live
+// container). Use THIS one when the image carries Playwright instead (dev/debug),
+// when connecting to an existing browser over CDP (browserless/remote-chrome), or
+// in the Playwright sidecar container. Invocation: ../subs/probe-playwright.md
 //
-// Runs INSIDE the standard web-live container using the Chrome + Puppeteer that
-// ship in the image (docman uses them to render lightning previews) — no extra
-// container, nothing installed, nothing written to the image. It is also the
-// endpoint prover: goto a URL with the logged-in session, then read "body" for
-// the JSON. Invocation + the Playwright-image fallback: ../subs/probe.md
-//
-//   docker exec -i -e OE_ACTIONS="$(cat acts.json)" -w /var/www/openeyes \
-//     <stack>-web-1 node --input-type=module - < scripts/journey.mjs
-//   node journey.mjs acts.json            # local file
-//   node journey.mjs '[{"goto":"/"}]'     # inline JSON
+//   node journey.playwright.mjs <actions.json | - | '[…]'>  [--shot <dir>]
+//   docker exec -i -e OE_ACTIONS='[…]' -w /var/www/openeyes <ctr> \
+//     node --input-type=module - < journey.playwright.mjs        # dev/debug image
 //
 // Actions: array of single-key objects —
 //   {"goto":"/patient/summary/17891"}   path or full URL
-//   {"click":"#add-event"}              CSS, text="Label", or "<sel> >> nth=N"
+//   {"click":"#add-event"}              Playwright selector (CSS or text="Label")
 //   {"fill":["#sel","value"]}  {"select":["#sel","value"]}  {"upload":["#sel","/file"]}
 //   {"press":"Enter"}  {"wait":1500}  {"read":".element-fields"}
 //   {"login":false}                     as FIRST action: skip the built-in login
 //
-// Env: BASE_URL (http://localhost) · OE_USERNAME/OE_PASSWORD (admin/admin) or
-// OE_PASSWORD_FILE · OE_INSTITUTION_ID/OE_SITE_ID (1/1) · OE_SETTLE_MS (700)
-// · OE_ALLOW_WRITE=1 to permit delete-like clicks and native confirm dialogs
-// · OE_ACTIONS carries the action list when the script itself is piped on stdin.
+// Env: BASE_URL (http://localhost; sidecar sets http://web) · OE_USERNAME/
+// OE_PASSWORD (admin/admin) or OE_PASSWORD_FILE · OE_INSTITUTION_ID/OE_SITE_ID
+// (1/1) · OE_SETTLE_MS (700) · OE_ALLOW_WRITE=1 to permit delete-like clicks and
+// native confirm dialogs · OE_ACTIONS carries the action list when the script
+// itself is piped on stdin · OE_CDP_URL connects to an existing browser over CDP
+// instead of launching · OE_CHROME launches a specific Chrome binary.
 // Exit: 0 ok · 2 bad input or step failure · 3 login/infra failure.
-import puppeteer from 'puppeteer';
 import { readFileSync, mkdirSync } from 'node:fs';
+
+let chromium;
+try { ({ chromium } = await import('playwright')); }
+catch {
+  try { ({ chromium } = await import('playwright-core')); }
+  catch { console.error('neither playwright nor playwright-core is installed here'); process.exit(3); }
+}
 
 const env = (k, d) => process.env[k] ?? d;
 const BASE = env('BASE_URL', 'http://localhost').replace(/\/$/, '');
@@ -40,8 +45,6 @@ const argv = process.argv.slice(2);
 const shotAt = argv.indexOf('--shot');
 const shotDir = shotAt >= 0 ? argv.splice(shotAt, 2)[1] : null;
 if (shotDir) mkdirSync(shotDir, { recursive: true });
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Actions come from $OE_ACTIONS (script is on stdin), else argv (path or inline JSON), else stdin.
 let actions;
@@ -61,28 +64,10 @@ try {
 
 const out = (s) => console.log(s);
 
-// Playwright-style selector sugar → Puppeteer: text="X" → ::-p-text(X); "<sel> >> nth=N".
-const splitNth = (sel) => {
-  const m = sel.match(/^(.*?)\s*>>\s*nth=(\d+)\s*$/);
-  return m ? { base: m[1].trim(), nth: Number(m[2]) } : { base: sel, nth: null };
-};
-const toSel = (sel) => {
-  const m = sel.match(/^text="(.+)"$/);
-  return m ? `::-p-text(${m[1]})` : sel;
-};
-const find = async (page, sel, timeout = 8000) => {
-  const { base, nth } = splitNth(sel);
-  const s = toSel(base);
-  await page.waitForSelector(s, { timeout });
-  if (nth == null) return page.$(s);
-  const els = await page.$$(s);
-  if (!els[nth]) throw new Error(`no match #${nth} for "${s}"`);
-  return els[nth];
-};
-
 async function settle(page) {
-  // OE long-polls (worklist sync, notifications) — never wait for network-idle.
-  await sleep(SETTLE);
+  await page.waitForLoadState('domcontentloaded').catch(() => {});
+  // OE long-polls (worklist sync, notifications) — never wait for networkidle.
+  await page.waitForTimeout(SETTLE);
 }
 
 // What the user currently sees; when an OE popup/dialog is open, scope to it.
@@ -135,19 +120,14 @@ async function dump(page) {
 
 async function login(page) {
   await page.goto(BASE + '/site/login', { waitUntil: 'domcontentloaded', timeout: 30000 });
-  const user = await find(page, '#LoginForm_username');
-  await user.type(env('OE_USERNAME', 'admin'));
-  const pass = await find(page, '#LoginForm_password');
-  await pass.type(PASSWORD);
+  await page.fill('#LoginForm_username', env('OE_USERNAME', 'admin'));
+  await page.fill('#LoginForm_password', PASSWORD);
   // The institution/site pickers are custom JS; the real inputs are hidden.
   await page.evaluate(({ inst, site }) => {
     const i = document.querySelector('#LoginForm_institution_id'); if (i) i.value = inst;
     const s = document.querySelector('#LoginForm_site_id'); if (s) s.value = site;
   }, { inst: env('OE_INSTITUTION_ID', '1'), site: env('OE_SITE_ID', '1') });
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 20000 }).catch(() => {}),
-    page.click('#login_button'),
-  ]);
+  await page.click('#login_button');
   await settle(page);
   if (page.url().includes('/site/login')) {
     throw new Error('still on /site/login — check creds / institution / site ids');
@@ -163,35 +143,22 @@ const acts = {
     if (/delete/i.test(sel) && !ALLOW_WRITE) {
       throw new Error(`refusing delete-like click "${sel}" (set OE_ALLOW_WRITE=1 on a sample box to permit)`);
     }
-    const el = await find(page, sel);
-    await el.click();
+    await page.click(sel, { timeout: 8000 });
   },
-  fill: async (page, [sel, val]) => {
-    const el = await find(page, sel);
-    await el.evaluate((e) => { e.value = ''; });
-    await el.type(String(val));
-  },
-  select: async (page, [sel, val]) => {
-    const s = toSel(splitNth(sel).base);
-    await page.waitForSelector(s, { timeout: 8000 });
-    await page.select(s, val);
-  },
-  upload: async (page, [sel, file]) => {
-    const el = await find(page, sel);
-    await el.uploadFile(file);
-  },
+  fill: (page, [sel, val]) => page.fill(sel, val, { timeout: 8000 }),
+  select: (page, [sel, val]) => page.selectOption(sel, val, { timeout: 8000 }),
+  upload: (page, [sel, file]) => page.setInputFiles(sel, file, { timeout: 8000 }),
   press: (page, key) => page.keyboard.press(key),
-  wait: (page, ms) => sleep(Number(ms)),
-  read: async (page, sel) => {
-    const el = await find(page, sel);
-    out('TEXT ' + JSON.stringify((await el.evaluate((e) => e.innerText)).slice(0, 2000)));
-  },
+  wait: (page, ms) => page.waitForTimeout(Number(ms)),
+  read: async (page, sel) =>
+    out('TEXT ' + JSON.stringify((await page.locator(sel).first().innerText({ timeout: 8000 })).slice(0, 2000))),
 };
 
-const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+const browser = env('OE_CDP_URL')
+  ? await chromium.connectOverCDP(env('OE_CDP_URL'))
+  : await chromium.launch({ args: ['--no-sandbox'], ...(env('OE_CHROME') ? { executablePath: env('OE_CHROME') } : {}) });
 try {
-  const page = await browser.newPage();
-  await page.setViewport({ width: 1400, height: 900 });
+  const page = await (await browser.newContext({ viewport: { width: 1400, height: 900 } })).newPage();
   page.on('dialog', (d) => (ALLOW_WRITE ? d.accept() : d.dismiss()).catch(() => {}));
 
   if (actions[0]?.login !== false) {

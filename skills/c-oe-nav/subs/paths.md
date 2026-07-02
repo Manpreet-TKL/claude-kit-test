@@ -56,6 +56,7 @@ Notable destination details: Add Patient — 'Create new patient' `[data-test="s
 - `/` is the search screen; the top toolbar also carries a patient-search field on every page. Accepts surname ("SMITH" / "SMITH, John"), hospital number, NHS number. Result rows have **no href** — they open via a JS row-click (true of most OE list rows). Sample patient 17891 is "BLACKWELL, Elizabeth (Mrs)".
 - Patient summary `/patient/summary/:id`, heading "Patient Overview": episodes sidebar (left), event timeline (per-episode, dated entries like "8Dec2017 GL"), summary panels (medications, procedures, management summaries), 'Previous <subspecialty> Summaries' `[data-test="get-past-summaries-btn"]`.
 - **Add Event** button `#add-event` / `[data-test="add-new-event-button"]` lives on the patient summary.
+- **Lightning viewer** (event preview browser, verified v11.0.18): lightning-bolt icon in the patient sidebar (`a.lightning-viewer-icon`) → `/patient/lightningViewer?id=<pid>`; per-event timeline icons `span.js-lightning-view-icon` select an event. Selecting one whose preview is missing/stale fires `GET /eventImage/getImageInfo?event_id=` and generates the preview server-side; the episode-sidebar quick-look and an event's print view drive the same generation, and previews rebuild after the event is modified.
 
 ## Add Event dialog → create pages
 
@@ -115,7 +116,9 @@ Single-URL app at `/worklist/view` — every sub-view is an in-page panel/tab/di
 
 ## Admin
 
-- Menu ▸ Admin → `/admin` redirects to `/admin/users`. Sidebar `.oe-full-side-panel.admin-panels`; 33 sections rendered **alphabetically**, 267 pages.
+- Menu ▸ Admin → `/admin` redirects to `/admin/users`. Sidebar `.oe-full-side-panel.admin-panels`, sections **alphabetical**, the current section expanded to show its pages (~267 pages total on develop).
+- Sections (30, verified v11.0.18; develop's crawl had 33): Biometry · CVI · Checklists · Consent form · Core · Correspondence · Disorders · Document · Drugs · Event Export · Examination · Generic event · Genetics · Intravitreal injection · Investigation management · Lab results · Laser · Leaflets · Message · Operation booking · Operation note · PASAPI · PatientTicketing · Payload processor API · Procedure management · Request forms · SSO settings · System · Therapy application · Worklist.
+- Core's pages (the most-touched admin area, verified v11.0.18): Users · Institutions · Sites · Teams · Subspecialty (+ Subsections) · Contexts and Services · Patient Identifier Types · Patient Shortcodes · Contacts · Contact labels · Commissioning bodies (+ services, service types, body types) · Data sources · Element/Event Type Custom Text · Event deletion requests · Ethnic Groups · Examination Event Logs · LDAP Configurations · PAS Configuration · SSO Configurations.
 - Module sections use **module-prefixed** routes, not `/admin/…`: e.g. Examination `/OphCiExamination/admin/<Thing>`, plus `/oeadmin/...`, `/Admin/...`, `/sso/...`.
 - Biggest sections: examination (77 pages), core (25), drugs (18), operation-booking (16), intravitreal-injection (15), correspondence and cvi (10 each).
 - Lookup-table admin pages follow one pattern: heading "Edit <Thing>s", rows with 'Add' `[data-test="add-row"]`, 'Save' `[data-test="save-rows"]` (some settings pages use `#et_admin-save`), delete per row `[data-test="delete-row"]`.
