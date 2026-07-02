@@ -8,6 +8,7 @@ Goal-keyed jump table. Class names move sometimes — `grep` to confirm before q
 | How a new event is created | `BaseEventTypeController::actionCreate`, `EventBuilder`, `EventDefaults` |
 | How elements are wired to events | `BaseEventTypeElement`, `ElementType`, the module's migration (`element_type` seed), `SubspecialtySubsection` — full model → `subs/event-element-model.md` |
 | Is this code legacy or replatform? Where does a class live? | `subs/protected-tree.md` (namespace = era; per-dir map) |
+| When was this code introduced / deprecated, and in which release? | `subs/code-history.md` (pickaxe `-S`/`-G`, creation migrations, `tag --contains`) |
 | The Patient→Episode→Event→Element spine | `subs/event-element-model.md` |
 | Cross-module reads | `components/BaseAPI.php`, `components/ModuleAPI.php`, each module's `*_API.php` |
 | Core cross-module reads | `components/CoreAPI.php` |
