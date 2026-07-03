@@ -27,9 +27,13 @@ satellite>. Target <branch — e.g. release/26.0.x>. Back-port? list both.
 
 Commit title:
 (verbatim `git commit -m` message, on its own indented line; one block per commit,
-in order; the headline-fix commit reuses the Jira title)
+in order. Every OE commit is prefixed `[OE-XXXXX] - ` — the Jira key the user raises
+themselves, so leave it as literal `OE-XXXXX` X's for them to fill in. The whole
+subject line, prefix included, is ≤ 72 chars, so the text after `- ` gets ≤ 59;
+aim ≤ 50 total. The headline-fix commit reuses the Jira title, trimmed to fit. See
+*Commit titles* below.)
 
-    <exact commit message>
+    [OE-XXXXX] - <exact commit message, ≤ 59 chars>
 
 GitHub PR description:
 
@@ -94,6 +98,24 @@ The rules, the worked example, and the special cases (performance/refactor ticke
 | **EyeDraw Spec** | Specification for an EyeDraw doodle. |
 
 Bug vs Regression: did a prior version behave correctly? Yes → Regression. Unsure on a client fault → Regression. Improvement vs Internal: would a clinician notice?
+
+## Commit titles — the `[OE-XXXXX]` prefix and the length cap
+
+Every OE commit subject is prefixed with its Jira key in the form `[OE-XXXXX] - `, e.g.
+`[OE-18227] - Clean up temp files created per page in createPdfPreviewImages`. The prefix
+is a fixed **13 characters** (`[` + `OE-` + a 5-digit key + `]` + ` - `).
+
+- **The user raises the ticket, not the skill.** Suggest the message with the key left as
+  literal `OE-XXXXX` X's (still 13 chars, so the budget is unchanged) — the user pastes the
+  real key in once the ticket exists, then commits and opens the PR themselves.
+- **The whole subject line, prefix included, must fit ≤ 72 chars** — git's subject wrap and
+  where GitHub truncates the commit title. So the text after `- ` gets at most **59 chars**;
+  aim for ≤ 50 total where you can.
+- The headline-fix commit reuses the Jira ticket title **trimmed to fit** this budget — the
+  Jira title itself can stay fuller (up to ~70 chars for release notes); the commit message
+  is the shortened form that survives the prefix + 72-char cap. If trimming loses meaning,
+  reword rather than truncate mid-word.
+- Every commit in a multi-commit PR carries the same `[OE-XXXXX] - ` prefix and the same cap.
 
 ## Multiple commits
 

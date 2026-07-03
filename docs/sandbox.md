@@ -1,9 +1,11 @@
 # Running without prompts in a sandbox
 
-Sometimes you want Claude Code to operate fully autonomously — long batch jobs, CI-driven refactors, scripted bring-up. The kit ships two `defaultMode: dontAsk` tiers:
+Sometimes you want Claude Code to operate fully autonomously — long batch jobs, CI-driven refactors, scripted bring-up. For that, pair a permissive tier with `-m dontAsk` — the mode that suppresses prompts while still honouring the deny/ask rules. Two tiers suit prompt-free runs:
 
-- `trusted` — no prompts, but the deny list still catches `git push`/`git commit`, secret reads, and wide `rm -rf`. Use this on a host you trust.
-- `yolo` — no prompts, deny list trimmed to git push/commit and the two `rm -rf` rules (secret reads go through). Use this **only inside a throwaway container/VM**.
+- `trusted` — broad allow-list + wide `rm -rf` denies; the deny list still catches `git push`/`git commit`, secret reads, and wide `rm -rf`. Use this on a host you trust.
+- `yolo` — deny list trimmed to git push/commit and the two `rm -rf` rules (secret reads go through). Use this **only inside a throwaway container/VM**.
+
+> **Mode is separate from the tier and defaults to `auto`.** A bare `-p trusted` boots into the `auto` classifier, which still stops to ask on some calls — *not* `dontAsk`. For a genuinely prompt-free unattended run, always pass `-m dontAsk` explicitly.
 
 This doc explains the safe envelope for "no prompts" runs.
 
@@ -26,7 +28,7 @@ The mitigation is the **container/VM** boundary, not the permission rules. The p
 3. **The repo bind-mounted read-write**, everything else read-only.
 4. **`trusted` or `yolo` tier installed** for the in-container user. Pick `yolo` only if you genuinely need `.env*` / `~/.ssh/**` reads to go through unprompted (e.g. tooling that needs to read its own `.env` file); otherwise `trusted` gives the same prompt-free experience with the secrets safety net intact. **Neither tier lets Claude `git push` or `git commit`** — that's a hard floor across the kit.
 5. **No human-account credentials inside the container.** Use a scoped bot account.
-6. **No `bypassPermissions`** — this kit deliberately doesn't ship it. `yolo` is as wide as the kit goes; anything wider must come from a network-isolated VM, not a settings change.
+6. **Prefer `-m dontAsk` over `-m bypassPermissions`.** Mode is now separate from the rule-set (`-p` picks the deny/allow tier, `-m` picks `defaultMode`), so `bypassPermissions` is selectable — but it skips *every* check, including the git push/commit and secret-read denies that `dontAsk` still enforces. It's wider than any tier because it ignores the rules entirely; reach for it only in a throwaway VM, and only when `dontAsk` genuinely isn't enough.
 
 ## Minimum Docker recipe
 
@@ -39,7 +41,7 @@ docker run --rm -it \
   claude-sandbox:latest
 ```
 
-Inside the image, run this kit's `install.sh --permissions trusted -y` once during image build (or `--permissions yolo -y` if the job legitimately needs `.env` / `~/.ssh` reads to go through unprompted — note that git push/commit are still denied on `yolo`).
+Inside the image, run this kit's `install.sh --permissions trusted -m dontAsk -y` once during image build (or `--permissions yolo -m dontAsk -y` if the job legitimately needs `.env` / `~/.ssh` reads to go through unprompted — note that git push/commit are still denied on `yolo`). The `-m dontAsk` is what makes it prompt-free; without it the install defaults to `auto`, which still stops to ask on some calls.
 
 ## What each prompt-free tier still denies
 
@@ -55,9 +57,9 @@ Tier deny lists live in `settings/permissions/<tier>.json`. Add your own deny ru
 
 ## What this kit deliberately doesn't do
 
-- **No `bypassPermissions` flag.** The brief explicitly avoided it. `yolo` is the widest tier the kit ships, and even that keeps the git push/commit denies and the two `rm -rf` denies. Anything wider must come from a network-isolated VM, not a settings change.
+- **`bypassPermissions` is mode-only, never a tier.** It's reachable via `-m bypassPermissions` (behind a warning) now that mode is separable from the rule-set, but no *tier* enables it: `yolo` is the widest rule-set and still keeps the git push/commit and two `rm -rf` denies. `bypassPermissions` skips those denies too, so it belongs only in a network-isolated VM — the mode is the wide part, not the tier.
 - **No disabling auto-compact via `"autoCompactEnabled": false`.** That key is silently ignored — don't bother. Use `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` and `CLAUDE_CODE_AUTO_COMPACT_WINDOW` env vars instead (the installer sets both).
 
 ## CI-style autonomous runs
 
-For "run claude over this branch in CI", you almost certainly want `claude --permissions trusted` inside the CI runner's normal container, with the deny rules from this kit and network access locked down by the CI runner itself. Treat the runner as the sandbox boundary, not the permission rules.
+For "run claude over this branch in CI", you almost certainly want this kit's `trusted` tier installed with `-m dontAsk` (`install.sh -p trusted -m dontAsk -y`) inside the CI runner's normal container, with the deny rules from this kit and network access locked down by the CI runner itself. Don't rely on the default mode here — it's `auto`, which still prompts. Treat the runner as the sandbox boundary, not the permission rules.

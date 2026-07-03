@@ -101,8 +101,9 @@ equivalent another way:
   `~` or `/`.
 
 This is also why `mcp__codex` is allowed on the `standard`/`trusted`/`yolo` tiers but
-**not on `safe`**: spawning an autonomous writer is a write action, and the read-mostly
-`safe` tier prompts before it. On `safe` you'll get a permission prompt the first time.
+**not on `ultra-safe`**: spawning an autonomous writer is a write action, and the
+read-mostly `ultra-safe` tier prompts before it. On `ultra-safe` you'll get a permission
+prompt the first time.
 
 ## Teardown
 
@@ -138,4 +139,4 @@ Atlassian/GitHub creds, so one backup of that folder survives a `git reset --har
 | An agent couldn't `git push` / fetch | Expected — the `workspace-write` sandbox has network off. |
 | `codex mcp` errors instead of serving | Old vs new CLI: current builds serve via `codex mcp-server`; `codex mcp` now manages client entries. Update the Codex CLI. |
 | Tools missing after setup | Restart Claude Code — MCP servers bind at startup. |
-| Permission prompt on every spawn | You're on the `safe` tier (by design). Use `standard`+ or approve the prompt. |
+| Permission prompt on every spawn | You're on the `ultra-safe` tier (by design). Use `standard`+ or approve the prompt. |

@@ -4,20 +4,38 @@
 
 ## The four tiers
 
-| Tier      | `defaultMode` | What it feels like                                                         |
-| ---       | ---           | ---                                                                        |
-| `safe`    | `default`     | Read-mostly. Edit/Write/Bash all prompt. Suited to reviewing strangers' repos. |
-| `standard`| `acceptEdits` | Day-to-day. Edits auto-accept; shell prompts unless in the curated allow list. |
-| `trusted` | `dontAsk`     | Nothing prompts. Deny rules still catch git push/commit, secret reads, `rm -rf /*`. |
-| `yolo`    | `dontAsk`     | Nothing prompts. Git push/commit and `rm -rf /*` / `rm -rf ~*` still denied; secrets reads go through. **Container/VM only.** |
+The tier is only the **rule-set** — the allow/ask/deny lists. It says nothing about the session start mode; that's `-m` (next section), which defaults to `auto` for every tier.
+
+| Tier         | What the rule-set does                                                     |
+| ---          | ---                                                                        |
+| `ultra-safe` | Tightest allow-list. Reads and inspection go through; edits, writes, and shell aren't pre-approved, so your mode decides them. Suited to reviewing strangers' repos. |
+| `standard`   | Day-to-day. A curated allow-list auto-approves common edits and dev/test shell commands; anything off it falls to your mode. |
+| `trusted`    | Same broad allow-list as `standard`, plus wide `rm -rf` denies. Pair with `-m dontAsk` for a prompt-free run that still blocks git push/commit, secret reads, and `rm -rf /*`. |
+| `yolo`       | Like `trusted`, but the secret-read denies (`.env*`, `~/.ssh/**`) are dropped. **Container/VM only.** |
 
 Pick at install time:
 
 ```sh
-./install.sh --permissions standard      # or safe / trusted / yolo
+./install.sh --permissions standard              # standard rules; mode defaults to auto
+./install.sh --permissions standard --mode plan  # standard rules, but boot into plan mode
 ```
 
 If you omit `--permissions`, the installer prompts (defaulting to `standard`).
+
+## Session start mode (`-m`)
+
+`defaultMode` is what the session boots as — the fallback the evaluator uses for any tool call not settled by an `allow`/`ask`/`deny` rule (step 4 below). It's independent of the rule-set, so `-p` and `-m` mix freely:
+
+| Mode | Session starts as |
+| --- | --- |
+| `default` | Evaluate rules; anything unmatched prompts on first use. |
+| `plan` | Plan mode — read-only; no edits or command execution until you approve a plan. |
+| `acceptEdits` | Auto-accept Edit/Write; everything else follows the rules. |
+| `auto` | LLM safety classifier judges each tool call — auto-approves the ones it deems safe, asks on the rest. Shell is routed through the classifier, which can even supersede a static `allow` rule. |
+| `dontAsk` | No prompts; `deny` + `ask` rules still apply. |
+| `bypassPermissions` | Skip **all** checks — the widest mode, wider than any tier. Sandbox/VM only. |
+
+Omit `-m` and the session boots in `auto` regardless of tier (change the fallback with `DEFAULT_MODE=…` at install time, or pass `-m`). Interactive runs also prompt for the mode, pre-selecting `auto` (Enter keeps it). `bypassPermissions` ignores even the deny list, so the git push/commit hard floor no longer bites under it — see [sandbox.md](sandbox.md).
 
 ## Evaluation order
 
@@ -28,11 +46,11 @@ For any tool call, the rules are evaluated in this order — **first match wins*
 3. `allow` → run silently.
 4. Otherwise → fall back to `defaultMode`.
 
-This is why `trusted` is still safe-ish: even though `defaultMode` is `dontAsk`, the deny list still catches `git push`, `git commit`, secret reads, and wide `rm -rf`.
+This is why a `dontAsk` run on `trusted` is still safe-ish: even with no prompts, the deny list still catches `git push`, `git commit`, secret reads, and wide `rm -rf`.
 
 ## What's denied where
 
-| Deny rule | safe | standard | trusted | yolo |
+| Deny rule | ultra-safe | standard | trusted | yolo |
 | --- | :-: | :-: | :-: | :-: |
 | `Bash(git push *)`                  | ✓ | ✓ | ✓ | ✓ |
 | `Bash(git commit *)`                | ✓ | ✓ | ✓ | ✓ |

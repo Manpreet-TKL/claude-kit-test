@@ -10,9 +10,9 @@ A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` 
 │   └── CLAUDE.md           # global instructions; symlinked into ~/.claude/CLAUDE.md (edits are live)
 ├── settings/
 │   ├── permissions/
-│   │   ├── safe.json       # tier 1 — read-mostly
+│   │   ├── ultra-safe.json # tier 1 — read-mostly
 │   │   ├── standard.json   # tier 2 — day-to-day (default)
-│   │   ├── trusted.json    # tier 3 — no prompts (deny still wins)
+│   │   ├── trusted.json    # tier 3 — broad allow-list + wide `rm -rf` denies
 │   │   └── yolo.json       # tier 4 — git mutations + `rm -rf` still denied, secrets reads go through (container/VM only)
 │   ├── shift-enter.json    # newline-on-shift-enter fragment
 │   ├── mcp-atlassian.json  # Atlassian Remote MCP fragment (opt-in)
@@ -63,7 +63,7 @@ It backs up the pre-existing `settings.json` to `settings.json.bak` only when th
 ```bash
 cd ~/claude-kit
 ./install.sh                                # interactive tier choice (default standard)
-./install.sh --permissions safe             # explicit tier
+./install.sh --permissions ultra-safe       # explicit tier
 ./install.sh -p trusted -y                  # non-interactive
 ./install.sh --reset -p standard -y         # archive bloat → reinstall
 ./install.sh --fresh -p standard            # back up data → wipe ~/.claude → fresh install
@@ -78,18 +78,20 @@ Re-running is safe — Claude Code itself is installed if it's missing and other
 
 ## The features
 
-### 1. Permission tier (`--permissions safe|standard|trusted|yolo`)
+### 1. Permission rule-set + start mode (`--permissions ultra-safe|standard|trusted|yolo`, `--mode …`)
 
 Each tier lives as a standalone JSON file at `settings/permissions/<tier>.json`. The installer reads the file and copies it whole into `permissions:` — no inline construction.
 
-| Tier       | `defaultMode` | Behaviour                                                                                  |
-| ---        | ---           | ---                                                                                        |
-| `safe`     | `default`     | Reads + inspection allowed; asks for edits/writes/shell; denies git mutations and secrets. |
-| `standard` | `acceptEdits` | Auto-accept edits; allow common dev/test commands; still ask for arbitrary shell.          |
-| `trusted`  | `dontAsk`     | Nothing prompts; broad allow + extra `rm -rf` denies + git mutations + secrets.            |
-| `yolo`     | `dontAsk`     | Nothing prompts; `git push` / `git commit` and `rm -rf /*` / `rm -rf ~*` still denied (those denies are a hard floor across every tier); `.env`/`.ssh` reads go through. **Container/VM only.** |
+| Tier         | Rule-set (allow/ask/deny)                                                                  |
+| ---          | ---                                                                                        |
+| `ultra-safe` | Tightest allow-list — reads + inspection only; edits/writes/shell aren't pre-approved; denies git mutations and secrets. |
+| `standard`   | Curated allow-list for common edits and dev/test commands; arbitrary shell falls to your mode. |
+| `trusted`    | Same broad allow-list as `standard` + extra `rm -rf` denies; still denies git mutations + secrets. |
+| `yolo`       | Like `trusted`, but `.env`/`.ssh` reads go through; `git push` / `git commit` and `rm -rf /*` / `rm -rf ~*` still denied (those denies are a hard floor across every tier). **Container/VM only.** |
 
-Full explanation including evaluation order (`deny → ask → allow`) and what each tier denies: **[docs/permissions.md](docs/permissions.md)**. `bypassPermissions` is intentionally avoided — `yolo` is as wide as this kit goes; see [docs/sandbox.md](docs/sandbox.md) for the safe envelope.
+The tier (`-p`) is just the **rule-set**. The **session start mode** (`permissions.defaultMode`) is separate and defaults to `auto` for every tier: `-m default|plan|acceptEdits|auto|dontAsk|bypassPermissions` picks it explicitly — e.g. `-p standard -m plan`. (`auto` is the classifier-judged mode — auto-approves calls it deems safe, asks on the rest.) Omit `-m` and the session boots in `auto`; interactive runs prompt for it (Enter selects `auto`).
+
+Full explanation including evaluation order (`deny → ask → allow`) and what each tier denies: **[docs/permissions.md](docs/permissions.md)**. No *tier* enables `bypassPermissions` — `yolo` is the widest rule-set — but `-m bypassPermissions` is now selectable behind a warning; it skips even the deny floor, so it's VM-only. See [docs/sandbox.md](docs/sandbox.md) for the safe envelope.
 
 ### 2. Status line
 
@@ -125,7 +127,7 @@ WEEKLY_BUDGET        → env.CLAUDE_WEEKLY_TOKEN_BUDGET        (unset — status
 
 `Bash(git push *)` and `Bash(git commit *)` are denied on **every tier including `yolo`** — that's a hard floor. The human raises commits and pushes; Claude doesn't. The two `rm -rf /*` / `rm -rf ~*` denies are also universal.
 
-Reads of `.env*` and `~/.ssh/**` are denied on `safe` / `standard` / `trusted`. `yolo` drops only the secrets reads — use it only in a throwaway container/VM. Deny rules live inside each tier JSON file — to change them, edit the relevant `settings/permissions/<tier>.json` and re-run.
+Reads of `.env*` and `~/.ssh/**` are denied on `ultra-safe` / `standard` / `trusted`. `yolo` drops only the secrets reads — use it only in a throwaway container/VM. Deny rules live inside each tier JSON file — to change them, edit the relevant `settings/permissions/<tier>.json` and re-run.
 
 ### 6. Global CLAUDE.md
 
@@ -241,7 +243,7 @@ sandbox** with `approval_policy=never` — recorded (non-secretly) in
 shell *outside* Claude's `deny` rules, so blocking the network is what stops it
 `git push`-ing; the `codexmcp` skill additionally tells agents never to commit (the
 human commits). `mcp__codex` is allowed on `standard`/`trusted`/`yolo` but **prompts on
-`safe`** — spawning a writer is a write action. Full setup, model/sandbox tuning, and
+`ultra-safe`** — spawning a writer is a write action. Full setup, model/sandbox tuning, and
 teardown: **[docs/codex.md](docs/codex.md)**.
 
 Neither flag = `mcpServers.codex` is left exactly as-is on re-runs.
@@ -254,7 +256,7 @@ After applying, `install.sh` runs the checks and prints `[PASS]` / `[FAIL]` / `[
 
 ```bash
 jq '.statusLine'                                       ~/.claude/settings.json   # status line
-jq '.permissions.defaultMode'                          ~/.claude/settings.json   # tier
+jq '.permissions.defaultMode'                          ~/.claude/settings.json   # session start mode
 jq '.env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE,
     .env.CLAUDE_CODE_AUTO_COMPACT_WINDOW'              ~/.claude/settings.json   # autocompact
 jq '.permissions.deny'                                 ~/.claude/settings.json   # deny rules

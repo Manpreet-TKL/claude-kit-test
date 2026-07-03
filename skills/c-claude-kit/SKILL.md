@@ -12,7 +12,7 @@ When loaded as context with no task, reply only `Context loaded.` This skill is 
 
 ## Layout
 
-- `install.sh` — the only entry point. Lifecycle flags: `-p safe|standard|trusted|yolo`, `-y`, `--reset` (`-r`), `--fresh` (`-F`), `--no-update` (`-U`); MCP flags: `--with/without-atlassian|github|codex`.
+- `install.sh` — the only entry point. Lifecycle flags: `-p ultra-safe|standard|trusted|yolo` (rule-set), `-m default|plan|acceptEdits|auto|dontAsk|bypassPermissions` (session start mode / `defaultMode`, independent of `-p`; omit → `auto` (`DEFAULT_MODE`); `auto` = classifier-judged), `-y`, `--reset` (`-r`), `--fresh` (`-F`), `--no-update` (`-U`); MCP flags: `--with/without-atlassian|github|codex`.
 - `claude-md/CLAUDE.md` — symlinked into `~/.claude/CLAUDE.md` (editing it is live).
 - `settings/permissions/<tier>.json` — the four permission tiers (deny → ask → allow).
 - `settings/{shift-enter,mcp-atlassian}.json` — jq-merged settings fragments.

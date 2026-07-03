@@ -29,7 +29,9 @@ trap 'abort' 0
 set -e
 
 # Defaults (overridable via env or flag) ------------------------------------
-PERMISSIONS=""                                  # safe | standard | trusted | yolo
+PERMISSIONS=""                                  # ultra-safe | standard | trusted | yolo (the allow/ask/deny rule-set)
+MODE=""                                         # default|plan|acceptEdits|auto|dontAsk|bypassPermissions; "" = DEFAULT_MODE
+DEFAULT_MODE="${DEFAULT_MODE:-auto}"            # fallback session start mode when -m is omitted (env-overridable)
 AUTOCOMPACT_PCT="${AUTOCOMPACT_PCT:-100}"       # compact trigger %; 100 = no reduction (only lowers, clamped to ~83)
 AUTOCOMPACT_WINDOW="${AUTOCOMPACT_WINDOW:-200000}"  # effective window (tokens)
 FIVE_HOUR_BUDGET="${FIVE_HOUR_BUDGET:-}"        # tokens/5h, surfaced as % in status line; unset = raw count
@@ -54,7 +56,7 @@ while [[ $# -gt 0 ]]; do
     case $p in
     -[!-]?*)
         # Bundled short flags: explode -jc into -j -c (a single dash followed
-        # by 2+ chars, never a --long form). A value-taking flag like -p must be
+        # by 2+ chars, never a --long form). A value-taking flag (-p, -m) must be
         # last in the bundle, per getopt convention.
         rest="${p#-}"
         exploded=()
@@ -66,6 +68,10 @@ while [[ $# -gt 0 ]]; do
         ;;
     -p | --permissions)
         PERMISSIONS="${2}"
+        shift
+        ;;
+    -m | --mode)
+        MODE="${2}"
         shift
         ;;
     -y | --yes)
@@ -110,19 +116,32 @@ while [[ $# -gt 0 ]]; do
         ;;
     -h | --help)
         cat <<'USAGE'
-Usage: install.sh [-p <safe|standard|trusted|yolo>] [-r] [-F] [-n] [-U] [-y]
-                  [-j] [-c] [-a | -A] [-g | -G] [-x | -X]
+Usage: install.sh [-p <ultra-safe|standard|trusted|yolo>]
+                  [-m <default|plan|acceptEdits|auto|dontAsk|bypassPermissions>]
+                  [-r] [-F] [-n] [-U] [-y] [-j] [-c] [-a | -A] [-g | -G] [-x | -X]
 
   Every option has a single-letter (-x) and a long (--word) form.
-  Short flags may be bundled: -jc == -j -c (value-taking -p must be last).
+  Short flags may be bundled: -jc == -j -c (value-taking -p / -m must be last).
 
-  -p, --permissions   Permission tier to install (default: standard).
-                      safe      = read-mostly; ask before edits/writes/shell.
-                      standard  = day-to-day; auto-accept edits; ask for shell.
-                      trusted   = dontAsk; nothing prompts but deny still wins.
-                      yolo      = dontAsk; only git push/commit + rm -rf
-                                  denies remain (secrets reads ALLOWED).
-                                  Container/VM only — see docs/sandbox.md.
+  -p, --permissions   Permission rule-set to install (default: standard) — the
+                      allow/ask/deny lists, independent of -m (the start mode):
+                      ultra-safe  tightest allow-list; ask before edits/writes/shell.
+                      standard    broad allow-list for common dev/test commands.
+                      trusted     broad allow-list + extra rm -rf denies.
+                      yolo        like trusted but secret reads ALLOWED. Container/VM
+                                  only — see docs/sandbox.md.
+                      (git push/commit denied on every tier — a hard floor.)
+  -m, --mode          Session start mode (permissions.defaultMode), independent of the
+                      rule-set. One of:
+                      default            evaluate rules; unmatched tool calls prompt.
+                      plan               read-only; no edits/exec until you approve a plan.
+                      acceptEdits        auto-accept Edit/Write; everything else per rules.
+                      auto               LLM classifier judges each call — auto-approves the
+                                         safe ones, asks on the rest; shell routes through it.
+                      dontAsk            no prompts; deny + ask rules still apply.
+                      bypassPermissions  skip ALL checks — widest mode; sandbox/VM only.
+                      Omitted → DEFAULT_MODE (auto); interactive runs prompt for it
+                      (Enter selects auto).
   -r, --reset         Archive Claude Code's auto-generated state directories
                       (file-history, paste-cache, backups, shell-snapshots,
                       stats-cache, session-env, plugins, tasks) into
@@ -188,6 +207,8 @@ Usage: install.sh [-p <safe|standard|trusted|yolo>] [-r] [-F] [-n] [-U] [-y]
   -h, --help          This message.
 
 Env overrides:
+  DEFAULT_MODE         (default auto)    session start mode used when -m is omitted (and the
+                                         Enter default in the interactive mode prompt).
   AUTOCOMPACT_PCT      (default 100)     % capacity at which auto-compact triggers (100 = no reduction).
   AUTOCOMPACT_WINDOW   (default 200000)  effective context window in tokens.
   FIVE_HOUR_BUDGET     (unset)           tokens/5h budget — status line shows 5h N%
@@ -247,24 +268,60 @@ if [ -z "${PERMISSIONS}" ]; then
     if [ "${ASSUME_YES}" = "1" ] || [ ! -t 0 ]; then
         PERMISSIONS="standard"
     else
-        echo "Choose permission tier: [1] safe  [2] standard (default)  [3] trusted  [4] yolo"
+        echo "Choose permission tier: [1] ultra-safe  [2] standard (default)  [3] trusted  [4] yolo"
         read -r -p "Selection [2]: " choice
         case "${choice}" in
-            1|safe)     PERMISSIONS="safe" ;;
-            3|trusted)  PERMISSIONS="trusted" ;;
-            4|yolo)     PERMISSIONS="yolo" ;;
-            *)          PERMISSIONS="standard" ;;
+            1|ultra-safe) PERMISSIONS="ultra-safe" ;;
+            3|trusted)    PERMISSIONS="trusted" ;;
+            4|yolo)       PERMISSIONS="yolo" ;;
+            *)            PERMISSIONS="standard" ;;
         esac
     fi
 fi
 case "${PERMISSIONS}" in
-    safe|standard|trusted|yolo) echo "Tier: ${PERMISSIONS} [OK]" ;;
-    *) echo "Invalid tier '${PERMISSIONS}' — must be safe|standard|trusted|yolo" >&2; exit 1 ;;
+    ultra-safe|standard|trusted|yolo) echo "Tier: ${PERMISSIONS} [OK]" ;;
+    *) echo "Invalid tier '${PERMISSIONS}' — must be ultra-safe|standard|trusted|yolo" >&2; exit 1 ;;
 esac
 if [ "${PERMISSIONS}" = "yolo" ]; then
     echo "  WARNING: 'yolo' tier allows reads of .env/.ssh without prompting."
     echo "           (git push/commit + rm -rf are still denied — hard floor.)"
     echo "           Run only inside a throwaway container/VM. See docs/sandbox.md."
+fi
+
+# Resolve + validate the session start MODE (permissions.defaultMode), fully
+# independent of the rule-set tier. Defaults to DEFAULT_MODE (auto) when -m is
+# omitted, whichever tier you pick. Resolved before --fresh's wipe (like the tier)
+# so a bad -m aborts without half-tearing-down ~/.claude. writeSettings writes MODE
+# verbatim into permissions.defaultMode (overriding whatever the tier file carries).
+echo "Resolving session start mode..."
+if [ -z "${MODE}" ]; then
+    if [ "${ASSUME_YES}" = "1" ] || [ ! -t 0 ]; then
+        MODE="${DEFAULT_MODE}"
+    else
+        echo "Choose session start mode (defaultMode) — Enter selects '${DEFAULT_MODE}' (the default):"
+        echo "  [1] default  [2] plan  [3] acceptEdits  [4] auto  [5] dontAsk  [6] bypassPermissions"
+        read -r -p "Selection [${DEFAULT_MODE}]: " mchoice
+        case "${mchoice}" in
+            1|default)           MODE="default" ;;
+            2|plan)              MODE="plan" ;;
+            3|acceptEdits)       MODE="acceptEdits" ;;
+            4|auto)              MODE="auto" ;;
+            5|dontAsk)           MODE="dontAsk" ;;
+            6|bypassPermissions) MODE="bypassPermissions" ;;
+            "")                  MODE="${DEFAULT_MODE}" ;;
+            *)                   MODE="${mchoice}" ;;   # validated just below
+        esac
+    fi
+fi
+case "${MODE}" in
+    default|plan|acceptEdits|auto|dontAsk|bypassPermissions) echo "Mode: ${MODE} [OK]" ;;
+    *) echo "Invalid mode '${MODE}' — must be default|plan|acceptEdits|auto|dontAsk|bypassPermissions" >&2; exit 1 ;;
+esac
+if [ "${MODE}" = "bypassPermissions" ]; then
+    echo "  WARNING: 'bypassPermissions' skips ALL permission checks — the widest mode"
+    echo "           Claude Code has, wider than any kit tier. Don't count on deny rules"
+    echo "           (git push/commit, secret reads) to save you. Run only inside a"
+    echo "           throwaway container/VM. See docs/sandbox.md."
 fi
 
 # --fresh: NUKE AND PAVE. Archive conversations + auth, then delete the whole
@@ -446,6 +503,8 @@ permissionsJsonFor() {
 writeSettings() {
     local perms_json shift_json
     perms_json="$(permissionsJsonFor "${PERMISSIONS}")"
+    # Override the tier's baked-in defaultMode with the separately-resolved MODE.
+    perms_json="$(jq --arg m "${MODE}" '.defaultMode = $m' <<< "${perms_json}")"
     if [ -f "${shift_enter_file}" ]; then
         jq -e . "${shift_enter_file}" >/dev/null || { echo "Invalid JSON in ${shift_enter_file}" >&2; return 1; }
         shift_json="$(cat "${shift_enter_file}")"
@@ -1021,19 +1080,13 @@ verifyAll() {
     # 2. terminal-setup — not script-forceable; mark INFO not FAIL.
     echo "[INFO] (2) /terminal-setup not script-forceable; fallback printed above"
 
-    # 3. permissions tier present with correct defaultMode
-    local mode expected_mode
+    # 3. rule-set present with the separately-resolved defaultMode (MODE)
+    local mode
     mode="$(jq -r '.permissions.defaultMode // empty' "${settings_file}")"
-    case "${PERMISSIONS}" in
-        safe)     expected_mode="default" ;;
-        standard) expected_mode="acceptEdits" ;;
-        trusted)  expected_mode="dontAsk" ;;
-        yolo)     expected_mode="dontAsk" ;;
-    esac
-    if [ "${mode}" = "${expected_mode}" ]; then
-        echo "[PASS] (3) permissions tier '${PERMISSIONS}' applied (defaultMode=${mode})"
+    if [ "${mode}" = "${MODE}" ]; then
+        echo "[PASS] (3) tier '${PERMISSIONS}' rules + mode '${MODE}' applied (defaultMode=${mode})"
     else
-        echo "[FAIL] (3) permissions tier mismatch (have='${mode}', want='${expected_mode}')"; failed=1
+        echo "[FAIL] (3) defaultMode mismatch (have='${mode}', want='${MODE}')"; failed=1
     fi
 
     # 4. autocompact env vars
@@ -1097,7 +1150,8 @@ printSummary() {
     echo ""
     echo "Summary"
     echo "-------------------------------"
-    echo "  tier        : ${PERMISSIONS}"
+    echo "  tier        : ${PERMISSIONS}  (allow/ask/deny rule-set)"
+    echo "  mode        : ${MODE}  (permissions.defaultMode)"
     echo "  settings    : ${settings_file}  (backup: ${settings_bak})"
     echo "  statusline  : ${statusline_file}  (symlinked from ${statusline_src})"
     echo "  guidelines  : ${claude_md_file}  (symlinked from ${claude_md_src})"

@@ -36,7 +36,7 @@ whole check.
 Interpret:
 - **Tools present and `codex login status` OK** → print a one-line `Codex ✔` and proceed.
 - **Permission denied calling the tool** → the `mcp__codex` allow rule is missing for
-  this tier. Codex is allowed on `standard`/`trusted`/`yolo` but **prompts on `safe`**
+  this tier. Codex is allowed on `standard`/`trusted`/`yolo` but **prompts on `ultra-safe`**
   (it writes files). Either approve the prompt, or re-run `~/claude-kit/install.sh -p
   <tier>` for a tier that allows it, then stop.
 - **Connection error / "not connected" / timeout** → run remediation, restart, stop.
