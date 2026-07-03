@@ -50,7 +50,7 @@ Use the repo-appropriate folder prefix in the link (`oe-pr` / `oe-iol-pr` / `oe-
 - **Type, exactly one** of Bug / New Feature / Improvement / Internal Improvement / Story / Epic / Regression / EyeDraw Spec. Client-reported fault → usually **Regression** (worked in a prior version); never-correct → Bug. Improvement vs Internal turns on user-visibility.
 - **Affects version** = where the symptom manifests, verbatim (`v25.4.1`); **Fix version** = where the fix lands + repo + target branch.
 - **Commit titles verbatim**, ready for `git commit -m`; one block per commit; each commit self-contained and green.
-- The Steps/Current/Expected triad fits Bug/Regression only — drop it for feature/planning types; skip lighter sections when self-evident; never pad or fabricate steps.
+- The Steps/Current/Expected triad fits Bug/Regression only — drop it for feature/planning/performance types; skip lighter sections when self-evident; never pad or fabricate steps. For the Steps to Reproduce, run `c-oe-repro` if they aren't already in this conversation — it owns the rules.
 - **Client-agnostic everywhere**: no trust names, ticket numbers, credentials, sample-DB references, or real patient data — describe actors by role and data by kind.
 - One logical change per PR: multiple commits yes, multiple unrelated tickets no — split them.
 

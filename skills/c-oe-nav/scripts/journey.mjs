@@ -18,11 +18,18 @@
 //   {"click":"#add-event"}              CSS, text="Label", or "<sel> >> nth=N"
 //   {"fill":["#sel","value"]}  {"select":["#sel","value"]}  {"upload":["#sel","/file"]}
 //   {"press":"Enter"}  {"wait":1500}  {"read":".element-fields"}
+//   {"dump":true}                       force a structural snapshot (quiet is the default)
 //   {"login":false}                     as FIRST action: skip the built-in login
+//
+// Output is QUIET by default: the oe-version line, explicit reads, any STEP FAILED
+// state, and one final snapshot of where you landed — nothing per step. Drop in a
+// {"dump":true} action wherever you want a mid-journey structural view; pass
+// --verbose (or OE_VERBOSE=1) to restore a full dump after every step.
 //
 // Env: BASE_URL (http://localhost) · OE_USERNAME/OE_PASSWORD (admin/admin) or
 // OE_PASSWORD_FILE · OE_INSTITUTION_ID/OE_SITE_ID (1/1) · OE_SETTLE_MS (700)
 // · OE_ALLOW_WRITE=1 to permit delete-like clicks and native confirm dialogs
+// · OE_VERBOSE=1 (or --verbose) dumps the full page after every step (default is quiet)
 // · OE_ACTIONS carries the action list when the script itself is piped on stdin.
 // Exit: 0 ok · 2 bad input or step failure · 3 login/infra failure.
 import puppeteer from 'puppeteer';
@@ -40,6 +47,10 @@ const argv = process.argv.slice(2);
 const shotAt = argv.indexOf('--shot');
 const shotDir = shotAt >= 0 ? argv.splice(shotAt, 2)[1] : null;
 if (shotDir) mkdirSync(shotDir, { recursive: true });
+const verboseAt = argv.indexOf('--verbose');
+if (verboseAt >= 0) argv.splice(verboseAt, 1);
+// Quiet by default (oe-version + reads + failures + a final snapshot); --verbose restores per-step dumps.
+const VERBOSE = verboseAt >= 0 || /^(1|true|yes)$/i.test(env('OE_VERBOSE', ''));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -104,8 +115,6 @@ async function dump(page) {
     return {
       popup: !!popup,
       behind: popup ? [...document.querySelectorAll('h1')].map((e) => clean(e.innerText)).find((t) => t && !noise(t)) : null,
-      version: clean(document.querySelector('#js-openeyes-info')?.innerText)
-        || clean(document.querySelector('#js-openeyes-info')?.getAttribute('title')),
       headings: cap(q('h1,h2,h3,.oe-h1,.event-title').map((e) => clean(e.innerText)).filter((t) => t && !noise(t)), 8),
       banners: q('.errorMessage, .alert-box, .flash-error, .error, .warning')
         .map((e) => clean(e.innerText)).filter(Boolean).slice(0, 8),
@@ -202,31 +211,52 @@ try {
       process.exit(3);
     }
     out('### logged in');
-    const s = await dump(page);
-    if (s.version) out(`oe version: ${s.version}`);
+    // The in-app version is signal even when quiet; the full structural dump is the noise.
+    const version = await page.evaluate(() => {
+      const el = document.querySelector('#js-openeyes-info');
+      const raw = (el?.innerText || el?.getAttribute('title') || '').replace(/\s+/g, ' ').trim();
+      return raw.match(/Version:?\s*(v?[\d][\w.\-]*)/i)?.[1] || '';
+    });
+    if (version) out(`oe version: ${version}`);
+    if (VERBOSE) await dump(page);
   }
 
+  let lastDumped = false;
   for (let i = 0; i < actions.length; i++) {
     const [verb, arg] = Object.entries(actions[i])[0] ?? [];
     if (verb === 'login') continue;
+    out(`\n### step ${i + 1}: ${verb} ${JSON.stringify(arg)}`);
+    if (verb === 'dump') {                 // force a structural snapshot (quiet is the default)
+      await dump(page).catch(() => {});
+      lastDumped = true;
+      continue;
+    }
     if (!acts[verb]) {
       console.error(`step ${i + 1}: unknown action "${verb}"`);
       process.exit(2);
     }
-    out(`\n### step ${i + 1}: ${verb} ${JSON.stringify(arg)}`);
     try {
       await acts[verb](page, arg);
       await settle(page);
     } catch (e) {
       out(`STEP FAILED: ${e.message.split('\n')[0]}`);
       out('state at failure:');
-      await dump(page).catch(() => {});
+      await dump(page).catch(() => {});    // failures always dump, even when quiet
       if (shotDir) await page.screenshot({ path: `${shotDir}/step-${String(i + 1).padStart(2, '0')}-failed.png` }).catch(() => {});
       process.exit(2);
     }
-    if (verb !== 'wait' && verb !== 'read') await dump(page);
+    // Quiet (default) suppresses per-step dumps; --verbose restores them. read prints its own text; wait shows nothing.
+    if (verb !== 'wait' && verb !== 'read' && VERBOSE) {
+      await dump(page);
+      lastDumped = true;
+    } else if (verb === 'read') {
+      lastDumped = true;   // the read is the output — no redundant final snapshot after it
+    } else {
+      lastDumped = false;  // wait / quiet step — let the final snapshot show where we landed
+    }
     if (shotDir) await page.screenshot({ path: `${shotDir}/step-${String(i + 1).padStart(2, '0')}.png` }).catch(() => {});
   }
+  if (!VERBOSE && !lastDumped) await dump(page);   // quiet: one final snapshot of where we landed
   out('\nJOURNEY OK');
 } finally {
   await browser.close();

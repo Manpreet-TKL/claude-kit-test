@@ -64,7 +64,8 @@ Dialog has three columns: **Subspecialties** (episode list + 'Add New Subspecial
 
 - The dialog body is a Mustache template (`<script type="text/html" id="add-new-event-template">`) — not in the live DOM until opened. Items are `li.oe-event-type[data-eventtype-id]`, **no href**; the create URL is built in JS. Item hooks by version: v11.0.18 has `#<Module>-link` (e.g. `#OphCoDocument-link`); develop/26.x adds `[data-test="add-new-event-<Module>"]`. 'Add New Subspecialty' is `#js-add-subspecialty-btn`.
 - Create URL shape: `/patientEvent/create?patient_id=<pid>&event_type_id=<id>&context_id=<ctx>&episode_id=<ep>` — needs **both** `context_id` and a matching `episode_id`, else HTTP 400 "Episode/Context mismatch".
-- Sample patient 17891 pairs: General Ophthalmology ctx 13 / ep 601038 · Glaucoma ctx 8 / ep 601039 · Eye Casualty ctx 2 / ep 601040.
+- **Probing: skip the dialog, `goto` the create URL directly.** A `#<Module>-link` only becomes clickable once a subspecialty *and* a context are chosen; clicking one cold **silently no-ops** — the probe just sees the dialog unchanged (a real dead-end, not a bad selector). **DB is the fallback, not the first stop:** on a sample box try the recorded 17891 pairs below first — a wrong/stale pair fails fast and loud (the 400 above), so guessing costs one `goto`; `event_type_id`s are already in the table above. Query the DB (via `c-dblogin`) only after a 400 or when the repro needs a data-shaped patient ("a patient with …"): `SELECT id, firm_id FROM episode WHERE patient_id=<pid> AND deleted=0` — `firm_id` is the `context_id`, `id` the `episode_id`; `event_type_id` is `SELECT id FROM event_type WHERE class_name='<Module>'`.
+- Sample patient 17891 pairs (captured on develop; stock sample seeds usually match): General Ophthalmology ctx 13 / ep 601038 · Glaucoma ctx 8 / ep 601039 · Eye Casualty ctx 2 / ep 601040.
 
 All 23 event types on develop/26.x ('Select New Event' label → `event_type_id`, module). On v11.0.18 the dialog showed 20 — DNA sample, Genetic Results and Medical Device Usage Record were absent (later additions and/or subspecialty-filtered; confirm on the target version before citing them):
 
@@ -94,7 +95,18 @@ All 23 event types on develop/26.x ('Select New Event' label → `event_type_id`
 | Request Form | 49 | OphCoRequestForm |
 | Therapy Application | 35 | OphCoTherapyapplication |
 
-Create-form field labels are **not** in this atlas — read them from `protected/modules/<Module>/views/default/form_*.php` on the fix branch, or probe.
+Create-form field labels are **not** in this atlas — read them from `protected/modules/<Module>/views/default/form_*.php` on the fix branch, or probe. One exception, recorded because repros keep landing on it:
+
+### Document create form (OphCoDocument, event_type_id 40) — verified live v11.0.18 (2026-07)
+
+The trigger path for the PDF/render temp-file bug family (`oe_pdf` stubs, `magick-*` pixel cache): upload a PDF, then build its page previews.
+
+- 'Event Sub Type' dropdown `#Element_OphCoDocument_Document_event_sub_type` (empty option '-- Select --'; options from `ophcodocument_sub_types` — sample id 1 = "General").
+- 'Upload' row radios: 'Single file' `#upload_single` (checked by default) · 'Right/Left sides'.
+- File input `#Document_single_document_row_id` (`.js-document-file-input`) is `display:none` — the probe's upload action works on it anyway. Drop-zone label: "Click to select file, DROP here or press Ctrl + V to paste".
+- In-container test PDF (web-live ships ghostscript; one `showpage` per page): `gs -q -o /tmp/twopage.pdf -sDEVICE=pdfwrite -dDEVICEWIDTHPOINTS=300 -dDEVICEHEIGHTPOINTS=300 -c "showpage showpage"`.
+- 'Save' `#et_save` → lands on `/OphCoDocument/default/view/<event_id>` — take the id from the URL for endpoint work.
+- Page previews build server-side (`createPdfPreviewImages()`): fire logged-in `GET /eventImage/getImageInfo?event_id=<id>` (the same path the lightning-viewer icon fires) and re-fire after a few seconds until the JSON shows `page_count`. Temp-leak pairing: `docker exec <stack>-web-1 sh -c 'ls -1 /tmp/oe_pdf* 2>/dev/null | wc -l'` before/after.
 
 ## Event view / edit / delete
 
