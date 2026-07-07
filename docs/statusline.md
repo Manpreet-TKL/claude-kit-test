@@ -109,6 +109,15 @@ There's no canonical "right" budget — Anthropic's plan limits aren't published
 - **Calibrate against the GUI.** Note what `/usage` shows in Claude Code, then pick budgets so the bar lands near the same percentage. e.g. if GUI shows `4%` session at `1.8M` JSONL tokens, set `FIVE_HOUR_BUDGET≈45000000`.
 - **Cap-yourself number.** Pick a round number you don't want to blow past in a 5h / 7-day window, irrespective of plan, and watch the bar.
 
+## Refresh cadence
+
+By default Claude Code only re-runs the status-line command on conversation events (a new assistant message, `/compact`, a mode change), so during a long unattended turn — hours of tool calls in auto mode — the token bar goes stale. The kit therefore writes `statusLine.refreshInterval` into `settings.json` (default **5 seconds**, needs Claude Code ≥ 2.1.97): the command is re-run on a timer *in addition to* the event-driven updates, keeping the 5h/weekly windows honest through long sessions. The script costs ~10ms per run, so this is negligible. Tune or disable at install time:
+
+```bash
+STATUSLINE_REFRESH=30 ./install.sh -q -U   # every 30s
+STATUSLINE_REFRESH=0  ./install.sh -q -U   # event-driven only (key removed)
+```
+
 ## Customising
 
 Edit `~/.claude/statusline.sh` directly — the installer rewrites it on every run (the bar layout is part of the kit), but anything that doesn't survive a re-run isn't really a customisation, it's an installer change. Either edit `claude-kit/install.sh`'s `writeStatusline()` block and re-run, or fork the script after install and stop re-running the installer's statusline step.

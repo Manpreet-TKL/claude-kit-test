@@ -74,6 +74,10 @@ Deregisters the server (`claude mcp remove github -s user`). The credentials fil
 `generated/.github.env` is left in place — delete it manually to clear the token, and
 revoke the PAT at https://github.com/settings/personal-access-tokens.
 
+To clear the credentials in one go, `./install.sh -l github` (allowed on every
+permission tier) deregisters the server AND removes `generated/.github.env`, then
+exits — the PAT itself still needs revoking at GitHub.
+
 ## The credentials file
 
 `generated/.github.env` is plain shell:

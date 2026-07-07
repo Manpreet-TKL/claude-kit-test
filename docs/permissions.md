@@ -20,7 +20,7 @@ Pick at install time:
 ./install.sh --permissions standard --mode plan  # standard rules, but boot into plan mode
 ```
 
-If you omit `--permissions`, the installer prompts (defaulting to `standard`).
+If you omit `--permissions`, the installer prompts (defaulting to `standard`); under `-q` (quick, fully non-interactive) it takes `yolo` without asking.
 
 ## Session start mode (`-m`)
 
@@ -35,7 +35,7 @@ If you omit `--permissions`, the installer prompts (defaulting to `standard`).
 | `dontAsk` | No prompts; `deny` + `ask` rules still apply. |
 | `bypassPermissions` | Skip **all** checks — the widest mode, wider than any tier. Sandbox/VM only. |
 
-Omit `-m` and the session boots in `auto` regardless of tier (change the fallback with `DEFAULT_MODE=…` at install time, or pass `-m`). Interactive runs also prompt for the mode, pre-selecting `auto` (Enter keeps it). `bypassPermissions` ignores even the deny list, so the git push/commit hard floor no longer bites under it — see [sandbox.md](sandbox.md).
+Omit `-m` and the session boots in `auto` regardless of tier (change the fallback with `DEFAULT_MODE=…` at install time, or pass `-m`) — the mode is never prompted for; interactive runs only ask for the tier. `bypassPermissions` ignores even the deny list, so the git push/commit hard floor no longer bites under it — see [sandbox.md](sandbox.md).
 
 ## Evaluation order
 
@@ -59,6 +59,8 @@ This is why a `dontAsk` run on `trusted` is still safe-ish: even with no prompts
 | `Bash(rm -rf /*)`, `Bash(rm -rf ~*)`|   |   | ✓ | ✓ |
 
 `git push` and `git commit` are a **hard floor** — every tier carries them, `yolo` included. Commits and pushes are intentional human actions, not autonomous ones; no permission tier in this kit lets Claude do either. `yolo` only relaxes the secrets reads (`.env*`, `~/.ssh/**`); the wide `rm -rf` denies are kept on the two `dontAsk` tiers (`trusted` / `yolo`) where they're most useful. Use `yolo` exclusively inside a throwaway container/VM. See [sandbox.md](sandbox.md).
+
+The hard floor has a mirror image: one universal **allow**. Every tier — `ultra-safe` included — carries `Bash(~/claude-kit/install.sh -l *)` and `Bash(bash ~/claude-kit/install.sh -l *)`, so logging out of an MCP never needs a prompt. That's safe to always-allow because `-l/--logout` is a standalone action: install.sh validates the target, clears the credentials, and **exits before any other flag takes effect** — appended arguments parse but never execute, so the rule can't be escalated into a full install.
 
 ## Editing the tier files
 

@@ -49,80 +49,29 @@ GITHUB_MODE=""                                  # -g / --with-github / "" (leave
 GITHUB_REMOVE=0                                 # --without-github sets to 1
 CODEX_MODE=""                                   # -x / --with-codex / "" (leave alone)
 CODEX_REMOVE=0                                  # --without-codex sets to 1
+SKILLS_AUTO=""                                  # -s on|off: flip disable-model-invocation across kit skills; "" → off (plain runs restore true)
+LOGOUT_MCP=""                                   # -l codex|github|atlassian|all: clear stored MCP credentials and exit (standalone action)
+PRUNE_BEFORE=""                                 # -d <days|date>: archive+delete sessions last active before the cutoff; "" = off
+CLEANUP_PERIOD_DAYS="${CLEANUP_PERIOD_DAYS:-365}"  # settings.json cleanupPeriodDays — Claude Code's own transcript retention
+STATUSLINE_REFRESH="${STATUSLINE_REFRESH:-5}"   # statusLine.refreshInterval (seconds) — timer re-runs on top of event-driven updates; 0 = events only
+QUICK=0                                         # -q: non-interactive defaults run — yolo tier unless -p given, implies -y
 
-# Argument parsing ---------------------------------------------------------
-while [[ $# -gt 0 ]]; do
-    p="$1"
-    case $p in
-    -[!-]?*)
-        # Bundled short flags: explode -jc into -j -c (a single dash followed
-        # by 2+ chars, never a --long form). A value-taking flag (-p, -m) must be
-        # last in the bundle, per getopt convention.
-        rest="${p#-}"
-        exploded=()
-        for ((i = 0; i < ${#rest}; i++)); do
-            exploded+=("-${rest:i:1}")
-        done
-        set -- "${exploded[@]}" "${@:2}"
-        continue
-        ;;
-    -p | --permissions)
-        PERMISSIONS="${2}"
-        shift
-        ;;
-    -m | --mode)
-        MODE="${2}"
-        shift
-        ;;
-    -y | --yes)
-        ASSUME_YES=1
-        ;;
-    -n | --no-verify)
-        DO_VERIFY=0
-        ;;
-    -U | --no-update)
-        DO_UPDATE=0
-        ;;
-    -r | --reset)
-        DO_RESET=1
-        ;;
-    -F | --fresh)
-        DO_FRESH=1
-        ;;
-    -j | --with-jira)
-        JIRA_MODE="on"
-        ;;
-    -c | --with-confluence)
-        CONFLUENCE_MODE="on"
-        ;;
-    -a | --with-atlassian)
-        JIRA_MODE="on"
-        CONFLUENCE_MODE="on"
-        ;;
-    -A | --without-atlassian)
-        ATLASSIAN_REMOVE=1
-        ;;
-    -g | --with-github)
-        GITHUB_MODE="on"
-        ;;
-    -G | --without-github)
-        GITHUB_REMOVE=1
-        ;;
-    -x | --with-codex)
-        CODEX_MODE="on"
-        ;;
-    -X | --without-codex)
-        CODEX_REMOVE=1
-        ;;
-    -h | --help)
-        cat <<'USAGE'
-Usage: install.sh [-p <ultra-safe|standard|trusted|yolo>]
+# Usage ---------------------------------------------------------------------
+usage() {
+    cat <<'USAGE'
+Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                   [-m <default|plan|acceptEdits|auto|dontAsk|bypassPermissions>]
+                  [-s <on|off>] [-d <days|YYYY-MM-DD>]
                   [-r] [-F] [-n] [-U] [-y] [-j] [-c] [-a | -A] [-g | -G] [-x | -X]
 
   Every option has a single-letter (-x) and a long (--word) form.
-  Short flags may be bundled: -jc == -j -c (value-taking -p / -m must be last).
+  Short flags may be bundled: -jc == -j -c (value-taking -p / -m / -s / -d must be last).
+  Run with no flags at all, install.sh prints this help and exits with an
+  error — pass -q for the no-questions-asked run with defaults.
 
+  -q, --quick         Quick run: non-interactive with defaults — the yolo tier
+                      unless -p says otherwise, every prompt suppressed
+                      (implies -y). Otherwise identical to a plain install run.
   -p, --permissions   Permission rule-set to install (default: standard) — the
                       allow/ask/deny lists, independent of -m (the start mode):
                       ultra-safe  tightest allow-list; ask before edits/writes/shell.
@@ -140,8 +89,8 @@ Usage: install.sh [-p <ultra-safe|standard|trusted|yolo>]
                                          safe ones, asks on the rest; shell routes through it.
                       dontAsk            no prompts; deny + ask rules still apply.
                       bypassPermissions  skip ALL checks — widest mode; sandbox/VM only.
-                      Omitted → DEFAULT_MODE (auto); interactive runs prompt for it
-                      (Enter selects auto).
+                      Omitted → DEFAULT_MODE (auto); never prompted for — interactive
+                      runs only ask for the tier.
   -r, --reset         Archive Claude Code's auto-generated state directories
                       (file-history, paste-cache, backups, shell-snapshots,
                       stats-cache, session-env, plugins, tasks) into
@@ -183,16 +132,54 @@ Usage: install.sh [-p <ultra-safe|standard|trusted|yolo>]
   -G, --without-github
                       Deregister the github MCP server (claude mcp remove,
                       user scope). Credentials file is left in place.
-  -x, --with-codex    Register OpenAI Codex as a local MCP server (codex
-                      mcp-server) at user scope, so Claude can spawn one or more
-                      autonomous Codex coding agents (mcp__codex tools). Needs
-                      the `codex` CLI on PATH and a prior `codex login` (ChatGPT
-                      sign-in). Pins the flagship model + high reasoning effort
-                      and a workspace-write, no-network sandbox; tweakable in
+  -x, --with-codex    Register OpenAI Codex as an MCP server (codex mcp-server)
+                      at user scope, so Claude can spawn one or more autonomous
+                      Codex coding agents (mcp__codex tools). Docker-first:
+                      builds a local claude-kit-codex image (docker/codex/) and
+                      runs the server containerised — nothing is installed on
+                      the host; a host `codex` binary is used only if Docker is
+                      absent. Sign in once via `... claude-kit-codex login` (the
+                      exact command is printed; auth lands in ~/.codex). Pins
+                      the flagship model + high reasoning effort and a
+                      workspace-write, no-network sandbox; tweakable in
                       generated/.codex.env. With -y, reads that file silently.
   -X, --without-codex
                       Deregister the codex MCP server (claude mcp remove, user
                       scope). generated/.codex.env and ~/.codex are left alone.
+  -s, --skills-auto   on|off (default off). Set the model-invocation gate on
+                      every kit skill in place (the SKILL.md files are live
+                      symlink targets):
+                      on   rewrites 'disable-model-invocation: true' → 'false',
+                           so Claude may auto-pull any skill whose description
+                           matches the task.
+                      off  rewrites 'false' → 'true', restoring the exact
+                           per-skill state 'on' started from. Skills that never
+                           carried the flag (the deliberate auto-load set) are
+                           untouched in both directions. Restart Claude Code to
+                           pick up the change.
+                      Omitting -s means off: every plain run restores the
+                      canonical mostly-true state, so -s on only lasts until
+                      the next install.
+  -d, --prune-sessions
+                      <days|date>. Archive-then-delete conversations whose last
+                      activity is older than the cutoff — a bare number means
+                      that many days ago; anything else is parsed by date -d
+                      (e.g. 2025-01-31). For each stale session the transcript
+                      (projects/<proj>/<id>.jsonl), its sidecar dir, and the
+                      matching session-env/, file-history/ and tasks/ entries
+                      are MOVED to ~/.claude-backups/<timestamp>-pruned/ — they
+                      vanish from claude --resume but nothing is destroyed
+                      (delete the archive yourself to free the disk).
+                      Interactive runs show a summary and ask y/N; -y skips.
+  -l, --logout        <codex|github|atlassian|all>. Log out of an MCP and EXIT —
+                      a standalone action, nothing else runs (which is why the
+                      permission tiers can always-allow `install.sh -l *`).
+                      Removes the stored credentials: ~/.codex/auth.json for
+                      codex; for github/atlassian also the generated/ env file
+                      AND the ~/.claude.json registration (it embeds the token).
+                      codex stays registered — sign back in and it works again.
+                      Local only: the printed pointers tell you where to revoke
+                      each token server-side.
   -y, --yes           Non-interactive; accept default tier if not provided.
                       With -j/-c, reads generated/.atlassian.env instead of
                       prompting (errors if the file or required vars are absent).
@@ -207,8 +194,15 @@ Usage: install.sh [-p <ultra-safe|standard|trusted|yolo>]
   -h, --help          This message.
 
 Env overrides:
-  DEFAULT_MODE         (default auto)    session start mode used when -m is omitted (and the
-                                         Enter default in the interactive mode prompt).
+  DEFAULT_MODE         (default auto)    session start mode used when -m is omitted (the mode
+                                         is never prompted for).
+  CLEANUP_PERIOD_DAYS  (default 365)     settings.json cleanupPeriodDays — how long Claude Code
+                                         itself retains conversation transcripts (its built-in
+                                         default is only 30 days). Written on every run.
+  STATUSLINE_REFRESH   (default 5)       statusLine.refreshInterval in seconds — re-runs the
+                                         status line on a timer on top of the event-driven
+                                         updates, so token counts stay fresh through long
+                                         turns. 0 = event-driven only.
   AUTOCOMPACT_PCT      (default 100)     % capacity at which auto-compact triggers (100 = no reduction).
   AUTOCOMPACT_WINDOW   (default 200000)  effective context window in tokens.
   FIVE_HOUR_BUDGET     (unset)           tokens/5h budget — status line shows 5h N%
@@ -216,6 +210,111 @@ Env overrides:
   WEEKLY_BUDGET        (unset)           tokens/week (rolling 7d) — status line shows wk N%
                                          instead of a raw count. e.g. WEEKLY_BUDGET=20000000
 USAGE
+}
+
+# Argument parsing ---------------------------------------------------------
+requireValue() {   # $1=flag $2=its value (may be absent) — abort with a message instead of a bare set -e death
+    if [ $# -lt 2 ] || [ -z "${2}" ]; then
+        echo "install.sh: ${1} requires a value — see -h for accepted forms" >&2
+        trap : 0
+        exit 1
+    fi
+}
+
+if [ $# -eq 0 ]; then
+    usage >&2
+    echo >&2
+    echo "install.sh: no flags given — nothing assumed. Use -q to run non-interactively" >&2
+    echo "with defaults (yolo tier), or pick options from the list above." >&2
+    trap : 0
+    exit 1
+fi
+
+while [[ $# -gt 0 ]]; do
+    p="$1"
+    case $p in
+    -[!-]?*)
+        # Bundled short flags: explode -jc into -j -c (a single dash followed
+        # by 2+ chars, never a --long form). A value-taking flag (-p, -m) must be
+        # last in the bundle, per getopt convention.
+        rest="${p#-}"
+        exploded=()
+        for ((i = 0; i < ${#rest}; i++)); do
+            exploded+=("-${rest:i:1}")
+        done
+        set -- "${exploded[@]}" "${@:2}"
+        continue
+        ;;
+    -p | --permissions)
+        requireValue "$@"
+        PERMISSIONS="${2}"
+        shift
+        ;;
+    -m | --mode)
+        requireValue "$@"
+        MODE="${2}"
+        shift
+        ;;
+    -q | --quick)
+        QUICK=1
+        ;;
+    -y | --yes)
+        ASSUME_YES=1
+        ;;
+    -n | --no-verify)
+        DO_VERIFY=0
+        ;;
+    -U | --no-update)
+        DO_UPDATE=0
+        ;;
+    -r | --reset)
+        DO_RESET=1
+        ;;
+    -F | --fresh)
+        DO_FRESH=1
+        ;;
+    -j | --with-jira)
+        JIRA_MODE="on"
+        ;;
+    -c | --with-confluence)
+        CONFLUENCE_MODE="on"
+        ;;
+    -a | --with-atlassian)
+        JIRA_MODE="on"
+        CONFLUENCE_MODE="on"
+        ;;
+    -A | --without-atlassian)
+        ATLASSIAN_REMOVE=1
+        ;;
+    -g | --with-github)
+        GITHUB_MODE="on"
+        ;;
+    -G | --without-github)
+        GITHUB_REMOVE=1
+        ;;
+    -x | --with-codex)
+        CODEX_MODE="on"
+        ;;
+    -X | --without-codex)
+        CODEX_REMOVE=1
+        ;;
+    -s | --skills-auto)
+        requireValue "$@"
+        SKILLS_AUTO="${2}"
+        shift
+        ;;
+    -d | --prune-sessions)
+        requireValue "$@"
+        PRUNE_BEFORE="${2}"
+        shift
+        ;;
+    -l | --logout)
+        requireValue "$@"
+        LOGOUT_MCP="${2}"
+        shift
+        ;;
+    -h | --help)
+        usage
         trap : 0
         exit 0
         ;;
@@ -225,6 +324,11 @@ USAGE
     esac
     shift
 done
+
+if [ "${QUICK}" = "1" ]; then
+    PERMISSIONS="${PERMISSIONS:-yolo}"
+    ASSUME_YES=1
+fi
 
 # Portable paths -----------------------------------------------------------
 kit_root="$(dirname "$(realpath "$0")")"
@@ -236,7 +340,9 @@ generated_dir="${kit_root}/generated"
 atlassian_secrets="${generated_dir}/.atlassian.env"
 github_secrets="${generated_dir}/.github.env"
 codex_secrets="${generated_dir}/.codex.env"
+codex_docker_dir="${kit_root}/docker/codex"
 skills_src_dir="${kit_root}/skills"
+memory_src_dir="${kit_root}/memory"
 claude_md_src="${kit_root}/claude-md/CLAUDE.md"
 statusline_src="${kit_root}/settings/statusline.sh"
 claude_dir="${HOME}/.claude"
@@ -248,6 +354,83 @@ claude_md_file="${claude_dir}/CLAUDE.md"
 claude_md_bak="${claude_md_file}.bak"
 statusline_file="${claude_dir}/statusline.sh"
 statusline_bak="${statusline_file}.bak"
+
+# -l/--logout: clear stored MCP credentials, then exit — deliberately standalone,
+# BEFORE any pre-flight prompt or install step, so the permission tiers can
+# always-allow `install.sh -l *` knowing it can only ever log out. Local-only:
+# each block prints where to revoke the token server-side. The atlassian/github
+# registrations embed their tokens in ~/.claude.json, so those are deregistered
+# too; codex's registration holds no secret and stays — a fresh container login
+# brings it straight back without a re-run.
+logoutMcp() {
+    local target="${1}" did
+    if [ "${target}" = "codex" ] || [ "${target}" = "all" ]; then
+        if [ -f "${HOME}/.codex/auth.json" ]; then
+            rm -f "${HOME}/.codex/auth.json"
+            echo "codex: logged out (~/.codex/auth.json removed); to revoke server-side, remove Codex from your ChatGPT account's authorized apps"
+            echo "codex: sign back in with: docker run --rm -it --network host --user \"\$(id -u):\$(id -g)\" -v \"\$HOME/.codex:/home/codex/.codex\" claude-kit-codex login"
+        else
+            echo "codex: no stored login (~/.codex/auth.json absent)"
+        fi
+    fi
+    if [ "${target}" = "github" ] || [ "${target}" = "all" ]; then
+        did=0
+        if command -v claude >/dev/null 2>&1; then
+            if claude mcp remove github -s user >/dev/null 2>&1; then
+                echo "github: deregistered from ~/.claude.json (the registration embeds the PAT)"
+                did=1
+            fi
+        else
+            echo "github: claude CLI not found — check ~/.claude.json for a leftover github registration (it embeds the PAT)" >&2
+        fi
+        if [ -f "${github_secrets}" ]; then
+            rm -f "${github_secrets}"
+            echo "github: removed ${github_secrets}"
+            did=1
+        fi
+        if [ "${did}" = "1" ]; then
+            echo "github: revoke the PAT itself at https://github.com/settings/tokens"
+        else
+            echo "github: nothing stored"
+        fi
+    fi
+    if [ "${target}" = "atlassian" ] || [ "${target}" = "all" ]; then
+        did=0
+        if command -v claude >/dev/null 2>&1; then
+            if claude mcp remove atlassian -s user >/dev/null 2>&1; then
+                echo "atlassian: deregistered from ~/.claude.json (the registration embeds the API tokens)"
+                did=1
+            fi
+        else
+            echo "atlassian: claude CLI not found — check ~/.claude.json for a leftover atlassian registration (it embeds the API tokens)" >&2
+        fi
+        if [ -f "${atlassian_secrets}" ]; then
+            rm -f "${atlassian_secrets}"
+            echo "atlassian: removed ${atlassian_secrets}"
+            did=1
+        fi
+        if [ "${did}" = "1" ]; then
+            echo "atlassian: revoke the API token itself at https://id.atlassian.com/manage-profile/security/api-tokens"
+        else
+            echo "atlassian: nothing stored"
+        fi
+    fi
+    echo "restart Claude Code to drop any live MCP connection"
+}
+
+if [ -n "${LOGOUT_MCP}" ]; then
+    case "${LOGOUT_MCP}" in
+        codex | github | atlassian | all) : ;;
+        *)
+            echo "Invalid --logout target '${LOGOUT_MCP}' — use codex, github, atlassian or all" >&2
+            trap : 0
+            exit 1
+            ;;
+    esac
+    logoutMcp "${LOGOUT_MCP}"
+    trap : 0
+    exit 0
+fi
 
 ##################################################
 ### CHECKS (See end of script for execution)    ##
@@ -290,28 +473,13 @@ fi
 
 # Resolve + validate the session start MODE (permissions.defaultMode), fully
 # independent of the rule-set tier. Defaults to DEFAULT_MODE (auto) when -m is
-# omitted, whichever tier you pick. Resolved before --fresh's wipe (like the tier)
-# so a bad -m aborts without half-tearing-down ~/.claude. writeSettings writes MODE
-# verbatim into permissions.defaultMode (overriding whatever the tier file carries).
+# omitted — never prompted for, so interactive runs only ask for the tier.
+# Resolved before --fresh's wipe (like the tier) so a bad -m aborts without
+# half-tearing-down ~/.claude. writeSettings writes MODE verbatim into
+# permissions.defaultMode (overriding whatever the tier file carries).
 echo "Resolving session start mode..."
 if [ -z "${MODE}" ]; then
-    if [ "${ASSUME_YES}" = "1" ] || [ ! -t 0 ]; then
-        MODE="${DEFAULT_MODE}"
-    else
-        echo "Choose session start mode (defaultMode) — Enter selects '${DEFAULT_MODE}' (the default):"
-        echo "  [1] default  [2] plan  [3] acceptEdits  [4] auto  [5] dontAsk  [6] bypassPermissions"
-        read -r -p "Selection [${DEFAULT_MODE}]: " mchoice
-        case "${mchoice}" in
-            1|default)           MODE="default" ;;
-            2|plan)              MODE="plan" ;;
-            3|acceptEdits)       MODE="acceptEdits" ;;
-            4|auto)              MODE="auto" ;;
-            5|dontAsk)           MODE="dontAsk" ;;
-            6|bypassPermissions) MODE="bypassPermissions" ;;
-            "")                  MODE="${DEFAULT_MODE}" ;;
-            *)                   MODE="${mchoice}" ;;   # validated just below
-        esac
-    fi
+    MODE="${DEFAULT_MODE}"
 fi
 case "${MODE}" in
     default|plan|acceptEdits|auto|dontAsk|bypassPermissions) echo "Mode: ${MODE} [OK]" ;;
@@ -323,6 +491,44 @@ if [ "${MODE}" = "bypassPermissions" ]; then
     echo "           (git push/commit, secret reads) to save you. Run only inside a"
     echo "           throwaway container/VM. See docs/sandbox.md."
 fi
+
+# Validate the retention / skills / prune options before anything destructive,
+# same rationale as the tier and mode checks above.
+echo "Validating retention / skills / prune options..."
+case "${CLEANUP_PERIOD_DAYS}" in
+    ''|*[!0-9]*|0)
+        echo "Invalid CLEANUP_PERIOD_DAYS '${CLEANUP_PERIOD_DAYS}' — must be a positive integer (days)" >&2
+        exit 1
+        ;;
+esac
+case "${STATUSLINE_REFRESH}" in
+    ''|*[!0-9]*)
+        echo "Invalid STATUSLINE_REFRESH '${STATUSLINE_REFRESH}' — must be a whole number of seconds (0 = event-driven only)" >&2
+        exit 1
+        ;;
+esac
+# No -s → off: a plain run always restores the canonical mostly-true state, so
+# a previous -s on never lingers past the next install.
+case "${SKILLS_AUTO}" in
+    '')     SKILLS_AUTO="off" ;;
+    on|off) ;;
+    *) echo "Invalid --skills-auto '${SKILLS_AUTO}' — must be on|off" >&2; exit 1 ;;
+esac
+# Resolve the prune cutoff to an epoch now: a bare number is days-ago, anything
+# else goes through date -d (so 2025-01-31, 'last month' etc. all work).
+PRUNE_CUTOFF_EPOCH=""
+if [ -n "${PRUNE_BEFORE}" ]; then
+    case "${PRUNE_BEFORE}" in
+        *[!0-9]*) _prune_spec="${PRUNE_BEFORE}" ;;
+        *)        _prune_spec="${PRUNE_BEFORE} days ago" ;;
+    esac
+    if ! PRUNE_CUTOFF_EPOCH="$(date -d "${_prune_spec}" +%s 2>/dev/null)"; then
+        echo "Invalid --prune-sessions cutoff '${PRUNE_BEFORE}' — use a day count or a date like 2025-01-31" >&2
+        exit 1
+    fi
+    echo "Prune cutoff: sessions last active before $(date -d "@${PRUNE_CUTOFF_EPOCH}" '+%Y-%m-%d %H:%M')"
+fi
+echo "Retention: cleanupPeriodDays=${CLEANUP_PERIOD_DAYS} [OK]"
 
 # --fresh: NUKE AND PAVE. Archive conversations + auth, then delete the whole
 # ~/.claude so the existing-install check below reinstalls into a clean dir; the
@@ -440,6 +646,75 @@ resetBloat() {
     fi
 }
 
+# -d/--prune-sessions: archive-then-delete conversations last active before the
+# cutoff (PRUNE_CUTOFF_EPOCH, resolved in pre-flight). A session is its transcript
+# projects/<proj>/<id>.jsonl (mtime = last activity, what claude --resume sorts by)
+# plus the artifacts keyed by the same UUID: the sidecar dir next to the transcript
+# (subagents/, tool-results/) and the session-env/, file-history/ and tasks/
+# entries. Everything is MOVED into ~/.claude-backups/<ts>-pruned/ mirroring the
+# live layout (the resetBloat idiom) — nothing is destroyed; delete the archive
+# yourself to free the disk. IDs derive only from *.jsonl basenames, so non-session
+# content in a project dir (notably memory/) can never match. history.jsonl is
+# prompt history, not the resume list — left alone.
+pruneSessions() {
+    [ -n "${PRUNE_CUTOFF_EPOCH}" ] || return 0
+    local projects_dir="${claude_dir}/projects"
+    [ -d "${projects_dir}" ] || { echo "  no ${projects_dir} — nothing to prune"; return 0; }
+
+    # Collect stale transcripts, then expand each to its full artifact set.
+    local extras="session-env file-history tasks"
+    local jsonl id proj_dir extra
+    local -a victims=() paths=()
+    while IFS= read -r jsonl; do
+        victims+=("${jsonl}")
+        paths+=("${jsonl}")
+        id="$(basename "${jsonl}" .jsonl)"
+        proj_dir="$(dirname "${jsonl}")"
+        [ -d "${proj_dir}/${id}" ] && paths+=("${proj_dir}/${id}")
+        for extra in ${extras}; do
+            [ -e "${claude_dir}/${extra}/${id}" ] && paths+=("${claude_dir}/${extra}/${id}")
+        done
+    done < <(find "${projects_dir}" -mindepth 2 -maxdepth 2 -type f -name '*.jsonl' ! -newermt "@${PRUNE_CUTOFF_EPOCH}" | sort)
+
+    if [ "${#victims[@]}" -eq 0 ]; then
+        echo "  no sessions last active before $(date -d "@${PRUNE_CUTOFF_EPOCH}" '+%Y-%m-%d') — nothing to prune"
+        return 0
+    fi
+
+    local nprojects total
+    nprojects="$(printf '%s\n' "${victims[@]}" | xargs -r -n1 dirname | sort -u | wc -l)"
+    total="$(du -shc -- "${paths[@]}" 2>/dev/null | tail -1 | cut -f1)"
+    echo "  ${#victims[@]} session(s) across ${nprojects} project(s), ${total} total,"
+    echo "  last active before $(date -d "@${PRUNE_CUTOFF_EPOCH}" '+%Y-%m-%d %H:%M')"
+    if [ "${ASSUME_YES}" != "1" ] && [ -t 0 ]; then
+        read -r -p "  Archive and remove them? [y/N]: " _ans
+        case "${_ans}" in
+            y|Y|yes) ;;
+            *) echo "  prune skipped — no changes made"; return 0 ;;
+        esac
+    fi
+
+    local ts archive slug
+    ts="$(date +%Y%m%d-%H%M%S)"
+    archive="${HOME}/.claude-backups/${ts}-pruned"
+    for jsonl in "${victims[@]}"; do
+        id="$(basename "${jsonl}" .jsonl)"
+        proj_dir="$(dirname "${jsonl}")"
+        slug="$(basename "${proj_dir}")"
+        mkdir -p "${archive}/projects/${slug}"
+        mv -- "${jsonl}" "${archive}/projects/${slug}/"
+        [ -d "${proj_dir}/${id}" ] && mv -- "${proj_dir}/${id}" "${archive}/projects/${slug}/"
+        for extra in ${extras}; do
+            if [ -e "${claude_dir}/${extra}/${id}" ]; then
+                mkdir -p "${archive}/${extra}"
+                mv -- "${claude_dir}/${extra}/${id}" "${archive}/${extra}/"
+            fi
+        done
+    done
+    echo "  archived ${#victims[@]} session(s) → ${archive}"
+    echo "  they no longer appear in claude --resume; rm -rf the archive to free the disk"
+}
+
 # Refresh the Claude Code CLI to the latest version via `claude update`. Non-fatal:
 # a fresh curl-install already pulled the latest (skipped), --no-update opts out,
 # and any failure (offline, or a package-manager-managed install that defers the
@@ -519,12 +794,16 @@ writeSettings() {
         --arg win "${AUTOCOMPACT_WINDOW}" \
         --arg fivebudget "${FIVE_HOUR_BUDGET}" \
         --arg wkbudget "${WEEKLY_BUDGET}" \
+        --arg cleanup "${CLEANUP_PERIOD_DAYS}" \
+        --arg slrefresh "${STATUSLINE_REFRESH}" \
         --argjson perms "${perms_json}" \
         --argjson shift "${shift_json}" \
         '
         (.env // {}) as $env
         | . + $shift + {
-            statusLine: { type: "command", command: "bash ~/.claude/statusline.sh" },
+            statusLine: ({ type: "command", command: "bash ~/.claude/statusline.sh" }
+                + (if $slrefresh == "0" then {} else {refreshInterval: ($slrefresh | tonumber)} end)),
+            cleanupPeriodDays: ($cleanup | tonumber),
             env: (
                 ($env
                   | del(.CLAUDE_MONTHLY_LIMIT_USD)
@@ -835,10 +1114,14 @@ applyGitHub() {
 }
 
 # Configure or remove the codex MCP server via the claude CLI at user scope
-# (registered in ~/.claude.json, like atlassian/github). Unlike those two this is
-# NOT a Docker image — it runs the host `codex` binary as `codex mcp-server`, which
-# exposes the codex / codex-reply tools so Claude can spawn one or more autonomous
-# Codex coding agents. Auth is ChatGPT sign-in (`codex login`, stored in ~/.codex),
+# (registered in ~/.claude.json, like atlassian/github). Docker-first: OpenAI ships
+# no official CLI image, so this builds docker/codex/Dockerfile locally as
+# claude-kit-codex and runs `codex mcp-server` inside it (~/.codex and the project
+# dir bind-mounted, container as the invoking uid so written files stay yours).
+# Nothing is ever installed — or suggested for install — on the host; a host
+# `codex` binary is used only as the fallback when Docker itself is absent. The
+# server exposes the codex / codex-reply tools so Claude can spawn one or more
+# autonomous Codex coding agents. Auth is ChatGPT sign-in (stored in ~/.codex),
 # so no token is kept here — generated/.codex.env holds only the non-secret model /
 # effort / sandbox knobs, baked into the registration as `-c key=value` overrides so
 # every spawned agent inherits them. Driven by CODEX_MODE, CODEX_REMOVE.
@@ -854,29 +1137,76 @@ applyCodex() {
         else
             echo "  codex MCP server not registered at user scope — nothing to remove"
         fi
-        echo "  ${codex_secrets} and ~/.codex (your ChatGPT login) left in place"
+        echo "  ${codex_secrets}, ~/.codex (your ChatGPT login) and the claude-kit-codex docker image left in place"
         return
     fi
 
     [ "${CODEX_MODE}" = "on" ] || return 0
 
-    command -v codex >/dev/null 2>&1 || {
-        echo "  codex CLI not found — install it, then re-run with -x" >&2
-        echo "    npm install -g @openai/codex     # or: brew install codex" >&2
-        return 1
-    }
     command -v claude >/dev/null 2>&1 || {
         echo "  claude CLI not found — needed to register the MCP server (claude mcp add-json)" >&2
         return 1
     }
 
-    # ChatGPT sign-in check (non-fatal): the server registers regardless, but agent
-    # calls fail until the host is logged in. Prefer `codex login status`; fall back
-    # to the auth file so we don't depend on an exact subcommand name.
-    if codex login status >/dev/null 2>&1 || [ -f "${HOME}/.codex/auth.json" ]; then
+    # Docker-first runtime pick. Host codex is only a fallback when Docker itself
+    # is missing; when neither exists the fix offered is Docker, never a host install.
+    local image="claude-kit-codex" cname="claude-mcp-codex" cx_runtime
+    if command -v docker >/dev/null 2>&1; then
+        cx_runtime="docker"
+    elif command -v codex >/dev/null 2>&1; then
+        cx_runtime="host"
+        echo "  docker not found — falling back to the host codex binary"
+    else
+        echo "  docker not found — the codex MCP runs as a container (${image}, built from docker/codex/)" >&2
+        echo "  install Docker and re-run with -x" >&2
+        return 1
+    fi
+
+    if [ "${cx_runtime}" = "docker" ]; then
+        # Pre-create ~/.codex user-owned: docker would otherwise create a missing
+        # bind-mount source as root and the uid-mapped container couldn't write it.
+        mkdir -p "${HOME}/.codex"
+        # Local build (no official image) — before the sign-in gate below, which
+        # hands out a login command that needs the image. Built once and reused;
+        # layer cache makes a rebuild after a Dockerfile edit cheap. --no-cache to
+        # pull a newer CLI.
+        if docker image inspect "${image}" >/dev/null 2>&1; then
+            echo "  docker image ${image} present — reusing (refresh: docker build --no-cache -t ${image} docker/codex/)"
+        else
+            echo "  building ${image} (node:22-slim + @openai/codex)..."
+            docker build -t "${image}" "${codex_docker_dir}" || {
+                echo "  docker build failed — codex MCP not registered" >&2
+                return 1
+            }
+        fi
+    fi
+
+    # ChatGPT sign-in gate: the server registers regardless, but agent calls fail
+    # until ~/.codex holds a login — so on a tty, hand out the login command and
+    # wait for the credentials to land before continuing (Enter skips the wait).
+    # Checked via the auth file (works for both runtimes); host mode also gets to
+    # ask the binary itself.
+    local login_cmd="codex login"
+    [ "${cx_runtime}" = "docker" ] && login_cmd="docker run --rm -it --network host --user \"\$(id -u):\$(id -g)\" -v \"\$HOME/.codex:/home/codex/.codex\" ${image} login"
+    if [ -f "${HOME}/.codex/auth.json" ] || { [ "${cx_runtime}" = "host" ] && codex login status >/dev/null 2>&1; }; then
         echo "  codex: ChatGPT sign-in detected"
     else
-        echo "  codex: not signed in — run 'codex login' on this host before spawning agents" >&2
+        echo "  codex: not signed in — run this in another terminal:" >&2
+        echo "    ${login_cmd}" >&2
+        if [ -t 0 ]; then
+            echo -n "  waiting for ~/.codex/auth.json (Enter = skip and sign in later, Ctrl-C = abort) "
+            while [ ! -f "${HOME}/.codex/auth.json" ]; do
+                if read -r -t 2 _; then break; fi
+                echo -n "."
+            done
+            if [ -f "${HOME}/.codex/auth.json" ]; then
+                echo " detected"
+            else
+                echo " skipped — agent calls will fail until you sign in"
+            fi
+        else
+            echo "  no tty to wait on — continuing; agent calls will fail until you sign in" >&2
+        fi
     fi
 
     # Load saved knobs (non-secret) so re-runs preserve prior choices.
@@ -905,8 +1235,21 @@ applyCodex() {
         cx_model="${_in:-${cx_model}}"
         read -r -p "  CODEX_REASONING_EFFORT (minimal|low|medium|high|xhigh) [${cx_effort}]: " _in
         cx_effort="${_in:-${cx_effort}}"
-        read -r -p "  CODEX_SANDBOX (read-only|workspace-write|danger-full-access) [${cx_sandbox}]: " _in
-        cx_sandbox="${_in:-${cx_sandbox}}"
+        if [ "${cx_runtime}" = "host" ]; then
+            read -r -p "  CODEX_SANDBOX (read-only|workspace-write|danger-full-access) [${cx_sandbox}]: " _in
+            cx_sandbox="${_in:-${cx_sandbox}}"
+        fi
+    fi
+
+    # In docker mode the CONTAINER is the sandbox: only the project dir and ~/.codex
+    # are mounted (no git creds), the rootfs dies with --rm. codex's own bwrap
+    # sandbox cannot start inside Docker (user-namespace/loopback EPERM even
+    # privileged), so every inner mode except danger-full-access would break agent
+    # runs — pin it at launch. CODEX_SANDBOX is still saved for the host fallback.
+    local cx_sandbox_launch="${cx_sandbox}"
+    if [ "${cx_runtime}" = "docker" ]; then
+        cx_sandbox_launch="danger-full-access"
+        echo "  sandbox: the container itself (codex inner sandbox off — writes confined to the mounted project dir)"
     fi
 
     # Save knobs back (no secrets — auth lives in ~/.codex).
@@ -921,13 +1264,14 @@ applyCodex() {
     # Build the launch args: `codex mcp-server` plus `-c key=value` config overrides
     # that become the default for every spawned agent. TOML strings are quoted so the
     # parser treats e.g. gpt-5.5 as a string, not a malformed number. approval_policy
-    # =never keeps agents non-interactive; for workspace-write we also pin network off
-    # so an agent can never `git push` (the API analogue of the never-push hard floor).
+    # =never keeps agents non-interactive; for host workspace-write we also pin network
+    # off so an agent can never `git push` (the API analogue of the never-push floor);
+    # in docker mode push dies instead on the credential-free container.
     local args_json
     args_json="$(jq -n \
         --arg model   "${cx_model}" \
         --arg effort  "${cx_effort}" \
-        --arg sandbox "${cx_sandbox}" \
+        --arg sandbox "${cx_sandbox_launch}" \
         '
         ["mcp-server",
          "-c", ("model=\"" + $model + "\""),
@@ -939,16 +1283,26 @@ applyCodex() {
            else [] end)
         ')"
 
-    # Run via "sh -c" so each new session first reaps any leftover codex MCP server
-    # process before exec'ing its own — the process-level analogue of the docker
-    # "--name + rm -f" reuse used for github/atlassian. codex runs as a local CLI,
-    # not a container, so there's no container name to reap; instead we match the
-    # "codex mcp-server" cmdline and skip our own shell via $$. Matching on
-    # "mcp-server" leaves an interactive `codex` untouched. Each arg is @sh-quoted
-    # so the shell hands codex the exact same argv (TOML string quotes intact).
     local run_cmd
-    run_cmd="$(jq -rn --argjson a "${args_json}" \
-        '"for p in $(pgrep -f \"codex mcp-server\"); do [ \"$p\" != \"$$\" ] && kill \"$p\" 2>/dev/null; done; exec codex " + ($a | map(@sh) | join(" "))')"
+    if [ "${cx_runtime}" = "docker" ]; then
+        # Same "--name + rm -f" reuse as github/atlassian: one codex MCP container,
+        # newest session wins. $HOME/$PWD/$(id …) are escaped so they expand when
+        # Claude Code launches the server — the container then runs as the invoking
+        # user with only ~/.codex (auth, into the image HOME) and the project dir
+        # (same path, as workdir) mounted; codex's own args are @sh-quoted so the
+        # TOML string quotes survive.
+        run_cmd="$(jq -rn --argjson a "${args_json}" --arg img "${image}" --arg name "${cname}" \
+            '"docker rm -f \($name) >/dev/null 2>&1; mkdir -p \"$HOME/.codex\"; exec docker run -i --rm --name \($name) --user \"$(id -u):$(id -g)\" -v \"$HOME/.codex:/home/codex/.codex\" -v \"$PWD:$PWD\" -w \"$PWD\" \($img) " + ($a | map(@sh) | join(" "))')"
+    else
+        # Host fallback: run via "sh -c" so each new session first reaps any leftover
+        # codex MCP server process before exec'ing its own — the process-level
+        # analogue of the docker "--name + rm -f" reuse. We match the
+        # "codex mcp-server" cmdline and skip our own shell via $$; matching on
+        # "mcp-server" leaves an interactive `codex` untouched. Each arg is @sh-quoted
+        # so the shell hands codex the exact same argv (TOML string quotes intact).
+        run_cmd="$(jq -rn --argjson a "${args_json}" \
+            '"for p in $(pgrep -f \"codex mcp-server\"); do [ \"$p\" != \"$$\" ] && kill \"$p\" 2>/dev/null; done; exec codex " + ($a | map(@sh) | join(" "))')"
+    fi
 
     # Register at user scope (writes ~/.claude.json). Remove any prior registration
     # first so re-runs are idempotent — add-json errors if the name already exists.
@@ -956,9 +1310,109 @@ applyCodex() {
     server_json="$(jq -n --arg cmd "${run_cmd}" '{command: "sh", args: ["-c", $cmd]}')"
     claude mcp remove codex -s user >/dev/null 2>&1 || true
     claude mcp add-json codex "${server_json}" -s user >/dev/null
-    echo "  registered codex MCP (codex mcp-server) at user scope (~/.claude.json)"
-    echo "  model=${cx_model}  effort=${cx_effort}  sandbox=${cx_sandbox}$([ "${cx_sandbox}" = "workspace-write" ] && echo ' (network off)')"
+    if [ "${cx_runtime}" = "docker" ]; then
+        echo "  registered codex MCP (docker/${image}, codex mcp-server) at user scope (~/.claude.json)"
+    else
+        echo "  registered codex MCP (host codex mcp-server) at user scope (~/.claude.json)"
+    fi
+    if [ "${cx_runtime}" = "docker" ]; then
+        echo "  model=${cx_model}  effort=${cx_effort}  sandbox=container (project dir + ~/.codex mounted, no creds)"
+    else
+        echo "  model=${cx_model}  effort=${cx_effort}  sandbox=${cx_sandbox}$([ "${cx_sandbox}" = "workspace-write" ] && echo ' (network off)')"
+    fi
     echo "  restart Claude Code to pick up the new MCP server"
+}
+
+# -s/--skills-auto: flip the model-invocation gate on every kit skill in place.
+# The SKILL.md files are live symlink targets, so the change reaches ~/.claude
+# with no re-link — but skills bind at session start, so a restart is needed.
+# Only an existing disable-model-invocation line inside the frontmatter is
+# rewritten (true→false for on, false→true for off); skills that never carried
+# the flag (the deliberate auto-load set) are untouched in both directions, so
+# 'off' restores exactly the per-skill state 'on' started from. Runs every
+# install — SKILLS_AUTO defaults to off, so a plain run undoes a prior -s on.
+applySkillsInvocation() {
+    [ -d "${skills_src_dir}" ] || { echo "  no skills/ dir in kit — skipped"; return 0; }
+    local from to
+    if [ "${SKILLS_AUTO}" = "on" ]; then
+        from="true"; to="false"
+    else
+        from="false"; to="true"
+    fi
+    local f changed=0
+    for f in "${skills_src_dir}"/*/SKILL.md; do
+        [ -f "${f}" ] || continue
+        # Restrict matching and rewriting to the frontmatter block (line 2 up to
+        # the closing ---), so a literal mention in a skill body is never touched.
+        if sed -n "2,/^---\$/p" "${f}" | grep -q "^disable-model-invocation: ${from}\$"; then
+            sed -i "2,/^---\$/ s/^disable-model-invocation: ${from}\$/disable-model-invocation: ${to}/" "${f}"
+            echo "  ${from}→${to}  ${f#"${kit_root}"/}"
+            changed=$((changed+1))
+        fi
+    done
+    if [ "${changed}" -eq 0 ]; then
+        if [ "${SKILLS_AUTO}" = "on" ]; then
+            echo "  all flagged skills already auto-invokable — no change"
+        else
+            echo "  all flagged skills already manual — no change"
+        fi
+    else
+        echo "  flipped ${changed} skill(s) to auto-invocation ${SKILLS_AUTO}"
+        echo "  restart Claude Code to pick up the change (skills bind at session start)"
+    fi
+}
+
+# Adopt every real ~/.claude/projects/<slug>/memory dir into the kit
+# (memory/<slug>/) and symlink it back, so memories are git-tracked like
+# everything else — every commit is a versioned backup, and edits stay live
+# through the link. Runs every install, idempotent, mirroring syncSkills'
+# safety floors: a correct link is left alone, a foreign symlink is skipped
+# with a warning, and when both a real dir and a kit dir exist nothing is
+# merged silently. Project slugs start with '-' — hence the -- guards.
+syncMemory() {
+    mkdir -p "${memory_src_dir}"
+    local proj slug live kitmem raw
+
+    # 1. Adoption pass — move real memory dirs into the kit.
+    for proj in "${claude_dir}/projects"/*/; do
+        [ -d "${proj}" ] || continue
+        live="${proj}memory"
+        slug="$(basename "${proj}")"
+        kitmem="${memory_src_dir}/${slug}"
+        if [ -d "${live}" ] && [ ! -L "${live}" ]; then
+            if [ -e "${kitmem}" ]; then
+                echo "  WARNING: both ${live} and ${kitmem} exist — not merging; resolve by hand" >&2
+                continue
+            fi
+            mv -- "${live}" "${kitmem}"
+            echo "  adopted → ${kitmem} (was ${live})"
+        fi
+    done
+
+    # 2. Link pass — every kit memory dir gets its projects/<slug>/memory link
+    # (re-created after --fresh, or on a machine that's never seen the project).
+    for kitmem in "${memory_src_dir}"/*/; do
+        [ -d "${kitmem}" ] || continue
+        kitmem="${kitmem%/}"
+        slug="$(basename "${kitmem}")"
+        live="${claude_dir}/projects/${slug}/memory"
+        if [ -L "${live}" ]; then
+            raw="$(readlink "${live}")"
+            if [ "${raw}" = "${kitmem}" ]; then
+                continue                      # already correct
+            elif [ ! -e "${live}" ] || [ "${raw#"${memory_src_dir}"/}" != "${raw}" ]; then
+                rm -f -- "${live}"            # dangling, or stale link into this kit
+            else
+                echo "  skip  → ${live} (foreign symlink — leaving alone)"
+                continue
+            fi
+        elif [ -e "${live}" ]; then
+            continue                          # real dir alongside a kit dir — warned in pass 1
+        fi
+        mkdir -p "${claude_dir}/projects/${slug}"
+        ln -s -- "${kitmem}" "${live}"
+        echo "  link  → ${live} → ${kitmem}"
+    done
 }
 
 # Rebuild ~/.claude/skills/<name> symlinks from scratch on every run, and keep an
@@ -1137,6 +1591,27 @@ verifyAll() {
         echo "[INFO] (7) codex not requested this run (-x/-X); skipping"
     fi
 
+    # 8. cleanupPeriodDays — Claude Code's own transcript retention, written by
+    # writeSettings on every run (default 365; its built-in default is only 30).
+    local cpd
+    cpd="$(jq -r '.cleanupPeriodDays // empty' "${settings_file}")"
+    if [ "${cpd}" = "${CLEANUP_PERIOD_DAYS}" ]; then
+        echo "[PASS] (8) cleanupPeriodDays=${cpd}"
+    else
+        echo "[FAIL] (8) cleanupPeriodDays mismatch (have='${cpd}', want='${CLEANUP_PERIOD_DAYS}')"; failed=1
+    fi
+
+    # 9. statusLine.refreshInterval — timer refresh on top of event-driven updates
+    # (0 = key absent, event-driven only).
+    local slr want_slr
+    slr="$(jq -r '.statusLine.refreshInterval // "0"' "${settings_file}")"
+    want_slr="${STATUSLINE_REFRESH}"
+    if [ "${slr}" = "${want_slr}" ]; then
+        echo "[PASS] (9) statusLine.refreshInterval=${slr}s"
+    else
+        echo "[FAIL] (9) statusLine.refreshInterval mismatch (have='${slr}', want='${want_slr}')"; failed=1
+    fi
+
     echo "-------------------------------"
     if [ "${failed}" -eq 0 ]; then
         echo "All scriptable checks passed."
@@ -1153,11 +1628,13 @@ printSummary() {
     echo "  tier        : ${PERMISSIONS}  (allow/ask/deny rule-set)"
     echo "  mode        : ${MODE}  (permissions.defaultMode)"
     echo "  settings    : ${settings_file}  (backup: ${settings_bak})"
-    echo "  statusline  : ${statusline_file}  (symlinked from ${statusline_src})"
+    echo "  statusline  : ${statusline_file}  (symlinked from ${statusline_src}; refresh $([ "${STATUSLINE_REFRESH}" = "0" ] && echo 'on events only' || echo "every ${STATUSLINE_REFRESH}s + events"))"
     echo "  guidelines  : ${claude_md_file}  (symlinked from ${claude_md_src})"
     echo "  skills      : ${claude_skills_dir}/  (symlinked from ${skills_src_dir})"
+    echo "  memory      : ${claude_dir}/projects/<project>/memory  (symlinked from ${memory_src_dir})"
     echo "  generated   : ${generated_dir}/  (machine-local creds/config; gitignored, back this up)"
     echo "  autocompact : ${AUTOCOMPACT_PCT}% / ${AUTOCOMPACT_WINDOW} tokens"
+    echo "  retention   : cleanupPeriodDays=${CLEANUP_PERIOD_DAYS}"
     echo "-------------------------------"
 }
 
@@ -1214,9 +1691,23 @@ if [ "${CODEX_MODE}" = "on" ] || [ "${CODEX_REMOVE}" = "1" ]; then
     echo -e "[Done]\n"
 fi
 
+echo "Ensuring skill auto-invocation state (${SKILLS_AUTO})..."
+applySkillsInvocation
+echo -e "[Done]\n"
+
 echo "Linking skills into ~/.claude/skills/..."
 syncSkills
 echo -e "[Done]\n"
+
+echo "Syncing project memory into the kit (memory/)..."
+syncMemory
+echo -e "[Done]\n"
+
+if [ -n "${PRUNE_BEFORE}" ]; then
+    echo "Pruning conversations last active before the cutoff..."
+    pruneSessions
+    echo -e "[Done]\n"
+fi
 
 echo "Shift+Enter / terminal setup..."
 shiftEnterHint

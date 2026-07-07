@@ -12,16 +12,18 @@ When loaded as context with no task, reply only `Context loaded.` This skill is 
 
 ## Layout
 
-- `install.sh` — the only entry point. Lifecycle flags: `-p ultra-safe|standard|trusted|yolo` (rule-set), `-m default|plan|acceptEdits|auto|dontAsk|bypassPermissions` (session start mode / `defaultMode`, independent of `-p`; omit → `auto` (`DEFAULT_MODE`); `auto` = classifier-judged), `-y`, `--reset` (`-r`), `--fresh` (`-F`), `--no-update` (`-U`); MCP flags: `--with/without-atlassian|github|codex`.
+- `install.sh` — the only entry point. Run with no flags it errors and prints the help; `-q` / `--quick` is the no-questions run (yolo tier unless `-p` given, implies `-y`). Lifecycle flags: `-p ultra-safe|standard|trusted|yolo` (rule-set), `-m default|plan|acceptEdits|auto|dontAsk|bypassPermissions` (session start mode / `defaultMode`, independent of `-p`; omit → `auto` (`DEFAULT_MODE`); `auto` = classifier-judged), `-y`, `--reset` (`-r`), `--fresh` (`-F`), `--no-update` (`-U`); MCP flags: `--with/without-atlassian|github|codex`; maintenance flags: `-s on|off` / `--skills-auto` (set `disable-model-invocation` across all kit skills — `on` makes every skill auto-invokable, `off` restores the exact prior per-skill state; flag-less always-auto skills are never touched; omitted → `off`, so a plain run undoes a prior `-s on`), `-d <days|date>` / `--prune-sessions` (archive-then-delete conversations last active before the cutoff — transcript + sidecar + `session-env`/`file-history`/`tasks` move to `~/.claude-backups/<ts>-pruned/`, dropping them from `claude --resume`), `-l codex|github|atlassian|all` / `--logout` (STANDALONE: clear the MCP's stored credentials — for github/atlassian also the token-embedding `~/.claude.json` registration — then exit without running anything else; always-allowed on every permission tier for exactly that reason).
 - `claude-md/CLAUDE.md` — symlinked into `~/.claude/CLAUDE.md` (editing it is live).
 - `settings/permissions/<tier>.json` — the four permission tiers (deny → ask → allow).
 - `settings/{shift-enter,mcp-atlassian}.json` — jq-merged settings fragments.
 - `skills/<name>/` — each symlinked into `~/.claude/skills/<name>`.
+- `memory/<project-slug>/` — Claude's auto-memory, adopted from `~/.claude/projects/<slug>/memory/` and symlinked back (git-tracked = versioned backup; edits live).
+- `docker/codex/` — Dockerfile for the locally-built `claude-kit-codex` image; `-x` builds it and runs the codex MCP server containerised (host `codex` binary only used when Docker is absent).
 - `docs/` — permissions, skills, statusline, sandbox, atlassian, github, codex.
 
 ## What install.sh writes into ~/.claude
 
-- `settings.json` — statusLine, autocompact env, permissions, shift-enter (jq-merged, never text-appended).
+- `settings.json` — statusLine (with `refreshInterval` 5s so the bar stays fresh through long turns; `STATUSLINE_REFRESH=<n|0>` to tune/disable), autocompact env, permissions, shift-enter, `cleanupPeriodDays` (Claude Code's transcript retention; kit default 365 days vs the built-in 30, override with `CLEANUP_PERIOD_DAYS=<n>`) — all jq-merged, never text-appended.
 - `statusline.sh` — token-usage status bar (5h / weekly rolling windows); symlinked from the kit.
 - `CLAUDE.md` — global rules (never commit/push; condensed coding guidelines); symlinked from the kit.
 - `skills/*` — symlinks back to this kit, so editing a skill here is live — no re-install.
@@ -33,7 +35,7 @@ To change config: `settings.json` is jq-merged, so edit the kit file and re-run 
 
 Two ways a skill's `SKILL.md` reaches Claude's context:
 
-- **Auto-load** (no `disable-model-invocation`): Claude reads `name`+`description` at startup and pulls the body in *itself* when a task matches. The `description:` is the trigger. Currently only: `c-frontend-design`, `c-oe-helm`, `c-oe-ui`.
+- **Auto-load** (no `disable-model-invocation`): Claude reads `name`+`description` at startup and pulls the body in *itself* when a task matches. The `description:` is the trigger. Currently only: `c-frontend-design`, `c-oe-docs`, `c-oe-helm`, `c-oe-ui`. (`install.sh -s on|off` flips everything else to auto and back — see Layout.)
 - **Manual** (`disable-model-invocation: true`): never auto-loaded; enters context only when invoked by name (`/c-oe-code`). Everything else in the kit.
 
 Conventions for kit skills — apply these to every new skill:

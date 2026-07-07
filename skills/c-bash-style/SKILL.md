@@ -28,6 +28,8 @@ Banners are exactly 50 chars wide, 3 lines. Setup sections left-aligned with `(S
 ## Rules
 
 - Always `"${var}"`; defaults via `${var:-default}`; no `set -u`.
+- Every option gets both a short and a long flag (`-D | --database`); never a short or long form alone.
+- Runnable commands echoed as advice (and in docs) go on ONE line — up to 200 chars is fine; never backslash-wrapped.
 - Short guards as `[ "${flag}" == "1" ] && action` one-liners.
 - `trap : 0` before every successful exit, including early ones.
 - Secrets read from files (`$(cat ${secrets_folder}/NAME)`), never env vars.

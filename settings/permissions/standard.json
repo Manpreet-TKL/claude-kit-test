@@ -14,7 +14,9 @@
     "Bash(grep *)",
     "mcp__atlassian",
     "mcp__github",
-    "mcp__codex"
+    "mcp__codex",
+    "Bash(~/claude-kit/install.sh -l *)",
+    "Bash(bash ~/claude-kit/install.sh -l *)"
   ],
   "ask": [
     "Bash"

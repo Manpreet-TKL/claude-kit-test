@@ -1,6 +1,6 @@
 # claude-kit
 
-A single-script Claude Code setup. Run `./install.sh` to configure `~/.claude/` in one shot, idempotently.
+A single-script Claude Code setup. Run `./install.sh -q` to configure `~/.claude/` in one shot, idempotently (no flags at all prints the help and errors — nothing is assumed).
 
 ```
 ~/claude-kit/
@@ -62,8 +62,8 @@ It backs up the pre-existing `settings.json` to `settings.json.bak` only when th
 
 ```bash
 cd ~/claude-kit
-./install.sh                                # interactive tier choice (default standard)
-./install.sh --permissions ultra-safe       # explicit tier
+./install.sh -q                             # quick: no prompts, yolo tier, all defaults
+./install.sh --permissions ultra-safe       # explicit tier (interactive prompt if -p omitted)
 ./install.sh -p trusted -y                  # non-interactive
 ./install.sh --reset -p standard -y         # archive bloat → reinstall
 ./install.sh --fresh -p standard            # back up data → wipe ~/.claude → fresh install
@@ -89,7 +89,7 @@ Each tier lives as a standalone JSON file at `settings/permissions/<tier>.json`.
 | `trusted`    | Same broad allow-list as `standard` + extra `rm -rf` denies; still denies git mutations + secrets. |
 | `yolo`       | Like `trusted`, but `.env`/`.ssh` reads go through; `git push` / `git commit` and `rm -rf /*` / `rm -rf ~*` still denied (those denies are a hard floor across every tier). **Container/VM only.** |
 
-The tier (`-p`) is just the **rule-set**. The **session start mode** (`permissions.defaultMode`) is separate and defaults to `auto` for every tier: `-m default|plan|acceptEdits|auto|dontAsk|bypassPermissions` picks it explicitly — e.g. `-p standard -m plan`. (`auto` is the classifier-judged mode — auto-approves calls it deems safe, asks on the rest.) Omit `-m` and the session boots in `auto`; interactive runs prompt for it (Enter selects `auto`).
+The tier (`-p`) is just the **rule-set**. The **session start mode** (`permissions.defaultMode`) is separate and defaults to `auto` for every tier: `-m default|plan|acceptEdits|auto|dontAsk|bypassPermissions` picks it explicitly — e.g. `-p standard -m plan`. (`auto` is the classifier-judged mode — auto-approves calls it deems safe, asks on the rest.) Omit `-m` and the session boots in `auto` — the mode is never prompted for; interactive runs only ask for the tier.
 
 Full explanation including evaluation order (`deny → ask → allow`) and what each tier denies: **[docs/permissions.md](docs/permissions.md)**. No *tier* enables `bypassPermissions` — `yolo` is the widest rule-set — but `-m bypassPermissions` is now selectable behind a warning; it skips even the deny floor, so it's VM-only. See [docs/sandbox.md](docs/sandbox.md) for the safe envelope.
 
@@ -105,6 +105,8 @@ Each window segment shows a **percentage** if you set a budget (`FIVE_HOUR_BUDGE
 
 The figures are a **local proxy**: Claude Code's GUI `/usage` % comes from Anthropic's server-side rate-limit accounting (held in-memory, not persisted), so the bar will diverge — calibrate budgets against the GUI if you want them to roughly agree. See **[docs/statusline.md](docs/statusline.md)**.
 
+The kit also writes `statusLine.refreshInterval` (default **5** seconds; needs Claude Code ≥ 2.1.97) so the bar re-runs on a timer in addition to conversation events — without it, the token windows go stale during long unattended turns (hours of tool calls in auto mode). Tune with `STATUSLINE_REFRESH=<seconds>`; `0` removes the key (event-driven only).
+
 ### 3. Shift+Enter newline
 
 `settings/shift-enter.json` is merged into `settings.json` to bind Shift+Enter for newline. If your terminal still won't honour it, run `/terminal-setup` once interactively or bind the key sequence in your terminal app.
@@ -116,6 +118,7 @@ AUTOCOMPACT_PCT      → env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE   (default 100 — 
 AUTOCOMPACT_WINDOW   → env.CLAUDE_CODE_AUTO_COMPACT_WINDOW   (default 200000)
 FIVE_HOUR_BUDGET     → env.CLAUDE_5H_TOKEN_BUDGET            (unset — status line shows raw count; set to flip to a 5h %)
 WEEKLY_BUDGET        → env.CLAUDE_WEEKLY_TOKEN_BUDGET        (unset — status line shows raw count; set to flip to a wk %)
+STATUSLINE_REFRESH   → statusLine.refreshInterval            (default 5 — re-run the bar every N seconds on top of event-driven updates; 0 = events only)
 ```
 
 - `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` only **lowers** the trigger; values above the internal cap (~83%) are clamped.
@@ -221,32 +224,115 @@ Neither flag = `mcpServers.github` is left exactly as-is on re-runs.
 
 ### 13. OpenAI Codex agents (`--with-codex` / `--without-codex`)
 
-Register or remove **OpenAI Codex** as a local MCP server so Claude can spawn one or
-many autonomous Codex coding agents. Unlike Atlassian/GitHub this is **not** a Docker
-image — it runs the host `codex` binary as `codex mcp-server`:
+Register or remove **OpenAI Codex** as an MCP server so Claude can spawn one or
+many autonomous Codex coding agents. Like Atlassian/GitHub it runs **in Docker**:
+OpenAI ships no official CLI image, so `-x` builds one locally (`claude-kit-codex`,
+from `docker/codex/Dockerfile`) and runs `codex mcp-server` inside it — **nothing is
+installed on the host** (a host `codex` binary is only the fallback when Docker is
+absent):
 
 ```bash
-./install.sh --with-codex    -p standard    # opt in  (-x)
+./install.sh --with-codex    -p standard    # opt in  (-x); builds the image on first run
 ./install.sh --without-codex -p standard -y  # tear down (-X)
 ```
 
-Needs the **Codex CLI** on PATH (`npm install -g @openai/codex`) and a one-time
-**`codex login`** (ChatGPT sign-in — so **no token is stored in this kit**; auth lives
-in `~/.codex`). The server exposes `mcp__codex__codex` / `mcp__codex__codex-reply`;
-Claude fans agents out by calling them in one message. Run `/codexmcp` to preflight and
-for the fan-out + safety rules.
+Needs **Docker** and a one-time **ChatGPT sign-in through the container** (when not
+signed in, install.sh prints the exact `… claude-kit-codex login` command and waits
+for you to run it in another terminal, continuing once the credentials land — so **no
+token is stored in this kit**; auth lives in `~/.codex`, which every agent container
+mounts). The server
+exposes `mcp__codex__codex` / `mcp__codex__codex-reply`; Claude fans agents out by
+calling them in one message. Run `/codexmcp` to preflight and for the fan-out + safety
+rules.
 
 install.sh pins the agent defaults as `-c` launch overrides — **flagship model
-(`gpt-5.5`) at `high` reasoning effort**, in a **`workspace-write`, network-off
-sandbox** with `approval_policy=never` — recorded (non-secretly) in
-`generated/.codex.env`. **Network-off is the safety floor:** an agent runs its own
-shell *outside* Claude's `deny` rules, so blocking the network is what stops it
-`git push`-ing; the `codexmcp` skill additionally tells agents never to commit (the
-human commits). `mcp__codex` is allowed on `standard`/`trusted`/`yolo` but **prompts on
-`ultra-safe`** — spawning a writer is a write action. Full setup, model/sandbox tuning, and
-teardown: **[docs/codex.md](docs/codex.md)**.
+(`gpt-5.5`) at `high` reasoning effort**, `approval_policy=never` — recorded
+(non-secretly) in `generated/.codex.env`. **The container is the safety floor:** an
+agent runs its own shell *outside* Claude's `deny` rules, but only the project dir and
+`~/.codex` are mounted and the container carries **no git credentials**, so a
+`git push` fails auth (in the no-Docker host fallback the floor is codex's own
+`workspace-write`, network-off sandbox instead); the `codexmcp` skill additionally
+tells agents never to commit (the human commits). `mcp__codex` is allowed on
+`standard`/`trusted`/`yolo` but **prompts on `ultra-safe`** — spawning a writer is a
+write action. Full setup, model/sandbox tuning, and teardown:
+**[docs/codex.md](docs/codex.md)**.
 
 Neither flag = `mcpServers.codex` is left exactly as-is on re-runs.
+
+### 14. Skills auto-invoke toggle (`--skills-auto on|off`)
+
+Most kit skills carry `disable-model-invocation: true`, so Claude only loads them when
+you invoke them by name. `-s on` rewrites that line to `false` in every kit `SKILL.md`
+(the files are live symlink targets — no re-link needed, but skills bind at session
+start, so restart Claude Code), letting Claude auto-pull any skill whose description
+matches the task. `-s off` rewrites `false` back to `true`:
+
+```bash
+./install.sh -s on  -p standard -yU    # everything auto-invokable
+./install.sh -s off -p standard -yU    # back to how it was
+```
+
+Only an *existing* flag line inside the frontmatter is touched — the deliberate
+always-auto skills (`c-frontend-design`, `c-oe-docs`, `c-oe-helm`, `c-oe-ui`) carry no
+flag and are ignored in both directions, so `off` restores exactly the per-skill state
+`on` started from. The change is a plain git diff in `skills/` — revert with git if
+ever needed.
+
+**Omitting `-s` means `off`** — every plain run restores the canonical mostly-`true`
+state, so `-s on` is deliberately temporary: it lasts only until the next install.
+
+### 15. Conversation pruning + retention (`--prune-sessions`, `CLEANUP_PERIOD_DAYS`)
+
+Two controls over conversation history:
+
+- **Retention** — `install.sh` now always writes `cleanupPeriodDays` into
+  `settings.json` (default **365**; Claude Code's built-in default is only **30 days**,
+  after which it deletes old transcripts itself). Override per run:
+  `CLEANUP_PERIOD_DAYS=90 ./install.sh -p standard -y`.
+- **Pruning** — `-d <days|date>` archive-then-deletes every conversation whose last
+  activity predates the cutoff (a bare number = that many days ago; anything else is
+  parsed by `date -d`, e.g. `2025-01-31`):
+
+```bash
+./install.sh -d 180        -p standard -yU   # drop sessions idle > 180 days
+./install.sh -d 2025-01-31 -p standard -yU   # drop sessions untouched since Feb
+```
+
+For each stale session the transcript (`projects/<proj>/<id>.jsonl` — what
+`claude --resume` lists), its sidecar dir (`subagents/`, `tool-results/`), and the
+matching `session-env/`, `file-history/` and `tasks/` entries are **moved** to
+`~/.claude-backups/<timestamp>-pruned/`, mirroring the live layout. Nothing is
+destroyed — restore by moving files back, or `rm -rf` the archive to actually free the
+disk. Interactive runs print a summary (count, projects, size) and ask `y/N`; `-y`
+skips the prompt. `memory/` dirs and `history.jsonl` (up-arrow prompt history) are
+never touched.
+
+### 16. Memory backup (`memory/`)
+
+Claude Code saves cross-conversation memories under `~/.claude/projects/<slug>/memory/`
+— plain markdown, but outside git and gone if `~/.claude` is lost. On every run
+`install.sh` (`syncMemory`) **adopts** each real memory dir into the kit at
+`memory/<slug>/` and symlinks it back, the same link-don't-copy idiom as skills: edits
+stay live, and **every kit commit is a versioned backup of your memories**. Safety
+floors match `syncSkills` — correct links untouched, foreign symlinks skipped with a
+warning, and if both a real dir and a kit dir exist nothing is merged silently. After
+`--fresh` (or on a new machine) the link pass recreates the symlinks from the kit copy.
+
+### 17. MCP logout (`--logout codex|github|atlassian|all`)
+
+`./install.sh -l <mcp>` logs out of an MCP and **exits** — a standalone action that
+runs nothing else, which is why every permission tier always-allows
+`install.sh -l *`: Claude can log you out on request, and an allowed `-l` can never
+be leveraged into a full install, `--fresh`, or anything beyond the logout. What it
+removes:
+
+- **codex** — `~/.codex/auth.json` (the ChatGPT session). The registration stays in
+  place; a fresh container `login` brings the tools straight back.
+- **github / atlassian** — the `generated/` env file **and** the `~/.claude.json`
+  registration, because that registration embeds the token.
+
+Everything is local-only: each block prints where to revoke the token server-side
+(GitHub token settings, Atlassian API-tokens page, ChatGPT authorized apps).
 
 ---
 
@@ -261,8 +347,10 @@ jq '.env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE,
     .env.CLAUDE_CODE_AUTO_COMPACT_WINDOW'              ~/.claude/settings.json   # autocompact
 jq '.permissions.deny'                                 ~/.claude/settings.json   # deny rules
 jq '.shiftEnterKeyBindingInstalled'                    ~/.claude/settings.json   # shift-enter
+jq '.cleanupPeriodDays'                                ~/.claude/settings.json   # retention (365)
 cmp -s ~/claude-kit/claude-md/CLAUDE.md ~/.claude/CLAUDE.md && echo match        # CLAUDE.md
 ls -l ~/.claude/skills/                                                          # symlinks
+readlink ~/.claude/projects/*/memory                                             # memory links
 claude mcp get codex                                                             # codex MCP server (if -x)
 ```
 

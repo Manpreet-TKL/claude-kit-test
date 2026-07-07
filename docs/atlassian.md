@@ -79,6 +79,11 @@ apply silently:
 Deregisters the server (`claude mcp remove atlassian -s user`). The credentials file
 `generated/.atlassian.env` is left in place — delete it manually to clear tokens.
 
+To clear the credentials in one go, `./install.sh -l atlassian` (allowed on every
+permission tier) deregisters the server AND removes `generated/.atlassian.env`, then
+exits — revoke the API token itself at
+https://id.atlassian.com/manage-profile/security/api-tokens.
+
 ## The credentials file
 
 `generated/.atlassian.env` is plain shell:

@@ -9,7 +9,9 @@
     "Bash(git diff *)",
     "Bash(git log *)",
     "mcp__atlassian",
-    "mcp__github"
+    "mcp__github",
+    "Bash(~/claude-kit/install.sh -l *)",
+    "Bash(bash ~/claude-kit/install.sh -l *)"
   ],
   "ask": [
     "Edit",
