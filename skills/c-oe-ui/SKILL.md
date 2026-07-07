@@ -172,6 +172,47 @@ and the page resolves them via `AssetManager::urlForManifestFile()` (reading
 `?v=` to a Vue asset or expect a manifest entry for a legacy one. See
 `subs/vue-vite.md`.
 
+## Module dual-theme pattern (verified July 2026, OeDocumentation)
+
+How a module's own CSS supports light + dark without touching core:
+
+- **Bootstrap the theme exactly like core `main.php`** in the module layout —
+  never bake the class in server-side:
+
+  ```php
+  <html lang="en" data-theme="<?= \SettingMetadata::model()->getSetting('display_theme'); ?>">
+  ...
+  <?php $this->renderPartial('//base/head/_assets'); ?>
+  <script>
+      window.OE_DISPLAY_THEME = document.documentElement.dataset.theme;
+      OpenEyes.UI.SetHtmlTagDefaults();
+  </script>
+  ```
+
+  `OpenEyes.UI.SetHtmlTagDefaults.js` (registered by `_assets`; Yii emits it above
+  the inline call) maps `data-theme` → a `theme-light|dark` class and resolves
+  `'auto'` via `prefers-color-scheme` with a live media-query listener. A
+  server-side `class="theme-<setting>"` yields `theme-auto` for auto users
+  (= stuck on light) and ignores the header's theme-switch buttons, which swap
+  the `theme-*` class client-side.
+- **Scoped custom properties**: define a module palette (`--oedoc-surface`,
+  `--oedoc-ink`, …) at `:root` with **light values as the defaults**, then ONE
+  `html.theme-dark { … }` block overriding the same variables. Selectors key off
+  `.theme-dark` only — never `[data-theme]`, never a `.theme-light` block.
+- **Don't override fills that carry white text** (solid accent/success buttons,
+  tags): they read fine on both themes; darkening them costs contrast.
+- **Deliberately-dark chrome stays literal**: a navy tool sidebar, dark code
+  blocks, lightbox overlays are dark by design in both themes — keep their hex
+  values out of the variable system so the dark block stays small.
+- **Native form fields need explicit colours** in the variable system
+  (`background: var(--…-surface-card); color: var(--…-ink)`) or they stay
+  white-on-white in dark.
+- **Theme resolution order in the DB**: `setting_user` (per-user) beats
+  `setting_installation` beats `setting_metadata.default_value` (ships as
+  `'auto'`, usually no installation row). To test as a user, flip **their
+  `setting_user` row** — inserting an installation row does nothing for a user
+  who has one. `setting_metadata` has no `value` column; only the other two do.
+
 ## House palettes
 
 - Ribbon breadcrumb/meta: 13px, text `#c8d6e5`, links `#c8d6e5` → hover `#fff`

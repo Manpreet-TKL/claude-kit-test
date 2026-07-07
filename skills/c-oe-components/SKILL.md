@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
 
-What executes inside a running deployment — `c-oeimagebuilder` builds the images, `c-oe-deploy` assembles and runs them. Detail: `subs/cron.md` (master-container yiic schedule), `subs/env-vars.md` (expected env vars).
+What executes inside a running deployment — `c-oeimagebuilder` builds the images, `c-oe-deploy` assembles and runs them. Detail: `subs/cron.md` (master-container yiic schedule), `subs/env-vars.md` (expected env vars), `subs/tmp-artefacts.md` (which rendering/import tool creates which temp files, and where each is invoked).
 
 ## Containers
 
