@@ -2,12 +2,12 @@
 
 ## Letter body
 
-- `et_ophcocorrespondence_letter` / `ElementLetter` — HTML body. TinyMCE on the way in, sanitised with HTMLPurifier, written back to PDF via Puppeteer (`DocumentRenderServicePuppeteer`) or TCPDF.
+- `et_ophcocorrespondence_letter` / `ElementLetter` - HTML body. TinyMCE on the way in, sanitised with HTMLPurifier, written back to PDF via Puppeteer (`DocumentRenderServicePuppeteer`) or TCPDF.
 
 ## Macros and snippets
 
-- `LetterMacro` rows — scoped per `Firm`, `Site`, `Subspecialty`, `Institution`.
-- `LetterString` / `FirmLetterString` — stringy snippets composing address / sign-off blocks.
+- `LetterMacro` rows - scoped per `Firm`, `Site`, `Subspecialty`, `Institution`.
+- `LetterString` / `FirmLetterString` - stringy snippets composing address / sign-off blocks.
 
 ## Recipients and enclosures
 
@@ -30,7 +30,7 @@ Backed by `BaseSignature` and `BaseEsignElement`. PIN-based signing supported vi
 
 ## Delivery
 
-- `CorrespondenceEmailCommand` — sends emailed letter copies (cron).
-- `DocManDeliveryCommand` / `DocmanRetriever` — external document handoff.
-- `InternalReferralDeliveryCommand` — internal referral routing.
+- `CorrespondenceEmailCommand` - sends emailed letter copies (cron).
+- `DocManDeliveryCommand` / `DocmanRetriever` - external document handoff.
+- `InternalReferralDeliveryCommand` - internal referral routing.
 - Letter PDFs are written to `protected/files/` (bind-mounted, see `c-oe-components`).

@@ -1,8 +1,8 @@
 # Correspondence, discharge, referrals, document upload
 
 Two distinct directions here:
-- **OUT** — OE produces letters / discharge summaries / internal referrals as PDFs for downstream document-management systems.
-- **IN** — third parties push documents *into* OE as document events (PASAPI v2).
+- **OUT** - OE produces letters / discharge summaries / internal referrals as PDFs for downstream document-management systems.
+- **IN** - third parties push documents *into* OE as document events (PASAPI v2).
 
 ## Correspondence & electronic discharge summaries (OUT)
 
@@ -10,7 +10,7 @@ Two distinct directions here:
 - Metadata is supplied by one or both of:
   - **Encoded filename**, e.g. `<hospital number>_<letter_type>_<Letter ID>_<date/time>.pdf` (format customisable).
   - **Sidecar XML** with the same base name as the PDF.
-- Detail: Appendix C – Document Management Output.
+- Detail: Appendix C - Document Management Output.
 
 ### Recipient output type configuration
 
@@ -24,7 +24,7 @@ Two distinct directions here:
 
 A special correspondence letter type. Behaves like correspondence/discharge output, but the **XML metadata carries referral fields** (referrer source, referee destination, urgency, etc.). Authored in the front end by creating a Correspondence event with letter type **Internal Referral**.
 
-## Document upload into OE (IN) — PASAPI v2
+## Document upload into OE (IN) - PASAPI v2
 
 - Requires **PASAPI Version 2**, first available in **OpenEyes 7.0**.
 - The event lands in an existing episode if one exists, else a new episode, depending on the **firm** chosen for the document.
@@ -35,8 +35,8 @@ A special correspondence letter type. Behaves like correspondence/discharge outp
 ### Transports (file drop)
 
 - **SFTP** to the OE server.
-- **SFTP** — BridgeLink picks files up from a designated location on your network.
-- **SMB (CIFS)** — BridgeLink picks files up from a designated network location.
+- **SFTP** - BridgeLink picks files up from a designated location on your network.
+- **SMB (CIFS)** - BridgeLink picks files up from a designated network location.
 
 ### File drop with detailed name
 

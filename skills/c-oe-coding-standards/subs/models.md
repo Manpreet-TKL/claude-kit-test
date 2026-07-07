@@ -1,6 +1,6 @@
 # Models (Yii)
 
-Models must be usable outside the HTTP context they were written in — keep them self-contained and
+Models must be usable outside the HTTP context they were written in - keep them self-contained and
 let them own their validation and persistence behaviour.
 
 ## No globals
@@ -14,7 +14,7 @@ the calling layer.
 $model->event_id = Yii::app()->request->getParam('event_id');
 ```
 
-- Sole exception: legacy rich-text "letter string" element methods rendering an HTML template — and even then use `$this->getApp()->controller`, not `Yii::app()->controller`.
+- Sole exception: legacy rich-text "letter string" element methods rendering an HTML template - and even then use `$this->getApp()->controller`, not `Yii::app()->controller`.
 
 ## Validation in rules
 
@@ -35,7 +35,7 @@ public function rules()
 
 ## Safe attributes
 
-Mark every data attribute `safe` — full mass assignment of data attributes is expected.
+Mark every data attribute `safe` - full mass assignment of data attributes is expected.
 
 ## Reuse validators
 
@@ -72,7 +72,7 @@ factory pattern, not `new`.
 
 ## Base classes
 
-`BaseActiveRecord` (plain) → `BaseActiveRecordVersioned` (history via `<table>_version`) →
+`BaseActiveRecord` (plain) -> `BaseActiveRecordVersioned` (history via `<table>_version`) ->
 `BaseActiveRecordVersionedSoftDelete` (**default for clinical entities**). Element bases:
 `BaseEventTypeElement`, `BaseMedicationElement`, `BaseEsignElement` + `BaseSignature` (signature/PIN).
 Also `BaseEventTemplate`, `BaseReport`, `BaseSetting`, `BaseTree`.

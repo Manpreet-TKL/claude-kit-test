@@ -1,4 +1,4 @@
-# notes — pinned stack (volatile)
+# notes - pinned stack (volatile)
 
 These versions move. Re-check against `src/composer.json`, `src/package.json`, `Dockerfile`, and `oe-deploy/templates/notes.yml` before assuming.
 

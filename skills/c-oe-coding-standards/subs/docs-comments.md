@@ -2,7 +2,7 @@
 
 ## Why not what
 
-Comments explain *why*, not *what* — the code itself reveals the what. Aim for self-documenting code.
+Comments explain *why*, not *what* - the code itself reveals the what. Aim for self-documenting code.
 
 ```php
 // widen tolerance: scanner clocks drift up to 2s between sites
@@ -11,7 +11,7 @@ $window = 2;
 
 ## DTO docblocks
 
-Every DTO gets a one-line PHPDoc summary, an `@property` line per property (type **and** description —
+Every DTO gets a one-line PHPDoc summary, an `@property` line per property (type **and** description -
 even with constructor property promotion), and a custom `@table` tag for the underlying model table.
 This feeds future centralised model-documentation generation.
 
@@ -27,7 +27,7 @@ This feeds future centralised model-documentation generation.
 ## View headers
 
 Head each PHP view file with `Ref:` lines for the rendering `class::method`(s) and `@var` type-hints
-for injected variables — views are often included via dynamically-built strings, which defeats global search.
+for injected variables - views are often included via dynamically-built strings, which defeats global search.
 
 ```php
 /**

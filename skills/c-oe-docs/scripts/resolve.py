@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-c-oe-docs resolver — map an OpenEyes route / URI / topic to its documentation
+c-oe-docs resolver - map an OpenEyes route / URI / topic to its documentation
 page in the OeDocumentation corpus, and optionally print that page's markdown.
 
 Mirrors the app's DocumentationRegistry::getDocsByAdminUri() from the
@@ -19,7 +19,7 @@ Usage:
     --limit   max matches to list (default 8).
     --docs-root DIR   the OeDocumentation module checkout (contains data/ and
                       docs/). Default: $OE_DOCS_ROOT, else the known host repo,
-                      else the current directory — first one that has
+                      else the current directory - first one that has
                       data/coverage.json.
     --json    machine-readable output.
 """
@@ -44,7 +44,7 @@ def find_root(explicit):
 
 
 def norm_route(s):
-    """Lowercase, drop non [a-z0-9/], collapse slashes — for route matching."""
+    """Lowercase, drop non [a-z0-9/], collapse slashes - for route matching."""
     return re.sub(r"/+", "/", re.sub(r"[^a-z0-9/]+", "", (s or "").lower())).strip("/")
 
 
@@ -107,7 +107,7 @@ def load_index(root):
             "path": os.path.join(docs_dir, slug + ".md"),
         }
 
-    # 2. filesystem scan — fill title/uri/status and add non-unit pages
+    # 2. filesystem scan - fill title/uri/status and add non-unit pages
     for path in glob.glob(os.path.join(docs_dir, "**", "*.md"), recursive=True):
         slug = os.path.relpath(path, docs_dir)[:-3]
         if slug.startswith("help/_evidence/"):
@@ -130,7 +130,7 @@ def load_index(root):
 
 
 def score(rec, query):
-    """Rank a doc against the query. Returns (score, reason) — higher is better."""
+    """Rank a doc against the query. Returns (score, reason) - higher is better."""
     q = query.strip()
     ql = q.lower()
 
@@ -214,8 +214,8 @@ def main():
         exists = "" if os.path.isfile(r["path"]) else "  [MISSING FILE]"
         print(f"  {sc:>4}  {r['slug']}{exists}")
         print(f"        {name}"
-              + (f"   ·  {r['uri']}" if r["uri"] else "")
-              + (f"   ·  status={r['status']}" if r["status"] else "")
+              + (f"  ,  {r['uri']}" if r["uri"] else "")
+              + (f"  ,  status={r['status']}" if r["status"] else "")
               + f"   ({why})")
     print()
 

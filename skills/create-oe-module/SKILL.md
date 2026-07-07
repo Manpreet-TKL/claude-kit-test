@@ -10,7 +10,7 @@ When loaded as context with no task, reply only `Context loaded.`
 
 OpenEyes modules live under `protected/modules/<Name>/` and are loaded by `OEConfig::getMergedConfig()` (see `protected/config/OEConfig.php`). This skill covers the load-bearing pieces that aren't obvious from looking at one module in isolation: registration, the `oe_special_module` menu gate, APCu invalidation, and the cross-module migration runner.
 
-For naming conventions (`Oph` + two-letter category like `Ci`, `Co`, `Tr`, `In`, `Dr`, `Le`, `Ou`), see CLAUDE.md §6.
+For naming conventions (`Oph` + two-letter category like `Ci`, `Co`, `Tr`, `In`, `Dr`, `Le`, `Ou`), see CLAUDE.md section 6.
 
 ---
 
@@ -18,19 +18,19 @@ For naming conventions (`Oph` + two-letter category like `Ci`, `Co`, `Tr`, `In`,
 
 ```
 protected/modules/<Name>/
-├── <Name>Module.php          # required — the module class
-├── README.md                 # required — what it is, how to use it, its dependencies
+├── <Name>Module.php          # required - the module class
+├── README.md                 # required - what it is, how to use it, its dependencies
 ├── docs/                     # module-owned design/format/contract docs (NOT the repo root)
 ├── config/
 │   ├── common.php            # merged into global config (params, components, sub-modules)
 │   └── <env>.php             # optional per-environment overrides (main/console/admin/test)
 ├── controllers/              # routed at /<Name>/<Controller>/<action>
-├── models/                   # AR models — `Element_<Name>_<Foo>` for event-type elements
+├── models/                   # AR models - `Element_<Name>_<Foo>` for event-type elements
 ├── components/               # `<Name>_API.php` lives here for cross-module reads (BaseAPI)
-├── resources/                # vendored, module-owned static assets (templates, filters, …)
+├── resources/                # vendored, module-owned static assets (templates, filters, ...)
 ├── views/                    # PHP views per controller
 ├── widgets/                  # form/display widgets
-├── migrations/               # see §6
+├── migrations/               # see section 6
 │   └── data/<migration_name>/NN_<table>.csv   # CSV seed data
 ├── seeders/                  # BaseSeeder classes (test data, used by Cypress/Playwright)
 ├── factories/                # Faker factories (`HasFactory` trait)
@@ -39,7 +39,7 @@ protected/modules/<Name>/
 ```
 
 **Modules are self-contained.** Everything needed to understand, use, and run a module
-lives inside its own directory — never at the repo root. Two non-negotiables for a new
+lives inside its own directory - never at the repo root. Two non-negotiables for a new
 module:
 
 - A **`README.md`** at the module root: what the module is, how to use it (UI + any
@@ -47,13 +47,13 @@ module:
 - A **`docs/`** folder for any longer design notes, format/contract docs, or rebuild
   procedures. The repo-root `*.md` convention is for *core* analysis notes; a module's
   own docs belong under `protected/modules/<Name>/docs/`, and any vendored assets the
-  module relies on belong under `protected/modules/<Name>/resources/` — so the module
+  module relies on belong under `protected/modules/<Name>/resources/` - so the module
   can be dropped into any OpenEyes container as one tree, with nothing to wire up
   elsewhere. (If the module depends on a tool or composer package that may be absent in
-  some containers, probe for it and degrade gracefully rather than fataling — say so in
+  some containers, probe for it and degrade gracefully rather than fataling - say so in
   the README.)
 
-### `<Name>Module.php` — minimum class
+### `<Name>Module.php` - minimum class
 
 **Utility module** (no event types):
 ```php
@@ -93,13 +93,13 @@ If you have a sub-module (e.g. an admin pane), declare it in `init()`:
 $this->setModules(['OphXxFooAdmin']);
 ```
 
-### `config/common.php` — typical shape
+### `config/common.php` - typical shape
 
 ```php
 <?php
 return [
     'params' => [
-        'menu_bar_items' => [ /* see §5 */ ],
+        'menu_bar_items' => [ /* see section 5 */ ],
     ],
     'aliases' => [
         // 'OphXxFooAdmin' => 'OEModule.OphXxFoo.modules.OphXxFooAdmin',
@@ -121,7 +121,7 @@ return [
 ];
 ```
 
-The Yii prefix-based autoload means: any module whose name starts with `Oph` gets its `models.*` path auto-imported by `OEConfig` — you don't have to list it again in `import`. Other modules (`Diagnoses`, `FileStorage`, etc.) need to declare imports themselves if they want models autoloaded.
+The Yii prefix-based autoload means: any module whose name starts with `Oph` gets its `models.*` path auto-imported by `OEConfig` - you don't have to list it again in `import`. Other modules (`Diagnoses`, `FileStorage`, etc.) need to declare imports themselves if they want models autoloaded.
 
 ---
 
@@ -130,7 +130,7 @@ The Yii prefix-based autoload means: any module whose name starts with `Oph` get
 Add the module to the `$modules` array in `protected/config/core/common.php` (around line 1161). Two valid forms:
 
 ```php
-// Simple (Yii infers class from path — works when the module class is in protected/modules/<Name>/<Name>Module.php and uses no namespace, OR is plain camel-case discoverable):
+// Simple (Yii infers class from path - works when the module class is in protected/modules/<Name>/<Name>Module.php and uses no namespace, OR is plain camel-case discoverable):
 'OphCoCorrespondence',
 
 // Explicit with class FQCN (required when the module lives under a PSR-4 namespace like OEModule\X):
@@ -139,7 +139,7 @@ Add the module to the `$modules` array in `protected/config/core/common.php` (ar
 
 Almost every modern module uses the explicit form. Use the simple form only if you're matching the convention of older clinical modules (`Api`, `eyedraw`, `Mirth`, `oldadmin`).
 
-Pattern for dev-only modules — wrap in an env check, like `TestHelper`:
+Pattern for dev-only modules - wrap in an env check, like `TestHelper`:
 ```php
 if (strtolower(getenv('OE_MODE')) !== 'live') {
     $modules['TestHelper'] = ['class' => TestHelperModule::class];
@@ -148,11 +148,11 @@ if (strtolower(getenv('OE_MODE')) !== 'live') {
 
 ### Docker deployments: `/config/modules.conf`
 
-If the module is deployment-specific, it can be added without touching core by mounting `/config/modules.conf` on the container (see `core/common.php` lines 1222–1242). Format:
+If the module is deployment-specific, it can be added without touching core by mounting `/config/modules.conf` on the container (see `core/common.php` lines 1222-1242). Format:
 ```
 modules=(MyModule=OEDeployment\MyModule\MyModuleModule OtherModule)
 ```
-This is the right escape hatch for site-local modules — don't edit core/common.php for one trust's bespoke module.
+This is the right escape hatch for site-local modules - don't edit core/common.php for one trust's bespoke module.
 
 ---
 
@@ -171,17 +171,17 @@ return [
 ];
 ```
 
-`local/common.php` is **not** in VCS by default — copy from `protected/config/local.sample/` to start. The file ships in some checkouts already (see `protected/config/local/common.php`), and the existing one does menu-bar suppression (see §4); preserve that logic if you edit it.
+`local/common.php` is **not** in VCS by default - copy from `protected/config/local.sample/` to start. The file ships in some checkouts already (see `protected/config/local/common.php`), and the existing one does menu-bar suppression (see section 4); preserve that logic if you edit it.
 
 Once the module is stable, move the registration into `core/common.php` so it ships with the codebase.
 
 ---
 
-## 4. `oe_special_module` — making your menu items visible
+## 4. `oe_special_module` - making your menu items visible
 
 This is the gotcha that catches new modules: **by default, your `menu_bar_items` will be invisible.**
 
-`protected/config/local/common.php` runs after all module configs and suppresses every menu item it can find — both core menu keys and every key in every module's `params.menu_bar_items` — by injecting an impossible `requires_setting` into them. It only leaves alone modules that have explicitly opted in:
+`protected/config/local/common.php` runs after all module configs and suppresses every menu item it can find - both core menu keys and every key in every module's `params.menu_bar_items` - by injecting an impossible `requires_setting` into them. It only leaves alone modules that have explicitly opted in:
 
 ```php
 // protected/modules/MyModule/config/common.php
@@ -199,17 +199,17 @@ return [
 ];
 ```
 
-**Use `oe_special_module` only for admin/infrastructure modules** (existing examples: `OeMerge`, `OeConfig`, `OeDataDictionary`, `OeDocumentation`). For clinical modules, the suppression is intentional — clinical entry points appear on the patient summary / pathway, not in the top nav.
+**Use `oe_special_module` only for admin/infrastructure modules** (existing examples: `OeMerge`, `OeConfig`, `OeDataDictionary`, `OeDocumentation`). For clinical modules, the suppression is intentional - clinical entry points appear on the patient summary / pathway, not in the top nav.
 
-The suppression code is in `protected/config/local/common.php` (lines 22–55). It scans both `modules/*/config/common.php` and one level of sub-module configs (`modules/*/modules/*/config/common.php`). When debugging "my menu item doesn't show up," read that file first.
+The suppression code is in `protected/config/local/common.php` (lines 22-55). It scans both `modules/*/config/common.php` and one level of sub-module configs (`modules/*/modules/*/config/common.php`). When debugging "my menu item doesn't show up," read that file first.
 
-Special modules share a consistent landing-page UI (canonical ribbon, full page width, hidden patient/hotlist panel, cache-busted module CSS) — see `subs/special-module-ui.md` for the recipe, and the `c-oe-ui` skill for the core CSS mechanics behind it.
+Special modules share a consistent landing-page UI (canonical ribbon, full page width, hidden patient/hotlist panel, cache-busted module CSS) - see `subs/special-module-ui.md` for the recipe, and the `c-oe-ui` skill for the core CSS mechanics behind it.
 
 ---
 
 ## 5. Menu bar item shape
 
-Used in core (`core/common.php` lines ~628–714) and inside any module's `params.menu_bar_items`:
+Used in core (`core/common.php` lines ~628-714) and inside any module's `params.menu_bar_items`:
 
 ```php
 'menu_bar_items' => [
@@ -238,7 +238,7 @@ $this->insert('authitemchild', [
 
 ---
 
-## 6. Migrations — core vs module ordering
+## 6. Migrations - core vs module ordering
 
 OpenEyes has a custom `OEMigrateCommand` (`protected/commands/OEMigrateCommand.php`) that interleaves core migrations and every module's migrations into a single chronologically-sorted run.
 
@@ -293,11 +293,11 @@ CSV seed data goes in `migrations/data/<migration_class_name>/NN_<table>.csv` an
 
 ---
 
-## 7. APCu — your module isn't appearing, here's why
+## 7. APCu - your module isn't appearing, here's why
 
-`OEConfig::getMergedConfig($environment)` caches the assembled config in APCu under the key `oe_merged_config_<environment>` (see `protected/config/OEConfig.php` lines 46–47 and 111). The cache is **per-environment** (`main`, `console`, `admin`, `test`) and persists across requests.
+`OEConfig::getMergedConfig($environment)` caches the assembled config in APCu under the key `oe_merged_config_<environment>` (see `protected/config/OEConfig.php` lines 46-47 and 111). The cache is **per-environment** (`main`, `console`, `admin`, `test`) and persists across requests.
 
-So when you edit a config file (`core/common.php`, `local/common.php`, or any module `config/common.php`) and nothing changes in the browser — APCu is serving you stale config.
+So when you edit a config file (`core/common.php`, `local/common.php`, or any module `config/common.php`) and nothing changes in the browser - APCu is serving you stale config.
 
 ### Three ways to clear it
 
@@ -316,9 +316,9 @@ So when you edit a config file (`core/common.php`, `local/common.php`, or any mo
    ```
    OE_CONFIG_TEST_RUNNING=1
    ```
-   This is what the test suite uses (PHPUnit sets it in `phpunit*.xml`). Useful in development if you're iterating on config — set it in your `.env` or fpm pool config and you'll never hit cached config again at the cost of re-merging on every request.
+   This is what the test suite uses (PHPUnit sets it in `phpunit*.xml`). Useful in development if you're iterating on config - set it in your `.env` or fpm pool config and you'll never hit cached config again at the cost of re-merging on every request.
 
-`yiilite.php` (the bytecode-optimised Yii bundle used in production when `OE_FORCE_YIILITE=true` or non-debug+APCu) is also cached — see `index_yii.php`. A full FPM restart catches both.
+`yiilite.php` (the bytecode-optimised Yii bundle used in production when `OE_FORCE_YIILITE=true` or non-debug+APCu) is also cached - see `index_yii.php`. A full FPM restart catches both.
 
 ---
 
@@ -326,7 +326,7 @@ So when you edit a config file (`core/common.php`, `local/common.php`, or any mo
 
 - **Module API**: if other modules need to read from yours, add `protected/modules/<Name>/components/<Name>_API.php extends BaseAPI`. Consumers resolve it via `Yii::app()->moduleAPI->get('<Name>')`. Never reach into another module's models directly.
 - **OEShared bindings**: if your module exposes a framework-agnostic contract, put the interface in `oe-shared/app/Modules/<Name>/Contracts/` and bind the Yii impl in your module's `config/common.php` `components.container.bindings` block (Laravel binds the same contract on its side).
-- **Static analysis**: your new module is under `protected/` so it's covered by `phpstan.yii.neon` / `phpcs.yii.xml` / `rector.yii.php` — not the Laravel or shared configs.
+- **Static analysis**: your new module is under `protected/` so it's covered by `phpstan.yii.neon` / `phpcs.yii.xml` / `rector.yii.php` - not the Laravel or shared configs.
 - **OEMigrate after registration**: after adding the module to `$modules` and clearing APCu, run `./protected/yiic migrate --all` to apply its migrations.
 
 ---
@@ -334,11 +334,11 @@ So when you edit a config file (`core/common.php`, `local/common.php`, or any mo
 ## End-to-end checklist for a new module `OphXxFoo`
 
 1. `mkdir -p protected/modules/OphXxFoo/{config,controllers,models,migrations,views,components,docs}`
-2. Write `OphXxFooModule.php` (event-type → `BaseEventTypeModule`; otherwise `CWebModule`).
-3. Write a `README.md` at the module root (what it is, usage, dependencies, config) and put any longer design/format docs under `docs/`. Keep the module self-contained — its docs and any vendored assets live inside the module, not at the repo root.
+2. Write `OphXxFooModule.php` (event-type -> `BaseEventTypeModule`; otherwise `CWebModule`).
+3. Write a `README.md` at the module root (what it is, usage, dependencies, config) and put any longer design/format docs under `docs/`. Keep the module self-contained - its docs and any vendored assets live inside the module, not at the repo root.
 4. Write `config/common.php` (params, components, sub-modules as needed).
 5. Add the explicit-class entry to `$modules` in `protected/config/core/common.php` (or `local/common.php` for testing).
-6. If you need a top-nav entry: add `params.menu_bar_items` AND set `params.oe_special_module = true` — but only if this is an admin/infra tool. Clinical modules don't. Build the landing page per `subs/special-module-ui.md`.
+6. If you need a top-nav entry: add `params.menu_bar_items` AND set `params.oe_special_module = true` - but only if this is an admin/infra tool. Clinical modules don't. Build the landing page per `subs/special-module-ui.md`.
 7. Write a timestamped migration in `protected/modules/OphXxFoo/migrations/` that creates tables, inserts the `event_type` and `element_type` rows (event-type modules), and any `authitem` permissions.
 8. Clear APCu: `curl http://localhost/apc_clear.php`.
 9. Run `./protected/yiic migrate --all`.

@@ -1,18 +1,18 @@
-# Clinical safety — non-negotiable invariants
+# Clinical safety - non-negotiable invariants
 
 OpenEyes is a clinical record. These override every other rule. When in doubt, stop and ask.
 See also `subs/disruptive-ops.md` for the literal-`yes` confirmation pattern on destructive ops.
 
 ## Never touch clinical values unasked
 
-Do not change how a clinical value is persisted, calculated, converted, or displayed —
-visual acuity, IOP, dose, laterality, drug name/strength, units — without an explicit instruction.
+Do not change how a clinical value is persisted, calculated, converted, or displayed -
+visual acuity, IOP, dose, laterality, drug name/strength, units - without an explicit instruction.
 - A "harmless" refactor of a unit conversion or a display rounding is a patient-safety change.
 - If a value's representation must change, surface it and get a clear ask first.
 
 ## Never bypass audit
 
-Every clinical CRUD runs through `AuditService`. Write through the model layer so it fires —
+Every clinical CRUD runs through `AuditService`. Write through the model layer so it fires -
 even in one-off scripts and migrations.
 - Never `INSERT`/`UPDATE` clinical tables with raw SQL that skips the model save path.
 - `Audit::add('Patient', 'view', $patient->id)` for explicit action auditing.
@@ -25,7 +25,7 @@ Clinical data is soft-deleted (`deleted = 1`), never hard-`DELETE`d.
 
 ## TestHelper stays out of live
 
-The `TestHelper` module must never be enabled in production — do not loosen its `OE_MODE !== 'live'` gate.
+The `TestHelper` module must never be enabled in production - do not loosen its `OE_MODE !== 'live'` gate.
 
 ## Modules self-register
 
@@ -34,7 +34,7 @@ A module advertises itself in its own `config/common.php`; `local/common.php` is
 
 ## voiceControl independent
 
-The `voiceControl` module must stand on its own — no runtime dependency on, shared key with, or
+The `voiceControl` module must stand on its own - no runtime dependency on, shared key with, or
 cross-import of `aiSearch`.
 
 ---

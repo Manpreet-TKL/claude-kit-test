@@ -1,4 +1,4 @@
-# PASAPI — field contract and routing detail
+# PASAPI - field contract and routing detail
 
 ## PASAPI V2 endpoints
 
@@ -19,7 +19,7 @@ Response: `<Success><Id>..</Id><Message>Patient updated</Message></Success>` or 
 - Appointments: Bahmni `POST /ws/rest/v1/appointment/search`
 - Builds HL7 ADT: A04 = patient-only (PID), A05 = appointment (PID + PV1/PV2); MLLP to `127.0.0.1:6661` (same mc container), `pollOnStart`, ~10 s interval.
 
-## HL7 → OE field contract (V2)
+## HL7 -> OE field contract (V2)
 
 - NHSNumber = `PID.3.1` where `PID.3.5 == 'NHS'`; HospitalNumber = `PID.3.1` where `PID.3.5 == 'MR'`
 - Title `PID.5.5`; FirstName `PID.5.2` (+`PID.5.3` middle); Surname `PID.5.1`

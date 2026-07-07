@@ -1,11 +1,11 @@
-# PayloadProcessor — queue model & JavaScript routines
+# PayloadProcessor - queue model & JavaScript routines
 
 ## Status model
 
 `utils/Status.java`: `NEW, RETRY, COMPLETE, FAILED, PAUSE, VOID` (stored as
 `EnumType.STRING` in `request_routine.status`). `PAUSE` is defined but unused.
 
-## Poll query — strict in-order per request
+## Poll query - strict in-order per request
 
 Named native query `routinesWithRequestQueueRestrictionForProcessing`
 (`models/RequestRoutine.java:25-37`):
@@ -25,15 +25,15 @@ ORDER BY rr.id
 
 The `NOT EXISTS` clause is the key invariant: a routine is eligible only when
 **every lower-`execute_sequence` routine for the same `request_id` is already
-`COMPLETE` or `VOID`** — so routines for one request run strictly in sequence,
+`COMPLETE` or `VOID`** - so routines for one request run strictly in sequence,
 while different requests run in parallel. The worker uses a twin query that also
 filters `rr.request_id = :request_id` to pull its own request's next routine.
 
 ## Retry backoff & locking
 
 - **Backoff** (`utils/RequestRoutineNextTryTimeCalculator.java`, via
-  `RequestRoutine.failedExecution`): by `try_count` — try 0-4 → `now + 120*tryCount`
-  s; try 5-12 → +30 min; try 13-19 → +360 min; **try ≥20 ⇒ `null` ⇒ status
+  `RequestRoutine.failedExecution`): by `try_count` - try 0-4 -> `now + 120*tryCount`
+  s; try 5-12 -> +30 min; try 13-19 -> +360 min; **try >=20 => `null` => status
   `FAILED`** (no further retry).
 - **Optimistic locking:** `request_routine` is `@OptimisticLocking(DIRTY)` +
   `@DynamicUpdate`; a concurrent change throws `OptimisticLockException`, caught by
@@ -45,11 +45,11 @@ filters `rr.request_id = :request_id` to pull its own request's next routine.
 - **Routines are plain JS files** (no extension) under
   `src/main/resources/routineLibrary/` (~74 of them), baked into `/routineLibrary`
   in the image. The DB `routine_library` table holds only `(routine_name,
-  hash_code)` — it's an **index of which scripts exist, not the bodies**. Bodies
+  hash_code)` - it's an **index of which scripts exist, not the bodies**. Bodies
   are read off disk at execution time (`RoutineScriptAccessor`).
 - **Sync is insert-only** (`RoutineLibrarySynchronizer`): edited scripts keep a
   stale hash; deleted scripts leave orphan rows. To pick up edits, restart the
-  container or lower `SYNCHRONIZE_ROUTINE_DELAY` — the practical effect of a
+  container or lower `SYNCHRONIZE_ROUTINE_DELAY` - the practical effect of a
   restart is simply re-reading bodies from disk. Override `/routineLibrary` with a
   bind volume to use custom scripts.
 - **Wrapping:** every routine = `preScript/functions` + the routine +
@@ -63,7 +63,7 @@ filters `rr.request_id = :request_id` to pull its own request's next routine.
 - **DICOM / blobs:** `getDicomParser`, `getDicom`, `getBlobData`.
 - **Routine chaining:** `addRoutine`, `addRoutineIfExists`,
   `addRoutineWithFallbackRoutine`, `addPriorityRoutine`, `voidAllNewRoutines`.
-- **Patient / events:** `getPatientId` (PAS search), `createEvent` (→ DataAPI
+- **Patient / events:** `getPatientId` (PAS search), `createEvent` (-> DataAPI
   direct SQL), `linkAttachmentDataWithEventNewGroup`,
   `insertEventSubtypeIfDoesNotExist`, `updateEventServiceFirmToEpisodeFirm`,
   `patientHasEpisodes`, `eventIsDeleted`.
@@ -85,7 +85,7 @@ is called.
 
 Per-modality entry points: `DICOM_SEED`, `OCT_SEED`, `XML_SEED`,
 `GENERIC_PROCESSING_SEED`, `GENERIC_EXTRACT_PDF`. `DICOM_SEED` maps DICOM header
-tags → `REQUEST_DATA` then dispatches to a manufacturer routine by
+tags -> `REQUEST_DATA` then dispatches to a manufacturer routine by
 `requestData.manufacturer` (`Carl_Zeiss_Meditec_*`, `Heidelberg_Engineering*`,
 `TOPCON*`, `OPTOS*`, `Triton*`, `Haag-Streit_AG*`, `Konan_Medical*`, `Kowa`,
 `OCULUS_*`, fallback `GENERIC_PROCESSING_SEED`). Event-creation: `create_event`,

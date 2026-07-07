@@ -1,8 +1,8 @@
-# Special-module landing-page UI — the consistent pattern
+# Special-module landing-page UI - the consistent pattern
 
 The signed-off UI recipe for `oe_special_module` (admin/infrastructure) modules.
 Reference implementations: **OeDataDictionary** (gold standard, custom-grid layout),
-**OeConfig** (module layout with left-aligned option tabs), **NodAudit** (no layout —
+**OeConfig** (module layout with left-aligned option tabs), **NodAudit** (no layout -
 ribbon partial + per-view chassis). For the underlying core CSS mechanics see the
 `c-oe-ui` skill.
 
@@ -31,8 +31,8 @@ A module layout must be the full document:
     <div id="oe-minimum-width-warning">Device width not supported</div>
     <?php $this->renderPartial('//base/_brand'); ?>   <!-- banner: leave alone -->
     <?php $this->renderPartial('//base/_header'); ?>  <!-- top nav: leave alone -->
-    <!-- ribbon (§2) -->
-    <!-- content (§3) -->
+    <!-- ribbon (section 2) -->
+    <!-- content (section 3) -->
     <?php $this->renderPartial('//base/_footer'); ?>
 </body>
 </html>
@@ -46,39 +46,39 @@ A module layout must be the full document:
         <div class="title wordcaps"><b>Module Title</b></div>
         <!-- optional left-aligned option tabs -->
         <div class="flex-layout" style="gap:6px; margin-left:32px;">
-            <a class="button selected" href="…">Tab A</a>
-            <a class="button" href="…">Tab B</a>
+            <a class="button selected" href="...">Tab A</a>
+            <a class="button" href="...">Tab B</a>
         </div>
     </div>
     <!-- optional right-side breadcrumb / meta -->
     <nav class="<name>-breadcrumb">
-        <a href="…">Home</a> › <span>Current</span>
+        <a href="...">Home</a> › <span>Current</span>
     </nav>
 </div>
 ```
 
-- Title is always `.title.wordcaps > <b>Title</b>` — never a raw `<h1>` with custom
+- Title is always `.title.wordcaps > <b>Title</b>` - never a raw `<h1>` with custom
   font sizing.
-- `.flex-layout` alone is `justify-content: space-between` — with three children it
+- `.flex-layout` alone is `justify-content: space-between` - with three children it
   **centers** the middle one. That is the bug the left cluster
   (`.flex-layout.flex-left`, core class, `justify-content: flex-start`) exists to
   avoid: title + tabs go inside it, tabs stay left-aligned next to the title.
 - Right-side breadcrumb/meta sits on the dark ribbon (`--bg-title`), so style it
   light: `font-size:13px; color:#c8d6e5;` links the same, hover `#fff` + underline.
-  Never default link blue / grey — unreadable on the ribbon.
+  Never default link blue / grey - unreadable on the ribbon.
 - Many tabs: add `flex-wrap:wrap; row-gap:4px` to the tab div (OeDatabase).
 
 ## 3. Full-width content
 
-Core caps `.oe-full-header` / `.oe-full-content` at 1440px on screens ≥1890px to
-leave room for the pinned hotlist. Since the hotlist is hidden (§4), opt out with
+Core caps `.oe-full-header` / `.oe-full-content` at 1440px on screens >=1890px to
+leave room for the pinned hotlist. Since the hotlist is hidden (section 4), opt out with
 core's own `use-full-screen` class on **both** the ribbon and the content wrapper:
 
 ```html
 <div class="oe-full-content use-full-screen oe-<name>">
     <main class="oe-full-main">
         <?php $this->renderPartial('//base/_messages') ?>
-        …
+        ...
     </main>
 </div>
 ```
@@ -86,17 +86,17 @@ core's own `use-full-screen` class on **both** the ribbon and the content wrappe
 Sidebar variants: `oe-full-content subgrid use-full-screen` (core 300px sidebar
 grid, override columns in module CSS), or a fully custom div with
 `display:grid; grid-template-columns: 220px 1fr; grid-area: main;`
-(OeDataDictionary's `.oe-dd-layout`) — custom grid-area divs escape the width cap
+(OeDataDictionary's `.oe-dd-layout`) - custom grid-area divs escape the width cap
 without `use-full-screen`, but their `.oe-full-header` then needs either
 `use-full-screen` or the DD override
 (`width:100%!important; grid-column:1/-1!important`).
 
 ## 4. Hide the patient search (hotlist) panel
 
-CSS-only, in the module stylesheet — do not touch controllers or `_header.php`:
+CSS-only, in the module stylesheet - do not touch controllers or `_header.php`:
 
 ```css
-/* Hide the patient hotlist panel — not relevant here */
+/* Hide the patient hotlist panel - not relevant here */
 .oe-hotlist-panel,
 .js-hotlist-panel-wrapper {
     display: none !important;
@@ -108,7 +108,7 @@ layout `<head>` (AiSearch, VoiceControl). Optionally also set
 `public $renderPatientPanel = false; public bool $fixedHotlist = false;` on the
 controller (OeConfig), but the CSS is what actually hides it.
 
-## 5. Module CSS registration — always cache-bust
+## 5. Module CSS registration - always cache-bust
 
 nginx serves published `/assets/...` with `Cache-Control: max-age=31536000` (1
 year). An unversioned CSS URL means browsers keep stale styles for a year. Always
@@ -124,8 +124,8 @@ $baseUrl = \Yii::app()->assetManager->publish(
 );
 ```
 
-(Layout `<link>` idiom in §1.) In debug, `linkAssets` symlinks the published dir so
-file edits are live; in production they are copies — the `?v=` matters in both.
+(Layout `<link>` idiom in section 1.) In debug, `linkAssets` symlinks the published dir so
+file edits are live; in production they are copies - the `?v=` matters in both.
 
 ## 6. Sidebar palette (when the module has one)
 

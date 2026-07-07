@@ -1,4 +1,4 @@
-# oe-deploy — per-app recipes (volatile)
+# oe-deploy - per-app recipes (volatile)
 
 The list of apps and the SERVICES/MODS each needs evolves. Always cross-check `templates/` and the per-app `templates/<app>.env` before assuming a service still exists or that its variables haven't been renamed. Snapshot below taken against the `cat` checkout (appName=openeyes, MASTER_TAG 26.0.0).
 
@@ -13,7 +13,7 @@ Four space-separated lists, each mapping to a template path:
 | `HEALTHCHECKS`| `templates/healthchecks/<svc>.yml`|
 | `AWSLOGS`     | `templates/awslogs/<svc>.yml`     |
 
-`build.sh` builds a `-f …` string from all four and runs `docker compose … config`.
+`build.sh` builds a `-f ...` string from all four and runs `docker compose ... config`.
 
 ## Apps and their recipes (cross-check before trusting)
 
@@ -21,7 +21,7 @@ Four space-separated lists, each mapping to a template path:
 |---       |---                               |---     |---                  |---    |
 | openeyes | `db web`                         | _(none)_ | `secrets/DATABASE_PASS` | Plain ref-app. `oe-manager` ships inside `web.yml`. Mirth/BridgeLink is optional (`mc`/`mcbl`), not in the base stack. |
 | notes    | `db notes tfk`                   | _(none)_ | `secrets/DB_PASSWORD`   | Uses the real `tfk` service, not the `tfk_only` mod. No OE images. |
-| openers  | `db mc-ers ers min tfk-ers cla`  | _(none)_ | `secrets/DB_PASSWORD` (+ `OPENERS_DATABASE_PASS`) | WIP recipe: `mc-ers ers min tfk-ers cla` have **no** matching `templates/*.yml` in this checkout — it will not render as-is. |
+| openers  | `db mc-ers ers min tfk-ers cla`  | _(none)_ | `secrets/DB_PASSWORD` (+ `OPENERS_DATABASE_PASS`) | WIP recipe: `mc-ers ers min tfk-ers cla` have **no** matching `templates/*.yml` in this checkout - it will not render as-is. |
 
 ## What each template does
 
@@ -33,10 +33,10 @@ Service fragments (`templates/<svc>.yml`):
 | `db2.yml`     | Second MariaDB container (`-db2` in db-setup). |
 | `mys.yml`     | MySQL container instead of MariaDB (`-mys`). |
 | `web.yml`     | `web` (anchor `&web`, image `toukanlabsdocker/oe-web-live`) **and** `oe-manager` (`<<: *web`, image `toukanlabsdocker/oe-manager`). No separate manager/master template. |
-| `mc.yml`      | NextGen Connect (Mirth) container — service name `mc`. |
-| `mcbl.yml`    | BridgeLink drop-in for `mc` — `innovarhealthcare/bridgelink:${MIRTH_IMAGE_TAG}`. Set `MIRTH_SSL=false`, `MIRTH_PKRET=true`, `VMOPTIONS=-Xmx512m`. |
+| `mc.yml`      | NextGen Connect (Mirth) container - service name `mc`. |
+| `mcbl.yml`    | BridgeLink drop-in for `mc` - `innovarhealthcare/bridgelink:${MIRTH_IMAGE_TAG}`. Set `MIRTH_SSL=false`, `MIRTH_PKRET=true`, `VMOPTIONS=-Xmx512m`. |
 | `notes.yml`   | The Notes app container. |
-| `iol.yml`     | IOL Master — import DICOM to OE. |
+| `iol.yml`     | IOL Master - import DICOM to OE. |
 | `pay.yml`     | Payload Processor (image processing). |
 | `pen.yml`     | Pentaho data-migration pipelines. |
 | `red.yml`     | Redis cache. |
@@ -57,11 +57,11 @@ Mods (`templates/modules/<mod>.yml`) overlay extra env/config onto `web`: `apach
 
 ## Image tag conventions (current)
 
-- `MASTER_TAG` (e.g. `26.0.0`) is the umbrella — `OE_WEB_TAG`, `OE_MANAGER_TAG`, `OE_RTF_TAG`, `IOL_MASTER_IMPORT_TAG`, `PAYLOAD_IMAGE_TAG`, `SIGNATURE_PROCESSOR_TAG` all default to `${MASTER_TAG}`. There is **no** `BL_TAG`.
-- **Mirth / BridgeLink** is `MIRTH_IMAGE_TAG` (default `4.6.1`). There's no bare `4.6` tag — pin a patch.
+- `MASTER_TAG` (e.g. `26.0.0`) is the umbrella - `OE_WEB_TAG`, `OE_MANAGER_TAG`, `OE_RTF_TAG`, `IOL_MASTER_IMPORT_TAG`, `PAYLOAD_IMAGE_TAG`, `SIGNATURE_PROCESSOR_TAG` all default to `${MASTER_TAG}`. There is **no** `BL_TAG`.
+- **Mirth / BridgeLink** is `MIRTH_IMAGE_TAG` (default `4.6.1`). There's no bare `4.6` tag - pin a patch.
 - **DB** is `DB_IMAGE`/`DB_TAG` (default `mariadb`/`11.8`); **Traefik** is `TFK_TAG` (`v3.6`).
-- **RC tag casing** — lowercase `rc` only (`v26.0.0-rc3`, not `-RC3`); Docker Hub is case-sensitive.
-- **OpenMRS first boot is slow** — initial WAR deploy can take ~73 min on a monkey-spec host. Quote the real number.
+- **RC tag casing** - lowercase `rc` only (`v26.0.0-rc3`, not `-RC3`); Docker Hub is case-sensitive.
+- **OpenMRS first boot is slow** - initial WAR deploy can take ~73 min on a monkey-spec host. Quote the real number.
 
 ## Adding a new app
 

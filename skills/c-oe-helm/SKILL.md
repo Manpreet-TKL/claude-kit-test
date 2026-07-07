@@ -1,11 +1,11 @@
 ---
 name: c-oe-helm
-description: OpenEyes Helm umbrella chart — deploy/debug/extend
+description: OpenEyes Helm umbrella chart - deploy/debug/extend
 ---
 
 # OpenEyes Helm chart
 
-When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself - it just loads knowledge; act only on instructions given in the conversation.
 
 A Helm 3 **umbrella chart** that deploys the full OpenEyes stack to Kubernetes.
 It was templated from `~/oe-deploy` (the docker-compose source of truth) and is
@@ -14,12 +14,12 @@ a service is a values-only edit.**
 
 Location: `~/charts/helm/openeyes`. Per-environment copies live under `~/charts`
 (`nl`, `alpha`, `prod`, `uat`, `train`), each carrying its own `values.yaml` +
-`secrets.toml` (and some local bug fixes — see `~/charts-bugfix-analysis.md`).
+`secrets.toml` (and some local bug fixes - see `~/charts-bugfix-analysis.md`).
 
 ## Chart identity
 
 `apiVersion: v2`, `name: openeyes`, `type: application`, `version: 0.1.0`,
-`appVersion: "1.16.0"`. **No `dependencies:` declared** — the subcharts are
+`appVersion: "1.16.0"`. **No `dependencies:` declared** - the subcharts are
 loose-vendored under `charts/` rather than declared dependencies.
 
 ## Layout
@@ -46,7 +46,7 @@ openeyes/
 
 1. **Factory pattern.** Each subchart's `templates/` (deployment.yaml,
    service.yaml, configmap.yaml, secret.yaml, pv.yaml, pvc.yaml, scaling.yaml)
-   are thin — they `include` shared named templates that build the actual
+   are thin - they `include` shared named templates that build the actual
    resource from that service's `values.yaml`. You define a service by writing
    values, not Kubernetes YAML.
 
@@ -63,14 +63,14 @@ openeyes/
 - **Per-service**: each subchart has its own `values.yaml` with an `enabled`
   flag, image/tag, env, volumes, resources, scaling, probes.
 - Enable/disable today is the per-service `enabled` flag (there is no
-  `condition:`/`tags:` dependency wiring yet — that is a reorg target).
+  `condition:`/`tags:` dependency wiring yet - that is a reorg target).
 
 ## Secrets
 
 `templates/secret.yaml` reads `secrets.toml` (per env) via `.Files.Get` and
 emits `Secret` objects. Special case: a `dockerPassword` key is rendered as a
 `kubernetes.io/dockerconfigjson` pull secret. **`secrets.toml` is committed in
-clear text (base64 only)** — it holds real secrets; never fold it into an
+clear text (base64 only)** - it holds real secrets; never fold it into an
 upstream PR, and rotate anything that leaks.
 
 ## Subchart inventory (12)
@@ -91,7 +91,7 @@ upstream PR, and rotate anything that leaks.
 | `aws` | aws-cli | off | S3 sync (not the full awslogs/CloudWatch pipeline) |
 
 **Critical tech debt:** every subchart ships a byte-identical `_helpers.tpl`
-(736 lines) + `_apis.tpl` (259 lines) — ~11,000 duplicated lines, md5-identical
+(736 lines) + `_apis.tpl` (259 lines) - ~11,000 duplicated lines, md5-identical
 across subcharts modulo the chart-name prefix. A one-line helper fix needs 12
 edits. Fixing this (a `type: library` chart) is the headline reorg target.
 
@@ -122,10 +122,10 @@ CronJobs, log shipping, WAIT_HOSTS init containers, monitoring. Full list:
 
 ## Planning docs (in /home/toukan)
 
-- `helm-reorg-plan.md` — library-chart refactor + phased, golden-file-verified migration.
-- `helm-vs-oe-deploy-differences.md` — complete parity gap list.
-- `helm-monitoring-integration.md` — Prometheus + Grafana integration design.
-- `charts-bugfix-analysis.md` — per-env bug fixes (LARAVEL_APP_KEY, zero-downtime rollout, configMap mountPath).
+- `helm-reorg-plan.md` - library-chart refactor + phased, golden-file-verified migration.
+- `helm-vs-oe-deploy-differences.md` - complete parity gap list.
+- `helm-monitoring-integration.md` - Prometheus + Grafana integration design.
+- `charts-bugfix-analysis.md` - per-env bug fixes (LARAVEL_APP_KEY, zero-downtime rollout, configMap mountPath).
 
 ## Deploy workflow
 

@@ -1,6 +1,6 @@
 # Clinical element-view rendering
 
-This is the 95% of OpenEyes UI clinicians actually use — the inside of a clinical
+This is the 95% of OpenEyes UI clinicians actually use - the inside of a clinical
 event, not the page chrome. An event view is a stack of **element** views; each
 element renders in one of two render paths. The domain/model side (base classes,
 `element_type` registration, `et_` naming) is `c-oe-code`
@@ -10,24 +10,24 @@ element renders in one of two render paths. The domain/model side (base classes,
 
 A clinical module renders each element through one of:
 
-1. **Legacy view triad** — plain PHP templates in
+1. **Legacy view triad** - plain PHP templates in
    `modules/<Module>/views/default/`:
    `form_<ElementClass>.php` / `view_<ElementClass>.php` / `print_<ElementClass>.php`
    (PREFIX, not `_form.php`). OphCiExamination ships 86 `form_`, 69 `view_`, 8
    `print_`. Resolved by `BaseEventTypeElement::getForm_View()` /
    `getView_view()` / `getPrint_view()` (print falls back to view, so `print_`
    files are sparse).
-2. **Widget triad** — `modules/<Module>/widgets/views/<Name>_event_edit.php` /
+2. **Widget triad** - `modules/<Module>/widgets/views/<Name>_event_edit.php` /
    `_event_view.php` / `_event_print.php`, backed by a widget class in
    `modules/<Module>/widgets/` extending `BaseEventElementWidget`. The widget picks
-   the view via `getViewNameForPrefix('event_edit'|'event_view'|…)`. OphCiExamination
+   the view via `getViewNameForPrefix('event_edit'|'event_view'|...)`. OphCiExamination
    ships 72 `_event_edit`. `BaseFieldWidget` and `TiledEventElementWidget` are
    related widget bases.
 
 Both are wrapped by the container views `//patient/element_container_{form,view,print}.php`.
 
 > Pitfall: the suffix `_form.php` / `_view.php` files (leading underscore) are Gii
-> CRUD **admin** scaffolding under `…Admin/views/…`, NOT element views.
+> CRUD **admin** scaffolding under `...Admin/views/...`, NOT element views.
 
 ## The event controller
 
@@ -40,12 +40,12 @@ element's `isEnabled()`, not the view.
 
 ## Element form anatomy (edit view)
 
-A typical `form_…`/`_event_edit.php` body:
+A typical `form_...`/`_event_edit.php` body:
 
 ```php
 <div class="element-fields flex-layout full-width" id="<model>_form">
     <?= $form->dropDownList($element, 'field', $options, [
-        'nowrapper' => true, 'data-adder-header' => 'Pick…',
+        'nowrapper' => true, 'data-adder-header' => 'Pick...',
     ]) ?>
     <button class="button hint green js-add-select-search" data-adder-trigger="true">Add</button>
 </div>
@@ -61,13 +61,13 @@ A typical `form_…`/`_event_edit.php` body:
   `data-ec-keep-field`, `data-ec-format-*` tune it. Multi-row variant:
   `OpenEyes.UI.ElementController.MultiRow`.
 - Behaviour hooks use the `js-` prefix (`js-add-select-search`, `js-comment-field`,
-  …) — never style off them. Widget/JS catalogue → `subs/js-toolkit.md`.
+  ...) - never style off them. Widget/JS catalogue -> `subs/js-toolkit.md`.
 
 ## EyeDraw elements
 
 EyeDraw is rendered as a Yii **PHP widget**, not a JS toolkit call:
-`$this->widget('application.modules.eyedraw.OEEyeDrawWidget', ['mode'=>…,
-'side'=>…, 'model'=>$element, 'attribute'=>…, 'listenerArray'=>…])`. Front-end
+`$this->widget('application.modules.eyedraw.OEEyeDrawWidget', ['mode'=>...,
+'side'=>..., 'model'=>$element, 'attribute'=>..., 'listenerArray'=>...])`. Front-end
 runtime is `protected/assets/js/eyedraw/EyeDrawManager.js`. The `eyedraw` module
 itself is external (not in a base core checkout).
 

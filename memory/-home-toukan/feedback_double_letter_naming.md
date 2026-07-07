@@ -1,6 +1,6 @@
 ---
 name: feedback-double-letter-naming
-description: "When naming a shell alias/function, double the last letter if the chosen name is an English word or an existing Unix command — `helpp`, `searchh`, `loadd`, `chmodd`, `pss`, `dff`, `apt-gett`, `versionss`. Leave compound/coined names alone."
+description: "When naming a shell alias/function, double the last letter if the chosen name is an English word or an existing Unix command - `helpp`, `searchh`, `loadd`, `chmodd`, `pss`, `dff`, `apt-gett`, `versionss`. Leave compound/coined names alone."
 metadata: 
   node_type: memory
   type: feedback
@@ -30,7 +30,7 @@ Reference precedents in `~/.bash_aliases` / `oe-shortcuts.sh`:
 | `bytes` (word) | `bytess` | English word |
 | `load` (word) | `loadd` | English word |
 | `ports` (word) | `portss` | English word |
-| `version` (word) | `versionss` | English word — caught after I shipped `versions` once |
+| `version` (word) | `versionss` | English word - caught after I shipped `versions` once |
 | `ps` (cmd) | `pss` | shell command |
 | `df` (cmd) | `dff` | shell command |
 | `watch` (cmd) | `watchh` | shell command |
@@ -47,6 +47,6 @@ Edge cases:
   `oeerrors`, `oemodules`, `swapprocs`). The rule is on the full name, not
   the suffix.
 - Prefixed wrappers (`oeanalyze`, `oeoptimize`) follow the same compound
-  logic — left alone.
+  logic - left alone.
 
 See also [[feedback-house-style-as-skills]].

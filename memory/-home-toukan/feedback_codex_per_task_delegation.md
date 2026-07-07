@@ -1,6 +1,6 @@
 ---
 name: codex-per-task-delegation
-description: "No standing \"prefer codex\" rule — delegate to codex MCP agents only on explicit ask"
+description: "No standing \"prefer codex\" rule - delegate to codex MCP agents only on explicit ask"
 metadata: 
   node_type: memory
   type: feedback
@@ -11,4 +11,4 @@ Manpreet does NOT want a standing rule that routes work to codex to save Claude 
 
 **Why:** He doesn't always want codex; a global rule would auto-delegate work he'd rather Claude do directly.
 
-**How to apply:** Delegate to `mcp__codex__codex` agents only when he explicitly asks (typically after `/codexmcp`). At most, *suggest* codex for large parallelisable implementations — never auto-delegate. Related: [[one-line-cli-commands]].
+**How to apply:** Delegate to `mcp__codex__codex` agents only when he explicitly asks (typically after `/codexmcp`). At most, *suggest* codex for large parallelisable implementations - never auto-delegate. Related: [[one-line-cli-commands]].

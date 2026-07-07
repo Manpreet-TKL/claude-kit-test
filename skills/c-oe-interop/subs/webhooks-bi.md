@@ -18,5 +18,5 @@ Event-driven push so external systems subscribe instead of polling. Managed at `
 ## Data warehouse / Business Intelligence
 
 - ToukanLabs can provide a **direct connection to the OpenEyes MySQL database** for inclusion in a Trust data warehouse / BI tooling.
-- Recommended source for ad-hoc end-user reporting is a copy of the LIVE database — the **REPORTS** database — but that extra environment is **out of scope for standard deployments**.
+- Recommended source for ad-hoc end-user reporting is a copy of the LIVE database - the **REPORTS** database - but that extra environment is **out of scope for standard deployments**.
 - The **SUPPORT** database (used by the OE support team) can double as a reports database without a new environment, **subject to restrictions and by agreement**.

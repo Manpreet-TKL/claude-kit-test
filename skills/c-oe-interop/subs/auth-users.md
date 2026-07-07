@@ -1,6 +1,6 @@
 # User authentication (LDAP) and User Data API
 
-## User authentication — LDAP / Active Directory
+## User authentication - LDAP / Active Directory
 
 OE can authenticate users against any **LDAP-compatible** directory, including **Microsoft Active Directory**.
 
@@ -19,10 +19,10 @@ Config options:
 
 Advanced parameters:
 
-- `ldap_update_name` — `true`/`false` (default `true`): update the account's first/last name when it changes on the LDAP server.
-- `ldap_update_email` — `true`/`false`: update the account's email when it changes on the LDAP server.
+- `ldap_update_name` - `true`/`false` (default `true`): update the account's first/last name when it changes on the LDAP server.
+- `ldap_update_email` - `true`/`false`: update the account's email when it changes on the LDAP server.
 
-## User Data API (CSD) — staff details pull
+## User Data API (CSD) - staff details pull
 
 OE can **pull** staff details (name, grade, role, access level, etc.) from an external source and keep each user updated, keyed on their **Active Directory username**. Useful when staff data is maintained in a separate database/application.
 
@@ -58,4 +58,4 @@ API contract:
 }
 ```
 
-(Source describes it as a "simple SOAP API" yet specifies an `APIKey` header and JSON response — treat the JSON contract above as authoritative.)
+(Source describes it as a "simple SOAP API" yet specifies an `APIKey` header and JSON response - treat the JSON contract above as authoritative.)

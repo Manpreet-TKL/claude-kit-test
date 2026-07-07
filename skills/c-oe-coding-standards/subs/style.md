@@ -2,7 +2,7 @@
 
 Base style is **PSR-12**, enforced by `phpcs.xml` (with documented legacy/Yii exceptions). Laravel
 and Shared codespaces follow modern Laravel conventions and are the "gold standard"; legacy Yii keeps
-its historical rules. Run the tooling — see `tooling.md`.
+its historical rules. Run the tooling - see `tooling.md`.
 
 ## Casing
 
@@ -23,7 +23,7 @@ $x = array('a'=>1); // no
 
 ## Class constant
 
-Reference other classes with import + `::class`, never a quoted FQN string — including in relation definitions.
+Reference other classes with import + `::class`, never a quoted FQN string - including in relation definitions.
 
 ```php
 use OEModule\OphCiExamination\models\BirthHistory_DeliveryType;
@@ -44,7 +44,7 @@ Use `{$var}` or `$var`; avoid the `${var}` / `${(var)}` forms deprecated in PHP 
 
 ## Short methods
 
-Keep methods short — extract complex logic and multi-clause conditionals into descriptively-named methods.
+Keep methods short - extract complex logic and multi-clause conditionals into descriptively-named methods.
 
 ```php
 if ($this->isEligibleForBooking($patient)) { ... }
@@ -57,7 +57,7 @@ or extracted methods to flatten.
 
 ## Member order
 
-In new classes declare `public` → `protected` → `private`, and `static` before instance methods.
+In new classes declare `public` -> `protected` -> `private`, and `static` before instance methods.
 (MUST in new classes; SHOULD when adding methods to existing ones.)
 
 ## Type hints
@@ -83,13 +83,13 @@ namespace OEModule\Example;
 ## Namespace modules
 
 Namespace all new modules under `OEModule\[Name]` (reference modules: `OphCiExamination`,
-`PatientTicketing`). *(replatform: `OELaravel\Modules\[Name]\Models`)* — capitalise segments correctly.
+`PatientTicketing`). *(replatform: `OELaravel\Modules\[Name]\Models`)* - capitalise segments correctly.
 
 ## Target PHP version
 
 Write for the latest supported PHP without breaking the minimum supported version (e.g. cast
 possibly-null values to literals: `(string) ($user->name ?? '')`). Rector enforces the target
-version — see `tooling.md#rector`.
+version - see `tooling.md#rector`.
 
 ---
 Sources: Coding Standards (1570668569), Coding & Architecture Standards (3015540745), Developer Checklist (2227634177).

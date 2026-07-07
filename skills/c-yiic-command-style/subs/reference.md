@@ -1,6 +1,6 @@
-# yiic command style — verbatim blocks
+# yiic command style - verbatim blocks
 
-## File header (AGPL + author tag — copy from MirthCommand.php)
+## File header (AGPL + author tag - copy from MirthCommand.php)
 
 ```php
 <?php
@@ -138,7 +138,7 @@ public static function getMcDbConnection($host = 'db', $dbname = 'mirthdb', $use
 echo "[" . date('Y-m-d H:i:s') . "] Analyzing table: " . $table['TABLE_NAME'] . "\n";
 
 echo "Updating view: " . $view['TABLE_NAME'] . "...";
-// … work …
+// ... work ...
 echo "[DONE]\n";
 
 echo str_pad("LOCAL_CHANNEL_ID", 20) . str_pad("NAME", 40) . "\n";

@@ -4,7 +4,7 @@ The merge gate for code coming into OpenEyes. See the `create-oe-pr` skill for r
 
 ## PR clarity
 
-Every PR must clearly explain the **purpose** of its changes, using the provided GitHub templates —
+Every PR must clearly explain the **purpose** of its changes, using the provided GitHub templates -
 separate templates exist for **features** and **bug fixes**; use the right one and fill in purpose,
 changes, and testing.
 

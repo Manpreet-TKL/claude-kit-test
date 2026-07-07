@@ -10,7 +10,7 @@ metadata:
 If you set `temporaryDirectory` in OpenEyes `.puppeteerrc.cjs` (e.g. to move the
 `puppeteer_dev_chrome_profile-*` user-data dir out of `/tmp` into
 `protected/runtime/.cache/puppeteer/tmp`), you MUST create that directory or **every**
-PDF/image render dies with `ENOENT: mkdtemp '…/tmp/puppeteer_dev_chrome…'` → HTTP 500, no
+PDF/image render dies with `ENOENT: mkdtemp '.../tmp/puppeteer_dev_chrome...'` -> HTTP 500, no
 output. Node's `fs.mkdtemp()` (used by Puppeteer for the profile dir) does **not** create
 intermediate directories.
 

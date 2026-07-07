@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # OE DB login
 
-When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself — it just loads knowledge; act only on instructions given in the conversation.
+When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself - it just loads knowledge; act only on instructions given in the conversation.
 
 - Local db container, interactive: host fn `dba <project>` (root; project optional if one stack is up); `dbas <project>` for a plain prompt.
 - RDS / no db container: exec the web container and run `dblogin` (app user, reads `/run/secrets/DATABASE_*`).

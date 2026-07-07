@@ -15,7 +15,7 @@ standard Laravel auth conventions rather than ad-hoc inline checks.
 - `YiiRBAC` is currently scoped to xAPI use cases and the existing "special users" concept.
 
 **Direction of travel**
-- Move away from hard-coded user references; prefer HMAC token-based auth over Basic Auth — it gives granular audit, duplicate-query prevention, and future data-sharing options.
+- Move away from hard-coded user references; prefer HMAC token-based auth over Basic Auth - it gives granular audit, duplicate-query prevention, and future data-sharing options.
 - Future RBAC: bizrules as invokable classes operating on DTOs/Services (not Yii models), checking auth-item assignments via a repository.
 
 ```php

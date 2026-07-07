@@ -1,8 +1,8 @@
-# Canned walk — Document event + PDF preview temp-leak (`oe_pdf` stub family)
+# Canned walk - Document event + PDF preview temp-leak (`oe_pdf` stub family)
 
-One-command verification of the PDF-preview temp-leak repro on a sample stack. Everything here ran green on v11.0.18 (snail, 2026-07-03): launch a **Haiku** subagent with the Procedure below pasted in — no need to read `probe.md` or `paths.md` for this walk. Main-context cost ≈ this file; subagent cost ≈ 35k tokens / 2 driver runs.
+One-command verification of the PDF-preview temp-leak repro on a sample stack. Everything here ran green on v11.0.18 (snail, 2026-07-03): launch a **Haiku** subagent with the Procedure below pasted in - no need to read `probe.md` or `paths.md` for this walk. Main-context cost ~ this file; subagent cost ~ 35k tokens / 2 driver runs.
 
-Parameters: `<web>` = web container (e.g. `snail-web-1`). Sample ids: patient 17891, `context_id=13`, `episode_id=601038`, Document `event_type_id=40` — a stale pair fails fast with HTTP 400 "Episode/Context mismatch"; re-pick via `c-dblogin` only then.
+Parameters: `<web>` = web container (e.g. `snail-web-1`). Sample ids: patient 17891, `context_id=13`, `episode_id=601038`, Document `event_type_id=40` - a stale pair fails fast with HTTP 400 "Episode/Context mismatch"; re-pick via `c-dblogin` only then.
 
 **Patched-or-not, before walking** (predicts the outcome; unpatched = single-line `tempnam(...) . '.png'`, no `finally`):
 
@@ -28,6 +28,6 @@ Procedure (Bash, in order; upload + Save are authorized writes on sample boxes o
      -w /var/www/openeyes <web> node --input-type=module - < ~/.claude/skills/c-oe-nav/scripts/journey.mjs
    ```
 5. Count after + evidence: `docker exec <web> sh -c 'ls -1 /tmp/oe_pdf* 2>/dev/null | wc -l; ls -la /tmp/oe_pdf* 2>/dev/null | head'`
-6. Clean up the test PDF only (`docker exec <web> rm -f /tmp/twopage.pdf`); leave the leaked stubs — they are the evidence.
+6. Clean up the test PDF only (`docker exec <web> rm -f /tmp/twopage.pdf`); leave the leaked stubs - they are the evidence.
 
-Expected: unpatched +1 zero-byte `oe_pdfXXXXXX` stub per page (2-page PDF → +2); patched → count unchanged. The shipped Steps to Reproduce this verifies are the worked example in `c-oe-repro`'s SKILL.md.
+Expected: unpatched +1 zero-byte `oe_pdfXXXXXX` stub per page (2-page PDF -> +2); patched -> count unchanged. The shipped Steps to Reproduce this verifies are the worked example in `c-oe-repro`'s SKILL.md.

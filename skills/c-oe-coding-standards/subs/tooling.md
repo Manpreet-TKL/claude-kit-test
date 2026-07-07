@@ -1,8 +1,8 @@
 # Tooling & static analysis
 
-Three codespaces (`yii`, `laravel`, `shared`) × three tools (phpcs, phpstan, rector), each with a
+Three codespaces (`yii`, `laravel`, `shared`) x three tools (phpcs, phpstan, rector), each with a
 config suffixed `.yii` / `.laravel` / `.shared`. Run the config for the layer you touched. Drive
-everything through composer scripts — list them with `composer run-script --list`.
+everything through composer scripts - list them with `composer run-script --list`.
 
 ## phpcs
 
@@ -19,7 +19,7 @@ composer cbf:yii -- protected/path/File.php -v        # autofix (phpcbf)
 
 ## Pre-commit hooks
 
-Configure the project's hook path so phpcbf → phpcs → rector run on changed files at commit (v26.0+).
+Configure the project's hook path so phpcbf -> phpcs -> rector run on changed files at commit (v26.0+).
 The ToukanLabs dev environment sets this up automatically.
 
 ```bash

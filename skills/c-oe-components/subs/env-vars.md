@@ -6,7 +6,7 @@ What OE reads at boot. Sources vary by deployment (`.env`, compose-file `environ
 
 | Var | Effect |
 |---|---|
-| `OE_MODE` | `live` enables OPcache + caches + Sentry, disables `YII_DEBUG`. Anything else (`dev`, `test`, …) = debug mode. **`TestHelper` checks `OE_MODE !== 'live'` before exposing any route.** |
+| `OE_MODE` | `live` enables OPcache + caches + Sentry, disables `YII_DEBUG`. Anything else (`dev`, `test`, ...) = debug mode. **`TestHelper` checks `OE_MODE !== 'live'` before exposing any route.** |
 | `OE_FORCE_YIILITE` | `1` forces `yiilite.php` even in debug. |
 | `OE_CONFIG_TEST_RUNNING` | `1` bypasses APCu cache for `OEConfig::getMergedConfig`. Set by the test bootstrap. |
 | `OE_ENABLE_VIRUS_SCANNING` | `true` turns on ClamAV upload scanning via `xenolope/quahog`. |
@@ -37,8 +37,8 @@ What OE reads at boot. Sources vary by deployment (`.env`, compose-file `environ
 
 ## SSO
 
-`SAML_settings` and `OIDC_settings` are config arrays, not env vars — they live in `local/common.php`. Env vars only seed the references (e.g. IdP cert path).
+`SAML_settings` and `OIDC_settings` are config arrays, not env vars - they live in `local/common.php`. Env vars only seed the references (e.g. IdP cert path).
 
 ## Demo / sample DB caveat (per memory)
 
-OE sample DBs ship with `admin` / `admin`. **Don't run `set_frontend_passwords.sh` on demos** — it will lock out the seeded admin credentials people expect.
+OE sample DBs ship with `admin` / `admin`. **Don't run `set_frontend_passwords.sh` on demos** - it will lock out the seeded admin credentials people expect.

@@ -1,18 +1,18 @@
-# IOLMasterImport — known issues & dead code
+# IOLMasterImport - known issues & dead code
 
-Found in the actual source. Cite/verify a line before relying on it — some of
+Found in the actual source. Cite/verify a line before relying on it - some of
 this is stale or inert.
 
 ## Live bugs
 
-- **Watcher CPU-spin / wrong default sleep.** `runFileWatcher.php:76` —
+- **Watcher CPU-spin / wrong default sleep.** `runFileWatcher.php:76` -
   `sleep(getenv('QUEUE_SLEEP_INTERVAL') ?? 300)`. `getenv()` returns `false` (not
-  `null`) when unset, and `false ?? 300` is `false`, so `sleep(false)` ≈
-  `sleep(0)` → the loop busy-spins a core. `QUEUE_SLEEP_INTERVAL` is **not** set
+  `null`) when unset, and `false ?? 300` is `false`, so `sleep(false)` ~
+  `sleep(0)` -> the loop busy-spins a core. `QUEUE_SLEEP_INTERVAL` is **not** set
   in the Dockerfile, so this is the default behaviour. Intended guard is
   `getenv(...) ?: 300`.
 - **Java `OE_MODE` check is always false.** `DatabaseFunctions.java:238` uses
-  `System.getenv("OE_MODE").toLowerCase() == "dev"` — Java `==` is reference
+  `System.getenv("OE_MODE").toLowerCase() == "dev"` - Java `==` is reference
   equality on Strings, so Hibernate `show_sql`/`hbm2ddl` are never enabled
   regardless of `OE_MODE`, and it NPEs if `OE_MODE` is unset.
 - **`getenv('$CLI_ROOT')` literal.** `fileWatcherConfig.php:27` passes the literal
@@ -25,7 +25,7 @@ this is stale or inert.
   on `$dicomConfig['FAM']` (default 0, never set in Docker); php-fam isn't
   installed. The folder is polled, not inotify-watched. (A migration to inotify
   was the priority item in the original notes.)
-- **Legacy `dicom-file-watcher` service** — `queueProcessorClass.php:37-51`
+- **Legacy `dicom-file-watcher` service** - `queueProcessorClass.php:37-51`
   `checkFileWatcher()` `sudo service dicom-file-watcher start` only runs outside
   Docker; that service doesn't exist in this image (pre-Docker artefact).
 - **`DICOMHFAVF.java`** writes to hard-coded Windows paths
@@ -35,10 +35,10 @@ this is stale or inert.
   references classes that don't exist in `models/`; the runtime uses Hibernate,
   not this PU.
 - **`src/resources/hibernate.cfg.xml`** hard-codes `db:3306`/deprecated driver
-  with `hbm2ddl.auto=validate`; only used if `-c …hibernate.cfg.xml` is passed,
+  with `hbm2ddl.auto=validate`; only used if `-c ...hibernate.cfg.xml` is passed,
   which PHP never does.
 - Committed dev scratch: `run_test_with_live_data.php`,
-  `test_large_file_structure.php`, `testrun.txt`, `queuePid` — hard-coded paths,
+  `test_large_file_structure.php`, `testrun.txt`, `queuePid` - hard-coded paths,
   stale classpaths.
 
 ## Other rough edges
@@ -52,9 +52,9 @@ this is stale or inert.
 - **Default DB port `3333`** (Dockerfile) mismatches `hibernate.cfg.xml`'s 3306
   and is unusual.
 - **`FHIR_API_PI_UNIQUE_ROW_STR`** (Dockerfile default `LOCAL-1-0`) is declared but
-  read by no code — orphan env. FHIR feature is "experimental (untested)" per the
+  read by no code - orphan env. FHIR feature is "experimental (untested)" per the
   README.
-- **`calculateHaigisLH`** carries a `TODO this is still myopic...` — the hyperopic
+- **`calculateHaigisLH`** carries a `TODO this is still myopic...` - the hyperopic
   Haigis-L path reuses the myopic formula (`BiometryFunctions.java:996`).
 - **`DICOMKOWA extends DICOMParser`** while the other parsers extend
-  `IOLMasterAbstract` — inconsistent inheritance.
+  `IOLMasterAbstract` - inconsistent inheritance.

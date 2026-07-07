@@ -1,4 +1,4 @@
-# Security & data integrity — "be paranoid"
+# Security & data integrity - "be paranoid"
 
 The four "be paranoid" fundamentals from the Developer Checklist, plus scale and request-form validation.
 
@@ -10,12 +10,12 @@ form object (see [request forms](#request-forms-validate-endpoints)); for models
 
 ## Authorise every action
 
-Authorise every user action before performing it — check RBAC / access rules in the controller
-before executing. *(replatform: via the `Gate` facade — see `auth.md`.)*
+Authorise every user action before performing it - check RBAC / access rules in the controller
+before executing. *(replatform: via the `Gate` facade - see `auth.md`.)*
 
 ## Bind query parameters
 
-Escape all DB query parameters — never string-concatenate SQL.
+Escape all DB query parameters - never string-concatenate SQL.
 
 ```php
 $cmd->where('id = :id', [':id' => $id]);   // yes

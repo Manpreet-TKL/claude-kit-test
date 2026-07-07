@@ -1,29 +1,29 @@
 #!/usr/bin/env node
-// OpenEyes journey driver (Playwright, FALLBACK) — run a JSON action list against a
+// OpenEyes journey driver (Playwright, FALLBACK) - run a JSON action list against a
 // running OE instance and print a compact text dump after every step.
 // The primary driver is ../scripts/journey.mjs (Puppeteer, runs inside the web-live
 // container). Use THIS one when the image carries Playwright instead (dev/debug),
 // when connecting to an existing browser over CDP (browserless/remote-chrome), or
 // in the Playwright sidecar container. Invocation: ../subs/probe-playwright.md
 //
-//   node journey.playwright.mjs <actions.json | - | '[…]'>  [--shot <dir>]
-//   docker exec -i -e OE_ACTIONS='[…]' -w /var/www/openeyes <ctr> \
+//   node journey.playwright.mjs <actions.json | - | '[...]'>  [--shot <dir>]
+//   docker exec -i -e OE_ACTIONS='[...]' -w /var/www/openeyes <ctr> \
 //     node --input-type=module - < journey.playwright.mjs        # dev/debug image
 //
-// Actions: array of single-key objects —
+// Actions: array of single-key objects -
 //   {"goto":"/patient/summary/17891"}   path or full URL
 //   {"click":"#add-event"}              Playwright selector (CSS or text="Label")
 //   {"fill":["#sel","value"]}  {"select":["#sel","value"]}  {"upload":["#sel","/file"]}
 //   {"press":"Enter"}  {"wait":1500}  {"read":".element-fields"}
 //   {"login":false}                     as FIRST action: skip the built-in login
 //
-// Env: BASE_URL (http://localhost; sidecar sets http://web) · OE_USERNAME/
-// OE_PASSWORD (admin/admin) or OE_PASSWORD_FILE · OE_INSTITUTION_ID/OE_SITE_ID
-// (1/1) · OE_SETTLE_MS (700) · OE_ALLOW_WRITE=1 to permit delete-like clicks and
-// native confirm dialogs · OE_ACTIONS carries the action list when the script
-// itself is piped on stdin · OE_CDP_URL connects to an existing browser over CDP
-// instead of launching · OE_CHROME launches a specific Chrome binary.
-// Exit: 0 ok · 2 bad input or step failure · 3 login/infra failure.
+// Env: BASE_URL (http://localhost; sidecar sets http://web), OE_USERNAME/
+// OE_PASSWORD (admin/admin) or OE_PASSWORD_FILE, OE_INSTITUTION_ID/OE_SITE_ID
+// (1/1), OE_SETTLE_MS (700), OE_ALLOW_WRITE=1 to permit delete-like clicks and
+// native confirm dialogs, OE_ACTIONS carries the action list when the script
+// itself is piped on stdin, OE_CDP_URL connects to an existing browser over CDP
+// instead of launching, OE_CHROME launches a specific Chrome binary.
+// Exit: 0 ok, 2 bad input or step failure, 3 login/infra failure.
 import { readFileSync, mkdirSync } from 'node:fs';
 
 let chromium;
@@ -66,7 +66,7 @@ const out = (s) => console.log(s);
 
 async function settle(page) {
   await page.waitForLoadState('domcontentloaded').catch(() => {});
-  // OE long-polls (worklist sync, notifications) — never wait for networkidle.
+  // OE long-polls (worklist sync, notifications) - never wait for networkidle.
   await page.waitForTimeout(SETTLE);
 }
 
@@ -85,7 +85,7 @@ async function dump(page) {
     const popup = [...document.querySelectorAll('.oe-popup-wrap, .oe-dialog, [role="dialog"]')].find(vis) || null;
     const root = popup || document;
     const q = (sel) => [...root.querySelectorAll(sel)].filter(vis);
-    const cap = (arr, n) => arr.length > n ? [...arr.slice(0, n), `… +${arr.length - n} more`] : arr;
+    const cap = (arr, n) => arr.length > n ? [...arr.slice(0, n), `... +${arr.length - n} more`] : arr;
     return {
       popup: !!popup,
       behind: popup ? [...document.querySelectorAll('h1')].map((e) => clean(e.innerText)).find((t) => t && !noise(t)) : null,
@@ -107,7 +107,7 @@ async function dump(page) {
     };
   });
   out(`url: ${page.url()}`);
-  if (s.popup) out(`popup: OPEN — controls below are the popup's (page behind: "${s.behind}")`);
+  if (s.popup) out(`popup: OPEN - controls below are the popup's (page behind: "${s.behind}")`);
   if (s.headings.length) out(`headings: ${s.headings.join(' | ')}`);
   if (s.banners.length) out(`banners: ${s.banners.join(' | ')}`);
   for (const [label, items] of [['buttons', s.buttons], ['fields', s.fields], ['links', s.links]]) {
@@ -130,7 +130,7 @@ async function login(page) {
   await page.click('#login_button');
   await settle(page);
   if (page.url().includes('/site/login')) {
-    throw new Error('still on /site/login — check creds / institution / site ids');
+    throw new Error('still on /site/login - check creds / institution / site ids');
   }
 }
 

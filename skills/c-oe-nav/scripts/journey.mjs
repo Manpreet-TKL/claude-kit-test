@@ -3,7 +3,7 @@
 // instance and print a compact text dump of what the user sees after every step.
 //
 // Runs INSIDE the standard web-live container using the Chrome + Puppeteer that
-// ship in the image (docman uses them to render lightning previews) — no extra
+// ship in the image (docman uses them to render lightning previews) - no extra
 // container, nothing installed, nothing written to the image. It is also the
 // endpoint prover: goto a URL with the logged-in session, then read "body" for
 // the JSON. Invocation + the Playwright-image fallback: ../subs/probe.md
@@ -13,7 +13,7 @@
 //   node journey.mjs acts.json            # local file
 //   node journey.mjs '[{"goto":"/"}]'     # inline JSON
 //
-// Actions: array of single-key objects —
+// Actions: array of single-key objects -
 //   {"goto":"/patient/summary/17891"}   path or full URL
 //   {"click":"#add-event"}              CSS, text="Label", or "<sel> >> nth=N"
 //   {"fill":["#sel","value"]}  {"select":["#sel","value"]}  {"upload":["#sel","/file"]}
@@ -22,16 +22,16 @@
 //   {"login":false}                     as FIRST action: skip the built-in login
 //
 // Output is QUIET by default: the oe-version line, explicit reads, any STEP FAILED
-// state, and one final snapshot of where you landed — nothing per step. Drop in a
+// state, and one final snapshot of where you landed - nothing per step. Drop in a
 // {"dump":true} action wherever you want a mid-journey structural view; pass
 // --verbose (or OE_VERBOSE=1) to restore a full dump after every step.
 //
-// Env: BASE_URL (http://localhost) · OE_USERNAME/OE_PASSWORD (admin/admin) or
-// OE_PASSWORD_FILE · OE_INSTITUTION_ID/OE_SITE_ID (1/1) · OE_SETTLE_MS (700)
-// · OE_ALLOW_WRITE=1 to permit delete-like clicks and native confirm dialogs
-// · OE_VERBOSE=1 (or --verbose) dumps the full page after every step (default is quiet)
-// · OE_ACTIONS carries the action list when the script itself is piped on stdin.
-// Exit: 0 ok · 2 bad input or step failure · 3 login/infra failure.
+// Env: BASE_URL (http://localhost), OE_USERNAME/OE_PASSWORD (admin/admin) or
+// OE_PASSWORD_FILE, OE_INSTITUTION_ID/OE_SITE_ID (1/1), OE_SETTLE_MS (700)
+//, OE_ALLOW_WRITE=1 to permit delete-like clicks and native confirm dialogs
+//, OE_VERBOSE=1 (or --verbose) dumps the full page after every step (default is quiet)
+//, OE_ACTIONS carries the action list when the script itself is piped on stdin.
+// Exit: 0 ok, 2 bad input or step failure, 3 login/infra failure.
 import puppeteer from 'puppeteer';
 import { readFileSync, mkdirSync } from 'node:fs';
 
@@ -72,7 +72,7 @@ try {
 
 const out = (s) => console.log(s);
 
-// Playwright-style selector sugar → Puppeteer: text="X" → ::-p-text(X); "<sel> >> nth=N".
+// Playwright-style selector sugar -> Puppeteer: text="X" -> ::-p-text(X); "<sel> >> nth=N".
 const splitNth = (sel) => {
   const m = sel.match(/^(.*?)\s*>>\s*nth=(\d+)\s*$/);
   return m ? { base: m[1].trim(), nth: Number(m[2]) } : { base: sel, nth: null };
@@ -92,7 +92,7 @@ const find = async (page, sel, timeout = 8000) => {
 };
 
 async function settle(page) {
-  // OE long-polls (worklist sync, notifications) — never wait for network-idle.
+  // OE long-polls (worklist sync, notifications) - never wait for network-idle.
   await sleep(SETTLE);
 }
 
@@ -111,7 +111,7 @@ async function dump(page) {
     const popup = [...document.querySelectorAll('.oe-popup-wrap, .oe-dialog, [role="dialog"]')].find(vis) || null;
     const root = popup || document;
     const q = (sel) => [...root.querySelectorAll(sel)].filter(vis);
-    const cap = (arr, n) => arr.length > n ? [...arr.slice(0, n), `… +${arr.length - n} more`] : arr;
+    const cap = (arr, n) => arr.length > n ? [...arr.slice(0, n), `... +${arr.length - n} more`] : arr;
     return {
       popup: !!popup,
       behind: popup ? [...document.querySelectorAll('h1')].map((e) => clean(e.innerText)).find((t) => t && !noise(t)) : null,
@@ -131,7 +131,7 @@ async function dump(page) {
     };
   });
   out(`url: ${page.url()}`);
-  if (s.popup) out(`popup: OPEN — controls below are the popup's (page behind: "${s.behind}")`);
+  if (s.popup) out(`popup: OPEN - controls below are the popup's (page behind: "${s.behind}")`);
   if (s.headings.length) out(`headings: ${s.headings.join(' | ')}`);
   if (s.banners.length) out(`banners: ${s.banners.join(' | ')}`);
   for (const [label, items] of [['buttons', s.buttons], ['fields', s.fields], ['links', s.links]]) {
@@ -159,7 +159,7 @@ async function login(page) {
   ]);
   await settle(page);
   if (page.url().includes('/site/login')) {
-    throw new Error('still on /site/login — check creds / institution / site ids');
+    throw new Error('still on /site/login - check creds / institution / site ids');
   }
 }
 
@@ -250,9 +250,9 @@ try {
       await dump(page);
       lastDumped = true;
     } else if (verb === 'read') {
-      lastDumped = true;   // the read is the output — no redundant final snapshot after it
+      lastDumped = true;   // the read is the output - no redundant final snapshot after it
     } else {
-      lastDumped = false;  // wait / quiet step — let the final snapshot show where we landed
+      lastDumped = false;  // wait / quiet step - let the final snapshot show where we landed
     }
     if (shotDir) await page.screenshot({ path: `${shotDir}/step-${String(i + 1).padStart(2, '0')}.png` }).catch(() => {});
   }

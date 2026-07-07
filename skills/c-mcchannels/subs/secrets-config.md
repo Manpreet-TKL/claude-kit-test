@@ -1,7 +1,7 @@
 # Secrets & config resolution (common.js / globalMap)
 
 REST recipes for reading/writing the configurationMap and importing channels are
-in the `c-mirth` skill — don't duplicate them here. This sub records how the three
+in the `c-mirth` skill - don't duplicate them here. This sub records how the three
 `mc_channels/` channels get their config and why the exports are structured the
 way they are.
 
@@ -12,7 +12,7 @@ The global **Deploy** script (template `common.js`, run on every
 and writes the result into `globalMap` under an **UPPERCASE** key:
 
 ```
-/run/secrets/<name>   →   env var   →   configurationMap   →   hardcoded default
+/run/secrets/<name>   ->   env var   ->   configurationMap   ->   hardcoded default
 ```
 
 So a Docker/Compose secret wins, then an environment variable, then the
@@ -36,19 +36,19 @@ substitute the connector's own `username`/`password` fields (`c-mirth` skill,
 ## What is and isn't secret-free to export
 
 - **Secret-free** (safe to commit): channel XML, code-template (library) exports,
-  and global-script exports — provided they only reference `${VAR}` and carry no
+  and global-script exports - provided they only reference `${VAR}` and carry no
   inline credentials. The raw `~/mc_channels/*.xml` are **not yet** in this state:
   PAS IN embeds `api:Password123` 6 times and DICOM once (PAS OUT is clean). They
   must be templated before they belong in git.
-- **NOT secret-free:** the full **Server Configuration export** — it embeds the
+- **NOT secret-free:** the full **Server Configuration export** - it embeds the
   configurationMap (which holds the resolved/default values). Never commit it.
 
 ## Map lifetimes across redeploy
 
-- **configurationMap** — persisted server state; **survives** redeploys (and is
-  the layer the Deploy script reads). Replace the whole map via REST: GET → merge
-  → PUT (`c-mirth`).
-- **globalChannelMap** — **cleared** on every (re)deploy, so any watermark /
+- **configurationMap** - persisted server state; **survives** redeploys (and is
+  the layer the Deploy script reads). Replace the whole map via REST: GET -> merge
+  -> PUT (`c-mirth`).
+- **globalChannelMap** - **cleared** on every (re)deploy, so any watermark /
   seen-set kept there resets and pollers re-emit once. Don't store durable
   config there. (`globalMap`, where the Deploy script writes resolved vars, is
   re-populated on each deploy by the script itself.)

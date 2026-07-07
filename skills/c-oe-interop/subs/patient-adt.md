@@ -11,7 +11,7 @@ Two transports for both demographics and appointments: **HL7 v2.x** (Appendix A)
 ## GP / practice data
 
 - **PASAPI v1:** accepts only **GP code** and **GP Practice code**. OE holds current names/addresses by regularly importing full GP/Practice data from **NHS Digital** and resolving the codes against it.
-- **PASAPI v2:** supports full GP and Practice details two ways — **direct import** via dedicated PASAPI GP and Practice endpoints, or **embedded** in the patient data imported from the PAS.
+- **PASAPI v2:** supports full GP and Practice details two ways - **direct import** via dedicated PASAPI GP and Practice endpoints, or **embedded** in the patient data imported from the PAS.
 
 ## Patient filtering (Specialty = Ophthalmology)
 
@@ -20,7 +20,7 @@ Two transports for both demographics and appointments: **HL7 v2.x** (Appendix A)
 
 ## Patient PAS Lookup (optional HL7 Q21/K21)
 
-- Use case: walk-in / Eye Casualty patient created in the PAS by the front desk, but no appointment booked, so no Ophthalmology HL7 was ever sent → patient absent from OE.
+- Use case: walk-in / Eye Casualty patient created in the PAS by the front desk, but no appointment booked, so no Ophthalmology HL7 was ever sent -> patient absent from OE.
 - When an OE patient search finds no record, OE can forward the query to another system (e.g. another PAS) via an **HL7 Q21/K21** message exchange **or** via the PAS API, so the record is usable immediately.
 
 ## Appointments / clinic lists
@@ -31,5 +31,5 @@ Two transports for both demographics and appointments: **HL7 v2.x** (Appendix A)
 
 - On an **A01** message OE sets the appointment to **"Arrived in the Clinic List"** and automatically **starts the patient pathway**.
 - Two settings under `Admin->System->Settings->Worklists` must match the Connect channel config:
-  - **PAS Appointment Patient Arrival Status Match Text** — the attribute *value* in inbound PAS API updates that signals arrival/check-in; when seen, the worklist check-in step is marked complete.
-  - **PAS Appointment Patient Arrival Status Name** — the attribute *name* in inbound PAS API updates that confirms arrival/check-in; when seen, the check-in step is marked complete.
+  - **PAS Appointment Patient Arrival Status Match Text** - the attribute *value* in inbound PAS API updates that signals arrival/check-in; when seen, the worklist check-in step is marked complete.
+  - **PAS Appointment Patient Arrival Status Name** - the attribute *name* in inbound PAS API updates that confirms arrival/check-in; when seen, the check-in step is marked complete.

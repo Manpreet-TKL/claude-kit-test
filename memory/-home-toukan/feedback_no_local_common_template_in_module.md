@@ -4,9 +4,9 @@ description: When installing an OE module, patch the in-container local/common.p
 type: feedback
 originSessionId: 3edf3f74-8cd5-4d68-9e64-24d0878d1895
 ---
-When installing an OE module that needs to be enabled via `local/common.php`, patch the in-container file (`/var/www/openeyes/protected/config/local/common.php`) **directly** — do not maintain a host-side template (e.g. `<module>/local_common.template.php` or `/tmp/lion-local-common.php`) that gets `docker cp`'d in.
+When installing an OE module that needs to be enabled via `local/common.php`, patch the in-container file (`/var/www/openeyes/protected/config/local/common.php`) **directly** - do not maintain a host-side template (e.g. `<module>/local_common.template.php` or `/tmp/lion-local-common.php`) that gets `docker cp`'d in.
 
-**Why:** User pushed back when I created `/tmp/lion-local-common.php` as a staging template for the voiceControl install. The aiSearch module's `local_common.template.php` pattern is not the preferred shape here — the module advertises itself in its own `<module>/config/common.php`; `local/common.php` is just an on-switch and its source of truth lives at the container path.
+**Why:** User pushed back when I created `/tmp/lion-local-common.php` as a staging template for the voiceControl install. The aiSearch module's `local_common.template.php` pattern is not the preferred shape here - the module advertises itself in its own `<module>/config/common.php`; `local/common.php` is just an on-switch and its source of truth lives at the container path.
 
 **How to apply:**
 - For module enablement, run an in-place edit inside the container (e.g. `docker exec <web> sed -i ...` or a PHP transform) against `/var/www/openeyes/protected/config/local/common.php`.

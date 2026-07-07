@@ -7,10 +7,10 @@ storage. None of this logic should know which ORM (Yii AR or Eloquent) is undern
 
 DTOs represent data independently of the ORM so business logic isn't coupled to the storage layer.
 - Generate standard model DTOs via the code-generation commands (seeded from the legacy model's properties); don't hand-write them.
-- Map ORM ↔ DTO through a `DTOMapper` resolved by `DTOMapperManager` (contracts in `OEShared\Contracts\DTOs\Mappers`). Name the mapper per framework:
-  - Laravel core `OELaravel\DTOs\Mappers\[Name]Mapper` · module `OELaravel\Modules\[Module]\DTOs\Mappers\[Name]Mapper`
-  - Yii core `OE\dto\mappers\[Name]Mapper` · module `OEModule\[Module]\dto\mappers\[Name]Mapper`
-- Mappers resolve as **singletons** — mock them through the container, not by `new`:
+- Map ORM <-> DTO through a `DTOMapper` resolved by `DTOMapperManager` (contracts in `OEShared\Contracts\DTOs\Mappers`). Name the mapper per framework:
+  - Laravel core `OELaravel\DTOs\Mappers\[Name]Mapper`, module `OELaravel\Modules\[Module]\DTOs\Mappers\[Name]Mapper`
+  - Yii core `OE\dto\mappers\[Name]Mapper`, module `OEModule\[Module]\dto\mappers\[Name]Mapper`
+- Mappers resolve as **singletons** - mock them through the container, not by `new`:
 
   ```php
   $this->mock(MyDTOMapper::class, fn (Mockery\MockInterface $m) =>
@@ -32,7 +32,7 @@ class EventMapper extends ActiveRecordDTOMapper {
 ```
 
 Protect identity/association fields with the read-only traits, including the required `__clone` unset
-(introduced Jan 2026 — adopt opportunistically):
+(introduced Jan 2026 - adopt opportunistically):
 
 ```php
 class AllergiesDTO extends BaseDTO implements EventElementDTO {
@@ -58,7 +58,7 @@ Event-owned services implement `EventOwnedReadService` / `EventOwnedWriteService
 ## Repository layer
 
 Repositories mediate **all** storage access and speak DTOs in and out.
-- `store(DTO)` returns the saved primary key (or throws); the passed DTO is **not** mutated with saved state — re-fetch via the returned id.
+- `store(DTO)` returns the saved primary key (or throws); the passed DTO is **not** mutated with saved state - re-fetch via the returned id.
 - Reads use a chainable query object then a read method that maps rows to DTOs. Laravel base: `BaseEloquentRepository` with the `UsesQueryBuilder` trait.
 
 ```php
@@ -67,4 +67,4 @@ $saved = $repository->get($id);
 ```
 
 ---
-Sources: DTOs (3079602181), Coding & Architecture Standards children — Service Layer, Repository Layer (3015540745).
+Sources: DTOs (3079602181), Coding & Architecture Standards children - Service Layer, Repository Layer (3015540745).

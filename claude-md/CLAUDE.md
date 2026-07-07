@@ -20,7 +20,7 @@ Bias toward caution over speed; use judgment on trivial tasks.
    reformat working code; match existing style. Remove only the orphans your own
    changes created; mention pre-existing dead code rather than deleting it.
    Every changed line should trace to the request.
-4. **Goal-driven execution.** Turn tasks into verifiable goals ("fix the bug" →
+4. **Goal-driven execution.** Turn tasks into verifiable goals ("fix the bug" ->
    "write a failing test that reproduces it, then make it pass"). For multi-step
    work, state a brief plan with a verify check per step, then loop until verified.
    When a task is complicated, offer plan mode first; once the plan is approved,
@@ -32,10 +32,15 @@ Bias toward caution over speed; use judgment on trivial tasks.
 ## Output discipline
 
 - No emojis unless asked.
+- No em or en dashes - the plain hyphen `-` is the only dash. Use `...`, never
+  the single-character ellipsis. New prose you generate is basic ASCII, but never
+  edit code or text that has nothing to do with the main change to "fix" its
+  characters. If non-basic-ASCII has been used - in your draft or in lines you
+  touch - load the `c-ascii` skill for the pitfalls before converting or keeping it.
 - Present choices or options as a numbered list; present any comparison as a table.
-- Runnable commands (chat, docs, script output) go on ONE line — up to 200 chars
+- Runnable commands (chat, docs, script output) go on ONE line - up to 200 chars
   is fine; never backslash-wrapped across lines.
-- No trailing summary of what you just did — the diff speaks.
+- No trailing summary of what you just did - the diff speaks.
 - No new `.md` planning docs in a repo unless explicitly requested. When a complex
   writeup is genuinely warranted, write it as a `.md` under `/home/toukan/`, not in
   the working tree.

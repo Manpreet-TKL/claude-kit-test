@@ -10,38 +10,38 @@ asset pipeline (SKILL.md "Module assets").
 
 Class names prefixed `js-` are **JavaScript behaviour hooks, never style hooks**:
 `js-add-select-search`, `js-comment-field`, `js-nav-hotlist-btn`,
-`js-element-eye`, … JS binds to them; CSS must not. When adding interactive
+`js-element-eye`, ... JS binds to them; CSS must not. When adding interactive
 behaviour, attach a `js-` class rather than styling an existing one.
 
 ## Core widgets (most-used)
 
-- **`OpenEyes.UI.AdderDialog`** — the ubiquitous "+ Add" picker (multi-select
+- **`OpenEyes.UI.AdderDialog`** - the ubiquitous "+ Add" picker (multi-select
   popup that writes chips/rows back into an element). Family: `AdderDialog.ItemSet`,
   `AdderDialog.Item`, plus search/quick-add variants. This is the single most
   common clinical-form interaction.
-- **`OpenEyes.UI.ElementController`** (+ `.MultiRow`) — wires a clinical element's
+- **`OpenEyes.UI.ElementController`** (+ `.MultiRow`) - wires a clinical element's
   fields to AdderDialogs and display masks via `data-adder-*` / `data-ec-*`
-  attributes. The backbone of `form_…`/`_event_edit` views — see
+  attributes. The backbone of `form_...`/`_event_edit` views - see
   `subs/clinical-element-views.md`.
-- **`OpenEyes.UI.CollapseData`** — expand/collapse for long event/element sections.
-- **`OpenEyes.UI.NavBtnPopup`** / **HotList** — the right-hand patient hotlist
+- **`OpenEyes.UI.CollapseData`** - expand/collapse for long event/element sections.
+- **`OpenEyes.UI.NavBtnPopup`** / **HotList** - the right-hand patient hotlist
   panel and nav-button popups (SKILL.md "Hotlist").
-- **`OpenEyes.UI.Dialog`** (`.Alert`, `.Confirm`, …) — modal dialogs (jQuery UI
+- **`OpenEyes.UI.Dialog`** (`.Alert`, `.Confirm`, ...) - modal dialogs (jQuery UI
   under the hood).
 - **`OpenEyes.UI.Tooltip`**, **`OpenEyes.UI.PatientElementController`**,
-  **`OpenEyes.UI.EpisodeSidebar`**, **`OpenEyes.UI.Search`** — supporting pieces.
+  **`OpenEyes.UI.EpisodeSidebar`**, **`OpenEyes.UI.Search`** - supporting pieces.
 
 Pattern: instantiate in an inline `<script>` at the end of a view, handing it a
-container selector — `new OpenEyes.UI.ElementController({ container: $('#…_form') })`.
+container selector - `new OpenEyes.UI.ElementController({ container: $('#..._form') })`.
 
 ## EyeDraw (the eye-diagram editor)
 
-EyeDraw is **not** an `OpenEyes.UI.*` call — it is a Yii PHP widget
+EyeDraw is **not** an `OpenEyes.UI.*` call - it is a Yii PHP widget
 (`application.modules.eyedraw.OEEyeDrawWidget`) with a JS runtime at
 `protected/assets/js/eyedraw/EyeDrawManager.js` (+ `oe-eyedraw.js`). It draws to
 `<canvas>` and serialises a JSON doodle string into a hidden input on the element.
 The `eyedraw` module is external (absent from a base core checkout). Rendering
-detail → `subs/clinical-element-views.md`.
+detail -> `subs/clinical-element-views.md`.
 
 ## TinyMCE
 

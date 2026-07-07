@@ -15,12 +15,12 @@ if ($api = Yii::app()->moduleAPI->get('OphCiExamination')) {
 ```
 
 - `<Module>_API` extends `BaseAPI`; `CoreAPI` for core data.
-- Exception: raw SQL for reports/view definitions — even then encapsulate the view in the module that owns the source data where feasible.
+- Exception: raw SQL for reports/view definitions - even then encapsulate the view in the module that owns the source data where feasible.
 - Required going forward; refactor non-compliant code when you're in the area.
 
 ## API shape
 
-- A module API returns an **abstract data structure** assembled from its model(s), **not** model instances — so consumers are shielded from how the module stores things.
+- A module API returns an **abstract data structure** assembled from its model(s), **not** model instances - so consumers are shielded from how the module stores things.
 
   ```php
   return [
@@ -35,8 +35,8 @@ if ($api = Yii::app()->moduleAPI->get('OphCiExamination')) {
   public function getLetter[StringDescription](\Patient $patient, bool $use_context = false)
   ```
 
-- Split a large module API into **traits** per data concept (Visual Acuity, Refraction, …) rather than one monolith (Examination is the cautionary tale). A trait may span several elements.
-- Rendering an element isn't only via the API — `BaseEventElementWidget`-based widgets can encapsulate an element for display:
+- Split a large module API into **traits** per data concept (Visual Acuity, Refraction, ...) rather than one monolith (Examination is the cautionary tale). A trait may span several elements.
+- Rendering an element isn't only via the API - `BaseEventElementWidget`-based widgets can encapsulate an element for display:
 
   ```php
   $this->widget(SystemicSurgeryWidget::class, [
@@ -50,7 +50,7 @@ if ($api = Yii::app()->moduleAPI->get('OphCiExamination')) {
 Everything a module needs lives in its own directory.
 - A `README` covering its key functional elements, integration hooks, and dependencies.
 - PHPUnit tests in a `test/` dir split into `unit/` and `feature/`, namespaced under the module.
-- Encapsulate functionality in module code rather than the application core — even "core" functionality (e.g. Diagnosis 2.0). Refactor logic spread through the codebase back into its module when the opportunity arises.
+- Encapsulate functionality in module code rather than the application core - even "core" functionality (e.g. Diagnosis 2.0). Refactor logic spread through the codebase back into its module when the opportunity arises.
 
 ## ADRs
 

@@ -1,6 +1,6 @@
-# oe-deploy — first-run on a fresh host (volatile)
+# oe-deploy - first-run on a fresh host (volatile)
 
-This is the **current** sequence, read from `environment-setup.sh`, `db-setup.sh`, `build.sh`. Steps move when flags change or a gate is added. If something here disagrees with a script, the script wins — update this file.
+This is the **current** sequence, read from `environment-setup.sh`, `db-setup.sh`, `build.sh`. Steps move when flags change or a gate is added. If something here disagrees with a script, the script wins - update this file.
 
 ## Prerequisites (Manpreet's hosts already have these)
 
@@ -20,7 +20,7 @@ cd <env>
 # 2. Set per-instance metadata. Every var in .oedeploy must be non-empty.
 $EDITOR .oedeploy           # appName=openeyes|notes|openers ; pushToGit='' on demo boxes
 
-# 3. Generate secrets + keeper.csv and copy templates/<appName>.env → .env
+# 3. Generate secrets + keeper.csv and copy templates/<appName>.env -> .env
 bash environment-setup.sh -y       # -y = non-interactive, auto-generate passwords
 #                         -ndp     # offline: gpg-random passwords instead of dinopass.com
 #                         -nm      # skip Mirth passwords ; -o = overwrite existing [DANGEROUS]
@@ -46,9 +46,9 @@ bash db-setup.sh            # default: OpenEyes + Mirth + backup user
 bash build.sh              # -np no pull, -n no up, -d dry-run diff, -y skip prod prompt
 ```
 
-No `echo yes |` is needed on a fresh host — `build.sh` only prompts on a prod machine with running containers (and `-y` skips that). On demo/sample boxes **do not** run `scripts/set_frontend_passwords.sh` — the sample DB ships `admin/admin`.
+No `echo yes |` is needed on a fresh host - `build.sh` only prompts on a prod machine with running containers (and `-y` skips that). On demo/sample boxes **do not** run `scripts/set_frontend_passwords.sh` - the sample DB ships `admin/admin`.
 
-After step 7, `docker compose ps` should show services `Up (healthy)` within a few minutes — **except** OpenMRS, which legitimately takes ~73 min on its first WAR deploy on a monkey-spec host. Don't kill it.
+After step 7, `docker compose ps` should show services `Up (healthy)` within a few minutes - **except** OpenMRS, which legitimately takes ~73 min on its first WAR deploy on a monkey-spec host. Don't kill it.
 
 ## Loading the sample DB / fixing the oe-manager crash loop
 
@@ -57,8 +57,8 @@ After step 7, `docker compose ps` should show services `Up (healthy)` within a f
 It's also the fix for the classic crash loop: oe-manager stuck `Restarting (1)` while web is `health: starting`, log ending in:
 
 ```
-85-migrate-up.sh … CREATE TABLE `address` … Table 'address' already exists   # consolidation can't run on a dirty DB
-93-import-eyedraw-config.sh … Table 'openeyes.eyedraw_doodle' doesn't exist   # → STARTUP ABORTED, exit 1
+85-migrate-up.sh ... CREATE TABLE `address` ... Table 'address' already exists   # consolidation can't run on a dirty DB
+93-import-eyedraw-config.sh ... Table 'openeyes.eyedraw_doodle' doesn't exist   # -> STARTUP ABORTED, exit 1
 ```
 
 That means a prior run left a **half-built** schema; consolidation won't re-run over existing tables, so `eyedraw_doodle` is never created and the container dies and retries forever. The reset wipes the DB and rebuilds it from the bundled sample.
@@ -72,16 +72,16 @@ docker compose run --rm --entrypoint /bin/bash oe-manager -c \
 docker compose up -d oe-manager            # migrate-up is now a no-op; oe-manager stays healthy
 ```
 
-- The README (Tutorial 5) writes this as `docker-compose run -d … && docker exec … && docker stop`. On compose v2 a **detached** `/bin/bash` with no TTY exits immediately, so the `exec` misses it — pass the work to `bash -c` inline instead (above). `docker-compose` and `docker compose` both work on Manpreet's hosts.
-- `oe-reset.sh -nm`: drop the DB + protected files, extract & import `protected/modules/sample/sql/sample_db.zip` (~242 MiB, **bundled in the oe-manager image — not web — so no git/network fetch**), `-nm` skips the auto-migrate so `oe-migrate.sh` runs the migration delta explicitly. **WARNING: destroys the current DB.** Other flags: `-nb` no banner, `--no-clean`, `--cleanbase`, `-r <restorefile>`.
-- Watch it: `tail -f` the run, or `docker exec <env>-db-1 sh -c 'mariadb -uroot -p"$(cat /run/secrets/MYSQL_ROOT_PASSWORD)" -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\"openeyes\""'` — count climbs ~145 (broken) → ~1400 (sample imported) → ~2300 (after migrate). The OE DB password secret is `DATABASE_PASS` (not `…PASSWORD`); root is `MYSQL_ROOT_PASSWORD`.
-- **The reset exits non-zero (`exit 1`, "ABORTED DUE TO ERROR") and that's EXPECTED — do not redo it.** `oe-migrate.sh` migrates first (`yiic migrate --all`, then `artisan migrate`) and only *then* tries an `npm/vite build`, which dies `vite: not found` (code 127) because the **oe-manager image has no node toolchain**. The schema is already complete by then and the **web** image ships prebuilt assets, so OE works regardless. Confirm success by the DB, not the exit code: `eyedraw_doodle` exists with rows, `tbl_migration` maxes at the latest `m26…` version, `user`/`patient` are populated.
-- Verify the instance: `docker compose ps` → web `(healthy)`, oe-manager `Up` with **restarts=0** (it now clears `93-import-eyedraw-config.sh` instead of crash-looping); `curl -s -o /dev/null -w '%{http_code}' http://localhost:<WEB_PORT>/` → `200`, page title `OpenEyes`.
+- The README (Tutorial 5) writes this as `docker-compose run -d ... && docker exec ... && docker stop`. On compose v2 a **detached** `/bin/bash` with no TTY exits immediately, so the `exec` misses it - pass the work to `bash -c` inline instead (above). `docker-compose` and `docker compose` both work on Manpreet's hosts.
+- `oe-reset.sh -nm`: drop the DB + protected files, extract & import `protected/modules/sample/sql/sample_db.zip` (~242 MiB, **bundled in the oe-manager image - not web - so no git/network fetch**), `-nm` skips the auto-migrate so `oe-migrate.sh` runs the migration delta explicitly. **WARNING: destroys the current DB.** Other flags: `-nb` no banner, `--no-clean`, `--cleanbase`, `-r <restorefile>`.
+- Watch it: `tail -f` the run, or `docker exec <env>-db-1 sh -c 'mariadb -uroot -p"$(cat /run/secrets/MYSQL_ROOT_PASSWORD)" -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\"openeyes\""'` - count climbs ~145 (broken) -> ~1400 (sample imported) -> ~2300 (after migrate). The OE DB password secret is `DATABASE_PASS` (not `...PASSWORD`); root is `MYSQL_ROOT_PASSWORD`.
+- **The reset exits non-zero (`exit 1`, "ABORTED DUE TO ERROR") and that's EXPECTED - do not redo it.** `oe-migrate.sh` migrates first (`yiic migrate --all`, then `artisan migrate`) and only *then* tries an `npm/vite build`, which dies `vite: not found` (code 127) because the **oe-manager image has no node toolchain**. The schema is already complete by then and the **web** image ships prebuilt assets, so OE works regardless. Confirm success by the DB, not the exit code: `eyedraw_doodle` exists with rows, `tbl_migration` maxes at the latest `m26...` version, `user`/`patient` are populated.
+- Verify the instance: `docker compose ps` -> web `(healthy)`, oe-manager `Up` with **restarts=0** (it now clears `93-import-eyedraw-config.sh` instead of crash-looping); `curl -s -o /dev/null -w '%{http_code}' http://localhost:<WEB_PORT>/` -> `200`, page title `OpenEyes`.
 - Sample login is `admin`/`admin`; **do not** run `scripts/set_frontend_passwords.sh` on a demo box.
 
 ### Migrate-only fallback (when `oemig` alias isn't on PATH)
 
-To run migrations without a full reset (e.g. after pulling a newer image), the in-container `oemig` is a shell alias; aliases don't survive `exec sh -c …`, and `sh -l -c` doesn't expand them reliably. Use `bash -c` with the absolute path:
+To run migrations without a full reset (e.g. after pulling a newer image), the in-container `oemig` is a shell alias; aliases don't survive `exec sh -c ...`, and `sh -l -c` doesn't expand them reliably. Use `bash -c` with the absolute path:
 
 ```bash
 docker compose exec web bash -c \
@@ -90,8 +90,8 @@ docker compose exec web bash -c \
 
 ## Where to look when something's wrong
 
-- `build.sh` printed a gate failure → `subs/build-gates.md`.
-- A service is unhealthy → `docker compose logs <svc>`.
-- BridgeLink/Mirth "manifest unknown" → you pinned a tag that doesn't exist; use `MIRTH_IMAGE_TAG=4.6.1`.
-- Traefik 502s on a fresh box → old Docker daemon API version; lower `min-api-version` to `1.24` in `/etc/docker/daemon.json` (don't downgrade Traefik).
-- OE returns `{}` from `/openmrs/` → that's the REST root; legacy UI is `/openmrs/login.htm`.
+- `build.sh` printed a gate failure -> `subs/build-gates.md`.
+- A service is unhealthy -> `docker compose logs <svc>`.
+- BridgeLink/Mirth "manifest unknown" -> you pinned a tag that doesn't exist; use `MIRTH_IMAGE_TAG=4.6.1`.
+- Traefik 502s on a fresh box -> old Docker daemon API version; lower `min-api-version` to `1.24` in `/etc/docker/daemon.json` (don't downgrade Traefik).
+- OE returns `{}` from `/openmrs/` -> that's the REST root; legacy UI is `/openmrs/login.htm`.

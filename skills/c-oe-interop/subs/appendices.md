@@ -1,14 +1,14 @@
 # Appendices and references
 
-> **Source gap:** the v1.1.1 export's body **ends at the Document Upload / HL7 MDM example** ("END OF DOCUMENT"). The appendices and a few late sections appear only in the Table of Contents and as inline cross-references — their full bodies are **not present** in this export. Use the live Confluence page for the real appendix tables. Listed below is what the TOC promises and the one worked example that *is* in the body.
+> **Source gap:** the v1.1.1 export's body **ends at the Document Upload / HL7 MDM example** ("END OF DOCUMENT"). The appendices and a few late sections appear only in the Table of Contents and as inline cross-references - their full bodies are **not present** in this export. Use the live Confluence page for the real appendix tables. Listed below is what the TOC promises and the one worked example that *is* in the body.
 
-## Referenced appendices (TOC only — bodies not in this export)
+## Referenced appendices (TOC only - bodies not in this export)
 
-- **Appendix A – HL7 supported messages** — the HL7 message catalogue (ADT, Q21/K21, MDM, etc.). Referenced by demographics, appointments, and PAS-lookup sections.
-- **Appendix B – PAS API** — PASAPI reference, including v2 GP/Practice import endpoints and examples. See the `c-pasapi` sibling skill for the actual PASAPI v2 contract.
-- **Appendix C – Document Management Output** — correspondence/discharge PDF metadata (filename encoding + sidecar XML schema).
-- **Appendix D – OpenEyes Desktop App Launcher** — the launcher utility used by FORUM and ImageNET (install/update, command-line params).
-- **Appendix F – Document Upload Parameters** — definitions for the document-upload variables (`patient_identifier_type`, `patient_id`, `firm_id`, `document_subtype`, `laterality`, `unique_reference`, `document_date`, etc.). (No "Appendix E" in the TOC.)
+- **Appendix A - HL7 supported messages** - the HL7 message catalogue (ADT, Q21/K21, MDM, etc.). Referenced by demographics, appointments, and PAS-lookup sections.
+- **Appendix B - PAS API** - PASAPI reference, including v2 GP/Practice import endpoints and examples. See the `c-pasapi` sibling skill for the actual PASAPI v2 contract.
+- **Appendix C - Document Management Output** - correspondence/discharge PDF metadata (filename encoding + sidecar XML schema).
+- **Appendix D - OpenEyes Desktop App Launcher** - the launcher utility used by FORUM and ImageNET (install/update, command-line params).
+- **Appendix F - Document Upload Parameters** - definitions for the document-upload variables (`patient_identifier_type`, `patient_id`, `firm_id`, `document_subtype`, `laterality`, `unique_reference`, `document_date`, etc.). (No "Appendix E" in the TOC.)
 
 Also TOC-listed with no body in this export: **PAS OUT**, **Event export to external systems (as PDF)**, **Configuration and Use of Webhooks / Documentation for the xAPI**, **COMPlog integration**, **Concentric Integration**, **DICOM (Medical Imaging Devices) Integration** + its supported-devices list, and a **Document Upload RESTful API**.
 

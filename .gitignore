@@ -8,7 +8,7 @@
 # All machine-local generated config / secrets live in one folder, so it can be
 # backed up and restored across a `git reset --hard` + `git clean -fdx`.
 /generated/
-# Legacy locations (pre-consolidation) — keep ignored in case an old install lingers.
+# Legacy locations (pre-consolidation) - keep ignored in case an old install lingers.
 settings/.atlassian.env
 settings/.github.env
 settings/.codex.env

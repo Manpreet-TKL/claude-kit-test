@@ -1,4 +1,4 @@
-# notes — domain model and schema (volatile)
+# notes - domain model and schema (volatile)
 
 Schema evolves; check `src/database/migrations/` for the current truth. Below is the current shape at a high level.
 
@@ -14,12 +14,12 @@ Schema evolves; check `src/database/migrations/` for the current truth. Below is
 | `tags`         | Many-to-many with notes. | Tag names are case-insensitive on lookup. |
 | `links`        | External hyperlinks anywhere in the body. | Extracted by parser, displayed in sidebar. |
 | `users`        | App users. | Auth via local password; no SSO. |
-| `roles`        | Authorisation roles. | Carries `default_on_create` flag — see SKILL.md. |
+| `roles`        | Authorisation roles. | Carries `default_on_create` flag - see SKILL.md. |
 | `audit_logs`   | Every create/update/delete on a note. | Hard requirement; never bypass. |
 
 ## Soft delete contract
 
-`Note` and `NoteVersion` use `SoftDeletes`. The default global scope excludes them. The slug uniqueness check **does not** apply the default scope — restoring a deleted note must not collide with a live one.
+`Note` and `NoteVersion` use `SoftDeletes`. The default global scope excludes them. The slug uniqueness check **does not** apply the default scope - restoring a deleted note must not collide with a live one.
 
 ## Search invariants (don't break these)
 
@@ -31,4 +31,4 @@ Schema evolves; check `src/database/migrations/` for the current truth. Below is
 
 ## Audit invariants
 
-`AuditLog::record($action, $note)` must run for every create / update / delete. The `Note` model observer handles this — don't call `DB::table('notes')` directly from anywhere.
+`AuditLog::record($action, $note)` must run for every create / update / delete. The `Note` model observer handles this - don't call `DB::table('notes')` directly from anywhere.

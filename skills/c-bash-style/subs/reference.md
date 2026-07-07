@@ -1,4 +1,4 @@
-# Bash style — verbatim templates
+# Bash style - verbatim templates
 
 ## Header
 
@@ -29,9 +29,9 @@ trap 'abort' 0
 set -e
 ```
 
-## Section banners — exactly 50 chars wide, 3 lines
+## Section banners - exactly 50 chars wide, 3 lines
 
-Setup sections (CHECKS, VARIABLES, FUNCTIONS) — left-aligned, annotated, space-padded before a trailing `##`:
+Setup sections (CHECKS, VARIABLES, FUNCTIONS) - left-aligned, annotated, space-padded before a trailing `##`:
 
 ```bash
 ##################################################
@@ -47,7 +47,7 @@ Setup sections (CHECKS, VARIABLES, FUNCTIONS) — left-aligned, annotated, space
 ##################################################
 ```
 
-Action sections (EXECUTION, POST-CHECKS) — centred, hashes both sides:
+Action sections (EXECUTION, POST-CHECKS) - centred, hashes both sides:
 
 ```bash
 ##################################################
@@ -59,7 +59,7 @@ Action sections (EXECUTION, POST-CHECKS) — centred, hashes both sides:
 ##################################################
 ```
 
-Reference: `ace/scripts/disable_ipv6.sh` lines 42–115.
+Reference: `ace/scripts/disable_ipv6.sh` lines 42-115.
 
 ## Argument parsing
 
@@ -121,7 +121,7 @@ for var in $requiredVariables; do
 done
 ```
 
-## Functions — camelCase, `local` params, sudo writes via tee+heredoc
+## Functions - camelCase, `local` params, sudo writes via tee+heredoc
 
 ```bash
 setProxyForApt() {
@@ -144,13 +144,13 @@ if [ "${install}" == "1" ]; then
 fi
 ```
 
-One-shot early exits — guard, run, disarm trap, exit:
+One-shot early exits - guard, run, disarm trap, exit:
 
 ```bash
 [ "${SIZE_ONLY}" == "1" ] && echo "$(dbsizegb ${DATABASE_NAME})" && trap : 0 && exit 0
 ```
 
-## Closing banner — mirror the abort banner
+## Closing banner - mirror the abort banner
 
 ```bash
 trap : 0
