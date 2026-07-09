@@ -2,15 +2,21 @@
 
 ## PR.md template (verbatim shape)
 
-Everything above the GitHub PR description is plain `label: value` metadata. The GitHub PR description is the only markdown field: `##` headings stay OUT of the blockquotes; each section body is one `> `-quoted block.
+Two `#` sections - **`# JIRA`** and **`# GITHUB`** - each a set of copy-paste blocks. Text above a `##`/`###` heading is plain `label: value` metadata; under a heading the heading stays OUT of the blockquote and each body is one `> `-quoted block. The GitHub blocks carry the PR prose ONLY - never the live template's tickboxes, emoji headings or Do-No-Harm reminder (the user fills those in by hand after raising).
 
 ```
-Jira ticket title:
+# JIRA
+
+Ticket name:
 <release-notes-style title - doubles as the customer-facing release-notes entry and
 the GitHub PR title. Generic, outcome-shaped, imperative, under 70 chars, no trailing
 punctuation, no client names, no ticket numbers.
   Good: Fix archived patients reappearing in the default worklist after refresh
   Bad:  Fix bug Foo Clinic reported in ticket #1421>
+
+## Description box
+
+Paste everything below into the Jira ticket's description field.
 
 Jira ticket type:
 <exactly one of: Bug | New Feature | Improvement | Internal Improvement | Story |
@@ -24,6 +30,28 @@ confirmed. Blank only for types with no affected install.>
 Fix version:
 Raised in <version, verbatim - e.g. v26.0.0-rc3>. Repo <openeyes/openeyes or a
 satellite>. Target <branch - e.g. release/26.0.x>. Back-port? list both.
+
+### Description
+> What the change does and why, plain language, client-agnostic. Lead with the
+> user-visible behaviour and the problem it fixes. Always present. Reused verbatim
+> as the GitHub Summary.
+
+### Steps to Reproduce
+> A generic, **frontend-only** click-path any user can follow without knowing what the
+> page does - numbered, **one sentence per step**, each naming the exact control by its
+> on-screen label (quoted) and where it sits. Client-agnostic (actor by role, data by
+> *kind*, never creds/seed/sample-DB). Start at login if a session is needed; end on an
+> observable check. Rules, worked example and special cases live in the **`c-oe-repro`**
+> skill - run it if the steps aren't already in this conversation.
+> 1. Log in as an administrator (a user with full access).
+
+### Current Outcome
+> What actually happens at the end of the steps. One or two lines.
+
+### Expected Outcome
+> What should happen instead. One or two lines.
+
+# GITHUB
 
 Apply onto:
 <the base branch the diff was cut from + its sha, e.g. release/26.0.x @ a1b2c3d - the
@@ -40,42 +68,31 @@ headline-fix commit reuses the Jira title, trimmed to fit. See *Commit titles* b
 
     [OE-XXXXX] - <exact commit message, <= 59 chars>
 
-GitHub PR description:
+## PR body
 
-## Description
-> What the change does and why, plain language, client-agnostic. Lead with the
-> user-visible behaviour and the problem it fixes. Always present.
+Paste each block into the matching section of the live OE PR template.
 
-## Steps to Reproduce
-> A generic, **frontend-only** click-path any user can follow without knowing what the
-> page does - numbered, **one sentence per step**, each naming the exact control by its
-> on-screen label (quoted) and where it sits. Client-agnostic (actor by role, data by
-> *kind*, never creds/seed/sample-DB). Start at login if a session is needed; end on an
-> observable check. Rules, worked example and special cases live in the **`c-oe-repro`**
-> skill - run it if the steps aren't already in this conversation.
-> 1. Log in as an administrator (a user with full access).
+### Summary
+> Same prose as the Jira Description above - what the change does and why, client-agnostic.
 
-## Current Outcome
-> What actually happens at the end of the steps. One or two lines.
+### Scope of Changes
 
-## Expected Outcome
-> What should happen instead. One or two lines.
-
-## Solution
+#### Solution
 > The approach, named not diffed - the mechanism and the one judgement call that
 > mattered (and the rejected alternative, if relevant).
 
-## Files changed
+#### Files changed
 > One bullet per file: repo-relative path + one sentence on why. Mark (new) and
 > (incidental). The change to each path lives in `changes.diff` - this list is the map.
 > - protected/models/Patient.php - added a default scope excluding archived rows.
 
-## Test
+#### Test
 > Exactly one of - Test added: <path> (run with `vendor/bin/phpunit <path>`); or
 > No test, justification: <paragraph - OK for UI-only/copy/migration with no
-> behavioural surface; not "ran out of time", not "this area has no tests">.
+> behavioural surface; not "ran out of time", not "this area has no tests">. Note per
+> change what covers it.
 
-## Notes for reviewer
+### Notes for Reviewers
 > Simple bullets: edge cases, clinical-safety invariants touched and how handled,
 > stack-specific verification that doesn't belong in Steps (cache clears, container
 > names), related-but-unfixed occurrences (file:line + recommended approach).
@@ -153,11 +170,15 @@ to a stale base (the far side applies it onto whatever the base is *now*).
   rather than a hard reject. Then write each commit yourself with the suggested title from
   `PR.md` (real Jira key filled in) and push. The skill never commits or pushes.
 
-## Jira fields vs the GitHub PR
+## Jira section vs GitHub section
 
-The Jira ticket title / type / Affects version / Fix version fields are for the Jira ticket -
-they feed the release notes and are transcribed there by the user. Only the **GitHub PR
-description** section becomes the PR body.
+The two `#` sections are the two paste targets. **`# JIRA`**: `Ticket name` goes in the Jira
+ticket's name/summary field; everything in the `## Description box` (type / Affects version /
+Fix version + Description + Steps + Current + Expected) pastes into the ticket's description
+field. **`# GITHUB`**: each `##`/`###` block pastes into the matching section of the live OE
+PR template. The Description is reused verbatim as the Summary. The template's tickboxes, emoji
+headings and Do-No-Harm reminder are filled in by hand after raising - the skill never
+reproduces that chrome.
 
 ## OE field rules
 
