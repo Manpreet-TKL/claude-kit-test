@@ -25,13 +25,18 @@ Fix version:
 Raised in <version, verbatim - e.g. v26.0.0-rc3>. Repo <openeyes/openeyes or a
 satellite>. Target <branch - e.g. release/26.0.x>. Back-port? list both.
 
+Apply onto:
+<the base branch the diff was cut from + its sha, e.g. release/26.0.x @ a1b2c3d - the
+far side checks out its current base and applies `changes.diff` with `git apply --3way`>
+
 Commit title:
-(verbatim `git commit -m` message, on its own indented line; one block per commit,
-in order. Every OE commit is prefixed `[OE-XXXXX] - ` - the Jira key the user raises
-themselves, so leave it as literal `OE-XXXXX` X's for them to fill in. The whole
-subject line, prefix included, is <= 72 chars, so the text after `- ` gets <= 59;
-aim <= 50 total. The headline-fix commit reuses the Jira title, trimmed to fit. See
-*Commit titles* below.)
+(suggested `git commit -m` message(s) for you to author on the far side - the skill never
+commits, so the message is always yours. One commit by default; add a block only when a
+split is genuinely beneficial (see *Multiple commits*). Every OE commit is prefixed
+`[OE-XXXXX] - ` - leave it as literal `OE-XXXXX` X's; you fill the real Jira key when you
+commit, since that subject is what auto-updates the ticket. The whole subject line, prefix
+included, is <= 72 chars, so the text after `- ` gets <= 59; aim <= 50 total. The
+headline-fix commit reuses the Jira title, trimmed to fit. See *Commit titles* below.)
 
     [OE-XXXXX] - <exact commit message, <= 59 chars>
 
@@ -62,8 +67,7 @@ GitHub PR description:
 
 ## Files changed
 > One bullet per file: repo-relative path + one sentence on why. Mark (new) and
-> (incidental). The applied change lives in the clone at the same path - this list
-> is the map.
+> (incidental). The change to each path lives in `changes.diff` - this list is the map.
 > - protected/models/Patient.php - added a default scope excluding archived rows.
 
 ## Test
@@ -119,23 +123,35 @@ is a fixed **13 characters** (`[` + `OE-` + a 5-digit key + `]` + ` - `).
 
 ## Multiple commits
 
-One indented message block per commit, in order. Each commit self-contained and green (tests pass, app boots) - never split a fix from its proving test, never a commit that won't build alone. Split by independent concern, not file type. Single commit -> one message, no numbering ceremony.
+**Default to one commit.** Split into multiple only when it is genuinely beneficial -
+independent concerns that each need to stand alone and stay green (e.g. a mechanical rename
+that must land separately from the behavioural fix). Never split by file type or for
+tidiness. When you do split, list one suggested title per commit **and say which files
+belong to each**, so you can stage `changes.diff` accordingly when you apply it - you author
+each real message yourself. Never split a fix from its proving test; never a commit that
+won't build alone.
 
-## Building the clone (how the skill assembles the folder)
+## Building the diff (how the skill assembles the folder)
 
-- **Source:** clone from the repo's `origin` URL - read it from the caller's working copy
-  (`git -C <working-copy> remote get-url origin`) - so the clone's `origin` is the real
-  remote and your push just works. Full clone, not shallow. OE repos are private,
-  so this relies on the user's configured git auth (askpass / SSH).
-- **Base branch:** resolve the nearest `release/<major>.<minor>.x` from the Fix version -
+The deliverable is a single `changes.diff`, not a clone - tiny to copy away, and never pinned
+to a stale base (the far side applies it onto whatever the base is *now*).
+
+- **Base:** resolve the nearest `release/<major>.<minor>.x` from the Fix version -
   `git ls-remote --heads origin 'release/*'`, match `release/<maj>.<min>.x`, else nearest +
   say which, else list candidates and let the user pick (see SKILL.md -> *Base branch*).
-  Check that release branch out, then `git checkout -b <branch>` off it.
-- **Apply:** write the final content of every changed and new file into the clone's working
-  tree at its repo-relative path - content, not patches - and **delete every file the change
-  removes** so the working tree reflects additions, edits, and deletions. Nothing else in the tree.
-- **Leave it uncommitted.** Never `git commit` / `git push` / `--no-verify` - you push it
-  yourself. `.git` stays and `origin` is the real remote, so the clone is ready to push as-is.
+  Record it in `PR.md` as `Apply onto: <branch> @ <sha>` (the `git ls-remote` sha). OE repos
+  are private, so fetching the base ref relies on the user's configured git auth (askpass / SSH).
+- **Produce the diff:** generate one unified `git diff` against that base from a checkout that
+  has the change - normally the working copy where you made it (`git -C <wc> diff <base>`,
+  fetching the base ref first if absent), or a throwaway clone used only to build it. Only
+  `changes.diff` is kept; the checkout is not part of the deliverable. It captures additions,
+  edits, and deletions as content - new files show `new file`, deletions `deleted file`. It
+  carries **no commit message**, so no Jira key is baked in.
+- **Applying it (what you do on the far side, in your live checkout):**
+  `git checkout -b <branch> <current-base>` then `git apply --3way changes.diff`. `--3way`
+  means a base that has moved on degrades to ordinary merge-conflict markers you resolve,
+  rather than a hard reject. Then write each commit yourself with the suggested title from
+  `PR.md` (real Jira key filled in) and push. The skill never commits or pushes.
 
 ## Jira fields vs the GitHub PR
 
