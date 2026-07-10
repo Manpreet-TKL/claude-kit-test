@@ -71,15 +71,23 @@ headline-fix commit reuses the Jira title, trimmed to fit. See *Commit titles* b
 
 ## Apply & push
 
-(not a paste target - the far-side commands with the folder, checkout and base filled in
-concretely. Branches are normally called fix/OE-XXXXX for bugfixes or feature/OE-XXXXX
-for features/improvements; write them with a sample key, e.g. fix/OE-12345, for the user
-to replace with the real one - never bake a real key. See *Apply & push* below.)
+(not a paste target - the far-side commands, written for the user's real workflow: the
+PR folder is copied to C:/Temp/pullrequests on a Windows machine and applied from Git
+Bash inside the checkout. The OE-XXXXX -> real-key substitution is done in VSCode
+find/replace directly in changes.patch - never suggest sed - and gets its own comment
+line at the top of the block; the checkout commands each get their own line too, never
+squashed into one. Branches are normally called fix/OE-XXXXX for bugfixes or
+feature/OE-XXXXX for features/improvements; write commands with a sample key, e.g.
+fix/OE-12345, for the user to replace with the real one - never bake a real key.
+See *Apply & push* below.)
 
-    git -C <checkout> switch -c fix/OE-12345
-    sed 's/OE-XXXXX/OE-12345/g' <folder>/changes.patch | git -C <checkout> am -3 --keep-non-patch
-    git -C <checkout> log --oneline <base>..HEAD
-    git -C <checkout> push -u origin fix/OE-12345
+    # in VSCode: find/replace OE-XXXXX -> OE-12345 in C:/Temp/pullrequests/<folder>/changes.patch
+    cd <checkout>
+    git checkout <base>
+    git checkout -b fix/OE-12345
+    git am -3 --keep-non-patch "C:/Temp/pullrequests/<folder>/changes.patch"
+    git log --oneline <base>..HEAD
+    git push -u origin fix/OE-12345
 
 ## PR body
 
@@ -141,8 +149,8 @@ is a fixed **13 characters** (`[` + `OE-` + a 5-digit key + `]` + ` - `).
 
 - **The user raises the ticket, not the skill.** The message is baked into `changes.patch`
   with the key left as literal `OE-XXXXX` X's (still 13 chars, so the budget is unchanged) -
-  once the ticket exists the user substitutes the real key (`sed 's/OE-XXXXX/OE-12345/g'`)
-  and `git am` creates the commit as them (see *Apply & push*).
+  once the ticket exists the user find/replaces the real key into the patch file and
+  `git am` creates the commit as them (see *Apply & push*).
 - **The whole subject line, prefix included, must fit <= 72 chars** - git's subject wrap and
   where GitHub truncates the commit title. So the text after `- ` gets at most **59 chars**;
   aim for <= 50 total where you can.
@@ -206,18 +214,29 @@ baked-in message(s). One mbox entry per commit, concatenated in the same file:
 
 ## Apply & push (what the user does on the far side - never the skill)
 
-From a clean checkout sitting on the current base branch:
+The user's workflow, and the exact shape every PR.md block takes: the PR folder is copied
+to `C:/Temp/pullrequests` on a Windows machine and applied from **Git Bash** inside the
+checkout - plain commands after a `cd`, no `git -C`, no sed pipe, one action per line.
+From a clean checkout:
 
-1. `git switch -c fix/OE-12345` - branches are normally called `fix/OE-XXXXX` (bugfixes) or
-   `feature/OE-XXXXX` (new features/improvements), with the real Jira key.
-2. `sed 's/OE-XXXXX/OE-12345/g' changes.patch | git am -3 --keep-non-patch` - substitutes
-   the real key everywhere, applies the diff AND creates the commit(s), one per mbox entry,
-   authored as the user. `-3` degrades a moved-on base to ordinary merge-conflict markers;
-   on conflict fix the files, `git add` them, `git am --continue` - or `git am --abort` to
-   return to the pristine branch tip.
-3. `git log --oneline <base>..HEAD` - the subject(s) must read `[OE-12345] - ...`.
-4. `git push -u origin fix/OE-12345`, raise the PR, then move the folder into
-   `~/pullrequests/pushed/`.
+1. In VSCode, find/replace `OE-XXXXX` with the real Jira key (e.g. `OE-12345`) in
+   `C:/Temp/pullrequests/<folder>/changes.patch` - written as a `#` comment line at the
+   top of the command block, never as a sed pipe.
+2. `cd <checkout>`, `git checkout <base>`, `git checkout -b fix/OE-12345` - one command
+   per line, never squashed into a `git switch -c <branch> <base>` one-liner. Branches
+   are normally called `fix/OE-XXXXX` (bugfixes) or `feature/OE-XXXXX` (new
+   features/improvements), with the real Jira key. Branching after an explicit
+   `git checkout <base>` pins the start point rather than trusting wherever HEAD is.
+3. `git am -3 --keep-non-patch "C:/Temp/pullrequests/<folder>/changes.patch"` - applies
+   the diff AND creates the commit(s), one per mbox entry, authored as the user. Quote
+   the path and use forward slashes (Git Bash mangles backslash paths). `-3` degrades a
+   moved-on base to ordinary merge-conflict markers; on conflict fix the files, `git add`
+   them, `git am --continue` - or `git am --abort` to return to the pristine branch tip.
+   An editor that saved the patch with CRLF line endings is harmless - `git am` strips
+   the CRs by default.
+4. `git log --oneline <base>..HEAD` - the subject(s) must read `[OE-12345] - ...`.
+5. `git push -u origin fix/OE-12345`, raise the PR, then move the folder into
+   `~/pullrequests/pushed/` (back on the machine where the folder was authored).
 
 **`--keep-non-patch` is load-bearing.** Plain `git am` strips *every* leading `[...]` group
 from the subject, so `[PATCH] [OE-12345] - Fix ...` would land as `- Fix ...`;
