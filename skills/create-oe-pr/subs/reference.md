@@ -82,12 +82,13 @@ fix/OE-12345, for the user to replace with the real one - never bake a real key.
 See *Apply & push* below.)
 
     # in VSCode: find/replace OE-XXXXX -> OE-12345 in C:/Temp/pullrequests/<folder>/changes.patch
-    cd <checkout>
-    git checkout <base>
+    # Go to repo and "git checkout master && git reset --hard && git clean -f && git pull"
+    # Below example is for develop as a base branch
+    git checkout develop
     git checkout -b fix/OE-12345
     git am -3 --keep-non-patch "C:/Temp/pullrequests/<folder>/changes.patch"
     git log --oneline <base>..HEAD
-    git push -u origin fix/OE-12345
+    git push -u origin HEAD
 
 ## PR body
 
