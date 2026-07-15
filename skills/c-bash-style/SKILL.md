@@ -36,4 +36,5 @@ Banners are exactly 50 chars wide, 3 lines. Setup sections left-aligned with `(S
 - `sudo` inside the script; sudo writes via `tee` + heredoc.
 - Pick mariadb/mysql at call time; backup filenames get `${environment}` + `$(date '+%Y%m%d_%H-%M')`.
 - Wrap actions in `echo "Doing X..."` / `echo -e "[Done]\n"`; gate echoes on a `silent` flag rather than redirecting.
+- Quiet noisy installs/builds per command, not per script: add the tool's quiet flags (`apt-get update -qq`, `DEBIAN_FRONTEND=noninteractive apt-get install -qqy`, `./configure --quiet`, `make -s`) so errors still reach stderr; never blanket-redirect to `/dev/null`.
 - Comments above the line; trailing only for flag defaults.

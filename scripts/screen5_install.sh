@@ -91,8 +91,8 @@ cleanLegacyInstall() {
 }
 
 installBuildDeps() {
-    sudo apt-get update
-    sudo apt-get install -y ${build_deps}
+    sudo apt-get update -qq
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -qqy -o=Dpkg::Use-Pty=0 ${build_deps}
 }
 
 buildAndInstallScreen() {
@@ -107,9 +107,9 @@ buildAndInstallScreen() {
 
     tar xzf "${tarball}"
     cd "screen-${version}"
-    ./configure --prefix="${prefix}"
-    make -j"$(nproc)"
-    sudo make install
+    ./configure --quiet --prefix="${prefix}"
+    make -s -j"$(nproc)"
+    sudo make -s install
 
     cd /
     rm -rf "${build_dir}"
