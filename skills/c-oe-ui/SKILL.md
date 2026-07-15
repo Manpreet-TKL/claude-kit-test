@@ -31,7 +31,7 @@ line, so grep with `-o`:
 grep -o '\.flex-layout[^{]*{[^}]*}' protected/assets/nxblu/dist/css/style_openeyes.css
 ```
 
-Theming is CSS variables (`--bg-title`, `--txt-light`, `--bg-main`, ...) keyed off a
+Theming is CSS variables (`--bg-title`, `--txt-light`, `--bg-event`, ...) keyed off a
 `theme-<dark|light>` class on `<html>`. The flow is two-stage: `main.php` emits the
 server-side preference as `data-theme` on the root element (from
 `SettingMetadata::model()->getSetting('display_theme')`), then client JS reads it
@@ -212,6 +212,36 @@ How a module's own CSS supports light + dark without touching core:
   `'auto'`, usually no installation row). To test as a user, flip **their
   `setting_user` row** - inserting an installation row does nothing for a user
   who has one. `setting_metadata` has no `value` column; only the other two do.
+
+## Core theme variables (verified July 2026, NodAudit)
+
+The alternative to a scoped palette: style the module with **core's own theme
+variables** and every surface flips with the theme by itself - no
+`html.theme-dark` block needed except for bespoke accent colours.
+
+- **The trap: not every plausible variable exists.** `--bg-main`, `--bg-alt` and
+  `--border-colour` are NOT defined in the compiled theme, so
+  `var(--bg-main, #fff)` silently takes the light fallback in BOTH themes - the
+  classic "panel stays light in dark mode" bug. Prove a variable exists before
+  using it: `grep -oE '(--bg|--gui|--txt|--input)[a-z-]*:[^;]+' protected/assets/nxblu/dist/css/style_openeyes.css | sort -u`
+  (the `.theme-dark{...}` / `.theme-light{...}` blocks each define the full set).
+- **Verified working set** (dark/light): surfaces `--bg-event`
+  (#26292b/#fcfbfb - the panel/card surface), `--bg-popup` (#181c21/#e2e1e1),
+  `--bg-data` (#17191c/#e7e6e6), `--bg-html`, `--bg-title`, `--bg-event-list`;
+  borders `--gui-line` (#303436/#c1bebe), `--gui-line-hard`, `--gui-line-soft`;
+  text `--txt-base`, `--txt-light`, `--txt-highlight`; inputs `--input-base`,
+  `--input-text`; hints `--color-hint-green|red|orange`; buttons `--btn-green` etc.
+- **Native date inputs**: besides `background: var(--input-base); color:
+  var(--input-text)`, set `color-scheme: var(--input-scheme)` (resolves to
+  `dark`/`light`) - it themes the browser-native calendar icon and picker popup,
+  which CSS colours cannot reach.
+- **Bespoke tints still need a dark block**: pastel status chips
+  (`#d4edda`-style bg + dark ink) have no core variable; give each an explicit
+  `.theme-dark .my-chip { background: <dark tint>; color: <light ink>; }`
+  override. Everything on core vars stays out of that block.
+
+Choose per module: core vars when the module should look like core (NodAudit);
+a scoped palette when it has its own visual identity (OeDocumentation, above).
 
 ## House palettes
 

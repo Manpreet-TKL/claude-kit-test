@@ -43,16 +43,53 @@ So a Yii-side async job is queued by writing a Laravel-compatible row that a
 Laravel `queue:work` worker / Horizon then executes. Same job class, two
 front-ends, one `jobs` table (default connection `database`; Horizon uses `redis`).
 
-## Migrations - three locations, two runners
+## Migrations - "oemig" (how OE migrations actually run)
 
-- **Core Yii:** `protected/migrations/` (~738), base `CDbMigration`; OE ones extend
-  `OEMigration` (adds CSV seed-data loading from `migrations/data/<Class>/`). Run
-  `./yiic migrate` -> `OEMigrateCommand`, table `tbl_migration`.
-- **Module Yii:** `modules/<Name>/migrations/`. Run `./yiic migratemodules` ->
-  `MigrateModulesCommand`. (The `deploy` module is a special case: table
-  `tbl_migration_deploy`.)
+Three layers, top to bottom; `oe-migrate.sh` is the single funnel everything
+routes through.
+
+- **`protected/scripts/oe-migrate.sh`** - the canonical entry (deploys, CI,
+  humans). Runs `yiic migrate --all --interactive=0`, then `oe-laravel/artisan
+  migrate --force`, tees both into `protected/runtime/migrate.log`, then greps
+  that log for error/exception/warning patterns and prompts Continue/Exit on a
+  hit (exits 1 when `DEBIAN_FRONTEND=noninteractive`). Flags: `-q|--quiet` (log
+  only), `--connectionID <id>`, `--ignore-warnings`. Callers: `oe-fix.sh`
+  (unless `--no-migrate` / `OE_NO_DB=true`) and, at web-container startup,
+  `/init_scripts/92-run-migrations-if-requested.sh` - only when
+  `OE_FORCE_MIGRATE=TRUE`, followed by `yiic eyedrawconfigload`; not for
+  multi-node prod (run on oe-manager instead).
+- **`OEMigrateCommand`** (`protected/commands/`) - what `yiic migrate` is:
+  `config/core/console.php`'s commandMap remaps `migrate` to it (extends stock
+  Yii `MigrateCommand`) with `migrationPath=application.migrations`,
+  `migrationTable=tbl_migration`, `connectionID=db`. Two OE additions:
+  - `--all` - ignores `migrationPath`; collects new migrations from core
+    `protected/migrations/` (~738) plus every **active** module's `migrations/`
+    dir (keys of `Yii::app()->modules` - a disabled module's migrations are
+    invisible), sorts the union by filename timestamp and runs it as one
+    interleaved chronological pass, swapping `migrationPath` per migration.
+    Cross-module FK deps are why per-module ordering isn't enough.
+  - `--testdata` - calls `setTestData(true)` on `OEMigration` instances
+    (`OEMigration` extends `CDbMigration` with CSV seed loading from
+    `migrations/data/<Class>/` and helpers like `insertOEEventType()`).
+
+  One shared history table `tbl_migration`; version = bare class name, no module
+  prefix, so a row doesn't tell you which module it came from. `yiic migrate
+  create <name>` emits an `OEMigration` subclass whose `safeDown()` returns
+  false - OE migrations are up-only by default.
 - **Laravel:** `oe-laravel/database/migrations/` - only the `jobs`/`failed_jobs`
-  table migrations. Run `php oe-laravel/artisan migrate`.
+  tables; the wrapper runs them via `artisan migrate --force`.
+
+Gotchas and adjacent commands:
+
+- `--migrationPath` takes a Yii path ALIAS (`application.modules.X.migrations`);
+  a filesystem path fails with "The migration directory does not exist".
+- `yiic oemigrate` = the same class via the commands-dir scan (no commandMap
+  config; the class defaults happen to match). `yiic migratemodules`
+  (`MigrateModulesCommand`) is the older per-module loop - shells `yiic
+  oemigrate --migrationPath=application.modules.<X>.migrations` per active
+  module, aborting on first failure; `migrate --all` is what the wrapper uses.
+- `deploy` module special case: run from `protected/modules/deploy/yiic`, the
+  commandMap swaps to stock `MigrateCommand` with table `tbl_migration_deploy`.
 
 ## Factories & seeders
 

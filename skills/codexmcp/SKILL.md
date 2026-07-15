@@ -107,8 +107,14 @@ form.)
 
 Set by `install.sh -x`, recorded non-secretly in `~/claude-kit/generated/.codex.env`:
 
-- `CODEX_MODEL` - the model id agents run (default the flagship, e.g. `gpt-5.5`).
-- `CODEX_REASONING_EFFORT` - default `high` (`xhigh` on models that support it).
+- `CODEX_MODEL` - the model id agents run (default the flagship, e.g. `gpt-5.6-sol`).
+  GPT-5.6 family: `gpt-5.6-sol` (flagship - complex, ambiguous, or high-value work),
+  `gpt-5.6-terra` (everyday workhorse), `gpt-5.6-luna` (fast/cheap repeatable tasks).
+  A registration pinning bare `gpt-5.6` predates the family split - the documented
+  flagship id is `gpt-5.6-sol`; if agent calls reject the bare id, set
+  `CODEX_MODEL=gpt-5.6-sol` and re-run `./install.sh -x -y`.
+- `CODEX_REASONING_EFFORT` - default `high` (`xhigh` on models that support it; the
+  GPT-5.6 family accepts low/medium/high/xhigh/max/ultra).
 - `CODEX_SANDBOX` - default `workspace-write` (network off); **host mode only** - in
   docker mode the container is the sandbox and this knob is ignored at launch.
 

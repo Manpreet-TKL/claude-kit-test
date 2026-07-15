@@ -16,9 +16,10 @@ Goal-keyed jump table. Class names move sometimes - `grep` to confirm before quo
 | Letter rendering | `OphCoCorrespondence/components/`, `DocumentRenderServicePuppeteer`, `EventStringTokeniser` |
 | Worklist generation | `GenerateWorklistsCommand`, `WorklistPatientResolver`, `Worklist*` models |
 | Pathway logic | `PathwayStep` model, `PathstepObserver`, `OEEventManager` config |
+| Pathway / clinic analytics | `pathway`, `pathway_step`, `worklist_patient` tables (millions-scale on real deployments); status constants in `protected/models/Pathway.php`; per-step `start_time`/`end_time` on `pathway_step` |
 | Diagnoses recomputation | `Diagnoses` module + `OEShared` system-event listeners |
 | Eyedraw doodles & policies | `eyedraw` module + `OE_ED_CONFIG.xml` + `EyedrawReportTextPolicy*` |
-| Imaging / DICOM | `DicomFiles`, `EventImage*`, `event_images/` directory |
+| Imaging / DICOM | `DicomFiles`, `EventImage*`, `event_images/` directory. Imaging DATA lives in exam elements (`et_ophciexamination_oct*`) + `OphCoDocument` sub-types - the standalone imaging event types are near-empty |
 | Outbound integrations | `Mirth/`, `PASAPI/`, `Webhooks/`, `EventExport/`, `correspondence_export_*` params |
 | Inbound REST (new) | `oe-laravel/routes/api.php` (`/xapi/*`) and `oe-laravel/app/Http/Controllers/Xapi/` |
 | Inbound REST (legacy) | `protected/modules/Api/` and `protected/modules/PASAPI/` |
