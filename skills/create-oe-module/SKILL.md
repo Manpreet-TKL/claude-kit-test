@@ -1,7 +1,7 @@
 ---
 name: create-oe-module
 description: Scaffold + register a new OpenEyes module
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # Creating an OpenEyes module

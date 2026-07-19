@@ -1,7 +1,7 @@
 ---
 name: c-oe-deploy
 description: oe-deploy template - compose gen + provisioning
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # oe-deploy

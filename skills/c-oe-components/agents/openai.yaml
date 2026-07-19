@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-oe-components"
+  short_description: "OpenEyes runtime containers and what runs inside them"

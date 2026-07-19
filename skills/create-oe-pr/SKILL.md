@@ -1,7 +1,7 @@
 ---
 name: create-oe-pr
 description: Package an OE change as a review-ready PR folder
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # Create-OE-PR playbook

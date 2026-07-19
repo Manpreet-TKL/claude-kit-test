@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-mcchannels"
+  short_description: "The three OE BridgeLink integration channels"

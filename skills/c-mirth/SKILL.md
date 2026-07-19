@@ -1,7 +1,7 @@
 ---
 name: c-mirth
 description: BridgeLink/Mirth (mc container) ops, REST API, secrets
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # Mirth / BridgeLink (mc)

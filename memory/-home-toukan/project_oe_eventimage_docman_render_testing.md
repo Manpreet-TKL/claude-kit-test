@@ -23,4 +23,4 @@ CSRF is cookie-backed so the hidden token field may be empty), then
 before/after. `event_image` is a regenerable derived cache, not clinical data. Document-leak
 paths (OphCoDocument imagick/ghostscript/pdf-preview) need an OphCoDocument event **with a file
 attachment** - the seeded sample DB has none. See `~/oe-tmpfix-notes.md`.
-Related: [[reference_oe_puppeteer_temporarydirectory_mkdtemp]], [[project_monkey_remote_chrome]].
+Related: [[reference_oe_puppeteer_temporarydirectory_mkdtemp]], [[monkey-environment]].

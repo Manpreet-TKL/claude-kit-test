@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-oe-docs"
+  short_description: "Answer \"how does X work / where do I configure X\" questions about the OpenEyes application by resolving a route, URI, or topic to its OeDocumentation page and reading that page. Use whenever a question is about how an OpenEyes screen, admin setting, clinical event, element, or workflow behaves - before reading app source or guessing."

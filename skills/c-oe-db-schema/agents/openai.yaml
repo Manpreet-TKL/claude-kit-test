@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-oe-db-schema"
+  short_description: "OpenEyes DB - connect, schema, domain model"

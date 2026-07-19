@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-mirth"
+  short_description: "BridgeLink/Mirth (mc container) ops, REST API, secrets"

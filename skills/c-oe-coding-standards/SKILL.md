@@ -1,7 +1,7 @@
 ---
 name: c-oe-coding-standards
 description: OpenEyes coding-standards index
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # OpenEyes coding standards

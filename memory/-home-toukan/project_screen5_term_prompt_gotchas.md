@@ -14,4 +14,4 @@ Found 2026-07-12 while debugging "white prompt + _ _ line" inside the source-bui
 3. Test-methodology trap: `screen -dm` without a controlling pty gives windows `TERM=unknown` - a red herring. Attach through `script -qec "screen ..." out.raw` for realistic captures; screen also re-encodes SGR, so grep for patterns like `\x1b\[[0-9;]*m`, not exact bytes.
 4. Claude Code inside screen renders fine; screen silently drops sync-output mode 2026 (claude issue #19533, closed not-planned) but nothing user-visible came of it. Claude picks truecolor from the leaked COLORTERM, ignoring terminfo.
 
-Related: [[oe-deploy-template-rename]] (env repos deploy the .bashrc template).
+Related: [[oe-deploy-conventions]] (env repos deploy the .bashrc template; host-setup.sh overwrites the alias/screenrc blocks).

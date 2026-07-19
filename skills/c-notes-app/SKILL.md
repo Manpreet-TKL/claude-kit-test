@@ -1,7 +1,7 @@
 ---
 name: c-notes-app
 description: opennotes repo conventions
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # opennotes (formerly notes-test)

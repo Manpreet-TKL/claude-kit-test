@@ -1,7 +1,7 @@
 ---
 name: c-oe-db-schema
 description: OpenEyes DB - connect, schema, domain model
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # OpenEyes database

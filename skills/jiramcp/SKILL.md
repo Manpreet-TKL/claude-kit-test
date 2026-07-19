@@ -1,7 +1,7 @@
 ---
 name: jiramcp
 description: Jira + Confluence MCP context + gate enable
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # Jira + Confluence MCP - context + gate enable

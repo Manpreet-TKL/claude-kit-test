@@ -1,7 +1,7 @@
 ---
 name: c-mcchannels
 description: The three OE BridgeLink integration channels
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # OE BridgeLink channels (mc_channels)

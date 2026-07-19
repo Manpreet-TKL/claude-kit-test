@@ -1,7 +1,7 @@
 ---
 name: devopstickets
 description: JIRA DevOps triage menu (TKLS service desk)
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # DevOps JIRA triage (TKLS)

@@ -26,4 +26,4 @@ mkdirSync(temporaryDirectory, { recursive: true });  // idempotent
 ```
 This bit the reconstructed `oe-pr-tmp-puppeteer-chromium-leak` PR; static checks (`php -l`,
 `git apply --check`) all pass because it's a Node runtime failure. See `~/oe-tmpfix-notes.md`.
-Related: [[project_monkey_remote_chrome]].
+Related: [[monkey-environment]].

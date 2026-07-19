@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-dblogin"
+  short_description: "How to log in to an OE database"

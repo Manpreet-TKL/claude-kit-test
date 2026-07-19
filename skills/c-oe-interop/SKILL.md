@@ -1,7 +1,7 @@
 ---
 name: c-oe-interop
 description: OpenEyes third-party integration capabilities
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # OpenEyes interoperability

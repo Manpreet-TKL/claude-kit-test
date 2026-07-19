@@ -1,7 +1,7 @@
 ---
 name: c-dblogin
 description: How to log in to an OE database
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # OE DB login

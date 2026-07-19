@@ -8,6 +8,9 @@
 # All machine-local generated config / secrets live in one folder, so it can be
 # backed up and restored across a `git reset --hard` + `git clean -fdx`.
 /generated/
+# Handoff documents are transient conversation snapshots and may carry residual
+# sensitive context - keep the folder, ignore its contents.
+/handoff/*.md
 # Legacy locations (pre-consolidation) - keep ignored in case an old install lingers.
 settings/.atlassian.env
 settings/.github.env

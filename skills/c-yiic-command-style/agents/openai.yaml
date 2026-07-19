@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-yiic-command-style"
+  short_description: "House style for OpenEyes yiic console commands"

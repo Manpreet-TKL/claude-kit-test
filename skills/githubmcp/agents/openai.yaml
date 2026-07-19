@@ -1,0 +1,3 @@
+interface:
+  display_name: "githubmcp"
+  short_description: "GitHub MCP context + gate enable (read-only)"

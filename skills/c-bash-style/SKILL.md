@@ -1,7 +1,7 @@
 ---
 name: c-bash-style
 description: Manpreet's bash script house style
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # Bash script style

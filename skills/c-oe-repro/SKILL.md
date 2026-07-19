@@ -1,7 +1,7 @@
 ---
 name: c-oe-repro
 description: OpenEyes bug repro - a frontend click-path anyone can follow
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # OpenEyes steps to reproduce

@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-oe-helm"
+  short_description: "OpenEyes Helm umbrella chart - deploy/debug/extend"

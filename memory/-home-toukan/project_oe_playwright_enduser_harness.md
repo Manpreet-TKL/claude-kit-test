@@ -44,6 +44,5 @@ to the regression suite's tsconfig alias + pinned Playwright version.
 capabilities, docker-compose sidecar shape, single-volume artifact layout, documentation
 deliverables); the plan-mode copy is `/home/toukan/.claude/plans/can-you-make-a-valiant-truffle.md`.
 **No default environment** - wait for the user to hand over BOTH the chosen stack AND the
-target environment before building. Related: [[feedback_oe_sample_db_admin_creds]]
-(sample instances seed `admin`/`admin`), [[project_monkey_remote_chrome]],
-[[project_oe_monkey_traefik_http_only]].
+target environment before building. Related: [[oe-deploy-conventions]]
+(sample instances seed `admin`/`admin`), [[monkey-environment]].

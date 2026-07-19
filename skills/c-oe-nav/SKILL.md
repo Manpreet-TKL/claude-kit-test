@@ -1,7 +1,7 @@
 ---
 name: c-oe-nav
 description: OpenEyes frontend click-paths - UI atlas + in-container probe
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # OpenEyes frontend navigation

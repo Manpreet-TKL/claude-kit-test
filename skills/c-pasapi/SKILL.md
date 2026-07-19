@@ -1,7 +1,7 @@
 ---
 name: c-pasapi
 description: OE PASAPI V2 + the OpenMRS->BridgeLink->OE PAS flow
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # OpenEyes PASAPI + PAS flow

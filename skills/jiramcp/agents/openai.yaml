@@ -1,0 +1,3 @@
+interface:
+  display_name: "jiramcp"
+  short_description: "Jira + Confluence MCP context + gate enable"

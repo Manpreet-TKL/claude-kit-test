@@ -1,7 +1,7 @@
 ---
 name: c-oeimagebuilder
 description: OEImageBuilder repo - builds the OE container images
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # OEImageBuilder

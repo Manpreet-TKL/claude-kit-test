@@ -1,7 +1,7 @@
 ---
 name: c-oe-iolmaster-import
 description: IOLMasterImport - DICOM biometry importer
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # oe-iolmaster-import

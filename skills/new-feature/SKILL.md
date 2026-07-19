@@ -1,7 +1,7 @@
 ---
 name: new-feature
 description: Plan a green-field feature (plan mode + verify)
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # New-feature playbook

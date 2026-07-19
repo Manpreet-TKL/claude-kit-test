@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-oe-nav"
+  short_description: "OpenEyes frontend click-paths - UI atlas + in-container probe"

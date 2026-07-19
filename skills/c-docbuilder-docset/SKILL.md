@@ -1,7 +1,7 @@
 ---
 name: c-docbuilder-docset
 description: OeDocBuilder docset contract (read before authoring)
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # OeDocBuilder docset scaffold

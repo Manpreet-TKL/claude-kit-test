@@ -1,7 +1,7 @@
 ---
 name: githubmcp
 description: GitHub MCP context + gate enable (read-only)
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # GitHub MCP (read-only) - context + gate enable

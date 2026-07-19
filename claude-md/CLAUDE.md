@@ -45,3 +45,20 @@ Bias toward caution over speed; use judgment on trivial tasks.
   writeup is genuinely warranted, write it as a `.md` under `/home/toukan/`, not in
   the working tree.
 - Comments: default none. Only write a comment for a non-obvious *why*.
+- In documentation and PRs never mention Claude, and never name test
+  environments (e.g. animal-named hosts) - write as though for any deployment,
+  unless told to be environment-specific.
+
+## Session context
+
+- You are running in Claude Code; `~/.claude/` is generated from `~/claude-kit`
+  (config, skills, and memory are symlinks back into the kit), and the kit is
+  freely readable.
+- On the first message of a session, assess which `c-*` context skills fit the
+  work and load them before starting.
+- `~/claude-kit/knowledge/` holds learnings from previous projects - read a
+  file when its topic comes up.
+- `~/claude-kit/handoff/` holds handoff documents - never read from it unless
+  explicitly asked.
+- When you learn something durable about a repo or technology in regular use,
+  offer to fold it into the matching context skill; update only on approval.

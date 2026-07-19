@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-oe-ui"
+  short_description: "Building or styling OpenEyes frontend pages"

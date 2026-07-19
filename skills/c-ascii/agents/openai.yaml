@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-ascii"
+  short_description: "Non-ASCII pitfalls - load when non-ASCII appears in your output or edits"

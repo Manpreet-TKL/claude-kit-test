@@ -1,0 +1,3 @@
+interface:
+  display_name: "codex-swarm"
+  short_description: "Split a task or plan into 40+ small Codex subagents (luna or terra)."

@@ -138,14 +138,20 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       builds a local claude-kit-codex image (docker/codex/) and
                       runs the server containerised - nothing is installed on
                       the host; a host `codex` binary is used only if Docker is
-                      absent. Sign in once via `... claude-kit-codex login` (the
-                      exact command is printed; auth lands in ~/.codex). Pins
-                      the flagship model + high reasoning effort and a
-                      workspace-write, no-network sandbox; tweakable in
-                      generated/.codex.env. With -y, reads that file silently.
+                      absent. Sign in once via the printed login command
+                      (`... claude-kit-codex login --device-auth`; auth lands
+                      in ~/.codex). Pins the flagship model (gpt-5.6-sol) at
+                      xhigh reasoning effort and a workspace-write, no-network
+                      sandbox; tweakable in generated/.codex.env. With -y,
+                      reads that file silently. Also wires codex compat:
+                      ~/.codex/AGENTS.md and ~/.codex/skills/* link back to
+                      this kit, so Codex agents share the same global
+                      instructions and skills as Claude.
   -X, --without-codex
                       Deregister the codex MCP server (claude mcp remove, user
-                      scope). generated/.codex.env and ~/.codex are left alone.
+                      scope) and remove the kit's codex-compat links
+                      (~/.codex/AGENTS.md + skill links). generated/.codex.env
+                      and your ~/.codex login are left alone.
   -s, --skills-auto   on|off (default off). Set the model-invocation gate on
                       every kit skill in place (the SKILL.md files are live
                       symlink targets):
@@ -201,6 +207,9 @@ MCP startup gate:
   the server in /mcp (its tools bind on the late connect). The flag is
   consumed on start, so the next session begins gated again - touch it just
   before launching Claude Code to have a server up from the start.
+  install.sh pre-arms the flag for every server it (re-)registers, so the
+  session right after a -j/-c/-a/-g/-x run connects without a manual touch;
+  that first start consumes the flag as usual.
 
 Env overrides:
   DEFAULT_MODE         (default auto)    session start mode used when -m is omitted (the mode
@@ -350,6 +359,10 @@ atlassian_secrets="${generated_dir}/.atlassian.env"
 github_secrets="${generated_dir}/.github.env"
 codex_secrets="${generated_dir}/.codex.env"
 codex_docker_dir="${kit_root}/docker/codex"
+codex_home="${HOME}/.codex"
+codex_agents_md="${codex_home}/AGENTS.md"
+codex_skills_dir="${codex_home}/skills"
+codex_skills_manifest="${codex_home}/.claude-kit-skills"   # names of skills linked for codex, for prune-on-removal
 skills_src_dir="${kit_root}/skills"
 memory_src_dir="${kit_root}/memory"
 claude_md_src="${kit_root}/claude-md/CLAUDE.md"
@@ -377,7 +390,7 @@ logoutMcp() {
         if [ -f "${HOME}/.codex/auth.json" ]; then
             rm -f "${HOME}/.codex/auth.json"
             echo "codex: logged out (~/.codex/auth.json removed); to revoke server-side, remove Codex from your ChatGPT account's authorized apps"
-            echo "codex: sign back in with: docker run --rm -it --network host --user \"\$(id -u):\$(id -g)\" -v \"\$HOME/.codex:/home/codex/.codex\" claude-kit-codex login"
+            echo "codex: sign back in with: docker run --rm -it --network host --user \"\$(id -u):\$(id -g)\" -v \"\$HOME/.codex:/home/codex/.codex\" claude-kit-codex login --device-auth"
         else
             echo "codex: no stored login (~/.codex/auth.json absent)"
         fi
@@ -878,6 +891,7 @@ applyAtlassian() {
         else
             echo "  atlassian MCP server not registered at user scope - nothing to remove"
         fi
+        rm -f "${generated_dir}/mcp-on/atlassian"
         echo "  credentials file ${atlassian_secrets} left in place - delete manually to clear tokens"
         return
     fi
@@ -1026,10 +1040,11 @@ applyAtlassian() {
         '{command: "sh", args: ["-c", $cmd], env: $env}')"
     claude mcp remove atlassian -s user >/dev/null 2>&1 || true
     claude mcp add-json atlassian "${server_json}" -s user >/dev/null
+    touch "${generated_dir}/mcp-on/atlassian"
     echo "  registered atlassian MCP (docker/${image##*/}) at user scope (~/.claude.json)"
     [ "${JIRA_MODE}" = "on" ]       && echo "  Jira projects filter: ${jira_filter}"
     [ "${CONFLUENCE_MODE}" = "on" ] && echo "  Confluence spaces filter: ${conf_filter:-none}"
-    echo "  gated: no container at session start - touch ${generated_dir}/mcp-on/atlassian then /mcp -> atlassian -> reconnect (flag is one-shot)"
+    echo "  gated + pre-armed: connects on your NEXT session start (or /mcp -> atlassian -> reconnect now); later sessions need touch ${generated_dir}/mcp-on/atlassian (flag is one-shot)"
     echo "  restart Claude Code to pick up the new MCP server"
 }
 
@@ -1050,6 +1065,7 @@ applyGitHub() {
         else
             echo "  github MCP server not registered at user scope - nothing to remove"
         fi
+        rm -f "${generated_dir}/mcp-on/github"
         echo "  credentials file ${github_secrets} left in place - delete manually to clear the token"
         return
     fi
@@ -1136,17 +1152,19 @@ applyGitHub() {
         '{command: "sh", args: ["-c", $cmd], env: $env}')"
     claude mcp remove github -s user >/dev/null 2>&1 || true
     claude mcp add-json github "${server_json}" -s user >/dev/null
+    touch "${generated_dir}/mcp-on/github"
     echo "  registered github MCP (docker/${image##*/}, read-only) at user scope (~/.claude.json)"
     echo "  GitHub toolsets: ${gh_toolsets:-server default}"
-    echo "  gated: no container at session start - touch ${generated_dir}/mcp-on/github then /mcp -> github -> reconnect (flag is one-shot)"
+    echo "  gated + pre-armed: connects on your NEXT session start (or /mcp -> github -> reconnect now); later sessions need touch ${generated_dir}/mcp-on/github (flag is one-shot)"
     echo "  restart Claude Code to pick up the new MCP server"
 }
 
 # Configure or remove the codex MCP server via the claude CLI at user scope
 # (registered in ~/.claude.json, like atlassian/github). Docker-first: OpenAI ships
 # no official CLI image, so this builds docker/codex/Dockerfile locally as
-# claude-kit-codex and runs `codex mcp-server` inside it (~/.codex and the project
-# dir bind-mounted, container as the invoking uid so written files stay yours).
+# claude-kit-codex and runs `codex mcp-server` inside it (~/.codex, the project dir
+# and the kit (read-only) bind-mounted, container as the invoking uid so written
+# files stay yours).
 # Nothing is ever installed - or suggested for install - on the host; a host
 # `codex` binary is used only as the fallback when Docker itself is absent. The
 # server exposes the codex / codex-reply tools so Claude can spawn one or more
@@ -1165,6 +1183,27 @@ applyCodex() {
             echo "  removed codex MCP server (user scope)"
         else
             echo "  codex MCP server not registered at user scope - nothing to remove"
+        fi
+        rm -f "${generated_dir}/mcp-on/codex"
+        # Drop the codex-compat links this kit created - only ever its own: the
+        # AGENTS.md link is removed only when it points at the kit, and skill
+        # links only via the manifest (the syncCodexSkills safety floors).
+        if [ -L "${codex_agents_md}" ] && [ "$(readlink "${codex_agents_md}")" = "${claude_md_src}" ]; then
+            rm -f "${codex_agents_md}"
+            echo "  removed ${codex_agents_md} (kit link)"
+        fi
+        if [ -f "${codex_skills_manifest}" ]; then
+            local prev mdst removed=0
+            while IFS= read -r prev; do
+                [ -n "${prev}" ] || continue
+                mdst="${codex_skills_dir}/${prev}"
+                if [ -L "${mdst}" ]; then
+                    rm -f "${mdst}"
+                    removed=$((removed+1))
+                fi
+            done < "${codex_skills_manifest}"
+            rm -f "${codex_skills_manifest}"
+            echo "  removed ${removed} codex skill link(s) + manifest"
         fi
         echo "  ${codex_secrets}, ~/.codex (your ChatGPT login) and the claude-kit-codex docker image left in place"
         return
@@ -1215,13 +1254,14 @@ applyCodex() {
     # wait for the credentials to land before continuing (Enter skips the wait).
     # Checked via the auth file (works for both runtimes); host mode also gets to
     # ask the binary itself.
-    local login_cmd="codex login"
-    [ "${cx_runtime}" = "docker" ] && login_cmd="docker run --rm -it --network host --user \"\$(id -u):\$(id -g)\" -v \"\$HOME/.codex:/home/codex/.codex\" ${image} login"
+    local login_cmd="codex login --device-auth"
+    [ "${cx_runtime}" = "docker" ] && login_cmd="docker run --rm -it --network host --user \"\$(id -u):\$(id -g)\" -v \"\$HOME/.codex:/home/codex/.codex\" ${image} login --device-auth"
     if [ -f "${HOME}/.codex/auth.json" ] || { [ "${cx_runtime}" = "host" ] && codex login status >/dev/null 2>&1; }; then
         echo "  codex: ChatGPT sign-in detected"
     else
         echo "  codex: not signed in - run this in another terminal:" >&2
         echo "    ${login_cmd}" >&2
+        echo "  (device-code flow - enable 'Allow device code login' in ChatGPT security settings; drop --device-auth for the browser flow)" >&2
         if [ -t 0 ]; then
             echo -n "  waiting for ~/.codex/auth.json (Enter = skip and sign in later, Ctrl-C = abort) "
             while [ ! -f "${HOME}/.codex/auth.json" ]; do
@@ -1247,9 +1287,9 @@ applyCodex() {
         cx_effort="${CODEX_REASONING_EFFORT:-}"
         cx_sandbox="${CODEX_SANDBOX:-}"
     fi
-    # Defaults: flagship model, high reasoning, workspace-write (network off -> no push).
-    cx_model="${cx_model:-gpt-5.5}"
-    cx_effort="${cx_effort:-high}"
+    # Defaults: flagship model, xhigh reasoning, workspace-write (network off -> no push).
+    cx_model="${cx_model:-gpt-5.6-sol}"
+    cx_effort="${cx_effort:-xhigh}"
     cx_sandbox="${cx_sandbox:-workspace-write}"
 
     local noninteractive=0
@@ -1262,7 +1302,7 @@ applyCodex() {
         echo "  Codex agent defaults (non-secret; saved to generated/.codex.env)"
         read -r -p "  CODEX_MODEL [${cx_model}]: " _in
         cx_model="${_in:-${cx_model}}"
-        read -r -p "  CODEX_REASONING_EFFORT (minimal|low|medium|high|xhigh) [${cx_effort}]: " _in
+        read -r -p "  CODEX_REASONING_EFFORT (low|medium|high|xhigh|max|ultra) [${cx_effort}]: " _in
         cx_effort="${_in:-${cx_effort}}"
         if [ "${cx_runtime}" = "host" ]; then
             read -r -p "  CODEX_SANDBOX (read-only|workspace-write|danger-full-access) [${cx_sandbox}]: " _in
@@ -1270,8 +1310,8 @@ applyCodex() {
         fi
     fi
 
-    # In docker mode the CONTAINER is the sandbox: only the project dir and ~/.codex
-    # are mounted (no git creds), the rootfs dies with --rm. codex's own bwrap
+    # In docker mode the CONTAINER is the sandbox: only the project dir, ~/.codex and
+    # the kit (read-only) are mounted (no git creds), the rootfs dies with --rm. codex's own bwrap
     # sandbox cannot start inside Docker (user-namespace/loopback EPERM even
     # privileged), so every inner mode except danger-full-access would break agent
     # runs - pin it at launch. CODEX_SANDBOX is still saved for the host fallback.
@@ -1292,7 +1332,7 @@ applyCodex() {
 
     # Build the launch args: `codex mcp-server` plus `-c key=value` config overrides
     # that become the default for every spawned agent. TOML strings are quoted so the
-    # parser treats e.g. gpt-5.5 as a string, not a malformed number. approval_policy
+    # parser treats e.g. gpt-5.6-sol as a string, not a malformed number. approval_policy
     # =never keeps agents non-interactive; for host workspace-write we also pin network
     # off so an agent can never `git push` (the API analogue of the never-push floor);
     # in docker mode push dies instead on the credential-free container.
@@ -1319,11 +1359,18 @@ applyCodex() {
         # "--name + rm -f" reuse as github/atlassian: one codex MCP container,
         # newest enabled start wins. $HOME/$PWD/$(id ...) are escaped so they expand
         # when Claude Code launches the server - the container then runs as the
-        # invoking user with only ~/.codex (auth, into the image HOME) and the
-        # project dir (same path, as workdir) mounted; codex's own args are
+        # invoking user with ~/.codex (auth + AGENTS.md/skills links, into the
+        # image HOME), the project dir (same path, as workdir) and the kit
+        # (read-only, same path, so the ~/.codex kit symlinks resolve in-container)
+        # mounted. The kit mount is skipped when the project dir IS the kit -
+        # docker rejects two mounts at one destination; $kitm expands unquoted at
+        # launch for exactly that optional-arg reason. codex's own args are
         # @sh-quoted so the TOML string quotes survive.
+        if [ "${kit_root}" != "${HOME}/claude-kit" ]; then
+            echo "  WARNING: kit at ${kit_root}, not ~/claude-kit - the baked kit mount assumes ~/claude-kit, so codex AGENTS.md/skill links may not resolve in-container" >&2
+        fi
         run_cmd="$(jq -rn --arg gate "${gate}" --argjson a "${args_json}" --arg img "${image}" --arg name "${cname}" \
-            '$gate + "docker rm -f \($name) >/dev/null 2>&1; mkdir -p \"$HOME/.codex\"; exec docker run -i --rm --name \($name) --user \"$(id -u):$(id -g)\" -v \"$HOME/.codex:/home/codex/.codex\" -v \"$PWD:$PWD\" -w \"$PWD\" \($img) " + ($a | map(@sh) | join(" "))')"
+            '$gate + "docker rm -f \($name) >/dev/null 2>&1; mkdir -p \"$HOME/.codex\"; kitm=\"\"; [ \"$PWD\" = \"$HOME/claude-kit\" ] || kitm=\"-v $HOME/claude-kit:$HOME/claude-kit:ro\"; exec docker run -i --rm --name \($name) --user \"$(id -u):$(id -g)\" -v \"$HOME/.codex:/home/codex/.codex\" -v \"$PWD:$PWD\" -w \"$PWD\" $kitm \($img) " + ($a | map(@sh) | join(" "))')"
     else
         # Host fallback: mcpGate prefix first, then reap any leftover codex MCP
         # server process before exec'ing our own - the process-level analogue of
@@ -1341,18 +1388,144 @@ applyCodex() {
     server_json="$(jq -n --arg cmd "${run_cmd}" '{command: "sh", args: ["-c", $cmd]}')"
     claude mcp remove codex -s user >/dev/null 2>&1 || true
     claude mcp add-json codex "${server_json}" -s user >/dev/null
+    touch "${generated_dir}/mcp-on/codex"
     if [ "${cx_runtime}" = "docker" ]; then
         echo "  registered codex MCP (docker/${image}, codex mcp-server) at user scope (~/.claude.json)"
     else
         echo "  registered codex MCP (host codex mcp-server) at user scope (~/.claude.json)"
     fi
     if [ "${cx_runtime}" = "docker" ]; then
-        echo "  model=${cx_model}  effort=${cx_effort}  sandbox=container (project dir + ~/.codex mounted, no creds)"
+        echo "  model=${cx_model}  effort=${cx_effort}  sandbox=container (project dir + ~/.codex + kit ro mounted, no creds)"
     else
         echo "  model=${cx_model}  effort=${cx_effort}  sandbox=${cx_sandbox}$([ "${cx_sandbox}" = "workspace-write" ] && echo ' (network off)')"
     fi
-    echo "  gated: no container at session start - touch ${generated_dir}/mcp-on/codex then /mcp -> codex -> reconnect (flag is one-shot)"
+    echo "  gated + pre-armed: connects on your NEXT session start (or /mcp -> codex -> reconnect now); later sessions need touch ${generated_dir}/mcp-on/codex (flag is one-shot)"
     echo "  restart Claude Code to pick up the new MCP server"
+
+    # Codex compat: the same global instructions + skills for codex agents.
+    echo "  wiring codex compat (AGENTS.md + skills)..."
+    writeCodexAgentsMd
+    syncCodexSkills
+}
+
+# Symlink ~/.codex/AGENTS.md -> the kit's claude-md/CLAUDE.md, so Codex agents
+# read the same global instructions as Claude (AGENTS.md is codex's CLAUDE.md
+# analogue, read from $CODEX_HOME at session start). writeClaudeMd idiom: a
+# correct link is left untouched, a real file is backed up once to *.bak.
+writeCodexAgentsMd() {
+    [ -f "${claude_md_src}" ] || { echo "  missing kit source: ${claude_md_src}" >&2; return 1; }
+    mkdir -p "${codex_home}"
+    if [ -L "${codex_agents_md}" ] && [ "$(readlink "${codex_agents_md}")" = "${claude_md_src}" ]; then
+        echo "  ~/.codex/AGENTS.md already linked - no change"
+        return 0
+    fi
+    if [ -e "${codex_agents_md}" ] && [ ! -L "${codex_agents_md}" ]; then
+        cp -p "${codex_agents_md}" "${codex_agents_md}.bak"
+        echo "  backed up -> ${codex_agents_md}.bak"
+    fi
+    ln -sfn "${claude_md_src}" "${codex_agents_md}"
+    echo "  linked    -> ${codex_agents_md} -> ${claude_md_src}"
+}
+
+# Mirror the kit's skills into ~/.codex/skills/<name> so Codex agents can invoke
+# them ($name). Structural clone of syncSkills: the same manifest + target prune
+# passes and the same safety floors (real dirs and foreign symlinks are never
+# touched). codex materialises its own bundled skills in ~/.codex/skills/.system -
+# a dotname the globs below never match. The registration's read-only kit mount
+# is what makes these links resolve inside the agent container.
+syncCodexSkills() {
+    [ -d "${skills_src_dir}" ] || { echo "  no skills/ dir in kit - skipped"; return 0; }
+    mkdir -p "${codex_skills_dir}"
+
+    # 1a. Manifest pass - remove links for kit skills that have since been deleted.
+    if [ -f "${codex_skills_manifest}" ]; then
+        local prev mdst
+        while IFS= read -r prev; do
+            [ -n "${prev}" ] || continue
+            [ -d "${skills_src_dir}/${prev}" ] && continue   # still in the kit -> keep (re-linked below)
+            mdst="${codex_skills_dir}/${prev}"
+            if [ -L "${mdst}" ]; then
+                rm -f "${mdst}"
+                echo "  unlink-> ${mdst} (removed from kit)"
+            fi
+        done < "${codex_skills_manifest}"
+    fi
+
+    # 1b. Target pass - drop any symlink that points into this kit's skills/.
+    local dst raw
+    for dst in "${codex_skills_dir}"/*; do
+        [ -L "${dst}" ] || continue
+        raw="$(readlink "${dst}")"
+        case "${raw}" in
+            "${skills_src_dir}"/*)
+                rm -f "${dst}"
+                echo "  unlink-> ${dst}"
+                ;;
+        esac
+    done
+
+    # 2. (Re)create a symlink per kit skill, rewriting the manifest to that set.
+    local src name
+    : > "${codex_skills_manifest}"
+    for src in "${skills_src_dir}"/*/; do
+        [ -d "${src}" ] || continue
+        name="$(basename "${src}")"
+        dst="${codex_skills_dir}/${name}"
+        if [ -L "${dst}" ] || [ -e "${dst}" ]; then
+            echo "  skip  -> ${dst} (exists and not kit-managed - leaving alone)"
+            continue
+        fi
+        ln -s "${src%/}" "${dst}"
+        printf '%s\n' "${name}" >> "${codex_skills_manifest}"
+    done
+    echo "  linked $(wc -l < "${codex_skills_manifest}") skill(s) into ${codex_skills_dir} (manifest: ${codex_skills_manifest})"
+}
+
+# Generate skills/<name>/agents/openai.yaml in the KIT from each SKILL.md's
+# frontmatter, so Codex gets a display name + description per skill and - for
+# skills marked disable-model-invocation: true - allow_implicit_invocation:
+# false, its Codex analogue. Runs every install AFTER applySkillsInvocation so
+# the yaml reflects this run's final frontmatter state; a file is rewritten only
+# when its content changes. No prune pass - the yaml lives inside the skill dir
+# and dies with it.
+writeOpenAiSkillMeta() {
+    [ -d "${skills_src_dir}" ] || { echo "  no skills/ dir in kit - skipped"; return 0; }
+    local f dir name desc tmp written=0
+    for f in "${skills_src_dir}"/*/SKILL.md; do
+        [ -f "${f}" ] || continue
+        dir="$(dirname "${f}")"
+        name="$(basename "${dir}")"
+        # description: from the frontmatter only (line 2 up to the closing ---).
+        desc="$(sed -n "2,/^---\$/p" "${f}" | sed -n 's/^description: //p' | head -1)"
+        [ -n "${desc}" ] || desc="${name}"
+        # YAML double-quoted scalar: escape backslashes first, then quotes.
+        desc="${desc//\\/\\\\}"
+        desc="${desc//\"/\\\"}"
+        tmp="$(mktemp)"
+        {
+            echo "interface:"
+            echo "  display_name: \"${name}\""
+            echo "  short_description: \"${desc}\""
+            if sed -n "2,/^---\$/p" "${f}" | grep -q '^disable-model-invocation: true$'; then
+                echo "policy:"
+                echo "  allow_implicit_invocation: false"
+            fi
+        } > "${tmp}"
+        if [ -f "${dir}/agents/openai.yaml" ] && cmp -s "${tmp}" "${dir}/agents/openai.yaml"; then
+            rm -f "${tmp}"
+            continue
+        fi
+        mkdir -p "${dir}/agents"
+        mv "${tmp}" "${dir}/agents/openai.yaml"
+        chmod 644 "${dir}/agents/openai.yaml"
+        echo "  wrote -> ${dir#"${kit_root}"/}/agents/openai.yaml"
+        written=$((written+1))
+    done
+    if [ "${written}" -eq 0 ]; then
+        echo "  all agents/openai.yaml files already current - no change"
+    else
+        echo "  generated/updated ${written} agents/openai.yaml file(s)"
+    fi
 }
 
 # -s/--skills-auto: flip the model-invocation gate on every kit skill in place.
@@ -1548,8 +1721,30 @@ shiftEnterHint() {
 TS_EOF
 }
 
-# Verification block - the 6 checks from the brief, plus (7) a conditional codex
-# MCP check that only asserts when -x/-X was passed this run.
+# GNU screen 5 + the claude-in-screen alias come from scripts/screen5_install.sh
+# (managed blocks in ~/.screenrc and ~/.bash_aliases). Not run from here - it
+# builds from source and may sudo - but probe the pieces and point at it when
+# something is missing (e.g. a regenerated ~/.bash_aliases lost the block).
+screenHint() {
+    local have_screen=0 have_alias=0 ver
+    if command -v screen >/dev/null 2>&1; then
+        ver="$(screen --version 2>/dev/null | awk '{print $3}')"
+        case "${ver}" in 5.*) have_screen=1 ;; esac
+    fi
+    if grep -qsF '# >>> screen5_install.sh managed block >>>' "${HOME}/.bash_aliases"; then
+        have_alias=1
+    fi
+    if [ "${have_screen}" = "1" ] && [ "${have_alias}" = "1" ]; then
+        echo "  screen 5 + claude-in-screen alias present - nothing to do"
+        return 0
+    fi
+    [ "${have_screen}" = "1" ] || echo "  GNU screen 5 not found on PATH (or an older version shadows it)"
+    [ "${have_alias}" = "1" ] || echo "  claude-in-screen alias block missing from ~/.bash_aliases"
+    echo "  to set both up, run: ${kit_root}/scripts/screen5_install.sh"
+}
+
+# Verification block - the 6 checks from the brief, plus conditional codex checks:
+# (7) registration when -x/-X was passed this run, (7b) compat wiring after -x.
 verifyAll() {
     local failed=0
     echo ""
@@ -1603,10 +1798,12 @@ verifyAll() {
     fi
 
     # 7. codex MCP server - only meaningful when -x/-X was passed this run. The
-    # registration lives in ~/.claude.json (user scope), so we ask the claude CLI
-    # rather than reading settings.json. INFO (not FAIL) when codex wasn't touched.
+    # registration lives in ~/.claude.json (user scope). Read it with jq rather
+    # than `claude mcp get`: the CLI health-checks by actually launching the
+    # server, which consumes the one-shot gate flag 7b then expects to find.
+    # INFO (not FAIL) when codex wasn't touched.
     local codex_registered=1
-    command -v claude >/dev/null 2>&1 && claude mcp get codex >/dev/null 2>&1 || codex_registered=0
+    [ -f "${HOME}/.claude.json" ] && jq -e '.mcpServers.codex' "${HOME}/.claude.json" >/dev/null 2>&1 || codex_registered=0
     if [ "${CODEX_MODE}" = "on" ]; then
         if [ "${codex_registered}" -eq 1 ]; then
             echo "[PASS] (7) codex MCP server registered (user scope)"
@@ -1614,13 +1811,26 @@ verifyAll() {
             echo "[FAIL] (7) codex MCP server not registered after -x"; failed=1
         fi
     elif [ "${CODEX_REMOVE}" = "1" ]; then
-        if [ "${codex_registered}" -eq 0 ]; then
-            echo "[PASS] (7) codex MCP server deregistered after -X"
+        if [ "${codex_registered}" -eq 0 ] && [ ! -f "${generated_dir}/mcp-on/codex" ]; then
+            echo "[PASS] (7) codex MCP server deregistered after -X (gate flag cleared)"
         else
-            echo "[FAIL] (7) codex MCP server still registered after -X"; failed=1
+            echo "[FAIL] (7) codex still registered or gate flag present after -X"; failed=1
         fi
     else
         echo "[INFO] (7) codex not requested this run (-x/-X); skipping"
+    fi
+
+    # 7b. codex compat state - only after -x this run: gate flag pre-armed for
+    # the next session, AGENTS.md linked to the kit, codex skills manifest
+    # non-empty.
+    if [ "${CODEX_MODE}" = "on" ]; then
+        if [ -f "${generated_dir}/mcp-on/codex" ] \
+            && [ -L "${codex_agents_md}" ] && [ "$(readlink "${codex_agents_md}")" = "${claude_md_src}" ] \
+            && [ -s "${codex_skills_manifest}" ]; then
+            echo "[PASS] (7b) codex gate pre-armed + AGENTS.md/skills linked"
+        else
+            echo "[FAIL] (7b) codex compat incomplete - check ${generated_dir}/mcp-on/codex, ${codex_agents_md}, ${codex_skills_manifest}"; failed=1
+        fi
     fi
 
     # 8. cleanupPeriodDays - Claude Code's own transcript retention, written by
@@ -1727,6 +1937,10 @@ echo "Ensuring skill auto-invocation state (${SKILLS_AUTO})..."
 applySkillsInvocation
 echo -e "[Done]\n"
 
+echo "Generating codex skill metadata (agents/openai.yaml)..."
+writeOpenAiSkillMeta
+echo -e "[Done]\n"
+
 echo "Linking skills into ~/.claude/skills/..."
 syncSkills
 echo -e "[Done]\n"
@@ -1743,6 +1957,10 @@ fi
 
 echo "Shift+Enter / terminal setup..."
 shiftEnterHint
+echo -e "[Done]\n"
+
+echo "Checking GNU screen 5 + claude alias..."
+screenHint
 echo -e "[Done]\n"
 
 printSummary

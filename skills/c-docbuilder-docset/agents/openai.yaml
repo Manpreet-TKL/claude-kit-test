@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-docbuilder-docset"
+  short_description: "OeDocBuilder docset contract (read before authoring)"

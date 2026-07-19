@@ -1,7 +1,7 @@
 ---
 name: c-oe-components
 description: OpenEyes runtime containers and what runs inside them
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # OpenEyes runtime components

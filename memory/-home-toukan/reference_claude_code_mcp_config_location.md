@@ -13,6 +13,6 @@ MCP servers live in:
 - `~/.claude.json` - added with `claude mcp add` / `claude mcp add-json <name> <json> -s <scope>`. Scopes: `user` (auto-loads in every session/project - the right one for a personal Jira/Atlassian server), `local` (this project only), `project` (checked-in `.mcp.json`, shared).
 - a project-root `.mcp.json` (project scope).
 
-Verify/manage with `claude mcp list` / `claude mcp get <name>` / `claude mcp remove <name> -s <scope>`. MCP tools bind at **session startup**, so a newly-added server isn't live until the next restart.
+Verify/manage with `claude mcp list` / `claude mcp get <name>` / `claude mcp remove <name> -s <scope>`. MCP tools bind at **session startup**, so a newly-added server isn't live until the next restart. Gotcha (2026-07-19): `claude mcp get <name>` health-checks by **actually launching the server command** - against claude-kit's gated registrations that consumes the one-shot `generated/mcp-on/<name>` flag; check registration by reading `~/.claude.json` with jq instead (install.sh's verify does exactly this).
 
-**Applies to claude-kit:** `install.sh` was wiring the atlassian/[[project_atlassian_scoped_token_gateway]] server by jq-merging into `settings.json` - wrong file. It should use `claude mcp add-json atlassian "$json" -s user` (teardown: `claude mcp remove atlassian -s user`).
+**Applies to claude-kit:** `install.sh` registers atlassian/github/codex via `claude mcp add-json <name> "$json" -s user` (teardown: `claude mcp remove <name> -s user`) - the earlier jq-merge into `settings.json` was the bug this memory caught. See [[project_atlassian_scoped_token_gateway]] for the token flavour the atlassian server needs.

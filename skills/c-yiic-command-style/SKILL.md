@@ -1,7 +1,7 @@
 ---
 name: c-yiic-command-style
 description: House style for OpenEyes yiic console commands
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # yiic command style

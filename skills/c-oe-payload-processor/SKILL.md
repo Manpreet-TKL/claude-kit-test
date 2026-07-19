@@ -1,7 +1,7 @@
 ---
 name: c-oe-payload-processor
 description: PayloadProcessor - JS device-routine queue runner
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # oe-payload-processor

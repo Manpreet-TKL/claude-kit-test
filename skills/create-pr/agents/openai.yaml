@@ -1,0 +1,3 @@
+interface:
+  display_name: "create-pr"
+  short_description: "Package a non-OE change as a review-ready PR folder"

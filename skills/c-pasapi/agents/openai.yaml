@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-pasapi"
+  short_description: "OE PASAPI V2 + the OpenMRS->BridgeLink->OE PAS flow"

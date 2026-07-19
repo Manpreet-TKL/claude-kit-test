@@ -1,7 +1,7 @@
 ---
 name: c-oe-code
 description: OpenEyes codebase shape - frameworks, modules, config
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # OpenEyes codebase shape

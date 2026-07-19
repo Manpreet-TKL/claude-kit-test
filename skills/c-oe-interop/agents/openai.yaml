@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-oe-interop"
+  short_description: "OpenEyes third-party integration capabilities"

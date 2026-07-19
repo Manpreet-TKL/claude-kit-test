@@ -1,0 +1,3 @@
+interface:
+  display_name: "compact-memories"
+  short_description: "Verify, merge, archive, and prune auto-memory; rewrite MEMORY.md."

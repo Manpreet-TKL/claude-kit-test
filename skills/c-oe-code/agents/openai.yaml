@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-oe-code"
+  short_description: "OpenEyes codebase shape - frameworks, modules, config"

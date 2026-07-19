@@ -1,7 +1,7 @@
 ---
 name: codexmcp
 description: Codex MCP context + gate enable, then fan out agents
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # Codex agents (OpenAI Codex via MCP)
@@ -15,7 +15,8 @@ touch `~/.codex/auth.json`.
 The server runs `codex mcp-server` inside a locally-built docker container
 (`claude-kit-codex`, from `~/claude-kit/docker/codex/`; the host `codex` binary is
 the fallback only when Docker is absent) and is registered with its defaults baked in
-(set by `install.sh -x`): the **flagship model at high reasoning effort**, sandboxed,
+(set by `install.sh -x`): the **flagship model (`gpt-5.6-sol`) at `xhigh` reasoning
+effort**, sandboxed,
 `approval_policy=never` so agents run unattended. In docker mode the **container is
 the sandbox** - only the project dir and `~/.codex` are mounted; in host mode it's
 codex's own **workspace-write, network-off** sandbox. It exposes two tools:
@@ -42,16 +43,25 @@ Beyond that one `touch`, take no other action: no docker commands, no `install.s
 runs, no probing `~/.codex` - everything below is context and advice for the user,
 not commands to run.
 
-If a later `mcp__codex__codex` call is **permission-denied**, the `mcp__codex` allow
-rule is missing for this tier: allowed on `standard`/`trusted`/`yolo`, **prompts on
-`ultra-safe`** (it writes files) - approve the prompt or advise
-`~/claude-kit/install.sh -p <tier>`.
+## Permissions - two prompts are normal, approve them
+
+Using this skill can raise up to two permission prompts; neither is an error:
+
+1. The gate `touch` itself may prompt as a Bash command on stricter tiers -
+   approve it; it is the only shell command this skill runs.
+2. The first `mcp__codex__*` call prompts when the tier lacks the `mcp__codex`
+   allow rule: allowed on `standard`/`trusted`/`yolo`, **always prompts on
+   `ultra-safe`** (agents write files) - approve it, or switch tier with
+   `~/claude-kit/install.sh -p <tier>`.
 
 ## Spawning agents - one or many, at the best model
 
 The defaults are already pinned at the server, so a **bare prompt is enough** - you do
 not need to pass model/sandbox per call. Each `mcp__codex__codex` call is an independent
-agent with its own context and its own sandboxed shell.
+agent with its own context and its own sandboxed shell. When a task wants a different
+tier, override per call: the `codex` tool accepts `model` and `config` (e.g.
+`{"model_reasoning_effort": "low"}`) alongside `prompt`/`cwd`, leaving the registration
+defaults untouched - `codex-grill` and `codex-swarm` build on exactly this.
 
 - **Run several at once:** issue multiple `mcp__codex__codex` calls **in a single
   message** to fan them out concurrently. Give each a self-contained brief - agents do
@@ -93,7 +103,7 @@ defends this instead:
 
 ## If the reconnect still fails (advice to relay - the user runs these, not you)
 
-- Not signed in (server reconnects but agent calls return auth/401 errors): `docker run --rm -it --network host --user "$(id -u):$(id -g)" -v "$HOME/.codex:/home/codex/.codex" claude-kit-codex login`
+- No codex auth present / not signed in (server reconnects but agent calls return auth/401 errors): `docker run --rm -it --network host --user "$(id -u):$(id -g)" -v "$HOME/.codex:/home/codex/.codex" claude-kit-codex login --device-auth` - device-code flow; needs "Allow device code login" enabled in ChatGPT security settings. (No extra `codex` word before `login` - the image ENTRYPOINT is already `codex`.)
 - Image or registration missing: `cd ~/claude-kit && ./install.sh -x -p trusted -y` (builds `claude-kit-codex` if absent and re-registers the server)
 - Anything else: restart Claude Code, touch the flag, reconnect in `/mcp` - or touch the flag before launching to have codex up from the start.
 
@@ -107,14 +117,11 @@ form.)
 
 Set by `install.sh -x`, recorded non-secretly in `~/claude-kit/generated/.codex.env`:
 
-- `CODEX_MODEL` - the model id agents run (default the flagship, e.g. `gpt-5.6-sol`).
-  GPT-5.6 family: `gpt-5.6-sol` (flagship - complex, ambiguous, or high-value work),
-  `gpt-5.6-terra` (everyday workhorse), `gpt-5.6-luna` (fast/cheap repeatable tasks).
-  A registration pinning bare `gpt-5.6` predates the family split - the documented
-  flagship id is `gpt-5.6-sol`; if agent calls reject the bare id, set
-  `CODEX_MODEL=gpt-5.6-sol` and re-run `./install.sh -x -y`.
-- `CODEX_REASONING_EFFORT` - default `high` (`xhigh` on models that support it; the
-  GPT-5.6 family accepts low/medium/high/xhigh/max/ultra).
+- `CODEX_MODEL` - the model id agents run (default `gpt-5.6-sol`). GPT-5.6 family:
+  `gpt-5.6-sol` (flagship - complex, ambiguous, or high-value work), `gpt-5.6-terra`
+  (everyday workhorse), `gpt-5.6-luna` (fast/cheap repeatable tasks).
+- `CODEX_REASONING_EFFORT` - default `xhigh` (the GPT-5.6 family accepts
+  low/medium/high/xhigh/max/ultra).
 - `CODEX_SANDBOX` - default `workspace-write` (network off); **host mode only** - in
   docker mode the container is the sandbox and this knob is ignored at launch.
 

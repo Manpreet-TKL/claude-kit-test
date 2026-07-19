@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-oe-repro"
+  short_description: "OpenEyes bug repro - a frontend click-path anyone can follow"

@@ -1,0 +1,3 @@
+interface:
+  display_name: "new-feature"
+  short_description: "Plan a green-field feature (plan mode + verify)"
