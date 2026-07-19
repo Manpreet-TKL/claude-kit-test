@@ -50,6 +50,22 @@ No `echo yes |` is needed on a fresh host - `build.sh` only prompts on a prod ma
 
 After step 7, `docker compose ps` should show services `Up (healthy)` within a few minutes - **except** OpenMRS, which legitimately takes ~73 min on its first WAR deploy on a monkey-spec host. Don't kill it.
 
+## Re-running db-setup.sh / stale `oe-db` volume
+
+`db-setup.sh` is safe to re-run: it detects databases/users that already exist and exits with "All selected databases and users are already set up".
+
+What breaks re-runs is a **leftover data volume with a different root password**: the temp `tempdb` container mounts the instance's `<env>_oe-db` volume (`<env>_oe-db2` with `-db2`), so if that volume pre-dates the current `secrets/MYSQL_ROOT_PASSWORD` every query gets `Access denied`. On `feature/test_env_setup_script` (pending merge) the script warns about the pre-existing volume up front and exits within seconds of the first `Access denied`; older checkouts poll forever with no error. Remedies either way:
+
+- `bash db-setup.sh -r` - resets root to the current secret. Spins the temp container on the SAME volume with `--skip-grant-tables`, so it needs no old password. `DATABASE_HOST=db` is normalised to `localhost` inside the script, so the "local docker containers only" refusal only bites genuinely remote DBs (RDS), not containerised ones.
+- `docker volume rm <env>_oe-db` - completely fresh database.
+
+### mariadb 11+ images have no `mysql*` binaries
+
+`mariadb:11.x` ships only `mariadb`, `mariadb-dump`, `mariadbd-safe`, ... - no `mysql`, no `mysqld_safe` (`mysql:8` images are the mirror case). Two traps with `docker exec` into a db container:
+
+- Resolve the client name **inside** the container: `docker exec <db> bash -c '$(command -v mysql || command -v mariadb) ...'` (single quotes - a host-evaluated `$(command -v mysql)` picks the host's client name, which the image may not have).
+- A hardcoded `mysqld_safe` entrypoint dies with "executable file not found"; probe first: `docker run --rm --entrypoint sh <image> -c 'command -v mariadbd-safe || command -v mysqld_safe'`.
+
 ## Loading the sample DB / fixing the oe-manager crash loop
 
 **oe-manager never loads the sample DB on its own.** Its startup only runs migrations (`85-migrate-up.sh` builds the schema from scratch via the `m130913_000000_consolidation` migration, then `93-import-eyedraw-config.sh` populates eyedraw). A fresh empty DB therefore migrates to an *empty* schema (no patients, and a login you may not have). A **demo** wants the bundled sample DB (admin/admin + sample patients), so run the reset below after `build.sh`.

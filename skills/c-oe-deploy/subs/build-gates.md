@@ -21,6 +21,8 @@
 
 There is no MariaDB "data-volume-creation-tag" gate in `build.sh` - gates 8/9 are about the **client** version on the host and the OE-vs-DB minimum.
 
+Gate 7 is not just a tripwire - it is **how template changes reach instances**: when a pulled template update adds or renames keys, the gate lists exactly which keys to add to (or delete from) `.env`. Copy new keys verbatim from `templates/<appName>.env`; template defaults are chosen to preserve existing behaviour.
+
 ## "Type yes" - where it actually is
 
 `build.sh` has exactly one interactive prompt: gate 3 (prod machine with running containers), and it lowercases the reply, so `yes`/`YES`/`Yes` all pass and `-y` skips it entirely. `echo yes | bash build.sh` is harmless but unnecessary on a fresh host. The other scripts:

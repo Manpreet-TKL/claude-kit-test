@@ -12,9 +12,14 @@ It was templated from `~/oe-deploy` (the docker-compose source of truth) and is
 meant to deploy the same services with the same ease-of-use: **adding or tuning
 a service is a values-only edit.**
 
-Location: `~/charts/helm/openeyes`. Per-environment copies live under `~/charts`
-(`nl`, `alpha`, `prod`, `uat`, `train`), each carrying its own `values.yaml` +
-`secrets.toml` (and some local bug fixes - see `~/charts-bugfix-analysis.md`).
+Location: canonical repo `git@github.com:ToukanLabs/helm.git`, checked out at
+`~/helm` on this host (chart at `~/helm/openeyes`, docs under `~/helm/docs/`).
+The repo `.gitignore` excludes the umbrella `/values.yaml` and `secrets.toml` -
+both are supplied per environment, so a fresh clone ships neither. The
+per-environment copies under `~/charts` (`nl`, `alpha`, `prod`, `uat`, `train`)
+are the legacy layout, each carrying its own `values.yaml` + `secrets.toml`
+(and some local bug fixes - see `~/charts-bugfix-analysis.md`). helm/kubectl
+binaries are NOT installed on this host - renders and deploys happen elsewhere.
 
 ## Chart identity
 
@@ -69,9 +74,10 @@ openeyes/
 
 `templates/secret.yaml` reads `secrets.toml` (per env) via `.Files.Get` and
 emits `Secret` objects. Special case: a `dockerPassword` key is rendered as a
-`kubernetes.io/dockerconfigjson` pull secret. **`secrets.toml` is committed in
-clear text (base64 only)** - it holds real secrets; never fold it into an
-upstream PR, and rotate anything that leaks.
+`kubernetes.io/dockerconfigjson` pull secret. **`secrets.toml` is gitignored,
+not committed** - it is supplied per environment in clear text (base64 only)
+and holds real secrets; never fold it into an upstream PR, and rotate anything
+that leaks.
 
 ## Subchart inventory (12)
 
@@ -130,6 +136,12 @@ CronJobs, log shipping, WAIT_HOSTS init containers, monitoring. Full list:
 ## Deploy workflow
 
 Mirrors oe-deploy's per-environment model: pick the env folder, supply its
-`values.yaml` + `secrets.toml`, then `helm install <release> ./openeyes -n <ns>`
-(or `helm template` first to diff). Architecture selection in values drives the
-ingress/storage matrix automatically.
+`values.yaml` + `secrets.toml`, then **always template before deploying**:
+`helm template <release> ./openeyes --debug > out.yaml` (the `htemplatee` alias
+in `.k8s_bash_aliases` renders to a timestamped file in `$HOME`) and inspect
+the render - secrets present, image tags right, namespace right - BEFORE any
+`helm install`/`helm upgrade`. Note `helm template` has no `--dry-run` flag;
+`--debug` is the proven form. Namespace resolution is the `openeyes.namespace`
+helper: the release namespace wins unless it is "default", in which case
+`global.namespace` is used (commands documented in `~/helm/docs/namespace.md`).
+Architecture selection in values drives the ingress/storage matrix automatically.

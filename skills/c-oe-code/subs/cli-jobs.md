@@ -43,6 +43,65 @@ So a Yii-side async job is queued by writing a Laravel-compatible row that a
 Laravel `queue:work` worker / Horizon then executes. Same job class, two
 front-ends, one `jobs` table (default connection `database`; Horizon uses `redis`).
 
+Redis mode + consumers (verified 26.0.6 / v26.1.0-pre1):
+
+- Driver pick: `asyncJobDispatcher`'s `connection` is `getenv('QUEUE_CONNECTION')
+  ?: 'database'` (`config/core/common.php`). `redis` swaps in `RedisQueueDriver`,
+  which rpushes the same Laravel payload to `<REDIS_PREFIX>queues:<REDIS_QUEUE
+  |default>` and back-fills Horizon's metadata keys so Yii-dispatched jobs show
+  in the dashboard. No phpredis extension in the images - `REDIS_CLIENT=predis`.
+- Password gotcha (26.0.x / v26.1.0-pre1 images only): `RedisQueueDriver::getRedis()`
+  there auths from `getenv('REDIS_PASSWORD')` ONLY - it does not read the
+  `/run/secrets/REDIS_PASSWORD` file the way `oe-laravel/config/database.php`
+  does (secret-file first, env fallback). Password delivered as a Docker secret
+  only -> every Yii-side redis dispatch throws `Predis\Response\ServerException:
+  NOAUTH Authentication required.` while Horizon itself runs fine. Fixed on
+  develop by OE-18162 (#12187, 2026-06-30): `config/core/common.php` reads the
+  secret file into `params['redis_password']`, which the driver now uses.
+- Consumers: the manager cron runs `queue:work --max-time=60` every minute
+  (`protected/scripts/.cron/reportsqueue`; schedule `CRON_REPORTSQUEUE_SCH`) on
+  whatever connection is default. Horizon is redis-only, gated by
+  `ENABLE_HORIZON` in `/init_scripts/96-start-horizon.sh` - baked `TRUE` in the
+  oe-manager image, `FALSE` in web, so a no-redis deployment's manager crash-loops
+  Horizon 4x at start (`Connection refused [tcp://127.0.0.1:6379]`) into
+  supervisord FATAL. With redis on, cron worker and Horizon both consume
+  `default` - cron-run jobs bypass Horizon's metrics. Dashboard: `/l/horizon`
+  (`HORIZON_PATH`), on the reserved `/l/` Laravel prefix.
+
+## docmandelivery - v26 correspondence delivery (verified v26.1.0-pre2)
+
+`yiic docmandelivery` (`protected/commands/DocManDeliveryCommand.php`) is the
+single delivery command for **Docman + Electronic + Internalreferral** outputs -
+there is no ElectronicDeliveryCommand. Selection logic:
+
+- **Institution gate** (:62-80): `active = 1` AND at least one
+  `correspondence_delivery_configuration` row. Per-institution flags
+  with_docman / with_electronic / with_internal_referral come from the config
+  rows' `output_type` (:101-108).
+- **Row selection** (:125-179): `document_output` joined through
+  document_target -> document_instance -> event ->
+  et_ophcocorrespondence_letter, filtered `event.deleted = 0`,
+  `event.delete_pending = 0`, `et_ophcocorrespondence_letter.draft = 0`.
+- **Status**: `output_status = 'PENDING'` always, plus `'PRINTED'` ONLY when
+  the institution has an Electronic config row - and that status OR-group
+  applies across ALL output types selected for that institution.
+- **'Print' never flows through it**: migration m241002_025325 converted
+  config 'Print' rows to 'Electronic'; the cdc `output_type` enum is now
+  `enum('Docman','Internalreferral','Print','Electronic')` but only the three
+  non-Print values are acted on.
+- **FAILED is never retried** by the cron path; `actionGenerateOne` ignores
+  status entirely. Status writes at :329-343.
+- `document_output.output_type` values: Print, Email, Email (Delayed),
+  Internalreferral, Docman, Electronic; statuses DRAFT / SENDING / PENDING /
+  PENDING_RETRY / FAILED / COMPLETE / PRINTED
+  (`protected/models/DocumentOutput.php:48-61`; institution relations
+  `protected/models/Institution.php:124-142`).
+- `InternalReferralDeliveryCommand` (:139-150) overlaps for internal referrals
+  but is simpler - no institution gate.
+- Ops side: oe-deploy's manager cron runs it (`CRON_DOCMANDELIVERY_SCH`,
+  default 21:00); the `oedocman` alias in oe-deploy `.bash_aliases` previews
+  exactly what a run would pick up.
+
 ## Migrations - "oemig" (how OE migrations actually run)
 
 Three layers, top to bottom; `oe-migrate.sh` is the single funnel everything

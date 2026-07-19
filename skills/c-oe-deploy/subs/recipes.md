@@ -55,6 +55,12 @@ Service fragments (`templates/<svc>.yml`):
 
 Mods (`templates/modules/<mod>.yml`) overlay extra env/config onto `web`: `apache`, `cito`, `cocoa`, `csd`, `debug`, `dev`, `hie`, `international`, `mailer`, `optom`, `pfbackup`, `tfk`, `wcrs`, `worklist`.
 
+## mc / BridgeLink ports (host vs container)
+
+Container-side ports in `mc.yml` are fixed: `8443` admin UI, `11112` DICOM, `6661` PAS IN, plus the channel port(s) `MIRTH_PORTS` (default `6660`, range allowed - deployed channels listen on fixed container ports, mostly `6661`/`6662`). To move a **host** port use the host-side variables (pending merge): `MC_ADMIN_PORT`, `MC_DICOM_PORT`, `MC_PAS_PORT`, `MIRTH_HOST_PORTS` (defaults to `${MIRTH_PORTS}`). Never remap `MIRTH_PORTS` itself to dodge a busy host port - that moves the container side the channels are deployed against.
+
+If `MIRTH_PORTS` is a range, `MIRTH_HOST_PORTS` must be a range of **equal length**: docker maps equal-length ranges pairwise in order (first host port -> first container port, and so on), and refuses unequal lengths at container create ("invalid ranges specified for container and host Ports").
+
 ## Image tag conventions (current)
 
 - `MASTER_TAG` (e.g. `26.0.0`) is the umbrella - `OE_WEB_TAG`, `OE_MANAGER_TAG`, `OE_RTF_TAG`, `IOL_MASTER_IMPORT_TAG`, `PAYLOAD_IMAGE_TAG`, `SIGNATURE_PROCESSOR_TAG` all default to `${MASTER_TAG}`. There is **no** `BL_TAG`.

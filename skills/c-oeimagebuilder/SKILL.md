@@ -38,6 +38,8 @@ docker build -t toukanlabsdocker/oe-web-live:v26.0.0-rc3 \
 
 - Init scripts run in numeric prefix order (`00-banner.sh` ... `100-start-apache.sh`): tini -> `/init.sh` -> `/init_scripts/`; child images add/override by same filename (`Web-Dev` also has `init_scripts_dev_only/`).
 - ARGs are the build knobs, ENVs the runtime contract; re-declare an ARG after every `FROM` whose stage uses it.
+- Web-Dev bootstrap: `init_scripts_dev_only/42-clone-source.sh` clones OE via `/oe-build-dev.sh` only when `$WROOT/protected/modules/eyedraw/.git/HEAD` is missing (`OE_MODE=TEST` clones `--single-branch --depth 1`); anything pre-creating a dir inside `$WROOT` before it runs - e.g. a compose volume mounted in-tree - makes the clone fail and the container never starts.
+- `52-setup-oeexceptionhandlerlogs-output-folder.sh` (Web-Base, also copied into Manager) symlinks top-level `/OEExceptionHandlerLogs` into `$WROOT/protected/runtime/` when that dir exists (replaces any real in-tree dir, drops a `.gitignore` in the volume) - the eh-logs volume mounts at `/OEExceptionHandlerLogs`, never in-tree. Mirrors `50-setup-protected-files.sh`'s `/protected/files` pattern; in every image since fc665f5 (2025-02-04, tag v10.0.0 onward).
 - `MODULES` is comma OR space separated; `eyedraw` is always added.
 - `WROOT` (default `/var/www/openeyes`) is the document root - don't hardcode the path.
 - READMEs are generated: edit `README_template.md` only; CI regenerates and commits `README.md`.

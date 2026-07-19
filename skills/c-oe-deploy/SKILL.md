@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself - it just loads knowledge; act only on instructions given in the conversation.
 
-A **template, not a source of truth**: every instance is a `mv oe-deploy <env>` on the target host - **never `cp`** - with its own `.env`, `.oedeploy`, and generated `docker-compose.yml`. Upstream is a private repo **`oed`** - the source that holds all the docs, the extra templates, and the additional features; this `oe-deploy` is the trimmed template for deploying production-ready OpenEyes plus a little diagnostics. **Sensitive values (DB passwords, API keys, GPG passphrases, ...) always go in Docker secrets** - the per-instance secret files keyed off `.oedeploy`/`keeper.csv` - **never in `.env` / environment variables.** Manpreet's hosts already have docker login, GPG, host-setup - don't re-check or re-run those. OE sample DBs ship `admin/admin` - never run `set_frontend_passwords.sh` on demo boxes. Detail: `subs/versions.md`, `subs/recipes.md`, `subs/build-gates.md`, `subs/first-run.md`.
+A **template, not a source of truth**: every instance is a `mv oe-deploy <env>` on the target host - **never `cp`** - with its own `.env`, `.oedeploy`, and generated `docker-compose.yml`. Upstream is a private repo **`oed`** - the source that holds all the docs, the extra templates, and the additional features; this `oe-deploy` is the trimmed template for deploying production-ready OpenEyes plus a little diagnostics. **Sensitive values (DB passwords, API keys, GPG passphrases, ...) always go in Docker secrets** - the per-instance secret files keyed off `.oedeploy`/`keeper.csv` - **never in `.env` / environment variables.** Manpreet's hosts already have docker login, GPG, host-setup - don't re-check or re-run those. OE sample DBs ship `admin/admin` - never run `set_frontend_passwords.sh` on demo boxes. Detail: `subs/versions.md`, `subs/recipes.md`, `subs/build-gates.md`, `subs/first-run.md`; `.bash_aliases` house rules: `subs/aliases.md`.
 
 ## Pantry + recipe + chef
 
@@ -17,6 +17,10 @@ Pantry: `templates/*.yml` (one compose fragment per service), with mods in `temp
 ## Template patterns (use, don't invent)
 
 Named volume for data + bind mounts for logs/config; `${VAR:-default}` optional, `${VAR:?msg}` required; literal `$VAR` (no braces) when interpolation must survive into the rendered file; YAML anchors (`<<: *web`) for shared blocks - extend, don't copy-paste.
+
+## Dev mod (oe-web-dev) gotchas
+
+The `dev` mod swaps `web` to `oe-web-dev`, which clones openeyes at first boot (dev-only init 42, skipped once `protected/modules/eyedraw/.git/HEAD` exists; needs `BUILD_BRANCH` plus the `SSH_PRIVATE_KEY` secret). **Never mount a volume inside `/var/www/openeyes`** - compose pre-creates the mount dir before init 42, git refuses to clone into the non-empty tree, and the container never comes up. The exception-handler volume's designed target is top-level `/OEExceptionHandlerLogs`: init 52 (in web AND manager images) symlinks it into `protected/runtime/` after the clone, so host-side logs work on live, dev, and manager alike - an in-tree target is exactly the clone-breaking bug (an existing dev host may carry the old workaround of stripping the mount from its rendered `docker-compose.yml`). `YII_DEBUG_BAR_IPS: ${YII_DEBUG_BAR_IPS:-'*'}` (the `debug.yml` pattern) turns on the Yii debug bar; openeyes reads it in `protected/config/core/main.php` only when `YII_DEBUG` is on (quotes stripped, comma-separated IPs or `*`), so it is inert on live images. `web.yml`'s `OE_EXCEPTION_HANDLER_FORCE_ENABLED` / `OE_EXCEPTION_HANDLER_LOG_PATH` **environment entries** have no consumer anywhere - dead config (the same-named variable still works as the mount-target override).
 
 ## Build gates (abridged)
 
