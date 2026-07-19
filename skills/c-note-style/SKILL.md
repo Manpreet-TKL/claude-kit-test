@@ -38,3 +38,4 @@ For Manpreet's knowledge-base notes - not code comments, commit messages, README
 - Mark unfinished notes `***Not Finished***` at the top; a stub beats no note.
 - As short as correct: procedural prose is a smell - convert it to numbered steps.
 - No blank lines between numbered steps - steps run flush; blank lines appear only after the title line and after the description block.
+- Deliver every drafted note by Writing it to a file under /home/toukan (e.g. /home/toukan/<topic>-note.txt) and stating the path - never print the note body in chat: copying from the CLI inside screen mangles it (OSC 52 base64 leak).

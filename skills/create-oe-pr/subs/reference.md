@@ -190,9 +190,10 @@ baked-in message(s). One mbox entry per commit, concatenated in the same file:
     ---
     <unified diff for this commit>
 
-- **Base:** resolve the nearest `release/<major>.<minor>.x` from the Fix version -
-  `git ls-remote --heads origin 'release/*'`, match `release/<maj>.<min>.x`, else nearest +
-  say which, else list candidates and let the user pick (see SKILL.md -> *Base branch*).
+- **Base:** `develop` for anything that isn't a bugfix targeting a release; bugfixes take the
+  highest unreleased `release/Y.Z.x` (occasionally an older line for a back-port) -
+  `git ls-remote --heads origin 'release/*'`, suggest one, ask when unsure
+  (see SKILL.md -> *Base branch*).
   Record it in `PR.md` as `Apply onto: <branch> @ <sha>` (the `git ls-remote` sha). OE repos
   are private, so fetching the base ref relies on the user's configured git auth (askpass / SSH).
 - **Headers:** `From:` is the identity the target checkout commits as (`git -C <wc> config
