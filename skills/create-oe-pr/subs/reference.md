@@ -55,17 +55,18 @@ satellite>. Target <branch - e.g. release/26.0.x>. Back-port? list both.
 
 Apply onto:
 <the base branch the patch was cut from + its sha, e.g. release/26.0.x @ a1b2c3d - the
-far side branches off its current base and applies `changes.patch` with
-`git am -3 --keep-non-patch`>
+far side branches off its current base, applies `changes.patch` with `git apply --3way`,
+and commits it itself>
 
 Commit title:
-(the commit message(s) exactly as baked into `changes.patch` mbox Subject lines - listed
-here so they can be read without opening the patch. One commit near-always; more entries
-only when a split is *very* beneficial (see *Multiple commits*). Every subject is prefixed
-`[OE-XXXXX] - ` with the key left as literal X's - the user substitutes the real key at
-apply time, and that subject is what auto-updates the ticket. The whole subject line,
-prefix included, is <= 72 chars, so the text after `- ` gets <= 59; aim <= 50 total. The
-headline-fix commit reuses the Jira title, trimmed to fit. See *Commit titles* below.)
+(the commit message(s) the user passes to `git commit -m` on the far side - also echoed in
+each patch header's `Subject:` line as documentation, but the header never becomes the
+commit. One commit near-always; more only when a split is *very* beneficial (see *Multiple
+commits*). Every title is prefixed `[OE-XXXXX] - ` with the key left as literal X's - the
+user types the real key into the command at apply time, and that commit title is what
+auto-updates the ticket. The whole title, prefix included, is <= 72 chars, so the text
+after `- ` gets <= 59; aim <= 50 total. The headline-fix commit reuses the Jira title,
+trimmed to fit. See *Commit titles* below.)
 
     [OE-XXXXX] - <exact commit message, <= 59 chars>
 
@@ -73,20 +74,20 @@ headline-fix commit reuses the Jira title, trimmed to fit. See *Commit titles* b
 
 (not a paste target - the far-side commands, written for the user's real workflow: the
 PR folder is copied to C:/Temp/pullrequests on a Windows machine and applied from Git
-Bash inside the checkout. The OE-XXXXX -> real-key substitution is done in VSCode
-find/replace directly in changes.patch - never suggest sed - and gets its own comment
-line at the top of the block; the checkout commands each get their own line too, never
-squashed into one. Branches are normally called fix/OE-XXXXX for bugfixes or
-feature/OE-XXXXX for features/improvements; write commands with a sample key, e.g.
-fix/OE-12345, for the user to replace with the real one - never bake a real key.
-See *Apply & push* below.)
+Bash inside the checkout. The patch file is never edited; the OE-XXXXX -> real-key
+substitution happens only in the commands (branch name and commit message), noted in a
+comment line at the top of the block. Each command gets its own line, never squashed
+into one. Branches are normally called fix/OE-XXXXX for bugfixes or feature/OE-XXXXX
+for features/improvements; write commands with a sample key, e.g. fix/OE-12345, for
+the user to replace with the real one - never bake a real key. See *Apply & push* below.)
 
-    # in VSCode: find/replace OE-XXXXX -> OE-12345 in C:/Temp/pullrequests/<folder>/changes.patch
+    # replace OE-12345 with the real Jira key in the commands below - the patch file needs no editing
     # Go to repo and "git checkout master && git reset --hard && git clean -f && git pull"
     # Below example is for develop as a base branch
     git checkout develop
     git checkout -b fix/OE-12345
-    git am -3 --keep-non-patch "C:/Temp/pullrequests/<folder>/changes.patch"
+    git apply --3way "C:/Temp/pullrequests/<folder>/changes.patch"
+    git commit -m "[OE-12345] - <commit title>"
     git log --oneline <base>..HEAD
     git push -u origin HEAD
 
@@ -148,10 +149,10 @@ Every OE commit subject is prefixed with its Jira key in the form `[OE-XXXXX] - 
 `[OE-18227] - Clean up temp files created per page in createPdfPreviewImages`. The prefix
 is a fixed **13 characters** (`[` + `OE-` + a 5-digit key + `]` + ` - `).
 
-- **The user raises the ticket, not the skill.** The message is baked into `changes.patch`
-  with the key left as literal `OE-XXXXX` X's (still 13 chars, so the budget is unchanged) -
-  once the ticket exists the user find/replaces the real key into the patch file and
-  `git am` creates the commit as them (see *Apply & push*).
+- **The user raises the ticket, not the skill.** The title is recorded in `PR.md` and the
+  patch header with the key left as literal `OE-XXXXX` X's (still 13 chars, so the budget is
+  unchanged) - once the ticket exists the user types the real key into the far-side
+  `git commit -m` command; the patch file itself is never edited (see *Apply & push*).
 - **The whole subject line, prefix included, must fit <= 72 chars** - git's subject wrap and
   where GitHub truncates the commit title. So the text after `- ` gets at most **59 chars**;
   aim for <= 50 total where you can.
@@ -171,19 +172,20 @@ for tidiness: a "command / perf flag / ops parity / test" 4-way split of one log
 fails the bar - document the separable concerns in *Solution* instead. Never split a fix
 from its proving test; never a commit that won't build alone.
 
-Structurally a multi-commit PR is the SAME deliverable: one `changes.patch` holding N mbox
-entries, applied in order by the same single `git am` command. List each subject in the
-Commit title block and say which files/hunks belong to each entry.
+Structurally a multi-commit PR is one numbered patch file per commit - `changes-1.patch`,
+`changes-2.patch`, ... - each applied and committed in order by its own `git apply --3way`
++ `git commit -m` pair in the Apply & push block. List each title in the Commit title
+block and say which files/hunks belong to each file.
 
 ## Building the patch (how the skill assembles the folder)
 
-The deliverable is a single `changes.patch` in mbox (`git format-patch`) format, not a
+The deliverable is `changes.patch` (one numbered file per commit when split), not a
 clone - tiny to copy away, never pinned to a stale base (the far side applies it onto
-whatever the base is *now*), and self-applying: `git am` creates the commit(s) with the
-baked-in message(s). One mbox entry per commit, concatenated in the same file:
+whatever the base is *now*), and **identity-free**: nothing in the file names an author,
+so the far-side commit is indistinguishable from a change the user made and committed
+locally. Each file is a plain `git diff` under a short documentation header:
 
     From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-    From: <user.name> <user.email>
     Date: <date -R output>
     Subject: [PATCH] [OE-XXXXX] - <commit title>
 
@@ -196,20 +198,22 @@ baked-in message(s). One mbox entry per commit, concatenated in the same file:
   (see SKILL.md -> *Base branch*).
   Record it in `PR.md` as `Apply onto: <branch> @ <sha>` (the `git ls-remote` sha). OE repos
   are private, so fetching the base ref relies on the user's configured git auth (askpass / SSH).
-- **Headers:** `From:` is the identity the target checkout commits as (`git -C <wc> config
-  user.name` / `user.email`) - `git am` takes the commit author from this line, so it must
-  be the user's identity, never Claude's. `Date:` from `date -R`. `Subject:` is
-  `[PATCH] [OE-XXXXX] - <title>` on ONE line, key left as literal X's - a real Jira key is
-  never baked in. The all-zero sha on the `From ` magic line is fine; git ignores it.
+- **Headers are documentation only** - `git apply` ignores everything before the first
+  `diff --git`. **Never write a `From:` line or any name/email**: an author baked into
+  the patch would override the applier's own identity, which is exactly what this flow
+  avoids (and why `git am` is never used - it refuses to run without one). `Date:` from
+  `date -R`. `Subject:` is `[PATCH] [OE-XXXXX] - <title>` on ONE line, key left as
+  literal X's - a real Jira key is never baked in. The all-zero sha on the `From ` magic
+  line is inert.
 - **Diff body** (the skill never commits, so never `git format-patch`): one unified
   `git diff` against the base from a checkout that has the change (`git -C <wc> diff <base>`,
   fetching the base ref first if absent), pasted under the `---` line. Keep the `index ...`
-  lines - `git am -3` needs those blob ids for its three-way fallback. New files show
+  lines - `git apply --3way` needs those blob ids for its three-way fallback. New files show
   `new file`, deletions `deleted file`.
 - **Slicing a multi-commit patch without committing:** from a worktree at the base, build
   slice 1, `git add -A`, `git diff --cached > slice1`; then for each further slice: build it,
   `git diff > sliceN` (worktree vs index = that slice alone), `git add -A`. Each slice
-  becomes the diff body of its own mbox entry, in apply order.
+  becomes the diff body of its own numbered patch file, in apply order.
 - The headers are ignored by `git apply` (everything before the first `diff --git`), so
   `git apply --check changes.patch` in the target checkout is the cheap validity test - run
   it before delivering, and leave the checkout clean.
@@ -221,31 +225,30 @@ to `C:/Temp/pullrequests` on a Windows machine and applied from **Git Bash** ins
 checkout - plain commands after a `cd`, no `git -C`, no sed pipe, one action per line.
 From a clean checkout:
 
-1. In VSCode, find/replace `OE-XXXXX` with the real Jira key (e.g. `OE-12345`) in
-   `C:/Temp/pullrequests/<folder>/changes.patch` - written as a `#` comment line at the
-   top of the command block, never as a sed pipe.
+1. Replace `OE-12345` with the real Jira key **in the commands only** (branch name and
+   commit message) - the patch file is never edited.
 2. `cd <checkout>`, `git checkout <base>`, `git checkout -b fix/OE-12345` - one command
    per line, never squashed into a `git switch -c <branch> <base>` one-liner. Branches
    are normally called `fix/OE-XXXXX` (bugfixes) or `feature/OE-XXXXX` (new
    features/improvements), with the real Jira key. Branching after an explicit
    `git checkout <base>` pins the start point rather than trusting wherever HEAD is.
-3. `git am -3 --keep-non-patch "C:/Temp/pullrequests/<folder>/changes.patch"` - applies
-   the diff AND creates the commit(s), one per mbox entry, authored as the user. Quote
-   the path and use forward slashes (Git Bash mangles backslash paths). `-3` degrades a
-   moved-on base to ordinary merge-conflict markers; on conflict fix the files, `git add`
-   them, `git am --continue` - or `git am --abort` to return to the pristine branch tip.
-   An editor that saved the patch with CRLF line endings is harmless - `git am` strips
-   the CRs by default.
-4. `git log --oneline <base>..HEAD` - the subject(s) must read `[OE-12345] - ...`.
-5. `git push -u origin fix/OE-12345`, raise the PR, then move the folder into
+3. `git apply --3way "C:/Temp/pullrequests/<folder>/changes.patch"` - applies the diff to
+   the working tree AND the index (`--3way` implies `--index`), so the change lands
+   staged and ready to commit. Quote the path and use forward slashes (Git Bash mangles
+   backslash paths). A moved-on base degrades to ordinary merge-conflict markers; fix
+   the files, `git add` them, and carry on - there is no `am` state to abort.
+4. `git commit -m "[OE-12345] - <commit title>"` - the commit is created here, on the
+   user's machine, with the checkout's own `user.name`/`user.email`, identical to any
+   local edit. On a multi-commit PR, repeat the apply + commit pair per numbered patch
+   file, in order.
+5. `git log --oneline <base>..HEAD` - the subject(s) must read `[OE-12345] - ...`.
+6. `git push -u origin fix/OE-12345`, raise the PR, then move the folder into
    `~/pullrequests/pushed/` (back on the machine where the folder was authored).
 
-**`--keep-non-patch` is load-bearing.** Plain `git am` strips *every* leading `[...]` group
-from the subject, so `[PATCH] [OE-12345] - Fix ...` would land as `- Fix ...`;
-`--keep-non-patch` (`-b`) strips only the `[PATCH]` marker and keeps the Jira prefix intact.
-
-No-commit fallback: `git apply --3way changes.patch` ignores the mail headers and applies
-the diff without committing - useful for inspecting the change in the working tree.
+**`git am` is never used.** It cannot create a commit without an author baked into the
+patch (`fatal: empty ident name`), and a baked author is exactly what this flow exists to
+avoid: nothing in the folder may carry an identity - or anything else that would make the
+result differ from the user modifying the code locally and pushing it themselves.
 
 ## Jira section vs GitHub section
 

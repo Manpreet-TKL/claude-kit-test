@@ -60,7 +60,9 @@ to a stale base (the far side applies it onto whatever the base is *now*).
   fetching the base ref first if absent), or a throwaway clone/worktree used only to build it.
   Only `changes.patch` is kept; the checkout is not part of the deliverable. It captures
   additions, edits, and deletions as content - new files show `new file`, deletions `deleted
-  file`. It carries **no commit messages** - plain `git diff` output, never `git format-patch`.
+  file`. It carries **no commit messages and no identity** - plain `git diff` output, never
+  `git format-patch`; the far-side commits are authored entirely by the user's own git
+  config, indistinguishable from a local edit.
 - **Applying it (on the far side, in your live checkout):** the commands live in `PR.md`'s
   `## Apply` block with concrete values - branch off the current base, then `git apply --3way
   changes.patch` (a moved base degrades to conflict markers, not a reject). Everything lands
