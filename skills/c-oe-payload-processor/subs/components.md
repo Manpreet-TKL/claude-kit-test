@@ -31,7 +31,9 @@ does not itself run routines). Each cycle:
 - When idle, triggers `routineLibrarySynchronizer.sync()` (`:94`).
 - Implements `RequestThreadListener.deQueue` (`:162-169`) - workers call back to
   update the queue's success/fail/active counters (`request_queue` is written
-  under `LockMode.UPGRADE_NOWAIT`, `:139-142`).
+  under `LockMode.UPGRADE_NOWAIT`, `:139-142`; in lease versions this became a
+  fenced `UPDATE ... WHERE owner_id = <me>` guarded by the volatile ownership
+  flag).
 
 ## RequestWorker - routine runner (one thread per request)
 
@@ -47,12 +49,33 @@ the thin facade (transaction control, next-routine lookup, body load via
 
 ## RequestQueueLocker - process mutex per queue
 
-`RequestQueueLocker.java`. Opens its own session and
-`SELECT ... FOR UPDATE NOWAIT` (`LockMode.UPGRADE_NOWAIT`) on a `request_queue_lock`
-row; if missing it inserts one and commits to hold the row-lock for the whole
-process lifetime; retries up to 20x with 5s sleeps (`:34-65`). `unlock()` commits
-the held transaction (`:93-98`). **This is what makes "one processor per queue"
-true.**
+`RequestQueueLocker.java`. **This is what makes "one processor per queue" true.**
+Two designs exist:
+
+- **Latest versions only** (OE-18206, on master / release/26.0.x - not in older
+  releases): a TTL **lease** on the `request_queue_lock` row (`owner_id`,
+  `lease_until`, `heartbeat_at`; columns added by an OpenEyes-side migration).
+  Fenced native SQL against `UTC_TIMESTAMP(6)`: renew where `owner_id` = me and
+  `lease_until` > now, else acquire/steal where owner is NULL or expired;
+  release is fenced by owner too. TTL default 30s, env
+  `REQUEST_QUEUE_LEASE_SECONDS`.
+- **Heartbeat design on top of the lease** (delivered as a fix PR, pending merge
+  as of 2026-07 - `~/pullrequests/oe-pay-pr-lease-locking-fixes/`): a daemon
+  heartbeat thread exclusively owns the lease Hibernate session; it acquires
+  once at startup (retry budget 20x with 5s sleeps), renews every
+  max(1s, TTL/3), and releases only in its own finally on shutdown, so the
+  lease spans polling cycles. Ownership is published to the polling/worker
+  threads as a volatile flag (`isLeaseOwned()`) - they never touch the session.
+  A refused renewal drops the flag immediately; an unreachable DB keeps it only
+  until the last successful renewal is a full TTL old. The thread restarts
+  after `unlock()` (DicomEngine's recovery loop re-enters `execute()` on the
+  same executor); an unclean exit lets the lease lapse at TTL for the next
+  processor to steal. Before this PR, the lease was acquired and released every
+  polling cycle, leaving unowned gaps between cycles.
+- **Older versions**: opens its own session and holds
+  `SELECT ... FOR UPDATE NOWAIT` (`LockMode.UPGRADE_NOWAIT`) on the row for the
+  whole process lifetime; if the row is missing it inserts one; retries up to
+  20x with 5s sleeps; `unlock()` commits the held transaction.
 
 ## RoutineLibrarySynchronizer - registry syncer
 

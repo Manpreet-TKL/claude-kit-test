@@ -17,7 +17,8 @@ REST API and via direct SQL on the shared DB. Maven artifact
 `com.abehrdigital:PayloadProcessor`, main class `DicomEngine`.
 
 **One container serves exactly one named queue.** To process N queues, run N
-containers; a DB row-lock guarantees one live processor per queue name.
+containers; a DB lock (a TTL lease in the latest versions, a held row-lock
+before) guarantees one live processor per queue name.
 
 ## Request / routine lifecycle
 
@@ -47,9 +48,12 @@ in `subs/components.md`:
    when idle.
 3. **`RequestWorker`** - the **routine runner** (one thread per request). Loops:
    fetch this request's next eligible routine -> execute it -> set status.
-4. **`RequestQueueLocker`** - the **process mutex**. `SELECT ... FOR UPDATE NOWAIT`
-   on a `request_queue_lock` row, held for the process lifetime -> only one
-   processor per queue.
+4. **`RequestQueueLocker`** - the **process mutex**. Latest versions only
+   (OE-18206, master / release/26.0.x): a TTL lease on the `request_queue_lock`
+   row (`owner_id`/`lease_until`, default 30s via `REQUEST_QUEUE_LEASE_SECONDS`),
+   renewed by a heartbeat thread at TTL/3. Older versions instead hold
+   `SELECT ... FOR UPDATE NOWAIT` on that row for the process lifetime. Either
+   way -> only one processor per queue.
 5. **`RoutineLibrarySynchronizer`** - the **registry syncer**. Inserts a
    `routine_library` row for any on-disk script file not yet registered
    (insert-only; never updates/deletes).
@@ -85,7 +89,8 @@ pages that live in the OpenEyes repo) and known issues are in
 
 Entry `DicomEngine.java:59-88`; poll/dispatch `RequestQueueExecutor.java:57-95`;
 worker run loop `RequestWorker.java:40-67`; process lock
-`RequestQueueLocker.java:34-65`; JS exec `JavascriptScriptExecutor.java:40-61`;
+`RequestQueueLocker.java` (layout differs per version - see subs/components.md);
+JS exec `JavascriptScriptExecutor.java:40-61`;
 poll query `models/RequestRoutine.java:25-37`; retry backoff
 `utils/RequestRoutineNextTryTimeCalculator.java`; container launch
 `.docker_build/init.sh:65,77`.
