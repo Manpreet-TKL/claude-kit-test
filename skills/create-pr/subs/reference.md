@@ -32,9 +32,12 @@ one-liners. `git apply` leaves everything unstaged: you review, stage, and commi
 suggested title(s), then push - the skill never does:>
 
     cd <checkout>
-    git fetch origin <base>
-    git checkout -b <branch> origin/<base>
-    git apply --3way <abs-path>/changes.patch
+    git fetch origin main
+    git checkout -b <branch>
+    git apply --3way "C:/Temp/pullrequests/<folder>/changes.patch"
+    git commit -m "<commit title>"
+    git status
+    git push -u origin HEAD
 ```
 
 Keep it short; never pad. If a fault can't be pinned down cleanly (intermittent, data-dependent), say what you can - don't fabricate.
