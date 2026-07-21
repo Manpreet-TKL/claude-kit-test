@@ -74,8 +74,9 @@ Two designs exist:
   polling cycle, leaving unowned gaps between cycles.
 - **Older versions**: opens its own session and holds
   `SELECT ... FOR UPDATE NOWAIT` (`LockMode.UPGRADE_NOWAIT`) on the row for the
-  whole process lifetime; if the row is missing it inserts one; retries up to
-  20x with 5s sleeps; `unlock()` commits the held transaction.
+  whole process lifetime; if the row is missing it inserts one and commits;
+  retries up to 20x with 5s sleeps (`:34-65`); `unlock()` commits the held
+  transaction (`:93-98`).
 
 ## RoutineLibrarySynchronizer - registry syncer
 
