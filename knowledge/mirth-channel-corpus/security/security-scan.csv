@@ -1,0 +1,103 @@
+instance,channel_name,channel_id,source_transport,inbound_auth,listener_binds_all_ifaces,outbound_http,outbound_https,outbound_basic_auth,dest_queue_enabled,dest_retry_max
+Bedford,DICOM,c14efd23,DICOM Listener,-,yes,1,0,yes,0,0
+Bedford,Document OUT,375fe7b2,File Reader,-,no,0,0,no,0,3
+Bedford,Document Upload PP,f703f9cd,File Reader,-,no,1,0,yes,0,0
+Bedford,PAS IN,d69815ee,TCP Listener,-,yes,7,0,yes,0,0
+Bedford,PAS OUT,06f0b8b8,HTTP Listener,NONE,yes,2,0,no,0,0
+Bolton,CORRESPONDENCE OUT,7a04b9d1,File Reader,-,no,0,0,no,0,0
+Bolton,DICOM,c14efd23,DICOM Listener,-,yes,1,0,yes,0,0
+Bolton,PAS IN,7a7288a3,TCP Listener,-,yes,8,0,yes,0,0
+Bolton,PAS OUT,06f0b8b8,HTTP Listener,NONE,yes,1,0,no,0,0
+EK,DICOM,da67d2ba,DICOM Listener,-,yes,1,0,yes,0,0
+EK,Filedrop Correspondence,7a04b9d1,File Reader,-,no,0,0,no,0,0
+EK,MTW Correspondence,3ad2f609,File Reader,-,no,0,0,no,0,0
+EK,PAS IN Maidstone,712ec2e2,TCP Listener,-,yes,4,0,yes,0,0
+EK,PAS IN,2a67566e,TCP Listener,-,yes,4,0,yes,0,0
+EK,PAS OUT,06f0b8b8,HTTP Listener,NONE,yes,1,0,no,0,0
+EK,Synertec Correspondence,685aeaf0,File Reader,-,no,0,0,no,0,0
+ENHT,DICOM,da67d2ba,DICOM Listener,-,yes,1,0,yes,0,0
+ENHT,Docman,04524f4d,File Reader,-,no,0,0,no,0,0
+ENHT,PAS In,7a7288a3,TCP Listener,-,yes,7,0,yes,0,0
+ENHT,PAS Out,cbc80f6b,HTTP Listener,NONE,yes,1,0,no,0,0
+Kingston,DICOM,da67d2ba,DICOM Listener,-,yes,1,0,yes,0,0
+Kingston,OpenEyes Correspondence,06f0b8b8,File Reader,-,no,0,0,no,0,0
+Kingston,OpenEyes DICOM Channel,ba5419a3,DICOM Listener,-,yes,1,0,yes,0,0
+Kingston,OpenEyes DICOM IOLMaster Channel,eee5caa4,DICOM Listener,-,yes,1,0,yes,0,0
+Kingston,OpenEyes PAS,6c3a10d1,TCP Listener,-,yes,4,0,yes,0,0
+MEH,AIS OUT,8439efef,HTTP Listener,NONE,yes,0,1,yes,0,0
+MEH,AIS Sender,8c65e82d,Channel Reader,-,no,0,0,no,0,0
+MEH,DICOM,319fcf7f,DICOM Listener,-,yes,0,1,yes,0,0
+MEH,Docman,04524f4d,File Reader,-,no,0,0,no,0,0
+MEH,OpenEyes PAS Query v2,969561b8,HTTP Listener,NONE,yes,2,0,no,0,0
+MEH,OpenEyes PAS v2,7d6b6b87,TCP Listener,-,yes,3,6,yes,0,0
+Newmedica,DICOM,99f6d548,DICOM Listener,-,yes,1,0,yes,0,3
+Newmedica,Docman,d77eae0b,File Reader,-,no,0,0,no,0,0
+Newmedica,Generic Document processor,c878f575,Channel Reader,-,no,1,0,yes,0,0
+Newmedica,Generic Document processor OLD,95e0a91d,Channel Reader,-,no,1,0,yes,0,0
+Newmedica,OpenEyes Document In,0e8bdcb1,TCP Listener,-,yes,10,0,yes,0,0
+Newmedica,OpenEyes PAS In,1fac4399,TCP Listener,-,yes,10,0,yes,0,0
+Newmedica,OpenEyes PAS Out,18755f08,HTTP Listener,NONE,yes,1,0,no,1,3
+Newmedica,PAS In LOCAL-1-0,ffa240cd,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-184-0,26d6b455,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-186-0,9f82c6ab,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-187-0,bd18bf88,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-188-0,b155ec7f,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-189-0,9f9973dd,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-190-0,09ebb81b,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-191-0,f01ab7a5,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-192-0,4eca83af,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-204-0,4173965c,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-205-0,ebd7b20d,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-206-0,4e8138ae,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-207-0,79666d06,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-208-0,44d1367a,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-209-0,60ae6aac,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-210-0,008a3a87,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-211-0,1013f884,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-212-0,1d89d5ec,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-213-0,9924758f,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-214-0,0a330e7d,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-215-0,bc05215d,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-216-0,3e4d1367,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-217-0,b53952c7,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-218-0,566f5c0b,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-219-0,d7b58099,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-221-0,f80bfe7c,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-222-0,33b1c017,Channel Reader,-,no,10,0,yes,0,0
+Newmedica,PAS In LOCAL-223-0,81982f7b,Channel Reader,-,no,10,0,yes,0,0
+Optegra,DOCUMENTS IN,1208a953,TCP Listener,-,yes,1,0,yes,0,0
+Optegra,Docman,04524f4d,File Reader,-,no,0,0,no,0,0
+Optegra,Document Migration,1a5ecbc6,File Reader,-,no,3,0,yes,0,0
+Optegra,HFA2,81492d92,DICOM Listener,-,yes,1,0,yes,0,0
+Optegra,IOL,c14efd23,DICOM Listener,-,yes,1,0,yes,0,0
+Optegra,PAS IN V2,d69815ee,TCP Listener,-,yes,7,0,yes,0,0
+Pennine,OpenEyes DICOM Channel,ba5419a3,DICOM Listener,-,yes,1,0,yes,0,0
+Pennine,OpenEyes DICOM IOLMaster Channel,eee5caa4,DICOM Listener,-,yes,1,0,yes,0,0
+Pennine,DICOM_11118,da67d2ba,DICOM Listener,-,yes,1,0,yes,0,0
+Pennine,DICOM_11119,2d01d348,DICOM Listener,-,yes,1,0,yes,0,0
+Pennine,OpenEyes PAS,6c3a10d1,TCP Listener,-,yes,4,0,yes,0,0
+Pennine,OpenEyes PAS Query,06f0b8b8,HTTP Listener,NONE,yes,1,0,no,0,0
+Portsmouth,DICOM,da67d2ba,DICOM Listener,-,yes,1,0,yes,0,0
+Portsmouth,DOCUMENT-OUT-Drop,29925e07,File Reader,-,no,0,0,no,0,0
+Portsmouth,DOCUMENT-OUT-Minestrone,04524f4d,File Reader,-,no,0,0,no,0,0
+Portsmouth,DOCUMENTS IN HL7,402e6dfd,TCP Listener,-,yes,1,0,yes,0,0
+Portsmouth,General Documents IN,f703f9cd,File Reader,-,no,2,0,yes,0,5
+Portsmouth,IOL Documents IN,70aa29b6,File Reader,-,no,2,0,yes,0,5
+Portsmouth,Migration Documents IN,3493b21f,File Reader,-,no,2,0,yes,0,0
+Portsmouth,PAS IN V2,d69815ee,TCP Listener,-,yes,7,0,yes,0,0
+Portsmouth,PAS OUT,06f0b8b8,HTTP Listener,NONE,yes,2,0,no,0,0
+Sussex,DICOM,c14efd23,DICOM Listener,-,yes,1,0,yes,0,0
+Sussex,Document Delivery,375fe7b2,File Reader,-,no,0,0,no,0,0
+Sussex,PAS IN,d69815ee,TCP Listener,-,yes,7,0,yes,0,0
+Sussex,PAS IN - Migration,6b9477af,TCP Listener,-,yes,7,0,yes,0,0
+Sussex,PAS OUT,06f0b8b8,HTTP Listener,NONE,yes,2,0,no,0,0
+Wales,DICOM,da67d2ba,DICOM Listener,-,yes,1,0,yes,0,0
+Wales,OpenEyes Query - ABUHB,2e678abc,HTTP Listener,NONE,yes,21,2,no,0,0
+Wales,OpenEyes Query - BCUHB - Central,3b655b56,HTTP Listener,NONE,yes,21,2,no,0,0
+Wales,OpenEyes Query - BCUHB - West,dbb9ec40,HTTP Listener,NONE,yes,21,2,no,0,0
+Wales,OpenEyes Query - CTMUHB,0fa224a7,HTTP Listener,NONE,yes,21,2,no,0,0
+Wales,OpenEyes Query - CVUHB,9b5a6e96,HTTP Listener,NONE,yes,21,2,no,0,0
+Wales,OpenEyes Query - HDUHB,dcf60125,HTTP Listener,NONE,yes,21,2,no,0,0
+Wales,OpenEyes Query - PTHB,e29c8a88,HTTP Listener,NONE,yes,21,2,no,0,0
+Wales,OpenEyes Query - SBUHB,0e97b0f7,HTTP Listener,NONE,yes,21,2,no,0,0
+Wales,PAS IN,7a7288a3,TCP Listener,-,yes,7,0,yes,0,0

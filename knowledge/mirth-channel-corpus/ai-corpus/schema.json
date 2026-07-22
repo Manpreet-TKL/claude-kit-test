@@ -1,0 +1,38 @@
+{
+  "companion_files": {
+    "../security/findings.md": "SEC/REL findings the security/reliability fields feed",
+    "../testing/strategy.md": "how safe_to_replay and the findings become test gates",
+    "glossary.md": "domain glossary (PASAPI, PDQ, MPI, PayloadProcessor, MLLP, ...)",
+    "summary.json": "estate aggregates - load first"
+  },
+  "description": "Schema for ai-corpus/channels.jsonl - one object per Mirth channel. Consolidated deterministically by bin/build_ai_corpus.py from the wave artifacts; every field traces to a source artifact. Names/IDs do not imply function - trust 'category' (evidence-classified), not the channel name.",
+  "join_key": "canonical_path (unique per channel)",
+  "record": {
+    "auth": "method + credential placeholder (never a value) + detail [taxonomy+deepdive]",
+    "bridgelink_version": "export schema version (4.4.2 / 4.5.2 / 4.6.1)",
+    "business_process": "business context [taxonomy]",
+    "canonical_path": "redacted+normalised copy under canonical/",
+    "category": "taxonomy category (evidence-classified) [taxonomy]",
+    "channel_id": "Mirth channel UUID (may recur across instances - see shared_channel_ids)",
+    "channel_name": "export name - NOT authoritative for function",
+    "confidence": "confirmed | inferred",
+    "dependencies": "channel/global-map dependencies [taxonomy/inventory]",
+    "destinations": "destination connectors: name/transport/endpoint [inventory]",
+    "evidence": "per-claim evidence pointers [deepdive, where present]",
+    "functional_purpose": "one-line purpose [taxonomy]",
+    "hl7": "version/message_types/trigger_events/ack_behaviour [taxonomy] + detail [deepdive]",
+    "instance": "client instance directory",
+    "message_format": "message format [taxonomy]",
+    "openeyes": "endpoints/api_versions/uses_payload_processor [inventory+taxonomy] + detail [deepdive]",
+    "protocol": "wire protocol [taxonomy]",
+    "provenance": "which artifacts contributed to this record",
+    "raw_sha256": "hash of the raw channel block (identity/dedup)",
+    "reliability": "queue_enabled_destinations/retry_max/processing_threads/stateful/safe_to_replay/error+retry+queue behaviour [security-scan + taxonomy + canonical]",
+    "reuse_class": "reusable-with-config | client-specific [taxonomy]",
+    "routing": "routing logic detail [deepdive, where present]",
+    "security": "outbound_scheme/http+https endpoint counts/outbound_basic_auth/message_storage_mode [security-scan + canonical]",
+    "source": "source connector: transport/port/endpoint/binds_all_interfaces/inbound_auth [inventory + security-scan]",
+    "source_file": "original export path (provenance; read-only corpus)",
+    "template_family": "parameterised-template family if a member, else null [templates]"
+  }
+}

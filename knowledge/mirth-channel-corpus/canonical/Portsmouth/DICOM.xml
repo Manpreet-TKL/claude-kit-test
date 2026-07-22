@@ -1,0 +1,538 @@
+<channel version="4.4.2">
+      <id>da67d2ba-db52-4f50-898b-b534d71450ab</id>
+      <nextMetaDataId>7</nextMetaDataId>
+      <name>DICOM</name>
+      <description></description>
+      <revision>0</revision>
+      <sourceConnector version="4.4.2">
+        <metaDataId>0</metaDataId>
+        <name>sourceConnector</name>
+        <properties class="com.mirth.connect.connectors.dimse.DICOMReceiverProperties" version="4.4.2">
+          <pluginProperties/>
+          <listenerConnectorProperties version="4.4.2">
+            <host>0.0.0.0</host>
+            <port>11112</port>
+          </listenerConnectorProperties>
+          <sourceConnectorProperties version="4.4.2">
+            <responseVariable>Auto-generate (After source transformer)</responseVariable>
+            <respondAfterProcessing>true</respondAfterProcessing>
+            <processBatch>false</processBatch>
+            <firstResponse>false</firstResponse>
+            <processingThreads>1</processingThreads>
+            <resourceIds class="linked-hash-map">
+              <entry>
+                <string>Default Resource</string>
+                <string>[Default Resource]</string>
+              </entry>
+            </resourceIds>
+            <queueBufferSize>1000</queueBufferSize>
+          </sourceConnectorProperties>
+          <applicationEntity></applicationEntity>
+          <localHost></localHost>
+          <localPort></localPort>
+          <localApplicationEntity></localApplicationEntity>
+          <soCloseDelay>50</soCloseDelay>
+          <releaseTo>5</releaseTo>
+          <requestTo>5</requestTo>
+          <idleTo>60</idleTo>
+          <reaper>10</reaper>
+          <rspDelay>0</rspDelay>
+          <pdv1>false</pdv1>
+          <sndpdulen>16</sndpdulen>
+          <rcvpdulen>16</rcvpdulen>
+          <async>0</async>
+          <bigEndian>false</bigEndian>
+          <bufSize>1</bufSize>
+          <defts>false</defts>
+          <dest></dest>
+          <nativeData>false</nativeData>
+          <sorcvbuf>0</sorcvbuf>
+          <sosndbuf>0</sosndbuf>
+          <tcpDelay>true</tcpDelay>
+          <keyPW></keyPW>
+          <keyStore></keyStore>
+          <keyStorePW></keyStorePW>
+          <noClientAuth>true</noClientAuth>
+          <nossl2>true</nossl2>
+          <tls>notls</tls>
+          <trustStore></trustStore>
+          <trustStorePW></trustStorePW>
+        </properties>
+        <transformer version="4.4.2">
+          <elements>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>Patient_Name</name>
+              <sequenceNumber>0</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>Patient_Name</variable>
+              <mapping>msg[&apos;tag00100010&apos;].toString()</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>Patient_DOB</name>
+              <sequenceNumber>1</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>Patient_DOB</variable>
+              <mapping>msg[&apos;tag00100030&apos;].toString()</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>Patient_OtherID</name>
+              <sequenceNumber>2</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>Patient_OtherID</variable>
+              <mapping>msg[&apos;tag00101000&apos;].toString()</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>Patient_ID</name>
+              <sequenceNumber>3</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>Patient_ID</variable>
+              <mapping>msg[&apos;tag00100020&apos;].toString()</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>Patient_Sex</name>
+              <sequenceNumber>4</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>Patient_Sex</variable>
+              <mapping>msg[&apos;tag00100040&apos;].toString()</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>Study_ID</name>
+              <sequenceNumber>5</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>Study_ID</variable>
+              <mapping>msg[&apos;tag00200010&apos;].toString()</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>Series_Number</name>
+              <sequenceNumber>6</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>Series_Number</variable>
+              <mapping>msg[&apos;tag00200011&apos;].toString()</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>Study_UID</name>
+              <sequenceNumber>7</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>Study_UID</variable>
+              <mapping>msg[&apos;tag0020000D&apos;].toString()</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>FileMetaVersion</name>
+              <sequenceNumber>8</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>FileMetaVersion</variable>
+              <mapping>msg[&apos;tag00020003&apos;].toString()</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>Device_Manufacturer</name>
+              <sequenceNumber>9</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>Device_Manufacturer</variable>
+              <mapping>msg[&apos;tag00080070&apos;].toString()</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>Device_Model_Name</name>
+              <sequenceNumber>10</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>Device_Model_Name</variable>
+              <mapping>msg[&apos;tag00081090&apos;].toString()</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>SOP_Class_UID</name>
+              <sequenceNumber>11</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>SOP_Class_UID</variable>
+              <mapping>msg[&apos;tag00080016&apos;].toString()</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>local_AET</name>
+              <sequenceNumber>12</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>local_AET</variable>
+              <mapping>sourceMap.get(&apos;localApplicationEntityTitle&apos;)</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.mapper.MapperStep version="4.4.2">
+              <name>remote_AET</name>
+              <sequenceNumber>13</sequenceNumber>
+              <enabled>true</enabled>
+              <variable>remote_AET</variable>
+              <mapping>sourceMap.get(&apos;remoteApplicationEntityTitle&apos;)</mapping>
+              <defaultValue></defaultValue>
+              <replacements/>
+              <scope>CHANNEL</scope>
+            </com.mirth.connect.plugins.mapper.MapperStep>
+            <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.4.2">
+              <name>Extract identifier_type and institution_id from Local AET</name>
+              <sequenceNumber>14</sequenceNumber>
+              <enabled>true</enabled>
+              <script>// Regex pattern for matching a patient_identifier_type.unique_string
+var regex = /(local|global)-(\d+)-(\d+)/i;
+
+// Set default values from configuration map or default to LOCAL-1-0
+var configPIDT = configurationMap.get(&apos;defaultPatientIdentifierType&apos;);
+var identifier_type = (typeof configPIDT !== &apos;undefined&apos; &amp;&amp; configPIDT !== null) ? configPIDT : &apos;LOCAL-1-0&apos;;
+var institution_id = identifier_type.match(regex)[2]; //get deafult institution_id
+
+var str = $(&apos;local_AET&apos;);
+var result = str.match(regex);
+
+// If a result was found, use it as the identifire_type
+if (typeof result !== &apos;undefined&apos; &amp;&amp; result !== null) {
+	identifier_type = result[0].toUpperCase();
+	institution_id = result[2]; // First nuber after LOCAL|GLOBAL-
+}
+
+// Add final values to the channelMap.
+channelMap.put(&apos;identifier_type&apos;, identifier_type);
+channelMap.put(&apos;institution_id&apos;, institution_id);</script>
+            </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+            <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.4.2">
+              <name>Set source platform tag based on AET</name>
+              <sequenceNumber>15</sequenceNumber>
+              <enabled>true</enabled>
+              <script>// source_platform works around some issues with particular ImageNET outputs by giving the PayloadProcessor a hint
+// it may also be used for linking events with intgratiosn to PACS such as imagenet, forum
+var source_platform = &apos;generic&apos;;
+
+if (
+	$(&apos;remote_AET&apos;).toLowerCase().contains(&apos;imagenet&apos;) 
+		|| $(&apos;local_AET&apos;).toLowerCase().contains(&apos;imagenet&apos;)
+)
+{
+	source_platform = &apos;imagenet&apos;;
+} else if (
+	$(&apos;remote_AET&apos;).toLowerCase().contains(&apos;forum&apos;) 
+		|| $(&apos;local_AET&apos;).toLowerCase().contains(&apos;forum&apos;)
+)
+{
+	source_platform = &apos;forum&apos;;
+} 
+
+channelMap.put(&apos;source_platform&apos;, source_platform);</script>
+            </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+            <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.4.2">
+              <name>Remove the IOLMaster Import destination if device is not a Zeiss IOL Master</name>
+              <sequenceNumber>16</sequenceNumber>
+              <enabled>true</enabled>
+              <script>const supportedSOPUIDs = [&apos;1.2.840.10008.5.1.4.1.1.104.1&apos;, &apos;1.2.840.10008.5.1.4.1.1.7.4&apos;];
+const sopClassUIDString = String($(&apos;SOP_Class_UID&apos;));
+
+if (
+	$(&apos;Device_Manufacturer&apos;).toLowerCase().indexOf(&apos;zeiss&apos;) == -1
+	|| $(&apos;Device_Model_Name&apos;).toLowerCase().indexOf(&apos;iolmaster&apos;) == -1
+	|| !supportedSOPUIDs.includes(sopClassUIDString)
+)
+{
+	// IOL Master Importer destination must be destination ID 1
+	destinationSet.remove([1]);
+}</script>
+            </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+          </elements>
+          <inboundTemplate encoding="base64"></inboundTemplate>
+          <outboundTemplate encoding="base64"></outboundTemplate>
+          <inboundDataType>DICOM</inboundDataType>
+          <outboundDataType>DICOM</outboundDataType>
+          <inboundProperties class="com.mirth.connect.plugins.datatypes.dicom.DICOMDataTypeProperties" version="4.4.2"/>
+          <outboundProperties class="com.mirth.connect.plugins.datatypes.dicom.DICOMDataTypeProperties" version="4.4.2"/>
+        </transformer>
+        <filter version="4.4.2">
+          <elements/>
+        </filter>
+        <transportName>DICOM Listener</transportName>
+        <mode>SOURCE</mode>
+        <enabled>true</enabled>
+        <waitForPrevious>true</waitForPrevious>
+      </sourceConnector>
+      <destinationConnectors>
+        <connector version="4.4.2">
+          <metaDataId>1</metaDataId>
+          <name>Write out file to IolMasterImport incoming folder when device is a Zeiss IOLMaster</name>
+          <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="4.4.2">
+            <pluginProperties/>
+            <destinationConnectorProperties version="4.4.2">
+              <queueEnabled>false</queueEnabled>
+              <sendFirst>false</sendFirst>
+              <retryIntervalMillis>10000</retryIntervalMillis>
+              <regenerateTemplate>false</regenerateTemplate>
+              <retryCount>0</retryCount>
+              <rotate>false</rotate>
+              <includeFilterTransformer>false</includeFilterTransformer>
+              <threadCount>1</threadCount>
+              <threadAssignmentVariable></threadAssignmentVariable>
+              <validateResponse>false</validateResponse>
+              <resourceIds class="linked-hash-map">
+                <entry>
+                  <string>Default Resource</string>
+                  <string>[Default Resource]</string>
+                </entry>
+              </resourceIds>
+              <queueBufferSize>1000</queueBufferSize>
+              <reattachAttachments>true</reattachAttachments>
+            </destinationConnectorProperties>
+            <scheme>FILE</scheme>
+            <host>/mnt/dicom</host>
+            <outputPattern>${originalFilename}</outputPattern>
+            <anonymous>true</anonymous>
+            <username>anonymous</username>
+            <password>${REDACTED_PASSWORD}</password>
+            <timeout>10000</timeout>
+            <keepConnectionOpen>true</keepConnectionOpen>
+            <maxIdleTime>0</maxIdleTime>
+            <secure>true</secure>
+            <passive>true</passive>
+            <validateConnection>true</validateConnection>
+            <outputAppend>false</outputAppend>
+            <errorOnExists>false</errorOnExists>
+            <temporary>false</temporary>
+            <binary>true</binary>
+            <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
+            <template>${message.rawData}</template>
+          </properties>
+          <transformer version="4.4.2">
+            <elements/>
+            <inboundTemplate encoding="base64"></inboundTemplate>
+            <inboundDataType>DICOM</inboundDataType>
+            <outboundDataType>DICOM</outboundDataType>
+            <inboundProperties class="com.mirth.connect.plugins.datatypes.dicom.DICOMDataTypeProperties" version="4.4.2"/>
+            <outboundProperties class="com.mirth.connect.plugins.datatypes.dicom.DICOMDataTypeProperties" version="4.4.2"/>
+          </transformer>
+          <responseTransformer version="4.4.2">
+            <elements/>
+            <inboundDataType>DICOM</inboundDataType>
+            <outboundDataType>DICOM</outboundDataType>
+            <inboundProperties class="com.mirth.connect.plugins.datatypes.dicom.DICOMDataTypeProperties" version="4.4.2"/>
+            <outboundProperties class="com.mirth.connect.plugins.datatypes.dicom.DICOMDataTypeProperties" version="4.4.2"/>
+          </responseTransformer>
+          <filter version="4.4.2">
+            <elements/>
+          </filter>
+          <transportName>File Writer</transportName>
+          <mode>DESTINATION</mode>
+          <enabled>true</enabled>
+          <waitForPrevious>true</waitForPrevious>
+        </connector>
+        <connector version="4.4.2">
+          <metaDataId>6</metaDataId>
+          <name>PayloadProcessor API Send</name>
+          <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.4.2">
+            <pluginProperties/>
+            <destinationConnectorProperties version="4.4.2">
+              <queueEnabled>false</queueEnabled>
+              <sendFirst>false</sendFirst>
+              <retryIntervalMillis>10000</retryIntervalMillis>
+              <regenerateTemplate>false</regenerateTemplate>
+              <retryCount>0</retryCount>
+              <rotate>false</rotate>
+              <includeFilterTransformer>false</includeFilterTransformer>
+              <threadCount>1</threadCount>
+              <threadAssignmentVariable></threadAssignmentVariable>
+              <validateResponse>false</validateResponse>
+              <resourceIds class="linked-hash-map">
+                <entry>
+                  <string>Default Resource</string>
+                  <string>[Default Resource]</string>
+                </entry>
+              </resourceIds>
+              <queueBufferSize>1000</queueBufferSize>
+              <reattachAttachments>true</reattachAttachments>
+            </destinationConnectorProperties>
+            <host>http://web/api/v1/request/queue/add</host>
+            <useProxyServer>false</useProxyServer>
+            <proxyAddress></proxyAddress>
+            <proxyPort></proxyPort>
+            <method>post</method>
+            <headers class="linked-hash-map"/>
+            <parameters class="linked-hash-map">
+              <entry>
+                <string>institution_id</string>
+                <list>
+                  <string>1</string>
+                </list>
+              </entry>
+              <entry>
+                <string>identifier_type</string>
+                <list>
+                  <string>LOCAL-1-0</string>
+                </list>
+              </entry>
+              <entry>
+                <string>file_name</string>
+                <list>
+                  <string>${originalFilename}</string>
+                </list>
+              </entry>
+              <entry>
+                <string>content_type</string>
+                <list>
+                  <string>application/dicom</string>
+                </list>
+              </entry>
+              <entry>
+                <string>system_message</string>
+                <list>
+                  <string>${local_AET}</string>
+                </list>
+              </entry>
+              <entry>
+                <string>request_type</string>
+                <list>
+                  <string>dicom_request</string>
+                </list>
+              </entry>
+              <entry>
+                <string>source_platform</string>
+                <list>
+                  <string>${source_platform}</string>
+                </list>
+              </entry>
+            </parameters>
+            <useHeadersVariable>false</useHeadersVariable>
+            <headersVariable></headersVariable>
+            <useParametersVariable>false</useParametersVariable>
+            <parametersVariable></parametersVariable>
+            <responseXmlBody>false</responseXmlBody>
+            <responseParseMultipart>true</responseParseMultipart>
+            <responseIncludeMetadata>false</responseIncludeMetadata>
+            <responseBinaryMimeTypes>application/.*(?&lt;!json|xml)$|image/.*|video/.*|audio/.*</responseBinaryMimeTypes>
+            <responseBinaryMimeTypesRegex>true</responseBinaryMimeTypesRegex>
+            <multipart>false</multipart>
+            <useAuthentication>true</useAuthentication>
+            <authenticationType>Basic</authenticationType>
+            <usePreemptiveAuthentication>true</usePreemptiveAuthentication>
+            <username>api</username>
+            <password>${REDACTED_PASSWORD}</password>
+            <content>${DICOMMESSAGE}</content>
+            <contentType>application/dicom</contentType>
+            <dataTypeBinary>true</dataTypeBinary>
+            <charset>DEFAULT_ENCODING</charset>
+            <socketTimeout>30000</socketTimeout>
+          </properties>
+          <transformer version="4.4.2">
+            <elements/>
+            <inboundTemplate encoding="base64"></inboundTemplate>
+            <outboundTemplate encoding="base64"></outboundTemplate>
+            <inboundDataType>DICOM</inboundDataType>
+            <outboundDataType>DICOM</outboundDataType>
+            <inboundProperties class="com.mirth.connect.plugins.datatypes.dicom.DICOMDataTypeProperties" version="4.4.2"/>
+            <outboundProperties class="com.mirth.connect.plugins.datatypes.dicom.DICOMDataTypeProperties" version="4.4.2"/>
+          </transformer>
+          <responseTransformer version="4.4.2">
+            <elements/>
+            <inboundTemplate encoding="base64"></inboundTemplate>
+            <outboundTemplate encoding="base64"></outboundTemplate>
+            <inboundDataType>DICOM</inboundDataType>
+            <outboundDataType>DICOM</outboundDataType>
+            <inboundProperties class="com.mirth.connect.plugins.datatypes.dicom.DICOMDataTypeProperties" version="4.4.2"/>
+            <outboundProperties class="com.mirth.connect.plugins.datatypes.dicom.DICOMDataTypeProperties" version="4.4.2"/>
+          </responseTransformer>
+          <filter version="4.4.2">
+            <elements/>
+          </filter>
+          <transportName>HTTP Sender</transportName>
+          <mode>DESTINATION</mode>
+          <enabled>true</enabled>
+          <waitForPrevious>true</waitForPrevious>
+        </connector>
+      </destinationConnectors>
+      <preprocessingScript>// Modify the message variable below to pre process data
+return message;</preprocessingScript>
+      <postprocessingScript>// This script executes once after a message has been processed
+// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+return;</postprocessingScript>
+      <deployScript>// This script executes once when the channel is deployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</deployScript>
+      <undeployScript>// This script executes once when the channel is undeployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</undeployScript>
+      <properties version="4.4.2">
+        <clearGlobalChannelMap>true</clearGlobalChannelMap>
+        <messageStorageMode>PRODUCTION</messageStorageMode>
+        <encryptData>false</encryptData>
+        <encryptAttachments>false</encryptAttachments>
+        <encryptCustomMetaData>false</encryptCustomMetaData>
+        <removeContentOnCompletion>false</removeContentOnCompletion>
+        <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+        <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
+        <initialState>STARTED</initialState>
+        <storeAttachments>true</storeAttachments>
+        <metaDataColumns>
+          <metaDataColumn>
+            <name>SOURCE</name>
+            <type>STRING</type>
+            <mappingName>mirth_source</mappingName>
+          </metaDataColumn>
+          <metaDataColumn>
+            <name>TYPE</name>
+            <type>STRING</type>
+            <mappingName>mirth_type</mappingName>
+          </metaDataColumn>
+        </metaDataColumns>
+        <attachmentProperties version="4.4.2">
+          <className>com.mirth.connect.server.attachments.dicom.DICOMAttachmentHandlerProvider</className>
+          <type>DICOM</type>
+          <properties/>
+        </attachmentProperties>
+        <resourceIds class="linked-hash-map">
+          <entry>
+            <string>Default Resource</string>
+            <string>[Default Resource]</string>
+          </entry>
+        </resourceIds>
+      </properties>
+      <exportData>
+        <metadata>
+          <enabled>true</enabled>
+          <lastModified>
+            <time>0</time>
+            <timezone>Europe/London</timezone>
+          </lastModified>
+          <pruningSettings>
+            <pruneMetaDataDays>14</pruneMetaDataDays>
+            <pruneContentDays>14</pruneContentDays>
+            <archiveEnabled>true</archiveEnabled>
+            <pruneErroredMessages>false</pruneErroredMessages>
+          </pruningSettings>
+          <userId>1</userId>
+        </metadata>
+      </exportData>
+    </channel>

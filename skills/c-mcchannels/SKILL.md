@@ -63,3 +63,6 @@ and should become `${OE_IDENTIFIER_TYPE}`.
   hosts to template, the `OE_API_AUTH` header workaround.
 - `subs/secrets-config.md` - the `common.js` globalMap resolution model and the
   secret-free-export rules.
+- `subs/estate-context.md` - how the three reference channels sit in the 13-instance
+  estate: shared-lineage drift (name != function), the estate-wide shared `api` secret,
+  the template model, and the security/reliability findings. Full corpus: ~/claude-kit/knowledge/mirth-channel-corpus.

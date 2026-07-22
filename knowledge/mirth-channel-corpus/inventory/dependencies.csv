@@ -1,0 +1,20 @@
+instance,channel_name,channel_id,depends_on_type,depends_on
+Bedford,DICOM,c14efd23-2c1c-4e53-a59f-dcfe0e727c3b,configurationMap.get,defaultPatientIdentifierType
+Bolton,DICOM,c14efd23-2c1c-4e53-a59f-dcfe0e727c3b,configurationMap.get,defaultPatientIdentifierType
+EK,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,configurationMap.get,defaultPatientIdentifierType
+ENHT,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,configurationMap.get,defaultPatientIdentifierType
+Kingston,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,configurationMap.get,defaultPatientIdentifierType
+MEH,DICOM,319fcf7f-ef08-4564-9dd1-33be634edfd4,configurationMap.get,defaultPatientIdentifierType
+Newmedica,DICOM,99f6d548-97f8-4400-96c4-ea388e72d48e,configurationMap.get,defaultPatientIdentifierType
+Newmedica,OpenEyes PAS In,1fac4399-a6ee-4fed-aa6a-1aea903485ee,channel_writer,${TargetChannel}
+Newmedica,OpenEyes PAS In,1fac4399-a6ee-4fed-aa6a-1aea903485ee,global.get,globalMap:channelLookupCache
+Newmedica,OpenEyes PAS In,1fac4399-a6ee-4fed-aa6a-1aea903485ee,global.get,globalMap:hospitalMapping
+Newmedica,OpenEyes PAS In,1fac4399-a6ee-4fed-aa6a-1aea903485ee,global.put,globalMap:channelLookupCache
+Newmedica,OpenEyes PAS In,1fac4399-a6ee-4fed-aa6a-1aea903485ee,global.put,globalMap:hospitalMapping
+Optegra,HFA2,81492d92-15a9-4109-8b65-9d95aa131200,configurationMap.get,defaultPatientIdentifierType
+Optegra,IOL,c14efd23-2c1c-4e53-a59f-dcfe0e727c3b,configurationMap.get,defaultPatientIdentifierType
+Pennine,DICOM_11118,da67d2ba-db52-4f50-898b-b534d71450ab,configurationMap.get,defaultPatientIdentifierType
+Pennine,DICOM_11119,2d01d348-a78d-42b7-a206-410d30a2ff8b,configurationMap.get,defaultPatientIdentifierType
+Portsmouth,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,configurationMap.get,defaultPatientIdentifierType
+Sussex,DICOM,c14efd23-2c1c-4e53-a59f-dcfe0e727c3b,configurationMap.get,defaultPatientIdentifierType
+Wales,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,configurationMap.get,defaultPatientIdentifierType

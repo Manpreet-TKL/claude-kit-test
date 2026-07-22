@@ -1,0 +1,9 @@
+channel_name,CHANNEL_ID,BOARD,LISTEN_PORT,BOARD_CODE,ARCHIVE_ENABLED
+OpenEyes Query - ABUHB,2e678abc-78ba-4220-93d3-846f765fd8dd,ABUHB,6668,139,false
+OpenEyes Query - BCUHB - Central,3b655b56-5d80-403e-a61e-97c3abf919a4,BCUHB - Central,6662,109,true
+OpenEyes Query - BCUHB - West,dbb9ec40-fc78-4f3c-82b6-552838ffe1d4,BCUHB - West,6663,110,false
+OpenEyes Query - CTMUHB,0fa224a7-fe33-46ae-af0e-96d0ffd134c3,CTMUHB,6667,126,false
+OpenEyes Query - CVUHB,9b5a6e96-dfbf-4a1d-b29b-59ccb6c3505d,CVUHB,6664,140,false
+OpenEyes Query - HDUHB,dcf60125-aa97-45b9-a819-d54008394dea,HDUHB,6665,149,false
+OpenEyes Query - PTHB,e29c8a88-35df-4bbd-89b2-864153cfb42d,PTHB,6666,170,false
+OpenEyes Query - SBUHB,0e97b0f7-75db-41c8-b287-b4c0b574608b,SBUHB,6669,108,false

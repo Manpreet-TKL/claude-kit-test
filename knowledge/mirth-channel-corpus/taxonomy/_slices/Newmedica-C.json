@@ -1,0 +1,1866 @@
+[
+  {
+    "channel_id": "60ae6aac-a8d0-46fc-a873-ee4c65a3952e",
+    "channel_name": "PAS In LOCAL-209-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-209-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Channel Reader accepts HL7v2 from an upstream Mirth channel; enabled HTTP destinations send patient, referral, appointment, merge, and did-not-attend data to OpenEyes PASAPI V1 and V3.",
+        "location": "Newmedica, PAS In LOCAL-209-0, 60ae6aac-a8d0-46fc-a873-ee4c65a3952e, Newmedica/PAS.xml, source Connector lines 7-116; HTTP destination connectors lines 119-640, 645-1935, 1936-2661, and 2924-3212",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The PASAPI transformers map HL7 patient and visit content to XML, derive hospital and secondary hospital numbers, patient identifier, appointment values, and parse PASAPI responses for warnings and PatientId.",
+        "location": "Newmedica, PAS In LOCAL-209-0, 60ae6aac-a8d0-46fc-a873-ee4c65a3952e, Newmedica/PAS.xml, destination transformer/response transformer PASAPI - Secondary Patient lines 180-625; PASAPI - Patient lines 706-1158; PASAPI - Patient Referral and Clinic List - PUT lines 1160-2163",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "Destination filters route A40 to secondary patient and patient merge, A38/S15 to appointment deletion, appointment events A01/A02/A03/A04/A05/A11/A12/A13/S12/S13/S14/S26 to appointment PUT, S26 to did-not-attend, and suppress ReportFile on HTTP appointment routes.",
+        "location": "Newmedica, PAS In LOCAL-209-0, 60ae6aac-a8d0-46fc-a873-ee4c65a3952e, Newmedica/PAS.xml, filters PASAPI - Secondary Patient lines 626-639, Clinic List - PUT lines 2102-2163, Clinic List - DELETE lines 2389-2405, PASAPI - Patient Merge lines 2644-2657, Clinic List - DNA lines 3163-3209",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "All HTTP destinations have destination queue disabled and retryCount 0, use preemptive HTTP Basic authentication with a redacted password, and response warning handling marks non-GP/non-Practice warnings as errors. The OBX JavaScript destination decodes ReportFile content to a Mirth attachment.",
+        "location": "Newmedica, PAS In LOCAL-209-0, 60ae6aac-a8d0-46fc-a873-ee4c65a3952e, Newmedica/PAS.xml, HTTP destination connector properties including PASAPI - Secondary Patient lines 124-172 and Clinic List - DNA lines 2929-2985; PASAPI response transformer lines 559-594; OBX document transformer lines 2665-2922",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "008a3a87-4ffd-4b4d-b992-3364c6974183",
+    "channel_name": "PAS In LOCAL-210-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-210-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Structurally identical to LOCAL-209-0 except channel id/name and exportData channelTag metadata: tag is Nuneaton; source Connector, all destination connector endpoints, filters, and transformer scripts are unchanged.",
+        "location": "Newmedica, PAS In LOCAL-210-0, 008a3a87-4ffd-4b4d-b992-3364c6974183, Newmedica/PAS.xml, whole-file direct diff against canonical/Newmedica/PAS In LOCAL-209-0.xml: channel metadata lines 2-4 and exportData/channelTag lines 3477-3490 differ; Newmedica, PAS In LOCAL-210-0, 008a3a87-4ffd-4b4d-b992-3364c6974183, Newmedica/PAS.xml, source Connector and destination connectors PASAPI - Secondary Patient/PASAPI - Patient/PASAPI - Patient Referral/Clinic List - PUT/Clinic List - DELETE/PASAPI - Patient Merge/OBX document/Clinic List - DNA is otherwise identical",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "1013f884-3dfa-43d1-9ad2-96eb4024d3b1",
+    "channel_name": "PAS In LOCAL-211-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-211-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Structurally identical to LOCAL-209-0 except channel id/name and exportData channelTag metadata: tag is Worcester; source Connector, all destination connector endpoints, filters, and transformer scripts are unchanged.",
+        "location": "Newmedica, PAS In LOCAL-211-0, 1013f884-3dfa-43d1-9ad2-96eb4024d3b1, Newmedica/PAS.xml, whole-file direct diff against canonical/Newmedica/PAS In LOCAL-209-0.xml: channel metadata lines 2-4 and exportData/channelTag lines 3477-3490 differ; Newmedica, PAS In LOCAL-211-0, 1013f884-3dfa-43d1-9ad2-96eb4024d3b1, Newmedica/PAS.xml, source Connector and destination connectors PASAPI - Secondary Patient/PASAPI - Patient/PASAPI - Patient Referral/Clinic List - PUT/Clinic List - DELETE/PASAPI - Patient Merge/OBX document/Clinic List - DNA is otherwise identical",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "1d89d5ec-49c2-4677-b8e7-43243e545bc7",
+    "channel_name": "PAS In LOCAL-212-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-212-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Structurally identical to LOCAL-209-0 except channel id/name and exportData channelTag metadata: tag is Oxford; source Connector, all destination connector endpoints, filters, and transformer scripts are unchanged.",
+        "location": "Newmedica, PAS In LOCAL-212-0, 1d89d5ec-49c2-4677-b8e7-43243e545bc7, Newmedica/PAS.xml, whole-file direct diff against canonical/Newmedica/PAS In LOCAL-209-0.xml: channel metadata lines 2-4 and exportData/channelTag lines 3477-3490 differ; Newmedica, PAS In LOCAL-212-0, 1d89d5ec-49c2-4677-b8e7-43243e545bc7, Newmedica/PAS.xml, source Connector and destination connectors PASAPI - Secondary Patient/PASAPI - Patient/PASAPI - Patient Referral/Clinic List - PUT/Clinic List - DELETE/PASAPI - Patient Merge/OBX document/Clinic List - DNA is otherwise identical",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "9924758f-6dd3-4556-8776-72084e8a4f12",
+    "channel_name": "PAS In LOCAL-213-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-213-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Structurally identical to LOCAL-209-0 except channel id/name and exportData channelTag metadata: tag is Birmingham; source Connector, all destination connector endpoints, filters, and transformer scripts are unchanged.",
+        "location": "Newmedica, PAS In LOCAL-213-0, 9924758f-6dd3-4556-8776-72084e8a4f12, Newmedica/PAS.xml, whole-file direct diff against canonical/Newmedica/PAS In LOCAL-209-0.xml: channel metadata lines 2-4 and exportData/channelTag lines 3477-3490 differ; Newmedica, PAS In LOCAL-213-0, 9924758f-6dd3-4556-8776-72084e8a4f12, Newmedica/PAS.xml, source Connector and destination connectors PASAPI - Secondary Patient/PASAPI - Patient/PASAPI - Patient Referral/Clinic List - PUT/Clinic List - DELETE/PASAPI - Patient Merge/OBX document/Clinic List - DNA is otherwise identical",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "0a330e7d-25b4-4588-b102-3dd780a130ed",
+    "channel_name": "PAS In LOCAL-214-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-214-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Structurally identical to LOCAL-209-0 except channel id/name and exportData channelTag metadata: tag is Nottingham; source Connector, all destination connector endpoints, filters, and transformer scripts are unchanged.",
+        "location": "Newmedica, PAS In LOCAL-214-0, 0a330e7d-25b4-4588-b102-3dd780a130ed, Newmedica/PAS.xml, whole-file direct diff against canonical/Newmedica/PAS In LOCAL-209-0.xml: channel metadata lines 2-4 and exportData/channelTag lines 3477-3490 differ; Newmedica, PAS In LOCAL-214-0, 0a330e7d-25b4-4588-b102-3dd780a130ed, Newmedica/PAS.xml, source Connector and destination connectors PASAPI - Secondary Patient/PASAPI - Patient/PASAPI - Patient Referral/Clinic List - PUT/Clinic List - DELETE/PASAPI - Patient Merge/OBX document/Clinic List - DNA is otherwise identical",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "bc05215d-34c3-4486-a3ea-40134491d392",
+    "channel_name": "PAS In LOCAL-215-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-215-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Structurally identical to LOCAL-209-0 except channel id/name and exportData channelTag metadata: tag is Hampshire; source Connector, all destination connector endpoints, filters, and transformer scripts are unchanged.",
+        "location": "Newmedica, PAS In LOCAL-215-0, bc05215d-34c3-4486-a3ea-40134491d392, Newmedica/PAS.xml, whole-file direct diff against canonical/Newmedica/PAS In LOCAL-209-0.xml: channel metadata lines 2-4 and exportData/channelTag lines 3477-3490 differ; Newmedica, PAS In LOCAL-215-0, bc05215d-34c3-4486-a3ea-40134491d392, Newmedica/PAS.xml, source Connector and destination connectors PASAPI - Secondary Patient/PASAPI - Patient/PASAPI - Patient Referral/Clinic List - PUT/Clinic List - DELETE/PASAPI - Patient Merge/OBX document/Clinic List - DNA is otherwise identical",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "3e4d1367-d4e0-4bed-9034-f21b50351583",
+    "channel_name": "PAS In LOCAL-216-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-216-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Structurally identical to LOCAL-209-0 except channel id/name and exportData channelTag metadata: tag is Berkshire; source Connector, all destination connector endpoints, filters, and transformer scripts are unchanged.",
+        "location": "Newmedica, PAS In LOCAL-216-0, 3e4d1367-d4e0-4bed-9034-f21b50351583, Newmedica/PAS.xml, whole-file direct diff against canonical/Newmedica/PAS In LOCAL-209-0.xml: channel metadata lines 2-4 and exportData/channelTag lines 3477-3490 differ; Newmedica, PAS In LOCAL-216-0, 3e4d1367-d4e0-4bed-9034-f21b50351583, Newmedica/PAS.xml, source Connector and destination connectors PASAPI - Secondary Patient/PASAPI - Patient/PASAPI - Patient Referral/Clinic List - PUT/Clinic List - DELETE/PASAPI - Patient Merge/OBX document/Clinic List - DNA is otherwise identical",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "b53952c7-8d31-4f8f-8f7b-ce536a0b6c7e",
+    "channel_name": "PAS In LOCAL-217-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-217-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Structurally identical to LOCAL-209-0 except channel id/name and exportData channelTag metadata: tag is Manchester; source Connector, all destination connector endpoints, filters, and transformer scripts are unchanged.",
+        "location": "Newmedica, PAS In LOCAL-217-0, b53952c7-8d31-4f8f-8f7b-ce536a0b6c7e, Newmedica/PAS.xml, whole-file direct diff against canonical/Newmedica/PAS In LOCAL-209-0.xml: channel metadata lines 2-4 and exportData/channelTag lines 3477-3490 differ; Newmedica, PAS In LOCAL-217-0, b53952c7-8d31-4f8f-8f7b-ce536a0b6c7e, Newmedica/PAS.xml, source Connector and destination connectors PASAPI - Secondary Patient/PASAPI - Patient/PASAPI - Patient Referral/Clinic List - PUT/Clinic List - DELETE/PASAPI - Patient Merge/OBX document/Clinic List - DNA is otherwise identical",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "566f5c0b-fa86-458a-8b6e-74593f0782af",
+    "channel_name": "PAS In LOCAL-218-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-218-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Structurally identical to LOCAL-209-0 except channel id/name and exportData channelTag metadata: tag is Hertfordshire; source Connector, all destination connector endpoints, filters, and transformer scripts are unchanged.",
+        "location": "Newmedica, PAS In LOCAL-218-0, 566f5c0b-fa86-458a-8b6e-74593f0782af, Newmedica/PAS.xml, whole-file direct diff against canonical/Newmedica/PAS In LOCAL-209-0.xml: channel metadata lines 2-4 and exportData/channelTag lines 3477-3490 differ; Newmedica, PAS In LOCAL-218-0, 566f5c0b-fa86-458a-8b6e-74593f0782af, Newmedica/PAS.xml, source Connector and destination connectors PASAPI - Secondary Patient/PASAPI - Patient/PASAPI - Patient Referral/Clinic List - PUT/Clinic List - DELETE/PASAPI - Patient Merge/OBX document/Clinic List - DNA is otherwise identical",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "d7b58099-c50c-4a1a-8d67-a4d80d0a0ed9",
+    "channel_name": "PAS In LOCAL-219-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-219-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Structurally identical to LOCAL-209-0 except channel id/name and exportData channelTag metadata: tag is Coventry; source Connector, all destination connector endpoints, filters, and transformer scripts are unchanged.",
+        "location": "Newmedica, PAS In LOCAL-219-0, d7b58099-c50c-4a1a-8d67-a4d80d0a0ed9, Newmedica/PAS.xml, whole-file direct diff against canonical/Newmedica/PAS In LOCAL-209-0.xml: channel metadata lines 2-4 and exportData/channelTag lines 3477-3490 differ; Newmedica, PAS In LOCAL-219-0, d7b58099-c50c-4a1a-8d67-a4d80d0a0ed9, Newmedica/PAS.xml, source Connector and destination connectors PASAPI - Secondary Patient/PASAPI - Patient/PASAPI - Patient Referral/Clinic List - PUT/Clinic List - DELETE/PASAPI - Patient Merge/OBX document/Clinic List - DNA is otherwise identical",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "f80bfe7c-e2f9-4560-9b08-80460de6fb31",
+    "channel_name": "PAS In LOCAL-221-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-221-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Structurally identical to LOCAL-209-0 except channel id/name and exportData channelTag metadata: tag is Bradford; source Connector, all destination connector endpoints, filters, and transformer scripts are unchanged.",
+        "location": "Newmedica, PAS In LOCAL-221-0, f80bfe7c-e2f9-4560-9b08-80460de6fb31, Newmedica/PAS.xml, whole-file direct diff against canonical/Newmedica/PAS In LOCAL-209-0.xml: channel metadata lines 2-4 and exportData/channelTag lines 3477-3490 differ; Newmedica, PAS In LOCAL-221-0, f80bfe7c-e2f9-4560-9b08-80460de6fb31, Newmedica/PAS.xml, source Connector and destination connectors PASAPI - Secondary Patient/PASAPI - Patient/PASAPI - Patient Referral/Clinic List - PUT/Clinic List - DELETE/PASAPI - Patient Merge/OBX document/Clinic List - DNA is otherwise identical",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "33b1c017-edf4-4feb-81b8-e59eb1f63f09",
+    "channel_name": "PAS In LOCAL-222-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-222-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Structurally identical to LOCAL-209-0 except channel id/name and exportData channelTag metadata: tag is West Cheshire; source Connector, all destination connector endpoints, filters, and transformer scripts are unchanged.",
+        "location": "Newmedica, PAS In LOCAL-222-0, 33b1c017-edf4-4feb-81b8-e59eb1f63f09, Newmedica/PAS.xml, whole-file direct diff against canonical/Newmedica/PAS In LOCAL-209-0.xml: channel metadata lines 2-4 and exportData/channelTag lines 3477-3490 differ; Newmedica, PAS In LOCAL-222-0, 33b1c017-edf4-4feb-81b8-e59eb1f63f09, Newmedica/PAS.xml, source Connector and destination connectors PASAPI - Secondary Patient/PASAPI - Patient/PASAPI - Patient Referral/Clinic List - PUT/Clinic List - DELETE/PASAPI - Patient Merge/OBX document/Clinic List - DNA is otherwise identical",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "81982f7b-ec91-42a8-a5ed-8352265f2e17",
+    "channel_name": "PAS In LOCAL-223-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-223-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Processes PAS-origin HL7v2 patient, merge, referral, appointment, and did-not-attend events and submits mapped XML to OpenEyes PASAPI. It also decodes ReportFile OBX content into a Mirth attachment.",
+    "business_process": "Patient demographic synchronisation, patient merge/referral handling, clinic appointment status maintenance, and did-not-attend recording for the Newmedica practices.",
+    "source_system": "Upstream Mirth channel carrying PAS-origin HL7v2",
+    "destination_systems": [
+      "OpenEyes PASAPI",
+      "Mirth message attachment"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${SecondaryHospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "PASAPI - Patient Referral",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/${PatientIdentifier}"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "OBX document",
+        "type": "JavaScript Writer",
+        "endpoint": "Mirth message attachment only"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      },
+      {
+        "name": "Nothing to do",
+        "type": "JavaScript Writer",
+        "endpoint": "disabled no-op"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "No network ACK is produced by this Channel Reader source.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "Secondary patient and patient merge destinations accept A40 only.",
+      "Appointment PUT accepts A01, A02, A03, A04, A05, A11, A12, A13, S12, S13, S14, or S26 and rejects ReportFile OBX.",
+      "Appointment DELETE accepts A38 or S15.",
+      "Did-not-attend accepts S26 and rejects ReportFile OBX.",
+      "OBX attachment destination accepts ReportFile; its Cataract filter is disabled."
+    ],
+    "main_transformer_stages": [
+      "Map practice identifier from PV1 location, transform HL7 demographics to PASAPI Patient XML, and derive hospital identifiers.",
+      "Parse PASAPI patient response, mark actionable warnings as errors, and store PatientId in message-scoped channelMap.",
+      "Map referral, appointment, appointment status, merge, and did-not-attend payload values from HL7 segments.",
+      "Decode ReportFile OBX payloads into Mirth attachments."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch mapping exceptions and log errors. PASAPI patient response warnings other than missing GP or Practice set the response status to error.",
+    "retry_behaviour": "Destination retryCount is 0 with a 10000 ms configured retry interval.",
+    "queue_behaviour": "Source buffer size is 1000; all destination queues are disabled.",
+    "logging": "Logs transformer mapping exceptions and a debug message for OBX document handling. The channel stores production message content, so operational logs/message storage can contain PII.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "client-specific",
+    "evidence": [
+      {
+        "claim": "Structurally identical to LOCAL-209-0 except channel id/name and exportData channelTag metadata: tag is Peterborough; source Connector, all destination connector endpoints, filters, and transformer scripts are unchanged.",
+        "location": "Newmedica, PAS In LOCAL-223-0, 81982f7b-ec91-42a8-a5ed-8352265f2e17, Newmedica/PAS.xml, whole-file direct diff against canonical/Newmedica/PAS In LOCAL-209-0.xml: channel metadata lines 2-4 and exportData/channelTag lines 3477-3490 differ; Newmedica, PAS In LOCAL-223-0, 81982f7b-ec91-42a8-a5ed-8352265f2e17, Newmedica/PAS.xml, source Connector and destination connectors PASAPI - Secondary Patient/PASAPI - Patient/PASAPI - Patient Referral/Clinic List - PUT/Clinic List - DELETE/PASAPI - Patient Merge/OBX document/Clinic List - DNA is otherwise identical",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  }
+]
+

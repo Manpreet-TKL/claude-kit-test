@@ -1,0 +1,144 @@
+[
+  {
+    "channel_id": "c14efd23-2c1c-4e53-a59f-dcfe0e727c3b",
+    "channel_name": "DICOM",
+    "instance": "Bedford",
+    "canonical_path": "canonical/Bedford/DICOM.xml",
+    "hl7": {
+      "is_hl7": false,
+      "version": null,
+      "message_types": [],
+      "trigger_events": [],
+      "ack": {"mode": "none", "detail": "DICOM Listener auto-generates its DICOM response after the source transformer, not an HL7 ACK/NACK.", "evidence": "Bedford, DICOM, c14efd23-2c1c-4e53-a59f-dcfe0e727c3b, canonical/Bedford/DICOM.xml: sourceConnector DICOM Listener lines 10-19"},
+      "inbound_segments_used": [],
+      "field_map": []
+    },
+    "oe_api": {
+      "calls_oe": true,
+      "calls": [
+        {"method": "POST", "path": "/api/v1/request/queue/add", "api_version": "api/v1", "resource": "PayloadProcessor", "payload_shape": "Raw DICOM body (application/dicom); request parameters institution_id=1, identifier_type=LOCAL-1-0, file_name=originalFilename, content_type=application/dicom, system_message=local_AET, request_type=dicom_request, and source_platform derived from AET hints.", "evidence": "Bedford, DICOM, c14efd23-2c1c-4e53-a59f-dcfe0e727c3b, canonical/Bedford/DICOM.xml: destination PayloadProcessor API Send lines 488-581; source transformer Set source platform tag based on AET lines 228-250"}
+      ]
+    },
+    "auth": {
+      "method": "HTTP Basic preemptive",
+      "credential_source": "connector field: PayloadProcessor API Send username api and redacted password",
+      "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "na", "relogin_trigger": "na - credentials are configured on the HTTP sender per message", "evidence": "Bedford, DICOM, c14efd23-2c1c-4e53-a59f-dcfe0e727c3b, canonical/Bedford/DICOM.xml: PayloadProcessor API Send lines 571-576; deploy/undeploy scripts lines 634-639"}
+    },
+    "routing": {"inbound_from": "DICOM Listener :11112", "outbound_to": ["OpenEyes PayloadProcessor", "file /mnt/dicom for enabled IOLMaster destination"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "DICOM metadata is parsed from a DICOM response and the source transformer derives identifier_type and institution_id from configurationMap defaultPatientIdentifierType or a local_AET match; source_platform becomes imagenet or forum when either AET contains that string, otherwise generic.", "location": "Bedford, DICOM, c14efd23-2c1c-4e53-a59f-dcfe0e727c3b, canonical/Bedford/DICOM.xml: source transformer Extract identifier_type and institution_id from Local AET lines 203-226; Set source platform tag based on AET lines 228-250; getDicomHeaders response transformer lines 342-359", "confidence": "confirmed"},
+      {"claim": "The File Writer sends the raw DICOM to /mnt/dicom but is controlled by a response transformer that removes it unless manufacturer contains Zeiss, model contains IOLMaster, and SOP Class UID is one of two configured values.", "location": "Bedford, DICOM, c14efd23-2c1c-4e53-a59f-dcfe0e727c3b, canonical/Bedford/DICOM.xml: getDicomHeaders response transformer remove first destination if type is not compatible lines 361-376; File Writer lines 401-442", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "No HL7v2 parsing or emission is configured. The configured PayloadProcessor institution_id and identifier_type are fixed connector parameters, even though the source transformer also calculates same-named channel-map values."
+  },
+  {
+    "channel_id": "375fe7b2-d55c-4c60-b66f-dc2000c8ea95",
+    "channel_name": "Document OUT",
+    "instance": "Bedford",
+    "canonical_path": "canonical/Bedford/Document OUT.xml",
+    "hl7": {"is_hl7": false, "version": null, "message_types": [], "trigger_events": [], "ack": {"mode": "none", "detail": "File polling channel; no HL7 listener or emitted HL7 payload is used.", "evidence": "Bedford, Document OUT, 375fe7b2-d55c-4c60-b66f-dc2000c8ea95, canonical/Bedford/Document OUT.xml: File Reader source and SFTP File Writer"}, "inbound_segments_used": [], "field_map": []},
+    "oe_api": {"calls_oe": false, "calls": []},
+    "auth": {"method": "other", "credential_source": "connector field: SFTP redacted username and password", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "na", "relogin_trigger": "na - SFTP password authentication is connector-configured", "evidence": "Bedford, Document OUT, 375fe7b2-d55c-4c60-b66f-dc2000c8ea95, canonical/Bedford/Document OUT.xml: destination SFTP lines 135-161; deploy/undeploy scripts lines 314-319"}},
+    "routing": {"inbound_from": "file /mnt/docman", "outbound_to": ["remote SFTP document inbox"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "The source is a raw binary File Reader on /mnt/docman which excludes names containing Internal and deletes successful input; the destination writes message.rawData as originalFilename through SFTP.", "location": "Bedford, Document OUT, 375fe7b2-d55c-4c60-b66f-dc2000c8ea95, canonical/Bedford/Document OUT.xml: sourceConnector File Reader lines 53-80; destination SFTP lines 135-161", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "The destination transformer declares an unused HL7V2 outbound template, but the File Writer explicitly sends raw file content, so this channel does not parse or emit HL7v2 at runtime."
+  },
+  {
+    "channel_id": "f703f9cd-a6ee-42e6-8550-c6a9c3fb1c73",
+    "channel_name": "Document Upload PP",
+    "instance": "Bedford",
+    "canonical_path": "canonical/Bedford/Document Upload PP.xml",
+    "hl7": {"is_hl7": false, "version": null, "message_types": [], "trigger_events": [], "ack": {"mode": "none", "detail": "File polling source has responseVariable None.", "evidence": "Bedford, Document Upload PP, f703f9cd-a6ee-42e6-8550-c6a9c3fb1c73, canonical/Bedford/Document Upload PP.xml: File Reader source lines 39-81"}, "inbound_segments_used": [], "field_map": []},
+    "oe_api": {"calls_oe": true, "calls": [{"method": "POST", "path": "/api/v1/request/queue/add", "api_version": "api/v1", "resource": "PayloadProcessor", "payload_shape": "Raw uploaded file body with MIME type inferred from the filename extension. Parameters parsed from eight __-separated filename parts: patient_identifier_type, patient_id, firm_id, document_subtype, laterality (B normalized to N), unique_ref, document_date and document_title; request_type=document_upload_request and system_message=Document Upload.", "evidence": "Bedford, Document Upload PP, f703f9cd-a6ee-42e6-8550-c6a9c3fb1c73, canonical/Bedford/Document Upload PP.xml: source transformer filename mappers lines 84-199; File Format filter lines 220-230; destination PayloadProcessor API Send lines 241-352"}]},
+    "auth": {"method": "HTTP Basic preemptive", "credential_source": "connector field: PayloadProcessor API Send username api and redacted password", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "na", "relogin_trigger": "na - credentials are configured on the HTTP sender per message", "evidence": "Bedford, Document Upload PP, f703f9cd-a6ee-42e6-8550-c6a9c3fb1c73, canonical/Bedford/Document Upload PP.xml: PayloadProcessor API Send lines 342-348; deploy/undeploy scripts lines 405-410"}},
+    "routing": {"inbound_from": "file /mnt/document-upload", "outbound_to": ["OpenEyes PayloadProcessor"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "Only pdf, image, video and audio extensions in the configured regular expression are polled, and the input must have exactly eight __-separated filename components or is filtered with an invalid-format error.", "location": "Bedford, Document Upload PP, f703f9cd-a6ee-42e6-8550-c6a9c3fb1c73, canonical/Bedford/Document Upload PP.xml: File Reader lines 53-80; source filter File Format lines 220-230", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "No session token, cookie, globalMap, or globalChannelMap access occurs."
+  },
+  {
+    "channel_id": "d69815ee-68d1-4dcb-8896-8b12ba06a9c4",
+    "channel_name": "PAS IN",
+    "instance": "Bedford",
+    "canonical_path": "canonical/Bedford/PAS IN.xml",
+    "hl7": {
+      "is_hl7": true,
+      "version": "2.4",
+      "message_types": ["ADT"],
+      "trigger_events": ["A01", "A02", "A03", "A04", "A05", "A08", "A11", "A12", "A13", "A38", "A40"],
+      "ack": {"mode": "auto", "detail": "MLLP TCP Listener auto-generates the HL7 response before processing; configured success/error/reject ACK codes are AA/AE/AR.", "evidence": "Bedford, PAS IN, d69815ee-68d1-4dcb-8896-8b12ba06a9c4, canonical/Bedford/PAS IN.xml: TCP Listener lines 10-38 and HL7 responseGenerationProperties lines 92-110"},
+      "inbound_segments_used": ["MSH", "EVN", "PID", "PD1", "NK1", "PV1", "PV2", "MRG"],
+      "field_map": [
+        {"source": "PID-3.1 where PID-3.5=NHS", "target": "Patient.NHSNumber", "note": "XSLT selects the NHS repetition.", "confidence": "confirmed"},
+        {"source": "PID-2.1", "target": "Patient.HospitalNumber and V2 Patient path HospitalNumber", "note": "Primary Patient XSLT and HospitalNumber script use PID-2.1; IdentifierTypeCode is fixed LOCAL-1-1.", "confidence": "confirmed"},
+        {"source": "PID-5.5, PID-5.2, PID-5.3, PID-5.1", "target": "Patient.Title, FirstName, Surname", "note": "Title case-normalized; middle name appended to FirstName.", "confidence": "confirmed"},
+        {"source": "PID-7.1, PID-8.1", "target": "Patient.DateOfBirth, Gender", "note": "DOB reformatted yyyy-MM-dd; 1/M maps M, 2/F maps F, otherwise U.", "confidence": "confirmed"},
+        {"source": "PID-11.1-.6", "target": "Patient.AddressList.Address Line1, Line2, City, County, Postcode, Country", "note": "One HOME address per PID-11; NSP or absent country maps GB.", "confidence": "confirmed"},
+        {"source": "PID-13 repetitions", "target": "Patient.TelephoneNumber, MobilePhoneNumber, Email", "note": "PH selects telephone, CP selects mobile, NET selects email.", "confidence": "confirmed"},
+        {"source": "PID-22.1, PID-30.1, PID-29.1", "target": "Patient.EthnicGroup, IsDeceased, DateOfDeath", "note": "NSP translated to Z for ethnicity; Y maps deceased=1; death date reformatted yyyy-MM-dd.", "confidence": "confirmed"},
+        {"source": "NK1-2, NK1-4, NK1-5", "target": "Patient.ContactList.PatientContact", "note": "Non-NS next-of-kin is rendered with contact/address/phone/mobile/email fields.", "confidence": "confirmed"},
+        {"source": "PD1-3 and PD1-4", "target": "Patient optometrist/practice/GP contact fields", "note": "PD1-3.8=OP produces Optometrist; practice and GP fields are conditional, GP code defaults when absent.", "confidence": "confirmed"},
+        {"source": "PV1-19.1", "target": "PatientAppointment path VisitID and AppointmentMapping VisitNumber", "note": "Used by the configured appointment PUT and DELETE connectors.", "confidence": "confirmed"},
+        {"source": "PV2-8.1 fallback PV1-44.1", "target": "PatientAppointment.AppointmentDate and AppointmentTime", "note": "Timestamp split to yyyy-MM-dd and HH:mm.", "confidence": "confirmed"},
+        {"source": "PV1-3.1 (A12 uses PV1-6.1), PD1-4.1, PV1-14.1", "target": "PatientAppointment mappings Clinic, Doctor, AdmitSource", "note": "Doctor defaults Unknown and AdmitSource defaults none.", "confidence": "confirmed"},
+        {"source": "EVN-2.1, MSH-9.2, PV2-24.1, PV2-27.1, PV1-6.1, PV1-3.9, PV1-44.1", "target": "PatientAppointment mapping Status", "note": "Script generates Scheduled, Did Not Attend, transfer, departed, attended, arrived or discharged status text.", "confidence": "confirmed"},
+        {"source": "MRG-1.1 where MRG-1.5=MR", "target": "A40 secondary Patient.HospitalNumber and PatientMerge.SecondaryPatientNumber", "note": "Secondary Patient XSLT uses MRG-1 and A40 merge payload pairs it with primary HospitalNumber.", "confidence": "confirmed"}
+      ]
+    },
+    "oe_api": {
+      "calls_oe": true,
+      "calls": [
+        {"method": "PUT", "path": "PASAPI/V2/Patient/${SecondaryHospitalNumber}", "api_version": "V2", "resource": "Patient", "payload_shape": "Patient XML built for A40 from MRG/PID/PD1/NK1; secondary HospitalNumber is MRG-1(MR), IdentifierTypeCode is LOCAL-1-0.", "evidence": "Bedford, PAS IN, d69815ee-68d1-4dcb-8896-8b12ba06a9c4, canonical/Bedford/PAS IN.xml: destination PASAPI - Secondary Patient lines 163-213; PASAPI XSLT Step lines 216-341; A40 filter lines 683-695"},
+        {"method": "PUT", "path": "PASAPI/V2/Patient/${HospitalNumber}", "api_version": "V2", "resource": "Patient", "payload_shape": "Patient XML containing identifiers, demographics, addresses, contacts, phone/email, ethnicity, death information, practice, GP, language, interpreter requirement and risks; primary HospitalNumber is PID-2.1 and IdentifierTypeCode LOCAL-1-1.", "evidence": "Bedford, PAS IN, d69815ee-68d1-4dcb-8896-8b12ba06a9c4, canonical/Bedford/PAS IN.xml: destination PASAPI - Patient lines 703-753; PatientXML XSLT lines 756-886; HospitalNumber script lines 890-903; M05 exclusion filter lines 1228-1239"},
+        {"method": "PUT", "path": "PASAPI/V2/PatientAppointment/${VisitID}", "api_version": "V2", "resource": "PatientAppointment", "payload_shape": "PatientId from preceding patient response, IdentifierTypeCode LOCAL-1-0, appointment date/time and mappings Doctor, Clinic, AdmitSource, VisitNumber and Status; X-OE-Partial-Record header. Connector is disabled.", "evidence": "Bedford, PAS IN, d69815ee-68d1-4dcb-8896-8b12ba06a9c4, canonical/Bedford/PAS IN.xml: destination Clinic List - PUT lines 1248-1333; Appointment Filter lines 1503-1533"},
+        {"method": "PUT", "path": "PASAPI/V1/PatientMerge/${HospitalNumber}/identifier-type/LOCAL-1-0", "api_version": "V1", "resource": "PatientMerge", "payload_shape": "PatientMerge XML with PrimaryPatientNumber=HospitalNumber and SecondaryPatientNumber=SecondaryHospitalNumber; filtered to A40.", "evidence": "Bedford, PAS IN, d69815ee-68d1-4dcb-8896-8b12ba06a9c4, canonical/Bedford/PAS IN.xml: destination PASAPI - Patient Merge lines 1778-1830; A40 filter lines 2003-2019"},
+        {"method": "DELETE", "path": "PASAPI/V2/PatientAppointment/${VisitID}", "api_version": "V2", "resource": "PatientAppointment", "payload_shape": "No body; connector has an A38 filter but is disabled.", "evidence": "Bedford, PAS IN, d69815ee-68d1-4dcb-8896-8b12ba06a9c4, canonical/Bedford/PAS IN.xml: destination Clinic List - DELETE lines 1537-1587; A38 filter lines 1755-1774"}
+      ]
+    },
+    "auth": {"method": "HTTP Basic preemptive", "credential_source": "connector fields: all configured PASAPI HTTP Senders use username api and a redacted password", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "na", "relogin_trigger": "na - each HTTP sender uses configured preemptive Basic authentication; no login script or 401 handler exists", "evidence": "Bedford, PAS IN, d69815ee-68d1-4dcb-8896-8b12ba06a9c4, canonical/Bedford/PAS IN.xml: HTTP sender auth fields lines 203-208, 743-748, 1295-1300, 1577-1582 and 1818-1823; deploy/undeploy scripts lines 2465-2470"}},
+    "routing": {"inbound_from": "TCP Listener MLLP :6661", "outbound_to": ["OpenEyes PASAPI V2 Patient", "OpenEyes PASAPI V2 PatientAppointment", "OpenEyes PASAPI V1 PatientMerge"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "The source accepts HL7v2 over MLLP and cleans doubled quotes from the parsed message XML before destinations run.", "location": "Bedford, PAS IN, d69815ee-68d1-4dcb-8896-8b12ba06a9c4, canonical/Bedford/PAS IN.xml: TCP Listener lines 10-53; source transformer lines 54-151", "confidence": "confirmed"},
+      {"claim": "The two appointment connectors are configured but disabled, while the V2 Patient, secondary patient and V1 PatientMerge connectors are enabled.", "location": "Bedford, PAS IN, d69815ee-68d1-4dcb-8896-8b12ba06a9c4, canonical/Bedford/PAS IN.xml: connector enabled states lines 696-699, 1241-1244, 1530-1533, 1771-1774 and 2016-2019", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "Configured connectors include disabled appointment PUT and DELETE calls; they are recorded because their API configuration and field mapping remain present in the export."
+  },
+  {
+    "channel_id": "06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c",
+    "channel_name": "PAS OUT",
+    "instance": "Bedford",
+    "canonical_path": "canonical/Bedford/PAS OUT.xml",
+    "hl7": {
+      "is_hl7": true,
+      "version": "2.4",
+      "message_types": ["QBP", "ADT", "RSP"],
+      "trigger_events": ["Q21", "A03"],
+      "ack": {"mode": "application", "detail": "The HTTP Listener waits for JavaScript destination Respond (responseVariable d6), which returns transformed PAS response XML or <PatientList/>. The TCP Sender itself uses MLLP framing and receives the remote response.", "evidence": "Bedford, PAS OUT, 06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c, canonical/Bedford/PAS OUT.xml: HTTP Listener lines 10-49; Convert K21 to XML lines 564-583; Create response lines 691-801; Respond lines 988-1017"},
+      "inbound_segments_used": ["MSH", "QPD", "PV1", "DG1", "MSA", "ERR", "PID", "PD1"],
+      "field_map": [
+        {"source": "HTTP Parameters.hosnum, fallback Parameters.nhsnum", "target": "outbound QBP^Q21 QPD-3.1", "note": "hosnum takes precedence.", "confidence": "confirmed"},
+        {"source": "HTTP Parameters.xmlrequest event_type and segment objects", "target": "outbound ADT MSH-9.2 and rendered HL7 segment fields", "note": "JSON converted from XML is rendered into HL7; MSH-9.1 fixed ADT.", "confidence": "confirmed"},
+        {"source": "PV1-3.1 and PV1-3.2 from xmlrequest", "target": "outbound PAS location code PV1-3.2", "note": "AES/RDCEC location-status labels map to PAS codes; invalid mappings are cleared.", "confidence": "confirmed"},
+        {"source": "DG1-5 shorter than 14 characters", "target": "outbound DG1-5", "note": "Replaced with newly created MSH-7.1 timestamp.", "confidence": "confirmed"},
+        {"source": "remote HL7 MSA-6.2 and ERR-3.2", "target": "HTTP response PatientList.AnswerMessage and ErrorMessage", "note": "K21 response transformed to XML.", "confidence": "confirmed"},
+        {"source": "remote PID-2(PAS), PID-3(NHS), PID-5, PID-7, PID-8, PID-11, PID-13, PID-22, PID-29, PD1, PID-15, PID-35", "target": "HTTP response PatientList.Patient fields", "note": "XSLT builds identifiers, demographics, correspondence/home addresses, contact, ethnic group, death, practice/GP, language, interpreter and risks.", "confidence": "confirmed"}
+      ]
+    },
+    "oe_api": {"calls_oe": false, "calls": []},
+    "auth": {"method": "none", "credential_source": "none", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "na", "relogin_trigger": "na", "evidence": "Bedford, PAS OUT, 06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c, canonical/Bedford/PAS OUT.xml: HTTP Listener NoneHttpAuthProperties lines 10-15; TCP Sender configuration lines 265-314; deploy/undeploy scripts lines 1228-1238"}},
+    "routing": {"inbound_from": "HTTP Listener :6663", "outbound_to": ["remote PAS MLLP TCP endpoint"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "The listener receives HTTP XML, constructs either QBP^Q21 for an identifier query or ADT from xmlrequest, and sends the encoded HL7 through the enabled Send Q21 TCP Sender.", "location": "Bedford, PAS OUT, 06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c, canonical/Bedford/PAS OUT.xml: source transformer Set hosnum parameter lines 64-72 and Set Message Type and data lines 74-195; Send Q21 connector lines 263-537", "confidence": "confirmed"},
+      {"claim": "The response XSLT uses the Send Q21 response converted to XML and the final Respond destination returns it to the HTTP caller, with <PatientList/> fallback when TransformedResponse is absent.", "location": "Bedford, PAS OUT, 06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c, canonical/Bedford/PAS OUT.xml: Convert K21 to XML lines 539-690; Create response XSLT lines 691-801; Respond lines 988-1017", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "No OpenEyes HTTP API call is configured. PAS OUT is an HTTP-to-MLLP PAS query/ADT bridge; its HTTP listener explicitly has no authentication."
+  }
+]

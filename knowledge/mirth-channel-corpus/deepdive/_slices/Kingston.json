@@ -1,0 +1,179 @@
+[
+  {
+    "channel_id": "da67d2ba-db52-4f50-898b-b534d71450ab",
+    "channel_name": "DICOM",
+    "instance": "Kingston",
+    "canonical_path": "canonical/Kingston/DICOM.xml",
+    "hl7": {
+      "is_hl7": false,
+      "version": null,
+      "message_types": [],
+      "trigger_events": [],
+      "ack": {"mode": "none", "detail": "DICOM listener, not an HL7v2 connector.", "evidence": "sourceConnector DICOM Listener lines 7-60, 272-280"},
+      "inbound_segments_used": [],
+      "field_map": []
+    },
+    "oe_api": {
+      "calls_oe": true,
+      "calls": [
+        {"method": "POST", "path": "/api/v1/request/queue/add", "api_version": "api/v1", "resource": "PayloadProcessor", "payload_shape": "Binary ${DICOMMESSAGE}, content type application/dicom; request parameters request_type=dicom_request, file_name=${originalFilename}, system_message=${local_AET}, identifier_type and institution_id derived from local AET or configurationMap default, and source_platform inferred from local/remote AET.", "evidence": "PayloadProcessor API Send connector lines 353-456; source transformer steps 14-15 lines 203-250"}
+      ]
+    },
+    "auth": {
+      "method": "HTTP Basic preemptive",
+      "credential_source": "connector field: PayloadProcessor API Send username api and ${REDACTED_PASSWORD}",
+      "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "false", "relogin_trigger": "per-message preemptive Basic request; no login script, token, or cookie configuration", "evidence": "PayloadProcessor API Send connector lines 437-447; deploy/undeploy scripts lines 481-486 are no-ops"}
+    },
+    "routing": {
+      "inbound_from": "DICOM listener :11112",
+      "outbound_to": ["file /mnt/dicom for Zeiss IOLMaster-supported SOP classes", "OpenEyes PayloadProcessor"],
+      "channel_writer_targets": []
+    },
+    "evidence": [
+      {"claim": "DICOM tags are mapped to message-scoped variables Patient_Name, Patient_DOB, Patient_OtherID, Patient_ID, Patient_Sex, Study_ID, Series_Number, Study_UID, FileMetaVersion, Device_Manufacturer, Device_Model_Name, and SOP_Class_UID; these are not HL7 fields.", "location": "source transformer mapper steps 0-11, canonical/Kingston/DICOM.xml lines 63-182", "confidence": "confirmed"},
+      {"claim": "identifier_type defaults from configurationMap:defaultPatientIdentifierType or LOCAL-1-0 and institution_id is parsed from the local AET; source_platform is generic, imagenet, or forum based on AET text.", "location": "source transformer JavaScript steps 14-15, canonical/Kingston/DICOM.xml lines 203-250", "confidence": "confirmed"},
+      {"claim": "The IOLMaster file destination is removed unless manufacturer contains zeiss, model contains iolmaster, and SOP Class UID is one of two listed supported values.", "location": "source transformer JavaScript step 16, canonical/Kingston/DICOM.xml lines 252-267", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "Unlike the other Kingston DICOM channels, this channel uses preemptive Basic authentication and dynamically derives PayloadProcessor parameters from DICOM/AET metadata."
+  },
+  {
+    "channel_id": "06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c",
+    "channel_name": "OpenEyes Correspondence",
+    "instance": "Kingston",
+    "canonical_path": "canonical/Kingston/OpenEyes Correspondence.xml",
+    "hl7": {
+      "is_hl7": true,
+      "version": "2.3",
+      "message_types": ["ORU"],
+      "trigger_events": ["R01"],
+      "ack": {"mode": "application", "detail": "The outbound MLLP TCP sender waits for a response and validates AA/CA as success, AE/CE as error, AR/CR as rejected against Destination_Encoded control ID. The source file reader itself has no HL7 ACK.", "evidence": "Send HL7 to Cerner connector MLLP/response validation lines 135-160 and 259-277"},
+      "inbound_segments_used": [],
+      "field_map": []
+    },
+    "oe_api": {"calls_oe": false, "calls": []},
+    "auth": {
+      "method": "none",
+      "credential_source": "na",
+      "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "na", "relogin_trigger": "na", "evidence": "deploy/undeploy scripts lines 515-520 are no-ops; no HTTP connector is configured"}
+    },
+    "routing": {
+      "inbound_from": "file /mnt/docman (*.rtf)",
+      "outbound_to": ["remote MLLP HL7 receiver", "remote MLLP DocMan JSON receiver"],
+      "channel_writer_targets": []
+    },
+    "evidence": [
+      {"claim": "The HL7 destination constructs ORU^R01 version 2.3, sets MSH.7.1 to current time and MSH.10.1 to the connector message ID, escapes the RTF into OBX.5.5, and reads the sibling XML to populate PID and OBR fields.", "location": "Send HL7 to Cerner transformer steps 0-3 and outbound template, canonical/Kingston/OpenEyes Correspondence.xml lines 162-278", "confidence": "confirmed"},
+      {"claim": "Sibling XML fields map to outbound HL7: PatientNumber to PID-3(1)-1, NhsNumber to PID-3(2)-1, Surname to PID-5.1, FirstForename to PID-5.2, DateOfBirth stripped of punctuation to PID-7.1, OE plus doc ID to OBR-3.1, and ActivityDate stripped of punctuation to OBR-7.1.", "location": "Send HL7 to Cerner Parse XML transformer step, canonical/Kingston/OpenEyes Correspondence.xml lines 213-227", "confidence": "confirmed"},
+      {"claim": "The separate DocMan JSON message base64-encodes the RTF and maps sibling XML values into RecipientOdsCode, Sender.Department, Patient, Document, and Notes fields.", "location": "Send JSON to DocMan transformer steps 0-1 and JSON template, canonical/Kingston/OpenEyes Correspondence.xml lines 425-480", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "HL7 is emitted, not parsed from the source. It does not call OpenEyes, so no HL7-to-OE field map exists."
+  },
+  {
+    "channel_id": "ba5419a3-24a5-48a2-bd9b-5cb2072e87f4",
+    "channel_name": "OpenEyes DICOM Channel",
+    "instance": "Kingston",
+    "canonical_path": "canonical/Kingston/OpenEyes DICOM Channel.xml",
+    "hl7": {"is_hl7": false, "version": null, "message_types": [], "trigger_events": [], "ack": {"mode": "none", "detail": "DICOM listener, not HL7v2.", "evidence": "sourceConnector DICOM Listener lines 7-71"}, "inbound_segments_used": [], "field_map": []},
+    "oe_api": {
+      "calls_oe": true,
+      "calls": [
+        {"method": "POST", "path": "/api/v1/request/queue/add", "api_version": "api/v1", "resource": "PayloadProcessor", "payload_shape": "Binary ${DICOMMESSAGE}, application/dicom, with URL query parameters request_type=dicom_request, system_message=system-message, content_type=application/dicom, and file_name=${originalFilename}.", "evidence": "Destination 1 HTTP Sender connector lines 77-138"}
+      ]
+    },
+    "auth": {
+      "method": "HTTP Basic",
+      "credential_source": "connector field: Destination 1 username api and ${REDACTED_PASSWORD}",
+      "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "false", "relogin_trigger": "per-message Basic challenge response; preemptive authentication is disabled and no login script/token/cookie is configured", "evidence": "Destination 1 HTTP Sender connector lines 119-128; deploy/undeploy scripts lines 160-165 are no-ops"}
+    },
+    "routing": {"inbound_from": "DICOM listener :11119", "outbound_to": ["OpenEyes PayloadProcessor"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "The source and destination transformers contain no mapping steps; DICOM is sent unchanged as ${DICOMMESSAGE}.", "location": "source transformer lines 61-67 and Destination 1 transformer lines 130-138", "confidence": "confirmed"},
+      {"claim": "This channel differs from Kingston DICOM because it supplies fixed URL query parameters, has no file-writer destination or AET/DICOM metadata mapping, and disables preemptive Basic authentication.", "location": "Destination 1 connector lines 102-128; compare this channel's empty source transformer lines 61-67", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "No session/token persistence is configured."
+  },
+  {
+    "channel_id": "eee5caa4-786f-451b-9a89-f00aeb46f935",
+    "channel_name": "OpenEyes DICOM IOLMaster Channel",
+    "instance": "Kingston",
+    "canonical_path": "canonical/Kingston/OpenEyes DICOM IOLMaster Channel.xml",
+    "hl7": {"is_hl7": false, "version": null, "message_types": [], "trigger_events": [], "ack": {"mode": "none", "detail": "DICOM listener, not HL7v2.", "evidence": "sourceConnector DICOM Listener lines 7-71"}, "inbound_segments_used": [], "field_map": []},
+    "oe_api": {
+      "calls_oe": true,
+      "calls": [
+        {"method": "POST", "path": "/api/v1/request/queue/add", "api_version": "api/v1", "resource": "PayloadProcessor", "payload_shape": "Binary ${DICOMMESSAGE}, application/dicom, with URL query parameters request_type=dicom_request, system_message=BIOMETRY_CHANNEL, content_type=application/dicom, and file_name=${originalFilename}.", "evidence": "Destination 2 HTTP Sender connector lines 145-204"}
+      ]
+    },
+    "auth": {
+      "method": "HTTP Basic",
+      "credential_source": "connector field: Destination 2 username api and ${REDACTED_PASSWORD}",
+      "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "false", "relogin_trigger": "per-message Basic challenge response; preemptive authentication is disabled and no login script/token/cookie is configured", "evidence": "Destination 2 HTTP Sender connector lines 187-196; deploy/undeploy scripts lines 226-231 are no-ops"}
+    },
+    "routing": {"inbound_from": "DICOM listener :11118", "outbound_to": ["file /mnt/dicom", "OpenEyes PayloadProcessor"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "The file destination writes the incoming binary ${DICOMMESSAGE} to /mnt/dicom using ${originalFilename}; it has no filter or transformer.", "location": "Destination 1 File Writer connector lines 77-143", "confidence": "confirmed"},
+      {"claim": "This channel differs from OpenEyes DICOM Channel by adding the file-writer destination and using system_message=BIOMETRY_CHANNEL rather than system-message in the PayloadProcessor request.", "location": "Destination 1 lines 77-143 and Destination 2 URL lines 170-196", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "No DICOM field mapping or session persistence is configured."
+  },
+  {
+    "channel_id": "6c3a10d1-968d-468e-9355-008946825b20",
+    "channel_name": "OpenEyes PAS",
+    "instance": "Kingston",
+    "canonical_path": "canonical/Kingston/OpenEyes PAS.xml",
+    "hl7": {
+      "is_hl7": true,
+      "version": null,
+      "message_types": ["ADT"],
+      "trigger_events": ["A01", "A05", "A08", "A11", "A31", "A38"],
+      "ack": {"mode": "auto", "detail": "TCP MLLP source auto-generates before processing: AA on success, AE on error, AR on rejection.", "evidence": "sourceConnector source properties lines 16-38 and HL7 responseGenerationProperties lines 77-95"},
+      "inbound_segments_used": ["MSH", "PID", "PD1", "PV1", "PV2"],
+      "field_map": [
+        {"source": "MSH-9.2", "target": "Patient@updateOnly", "note": "A31 sets updateOnly=1 in Patient XML.", "confidence": "confirmed"},
+        {"source": "PID-3.1 where PID-3.4=NHSNBR", "target": "Patient/NHSNumber", "note": "Selected identifier repetition.", "confidence": "confirmed"},
+        {"source": "PID-3.1 where PID-3.4=RAX MRN or PID-3.5=MRN", "target": "Patient/HospitalNumber and Patient endpoint path", "note": "HospitalNumber is also extracted to channelMap for /Patient/${HospitalNumber}.", "confidence": "confirmed"},
+        {"source": "PID-5.5", "target": "Patient/Title", "note": "Capitalizes first letter and lowercases remaining title text.", "confidence": "confirmed"},
+        {"source": "PID-5.2 and PID-5.3", "target": "Patient/FirstName", "note": "First name plus space and middle name when present.", "confidence": "confirmed"},
+        {"source": "PID-5.1", "target": "Patient/Surname", "note": "Direct.", "confidence": "confirmed"},
+        {"source": "PID-7.1", "target": "Patient/DateOfBirth", "note": "YYYYMMDD reformatted to YYYY-MM-DD.", "confidence": "confirmed"},
+        {"source": "PID-8.1", "target": "Patient/Gender", "note": "1 maps to M and 2 maps to F.", "confidence": "confirmed"},
+        {"source": "PID-11.1-5 and PID-11.7 HOME or CORR", "target": "Patient/AddressList/Address", "note": "Builds Line1, Line2, City, County (removes quotes), Postcode, country GB, and Type.", "confidence": "confirmed"},
+        {"source": "PID-13.1 where PID-13.2=HOME or MOBILE", "target": "Patient/TelephoneNumber or Patient/MobilePhoneNumber", "note": "Only emits values that pass the numeric-after-space-removal test.", "confidence": "confirmed"},
+        {"source": "PID-11.1 where PID-11.7=EMAIL", "target": "Patient/Email", "note": "Removes quotes.", "confidence": "confirmed"},
+        {"source": "PID-22.1", "target": "Patient/EthnicGroup", "note": "Direct.", "confidence": "confirmed"},
+        {"source": "PID-30.1 and PID-29.1", "target": "Patient/IsDeceased and Patient/DateOfDeath", "note": "DECEASED or D gives 1; death date is reformatted to YYYY-MM-DD.", "confidence": "confirmed"},
+        {"source": "PD1-3.3", "target": "Patient/Practice/Code", "note": "Only when present.", "confidence": "confirmed"},
+        {"source": "PD1-4.1", "target": "Patient/GP/Code", "note": "First 8 characters, or default G9999981 when absent.", "confidence": "confirmed"},
+        {"source": "PV1-19.1", "target": "PatientAppointment endpoint external ID", "note": "Replaces period with underscore to create VisitID.", "confidence": "confirmed"},
+        {"source": "PV1-44.1, fallback PV2-8.1", "target": "PatientAppointment/AppointmentDate and AppointmentTime", "note": "Splits HL7 datetime into YYYY-MM-DD and HH:MM.", "confidence": "confirmed"},
+        {"source": "PV1-3.1", "target": "PatientAppointment/AppointmentMappingItems Clinic", "note": "Removes commas.", "confidence": "confirmed"},
+        {"source": "PV1-4.1", "target": "PatientAppointment/AppointmentMappingItems Type", "note": "Empty or double-quote sentinel becomes Unknown.", "confidence": "confirmed"},
+        {"source": "MSH-9.2 plus PV1-15.1", "target": "PatientAppointment/AppointmentMappingItems Status", "note": "A01=Attended; A08+CHKO=Departed; A08+DNA=Did Not Attend; otherwise Scheduled. PUT filter excludes A08 CHKO/DNA.", "confidence": "confirmed"}
+      ]
+    },
+    "oe_api": {
+      "calls_oe": true,
+      "calls": [
+        {"method": "PUT", "path": "PASAPI/V2/Patient/${HospitalNumber}", "api_version": "V2", "resource": "Patient", "payload_shape": "XSLT-generated Patient XML with NHSNumber, HospitalNumber, IdentifierTypeCode LOCAL-1-0, demographics, address list, contact data, deceased fields, practice and GP; A31 adds updateOnly=1.", "evidence": "PASAPI - Patient connector lines 146-198; PASAPI XSLT transformer lines 201-267"},
+        {"method": "PUT", "path": "PASAPI/V2/PatientAppointment/${VisitID}", "api_version": "V2", "resource": "PatientAppointment", "payload_shape": "PatientId from Patient response, IdentifierTypeCode LOCAL-1-0, AppointmentDate/Time, and Type, Clinic, Status appointment mappings.", "evidence": "Clinic List - PUT connector content lines 560-632; mapping scripts lines 288-413; filter lines 801-827"},
+        {"method": "DELETE", "path": "PASAPI/V2/PatientAppointment/${VisitID}", "api_version": "V2", "resource": "PatientAppointment", "payload_shape": "Empty body; runs only for A11 or A38, and treats missing external ID as sent.", "evidence": "Clinic List - DELETE connector lines 833-885; response transformer lines 937-946; filter lines 965-980"}
+      ]
+    },
+    "auth": {
+      "method": "HTTP Basic",
+      "credential_source": "connector fields: each PASAPI HTTP sender username api and ${REDACTED_PASSWORD}",
+      "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "false", "relogin_trigger": "per-message Basic challenge response; all three HTTP senders disable preemptive authentication and no login script/token/cookie is configured", "evidence": "PASAPI - Patient lines 188-197; Clinic List PUT lines 602-631; Clinic List DELETE lines 875-884; deploy/undeploy scripts lines 992-997 are no-ops"}
+    },
+    "routing": {"inbound_from": "MLLP TCP listener :6662", "outbound_to": ["OpenEyes PASAPI V2 Patient", "OpenEyes PASAPI V2 PatientAppointment"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "The appointment PUT path is only selected for A01, A05, or A08 with valid date, time, and clinic, but explicitly suppresses A08 CHKO and DNA; A11 and A38 instead select DELETE.", "location": "Clinic List PUT filter lines 801-827; Clinic List DELETE filter lines 965-980", "confidence": "confirmed"},
+      {"claim": "The Patient response is parsed for ResponseXML.Id and stored as message-scoped channelMap PatientId for the appointment PUT body.", "location": "PASAPI - Patient response transformer lines 508-520; Clinic List PUT content lines 607-627", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "The channel parses HL7v2 with non-strict validation but does not state a fixed HL7 version in connector configuration. channelMap keys HospitalNumber, VisitID, VisitDate, VisitTime, ClinicCode, AppointmentType, VisitStatusXML, and PatientId are message-scoped rather than persisted login/session state."
+  }
+]

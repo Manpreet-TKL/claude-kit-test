@@ -1,0 +1,785 @@
+[
+  {
+    "channel_id": "da67d2ba-db52-4f50-898b-b534d71450ab",
+    "channel_name": "DICOM",
+    "instance": "Wales",
+    "source_file": "Wales/DICOM.xml",
+    "canonical_path": "canonical/Wales/DICOM.xml",
+    "category": "DICOM Ingestion",
+    "functional_purpose": "Receives DICOM studies, derives patient-identifier and source-platform metadata, and submits them to OpenEyes PayloadProcessor. Eligible Zeiss IOLMaster objects are also written to the IOLMasterImport incoming folder.",
+    "business_process": "Ingesting ophthalmic imaging and routing IOLMaster biometry files for import.",
+    "source_system": "PACS or imaging device",
+    "destination_systems": [
+      "PayloadProcessor",
+      "IOLMasterImport file drop"
+    ],
+    "source_connector": {
+      "type": "DICOM Listener",
+      "port": "11118"
+    },
+    "destination_connectors": [
+      {
+        "name": "Write out file to IolMasterImport incoming folder when device is a Zeiss IOLMaster",
+        "type": "File Writer",
+        "endpoint": "/mnt/dicom/${identifier_type}"
+      },
+      {
+        "name": "PayloadProcessor API Send",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/api/v1/request/queue/add"
+      }
+    ],
+    "protocol": "DICOM / HTTP",
+    "message_format": "DICOM",
+    "hl7_version": null,
+    "hl7_message_types": [],
+    "hl7_trigger_events": [],
+    "ack_behaviour": "DICOM listener auto-generates its response after the source transformer and waits for processing.",
+    "oe_endpoints": [
+      "/api/v1/request/queue/add"
+    ],
+    "oe_api_versions": [
+      "api/v1"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "No connector filter; source transformer removes the IOLMaster file destination unless manufacturer is Zeiss, model contains iolmaster, and the SOP Class UID is supported."
+    ],
+    "main_transformer_stages": [
+      "Map DICOM patient, study, device, and AE-title tags.",
+      "Derive identifier_type and institution_id from the local AE title, defaulting from configurationMap:defaultPatientIdentifierType.",
+      "Set source_platform from AE titles and conditionally remove the IOLMaster file writer."
+    ],
+    "depends_on": [
+      "configurationMap:defaultPatientIdentifierType"
+    ],
+    "error_handling": "No explicit error transformer or error script is configured.",
+    "retry_behaviour": "Both destinations have queueing disabled and retryCount 0 (retry interval configured as 10000 ms).",
+    "queue_behaviour": "Destination queues are disabled; the source connector has a 1000-message buffer.",
+    "logging": "No explicit logger calls; production message content and DICOM attachments are retained, creating a PII retention risk.",
+    "stateful": true,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Wales DICOM receives DICOM on port 11118.",
+        "location": "Wales/DICOM.xml: sourceConnector DICOM Listener (lines 7-60, 280)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "It posts application/dicom with request_type=dicom_request to PayloadProcessor and uses preemptive Basic authentication with a redacted password.",
+        "location": "Wales/DICOM.xml: destination 'PayloadProcessor API Send' (lines 355-470)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The source transformer reads configurationMap:defaultPatientIdentifierType and conditionally retains the IOLMaster file writer only for supported Zeiss IOLMaster DICOM objects.",
+        "location": "Wales/DICOM.xml: source transformer steps 'Extract identifier_type and institution_id from Local AET' and 'Remove the IOLMaster Import destination...' (lines 204-279)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "2e678abc-78ba-4220-93d3-846f765fd8dd",
+    "channel_name": "OpenEyes Query - ABUHB",
+    "instance": "Wales",
+    "source_file": "Wales/OpenEyes Query - ABUHB.xml",
+    "canonical_path": "canonical/Wales/OpenEyes Query - ABUHB.xml",
+    "category": "PAS Query / PDQ (MPI SOAP)",
+    "functional_purpose": "Accepts an HTTP demographic query, builds an HL7 PDQ query using ABUHB identifier code 139, sends it to the Welsh MPI SOAP service, and returns a simplified OpenEyes XML patient list.",
+    "business_process": "Patient demographic lookup before clinical record selection.",
+    "source_system": "OpenEyes or HTTP client",
+    "destination_systems": [
+      "Welsh MPI/PDQ service"
+    ],
+    "source_connector": {
+      "type": "HTTP Listener",
+      "port": "6668"
+    },
+    "destination_connectors": [
+      {
+        "name": "Send Q21",
+        "type": "Web Service Sender",
+        "endpoint": "https://mpilivequeries.cymru.nhs.uk:443/PatientDemographicsQueryWS.asmx"
+      }
+    ],
+    "protocol": "HTTP / SOAP",
+    "message_format": "XML request / HL7v2 PDQ query / XML response",
+    "hl7_version": null,
+    "hl7_message_types": [
+      "QBP",
+      "RSP"
+    ],
+    "hl7_trigger_events": [
+      "Q22",
+      "K21"
+    ],
+    "ack_behaviour": "HTTP response is created from the transformed MPI response after processing.",
+    "oe_endpoints": [],
+    "oe_api_versions": [],
+    "auth_method": "none",
+    "main_filters": [
+      "No source or SOAP destination filter is configured."
+    ],
+    "main_transformer_stages": [
+      "Set HL7 message timestamp and query identifiers.",
+      "Populate QPD query criteria from hosnum, nhsnum, givenname, familyname, and dob HTTP parameters.",
+      "Wrap the HL7 query in SOAP, extract the SOAP response, and transform K21 data to OpenEyes XML."
+    ],
+    "depends_on": [],
+    "error_handling": "No explicit error script is configured.",
+    "retry_behaviour": "SOAP destination queueing is disabled and retryCount is 0.",
+    "queue_behaviour": "Destination queues are disabled.",
+    "logging": "No explicit logger calls; production message content is retained for 14 days.",
+    "stateful": false,
+    "safe_to_replay": true,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Wales OpenEyes Query - ABUHB listens by HTTP on port 6668 and populates QPD criteria from request parameters.",
+        "location": "Wales/OpenEyes Query - ABUHB.xml: sourceConnector and transformer steps 0-6 (lines 7-184)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "It sends InvokePatientDemographicsQuery to the Welsh MPI Web Service and transforms the SOAP/K21 response to OpenEyes XML.",
+        "location": "Wales/OpenEyes Query - ABUHB.xml: destination 'Send Q21' and response destinations (lines 192-502, 717-890)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "ABUHB's concrete per-board parameter is QPD.3.2 identifier code 139, also used as vSender in the OpenEyes XML transform.",
+        "location": "Wales/OpenEyes Query - ABUHB.xml: transformer 'Set hosnum or nhsnum parameter' and destination 'Create Response' XSLT (lines 71-97, 745-770)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "3b655b56-5d80-403e-a61e-97c3abf919a4",
+    "channel_name": "OpenEyes Query - BCUHB - Central",
+    "instance": "Wales",
+    "source_file": "Wales/OpenEyes Query - BCUHB - Central.xml",
+    "canonical_path": "canonical/Wales/OpenEyes Query - BCUHB - Central.xml",
+    "category": "PAS Query / PDQ (MPI SOAP)",
+    "functional_purpose": "Accepts an HTTP demographic query, builds an HL7 PDQ query using BCUHB Central identifier code 109, sends it to the Welsh MPI SOAP service, and returns a simplified OpenEyes XML patient list.",
+    "business_process": "Patient demographic lookup before clinical record selection.",
+    "source_system": "OpenEyes or HTTP client",
+    "destination_systems": [
+      "Welsh MPI/PDQ service"
+    ],
+    "source_connector": {
+      "type": "HTTP Listener",
+      "port": "6662"
+    },
+    "destination_connectors": [
+      {
+        "name": "Send Q21",
+        "type": "Web Service Sender",
+        "endpoint": "https://mpilivequeries.cymru.nhs.uk:443/PatientDemographicsQueryWS.asmx"
+      }
+    ],
+    "protocol": "HTTP / SOAP",
+    "message_format": "XML request / HL7v2 PDQ query / XML response",
+    "hl7_version": null,
+    "hl7_message_types": [
+      "QBP",
+      "RSP"
+    ],
+    "hl7_trigger_events": [
+      "Q22",
+      "K21"
+    ],
+    "ack_behaviour": "HTTP response is created from the transformed MPI response after processing.",
+    "oe_endpoints": [],
+    "oe_api_versions": [],
+    "auth_method": "none",
+    "main_filters": [
+      "No source or SOAP destination filter is configured."
+    ],
+    "main_transformer_stages": [
+      "Set HL7 message timestamp and query identifiers.",
+      "Populate QPD criteria from HTTP parameters.",
+      "Wrap the query in SOAP, extract the SOAP response, and transform K21 data to OpenEyes XML."
+    ],
+    "depends_on": [],
+    "error_handling": "No explicit error script is configured.",
+    "retry_behaviour": "SOAP destination queueing is disabled and retryCount is 0.",
+    "queue_behaviour": "Destination queues are disabled.",
+    "logging": "No explicit logger calls; production message content is retained for 14 days.",
+    "stateful": false,
+    "safe_to_replay": true,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Wales OpenEyes Query - BCUHB - Central listens by HTTP on port 6662 and calls the MPI SOAP operation InvokePatientDemographicsQuery.",
+        "location": "Wales/OpenEyes Query - BCUHB - Central.xml: sourceConnector and destination 'Send Q21' (lines 7-184, 192-502)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "Its QPD transformer uses identifier code 109 and its response XSLT sets vSender to 109, distinguishing it from the other board channels.",
+        "location": "Wales/OpenEyes Query - BCUHB - Central.xml: transformer 'Set hosnum or nhsnum parameter' and destination 'Create Response' XSLT (lines 71-97, 745-770)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The channel converts the SOAP response to OpenEyes XML and returns it via the response writer.",
+        "location": "Wales/OpenEyes Query - BCUHB - Central.xml: response transformer 'Extract SOAP body' and destinations 'Convert K21 to XML'/'Create Response' (lines 392-440, 509-890)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "dbb9ec40-fc78-4f3c-82b6-552838ffe1d4",
+    "channel_name": "OpenEyes Query - BCUHB - West",
+    "instance": "Wales",
+    "source_file": "Wales/OpenEyes Query - BCUHB - West.xml",
+    "canonical_path": "canonical/Wales/OpenEyes Query - BCUHB - West.xml",
+    "category": "PAS Query / PDQ (MPI SOAP)",
+    "functional_purpose": "Accepts an HTTP demographic query, builds a BCUHB West HL7 PDQ query using identifier code 110, sends it to the Welsh MPI SOAP service, and returns OpenEyes XML.",
+    "business_process": "Patient demographic lookup before clinical record selection.",
+    "source_system": "OpenEyes or HTTP client",
+    "destination_systems": [
+      "Welsh MPI/PDQ service"
+    ],
+    "source_connector": {
+      "type": "HTTP Listener",
+      "port": "6663"
+    },
+    "destination_connectors": [
+      {
+        "name": "Send Q21",
+        "type": "Web Service Sender",
+        "endpoint": "https://mpilivequeries.cymru.nhs.uk:443/PatientDemographicsQueryWS.asmx"
+      }
+    ],
+    "protocol": "HTTP / SOAP",
+    "message_format": "XML request / HL7v2 PDQ query / XML response",
+    "hl7_version": null,
+    "hl7_message_types": [
+      "QBP",
+      "RSP"
+    ],
+    "hl7_trigger_events": [
+      "Q22",
+      "K21"
+    ],
+    "ack_behaviour": "HTTP response is created from the transformed MPI response after processing.",
+    "oe_endpoints": [],
+    "oe_api_versions": [],
+    "auth_method": "none",
+    "main_filters": [
+      "No source or SOAP destination filter is configured."
+    ],
+    "main_transformer_stages": [
+      "Set HL7 message timestamp and query identifiers.",
+      "Populate QPD criteria from HTTP parameters.",
+      "Wrap the query in SOAP, extract the SOAP response, and transform K21 data to OpenEyes XML."
+    ],
+    "depends_on": [],
+    "error_handling": "No explicit error script is configured.",
+    "retry_behaviour": "SOAP destination queueing is disabled and retryCount is 0.",
+    "queue_behaviour": "Destination queues are disabled.",
+    "logging": "No explicit logger calls; production message content is retained for 14 days.",
+    "stateful": false,
+    "safe_to_replay": true,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Wales OpenEyes Query - BCUHB - West listens by HTTP on port 6663 and uses the MPI Web Service Sender.",
+        "location": "Wales/OpenEyes Query - BCUHB - West.xml: sourceConnector and destination 'Send Q21' (lines 7-184, 192-502)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "Its board parameter is QPD.3.2 identifier code 110 and response XSLT vSender 110.",
+        "location": "Wales/OpenEyes Query - BCUHB - West.xml: transformer 'Set hosnum or nhsnum parameter' and destination 'Create Response' XSLT (lines 71-97, 745-770)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "SOAP response extraction and K21-to-OpenEyes XML transformation are configured.",
+        "location": "Wales/OpenEyes Query - BCUHB - West.xml: response transformer and destinations 'Convert K21 to XML'/'Create Response' (lines 392-440, 509-890)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "0fa224a7-fe33-46ae-af0e-96d0ffd134c3",
+    "channel_name": "OpenEyes Query - CTMUHB",
+    "instance": "Wales",
+    "source_file": "Wales/OpenEyes Query - CTMUHB.xml",
+    "canonical_path": "canonical/Wales/OpenEyes Query - CTMUHB.xml",
+    "category": "PAS Query / PDQ (MPI SOAP)",
+    "functional_purpose": "Accepts an HTTP demographic query, builds a CTMUHB HL7 PDQ query using identifier code 126, sends it to the Welsh MPI SOAP service, and returns OpenEyes XML.",
+    "business_process": "Patient demographic lookup before clinical record selection.",
+    "source_system": "OpenEyes or HTTP client",
+    "destination_systems": [
+      "Welsh MPI/PDQ service"
+    ],
+    "source_connector": {
+      "type": "HTTP Listener",
+      "port": "6667"
+    },
+    "destination_connectors": [
+      {
+        "name": "Send Q21",
+        "type": "Web Service Sender",
+        "endpoint": "https://mpilivequeries.cymru.nhs.uk:443/PatientDemographicsQueryWS.asmx"
+      }
+    ],
+    "protocol": "HTTP / SOAP",
+    "message_format": "XML request / HL7v2 PDQ query / XML response",
+    "hl7_version": null,
+    "hl7_message_types": [
+      "QBP",
+      "RSP"
+    ],
+    "hl7_trigger_events": [
+      "Q22",
+      "K21"
+    ],
+    "ack_behaviour": "HTTP response is created from the transformed MPI response after processing.",
+    "oe_endpoints": [],
+    "oe_api_versions": [],
+    "auth_method": "none",
+    "main_filters": [
+      "No source or SOAP destination filter is configured."
+    ],
+    "main_transformer_stages": [
+      "Set HL7 message timestamp and query identifiers.",
+      "Populate QPD criteria from HTTP parameters.",
+      "Wrap the query in SOAP, extract the SOAP response, and transform K21 data to OpenEyes XML."
+    ],
+    "depends_on": [],
+    "error_handling": "No explicit error script is configured.",
+    "retry_behaviour": "SOAP destination queueing is disabled and retryCount is 0.",
+    "queue_behaviour": "Destination queues are disabled.",
+    "logging": "No explicit logger calls; production message content is retained for 14 days.",
+    "stateful": false,
+    "safe_to_replay": true,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Wales OpenEyes Query - CTMUHB listens by HTTP on port 6667 and calls the MPI SOAP operation.",
+        "location": "Wales/OpenEyes Query - CTMUHB.xml: sourceConnector and destination 'Send Q21' (lines 7-184, 192-502)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "Its board parameter is QPD.3.2 identifier code 126 and response XSLT vSender 126.",
+        "location": "Wales/OpenEyes Query - CTMUHB.xml: transformer 'Set hosnum or nhsnum parameter' and destination 'Create Response' XSLT (lines 71-97, 745-770)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "SOAP response extraction and K21-to-OpenEyes XML transformation are configured.",
+        "location": "Wales/OpenEyes Query - CTMUHB.xml: response transformer and destinations 'Convert K21 to XML'/'Create Response' (lines 392-440, 509-890)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "9b5a6e96-dfbf-4a1d-b29b-59ccb6c3505d",
+    "channel_name": "OpenEyes Query - CVUHB",
+    "instance": "Wales",
+    "source_file": "Wales/OpenEyes Query - CVUHB.xml",
+    "canonical_path": "canonical/Wales/OpenEyes Query - CVUHB.xml",
+    "category": "PAS Query / PDQ (MPI SOAP)",
+    "functional_purpose": "Accepts an HTTP demographic query, builds a CVUHB HL7 PDQ query using identifier code 140, sends it to the Welsh MPI SOAP service, and returns OpenEyes XML.",
+    "business_process": "Patient demographic lookup before clinical record selection.",
+    "source_system": "OpenEyes or HTTP client",
+    "destination_systems": [
+      "Welsh MPI/PDQ service"
+    ],
+    "source_connector": {
+      "type": "HTTP Listener",
+      "port": "6664"
+    },
+    "destination_connectors": [
+      {
+        "name": "Send Q21",
+        "type": "Web Service Sender",
+        "endpoint": "https://mpilivequeries.cymru.nhs.uk:443/PatientDemographicsQueryWS.asmx"
+      }
+    ],
+    "protocol": "HTTP / SOAP",
+    "message_format": "XML request / HL7v2 PDQ query / XML response",
+    "hl7_version": null,
+    "hl7_message_types": [
+      "QBP",
+      "RSP"
+    ],
+    "hl7_trigger_events": [
+      "Q22",
+      "K21"
+    ],
+    "ack_behaviour": "HTTP response is created from the transformed MPI response after processing.",
+    "oe_endpoints": [],
+    "oe_api_versions": [],
+    "auth_method": "none",
+    "main_filters": [
+      "No source or SOAP destination filter is configured."
+    ],
+    "main_transformer_stages": [
+      "Set HL7 message timestamp and query identifiers.",
+      "Populate QPD criteria from HTTP parameters.",
+      "Wrap the query in SOAP, extract the SOAP response, and transform K21 data to OpenEyes XML."
+    ],
+    "depends_on": [],
+    "error_handling": "No explicit error script is configured.",
+    "retry_behaviour": "SOAP destination queueing is disabled and retryCount is 0.",
+    "queue_behaviour": "Destination queues are disabled.",
+    "logging": "No explicit logger calls; production message content is retained for 14 days.",
+    "stateful": false,
+    "safe_to_replay": true,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Wales OpenEyes Query - CVUHB listens by HTTP on port 6664 and uses the MPI Web Service Sender.",
+        "location": "Wales/OpenEyes Query - CVUHB.xml: sourceConnector and destination 'Send Q21' (lines 7-184, 192-502)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "Its board parameter is QPD.3.2 identifier code 140 and response XSLT vSender 140.",
+        "location": "Wales/OpenEyes Query - CVUHB.xml: transformer 'Set hosnum or nhsnum parameter' and destination 'Create Response' XSLT (lines 71-97, 745-770)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "SOAP response extraction and K21-to-OpenEyes XML transformation are configured.",
+        "location": "Wales/OpenEyes Query - CVUHB.xml: response transformer and destinations 'Convert K21 to XML'/'Create Response' (lines 392-440, 509-890)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "dcf60125-aa97-45b9-a819-d54008394dea",
+    "channel_name": "OpenEyes Query - HDUHB",
+    "instance": "Wales",
+    "source_file": "Wales/OpenEyes Query - HDUHB.xml",
+    "canonical_path": "canonical/Wales/OpenEyes Query - HDUHB.xml",
+    "category": "PAS Query / PDQ (MPI SOAP)",
+    "functional_purpose": "Accepts an HTTP demographic query, builds a HDUHB HL7 PDQ query using identifier code 149, sends it to the Welsh MPI SOAP service, and returns OpenEyes XML.",
+    "business_process": "Patient demographic lookup before clinical record selection.",
+    "source_system": "OpenEyes or HTTP client",
+    "destination_systems": [
+      "Welsh MPI/PDQ service"
+    ],
+    "source_connector": {
+      "type": "HTTP Listener",
+      "port": "6665"
+    },
+    "destination_connectors": [
+      {
+        "name": "Send Q21",
+        "type": "Web Service Sender",
+        "endpoint": "https://mpilivequeries.cymru.nhs.uk:443/PatientDemographicsQueryWS.asmx"
+      }
+    ],
+    "protocol": "HTTP / SOAP",
+    "message_format": "XML request / HL7v2 PDQ query / XML response",
+    "hl7_version": null,
+    "hl7_message_types": [
+      "QBP",
+      "RSP"
+    ],
+    "hl7_trigger_events": [
+      "Q22",
+      "K21"
+    ],
+    "ack_behaviour": "HTTP response is created from the transformed MPI response after processing.",
+    "oe_endpoints": [],
+    "oe_api_versions": [],
+    "auth_method": "none",
+    "main_filters": [
+      "No source or SOAP destination filter is configured."
+    ],
+    "main_transformer_stages": [
+      "Set HL7 message timestamp and query identifiers.",
+      "Populate QPD criteria from HTTP parameters.",
+      "Wrap the query in SOAP, extract the SOAP response, and transform K21 data to OpenEyes XML."
+    ],
+    "depends_on": [],
+    "error_handling": "No explicit error script is configured.",
+    "retry_behaviour": "SOAP destination queueing is disabled and retryCount is 0.",
+    "queue_behaviour": "Destination queues are disabled.",
+    "logging": "No explicit logger calls; production message content is retained for 14 days.",
+    "stateful": false,
+    "safe_to_replay": true,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Wales OpenEyes Query - HDUHB listens by HTTP on port 6665 and calls the MPI SOAP operation.",
+        "location": "Wales/OpenEyes Query - HDUHB.xml: sourceConnector and destination 'Send Q21' (lines 7-184, 192-502)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "Its board parameter is QPD.3.2 identifier code 149 and response XSLT vSender 149.",
+        "location": "Wales/OpenEyes Query - HDUHB.xml: transformer 'Set hosnum or nhsnum parameter' and destination 'Create Response' XSLT (lines 71-97, 745-770)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "SOAP response extraction and K21-to-OpenEyes XML transformation are configured.",
+        "location": "Wales/OpenEyes Query - HDUHB.xml: response transformer and destinations 'Convert K21 to XML'/'Create Response' (lines 392-440, 509-890)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "e29c8a88-35df-4bbd-89b2-864153cfb42d",
+    "channel_name": "OpenEyes Query - PTHB",
+    "instance": "Wales",
+    "source_file": "Wales/OpenEyes Query - PTHB.xml",
+    "canonical_path": "canonical/Wales/OpenEyes Query - PTHB.xml",
+    "category": "PAS Query / PDQ (MPI SOAP)",
+    "functional_purpose": "Accepts an HTTP demographic query, builds a PTHB HL7 PDQ query using identifier code 170, sends it to the Welsh MPI SOAP service, and returns OpenEyes XML.",
+    "business_process": "Patient demographic lookup before clinical record selection.",
+    "source_system": "OpenEyes or HTTP client",
+    "destination_systems": [
+      "Welsh MPI/PDQ service"
+    ],
+    "source_connector": {
+      "type": "HTTP Listener",
+      "port": "6666"
+    },
+    "destination_connectors": [
+      {
+        "name": "Send Q21",
+        "type": "Web Service Sender",
+        "endpoint": "https://mpilivequeries.cymru.nhs.uk:443/PatientDemographicsQueryWS.asmx"
+      }
+    ],
+    "protocol": "HTTP / SOAP",
+    "message_format": "XML request / HL7v2 PDQ query / XML response",
+    "hl7_version": null,
+    "hl7_message_types": [
+      "QBP",
+      "RSP"
+    ],
+    "hl7_trigger_events": [
+      "Q22",
+      "K21"
+    ],
+    "ack_behaviour": "HTTP response is created from the transformed MPI response after processing.",
+    "oe_endpoints": [],
+    "oe_api_versions": [],
+    "auth_method": "none",
+    "main_filters": [
+      "No source or SOAP destination filter is configured."
+    ],
+    "main_transformer_stages": [
+      "Set HL7 message timestamp and query identifiers.",
+      "Populate QPD criteria from HTTP parameters.",
+      "Wrap the query in SOAP, extract the SOAP response, and transform K21 data to OpenEyes XML."
+    ],
+    "depends_on": [],
+    "error_handling": "No explicit error script is configured.",
+    "retry_behaviour": "SOAP destination queueing is disabled and retryCount is 0.",
+    "queue_behaviour": "Destination queues are disabled.",
+    "logging": "No explicit logger calls; production message content is retained for 14 days.",
+    "stateful": false,
+    "safe_to_replay": true,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Wales OpenEyes Query - PTHB listens by HTTP on port 6666 and calls the MPI SOAP operation.",
+        "location": "Wales/OpenEyes Query - PTHB.xml: sourceConnector and destination 'Send Q21' (lines 7-184, 192-502)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "Its board parameter is QPD.3.2 identifier code 170 and response XSLT vSender 170.",
+        "location": "Wales/OpenEyes Query - PTHB.xml: transformer 'Set hosnum or nhsnum parameter' and destination 'Create Response' XSLT (lines 71-97, 745-770)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "SOAP response extraction and K21-to-OpenEyes XML transformation are configured.",
+        "location": "Wales/OpenEyes Query - PTHB.xml: response transformer and destinations 'Convert K21 to XML'/'Create Response' (lines 392-440, 509-890)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "0e97b0f7-75db-41c8-b287-b4c0b574608b",
+    "channel_name": "OpenEyes Query - SBUHB",
+    "instance": "Wales",
+    "source_file": "Wales/OpenEyes Query - SBUHB.xml",
+    "canonical_path": "canonical/Wales/OpenEyes Query - SBUHB.xml",
+    "category": "PAS Query / PDQ (MPI SOAP)",
+    "functional_purpose": "Accepts an HTTP demographic query, builds a SBUHB HL7 PDQ query using identifier code 108, sends it to the Welsh MPI SOAP service, and returns OpenEyes XML.",
+    "business_process": "Patient demographic lookup before clinical record selection.",
+    "source_system": "OpenEyes or HTTP client",
+    "destination_systems": [
+      "Welsh MPI/PDQ service"
+    ],
+    "source_connector": {
+      "type": "HTTP Listener",
+      "port": "6669"
+    },
+    "destination_connectors": [
+      {
+        "name": "Send Q21",
+        "type": "Web Service Sender",
+        "endpoint": "https://mpilivequeries.cymru.nhs.uk:443/PatientDemographicsQueryWS.asmx"
+      }
+    ],
+    "protocol": "HTTP / SOAP",
+    "message_format": "XML request / HL7v2 PDQ query / XML response",
+    "hl7_version": null,
+    "hl7_message_types": [
+      "QBP",
+      "RSP"
+    ],
+    "hl7_trigger_events": [
+      "Q22",
+      "K21"
+    ],
+    "ack_behaviour": "HTTP response is created from the transformed MPI response after processing.",
+    "oe_endpoints": [],
+    "oe_api_versions": [],
+    "auth_method": "none",
+    "main_filters": [
+      "No source or SOAP destination filter is configured."
+    ],
+    "main_transformer_stages": [
+      "Set HL7 message timestamp and query identifiers.",
+      "Populate QPD criteria from HTTP parameters.",
+      "Wrap the query in SOAP, extract the SOAP response, and transform K21 data to OpenEyes XML."
+    ],
+    "depends_on": [],
+    "error_handling": "No explicit error script is configured.",
+    "retry_behaviour": "SOAP destination queueing is disabled and retryCount is 0.",
+    "queue_behaviour": "Destination queues are disabled.",
+    "logging": "No explicit logger calls; production message content is retained for 14 days.",
+    "stateful": false,
+    "safe_to_replay": true,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Wales OpenEyes Query - SBUHB listens by HTTP on port 6669 and calls the MPI SOAP operation.",
+        "location": "Wales/OpenEyes Query - SBUHB.xml: sourceConnector and destination 'Send Q21' (lines 7-184, 192-502)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "Its board parameter is QPD.3.2 identifier code 108 and response XSLT vSender 108.",
+        "location": "Wales/OpenEyes Query - SBUHB.xml: transformer 'Set hosnum or nhsnum parameter' and destination 'Create Response' XSLT (lines 71-97, 745-770)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "SOAP response extraction and K21-to-OpenEyes XML transformation are configured.",
+        "location": "Wales/OpenEyes Query - SBUHB.xml: response transformer and destinations 'Convert K21 to XML'/'Create Response' (lines 392-440, 509-890)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "7a7288a3-5ade-46bc-921d-56baf0a6bf06",
+    "channel_name": "PAS IN",
+    "instance": "Wales",
+    "source_file": "Wales/PAS IN.xml",
+    "canonical_path": "canonical/Wales/PAS IN.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS ADT messages over MLLP and updates OpenEyes patients and appointments through PASAPI V1. It separately handles patient merges and appointment cancellation/deletion events.",
+    "business_process": "Synchronising patient demographics, encounters, appointments, and merges from the PAS into OpenEyes.",
+    "source_system": "PAS",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "TCP Listener",
+      "port": "6661"
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Secondary Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${SecondaryHospitalNumber}/identifier-type/LOCAL-1-0"
+      },
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/Patient/${HospitalNumber}/identifier-type/LOCAL-1-0"
+      },
+      {
+        "name": "Clinic List - PUT",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/PatientAppointment/${VisitID}/identifier-type/LOCAL-1-0"
+      },
+      {
+        "name": "Clinic List - DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V1/PatientMerge/${HospitalNumber}/identifier-type/LOCAL-1-0"
+      }
+    ],
+    "protocol": "MLLP / HTTP",
+    "message_format": "HL7v2 / XML",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A05",
+      "A08",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40"
+    ],
+    "ack_behaviour": "The TCP HL7 response generator is configured for AA success, AE error, and AR rejection acknowledgements.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V1/PatientAppointment",
+      "PASAPI/V1/PatientMerge"
+    ],
+    "oe_api_versions": [
+      "V1"
+    ],
+    "auth_method": "HTTP Basic",
+    "main_filters": [
+      "PASAPI - Secondary Patient and PASAPI - Patient are split by A40 versus non-M05 events.",
+      "Clinic List - PUT accepts A01, A05, A08, A11, A03, A13, A02, and A12.",
+      "Clinic List - DELETE accepts A38.",
+      "PASAPI - Patient Merge accepts A40."
+    ],
+    "main_transformer_stages": [
+      "Extract hospital/NHS identifiers, visit details, clinic and doctor codes, appointment status, and merge identifiers from HL7.",
+      "Transform patient data to PASAPI XML and PUT patient records.",
+      "PUT or DELETE PASAPI appointments according to ADT event filters, and PUT patient merges."
+    ],
+    "depends_on": [],
+    "error_handling": "Patient response transformers strip server log text, inspect warnings, and set responseErrorMessage; mapping scripts log extraction errors.",
+    "retry_behaviour": "All HTTP destinations have queueing disabled and retryCount 0 (retry interval configured as 10000 ms).",
+    "queue_behaviour": "Destination queues are disabled; no source queue is configured.",
+    "logging": "Mapping scripts log errors and one DoctorCode script logs PD1.4.1, creating a PII-in-log risk.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Wales PAS IN receives HL7V2 through a TCP Listener on port 6661 and produces AA, AE, and AR ACK codes.",
+        "location": "Wales/PAS IN.xml: sourceConnector (lines 7-142)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "It uses preemptive Basic authentication with a redacted password to PUT PASAPI V1 Patient and PatientAppointment resources and DELETE appointments.",
+        "location": "Wales/PAS IN.xml: destinations 'PASAPI - Patient' and 'Clinic List - PUT/DELETE' (lines 628-1103, 1107-1633)",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The appointment filter accepts A01, A05, A08, A11, A03, A13, A02, and A12; A38 drives appointment deletion and A40 drives PatientMerge.",
+        "location": "Wales/PAS IN.xml: 'Appointment Filter', 'Clinic List - DELETE' filter, and 'PASAPI - Patient Merge' filter (lines 1360-1388, 1613-1629, 1860-1874)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  }
+]
+

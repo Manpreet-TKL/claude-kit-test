@@ -1,0 +1,103 @@
+instance,channel_name,channel_id,group,artifact_type,bridgelink_version,source_file,source_transport,source_port,n_destinations,dest_transports,pasapi_versions,uses_payload_processor,secret_present,sensitive_env_present,raw_sha256
+Bedford,DICOM,c14efd23-2c1c-4e53-a59f-dcfe0e727c3b,[Default Group],channelGroup,4.5.2,Bedford/Default Group.xml,DICOM Listener,11112,3,File Writer|HTTP Sender|JavaScript Writer,,True,True,True,e35597abd2cd
+Bedford,Document OUT,375fe7b2-d55c-4c60-b66f-dc2000c8ea95,[Default Group],channelGroup,4.5.2,Bedford/Default Group.xml,File Reader,,1,File Writer,,False,True,True,11368e95e603
+Bedford,Document Upload PP,f703f9cd-a6ee-42e6-8550-c6a9c3fb1c73,[Default Group],channelGroup,4.5.2,Bedford/Default Group.xml,File Reader,,1,HTTP Sender,,True,True,False,fd102bfcce95
+Bedford,PAS IN,d69815ee-68d1-4dcb-8896-8b12ba06a9c4,[Default Group],channelGroup,4.5.2,Bedford/Default Group.xml,TCP Listener,6661,7,HTTP Sender|JavaScript Writer|TCP Sender,V1|V2,False,True,True,fef3705122f3
+Bedford,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,[Default Group],channelGroup,4.5.2,Bedford/Default Group.xml,HTTP Listener,6663,4,JavaScript Writer|TCP Sender,,False,True,True,ef8e19351001
+Bolton,CORRESPONDENCE OUT,7a04b9d1-70ac-4008-b809-732b88267f5c,,channel,4.6.1,Bolton/CORRESPONDENCE OUT.xml,File Reader,,1,File Writer,,False,True,True,92a209741e3c
+Bolton,DICOM,c14efd23-2c1c-4e53-a59f-dcfe0e727c3b,,channel,4.6.1,Bolton/DICOM.xml,DICOM Listener,11112,3,File Writer|HTTP Sender|JavaScript Writer,,True,True,True,74f1c2fb8399
+Bolton,PAS IN,7a7288a3-5ade-46bc-921d-56baf0a6bf06,,channel,4.6.1,Bolton/PAS IN.xml,TCP Listener,6661,6,HTTP Sender,V1|V2,False,True,True,c1ef315f7e17
+Bolton,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,,channel,4.6.1,Bolton/PAS OUT.xml,HTTP Listener,6663,4,JavaScript Writer|TCP Sender,,False,True,True,d1d01a66f978
+EK,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,,channel,4.5.2,EK/DICOM.xml,DICOM Listener,11112,2,File Writer|HTTP Sender,,True,True,True,1994aed3db0f
+EK,Filedrop Correspondence,7a04b9d1-70ac-4008-b809-732b88267f5c,,channel,4.5.2,EK/Filedrop Correspondence.xml,File Reader,,1,File Writer,,False,True,True,a06116f733b6
+EK,MTW Correspondence,3ad2f609-8045-4da9-b708-2e291f18af15,,channel,4.5.2,EK/MTW Correspondence.xml,File Reader,,1,File Writer,,False,True,True,dc764c63e221
+EK,PAS IN,2a67566e-e26d-4bd9-9e9b-1ea0806c5da4,,channel,4.5.2,EK/PAS IN.xml,TCP Listener,6661,3,HTTP Sender,V2,False,True,True,b9946883cd23
+EK,PAS IN Maidstone,712ec2e2-92a4-4f7a-bc3d-b216faeddc39,,channel,4.5.2,EK/PAS IN Maidstone.xml,TCP Listener,6671,3,HTTP Sender,V2,False,True,True,a1905d1b1377
+EK,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,,channel,4.5.2,EK/PAS OUT.xml,HTTP Listener,6663,4,JavaScript Writer|TCP Sender,,False,True,True,72bb28ba9226
+EK,Synertec Correspondence,685aeaf0-45ba-41d1-afde-187226ce4162,,channel,4.5.2,EK/Synertec Correspondence.xml,File Reader,,1,File Writer,,False,True,True,d504755906f9
+ENHT,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,Dicom,channelGroup,4.4.2,ENHT/Dicom.xml,DICOM Listener,11112,2,File Writer|HTTP Sender,,True,True,True,976fbe74b4b9
+ENHT,Docman,04524f4d-5201-4c16-b66f-26c3d7783d85,Docman,channelGroup,4.4.2,ENHT/Docman.xml,File Reader,,1,File Writer,,False,True,True,43d71544229a
+ENHT,PAS In,7a7288a3-5ade-46bc-921d-56baf0a6bf06,PAS,channelGroup,4.4.2,ENHT/PAS.xml,TCP Listener,6661,5,HTTP Sender,V2,False,True,True,40b24b5b8978
+ENHT,PAS Out,cbc80f6b-73ad-491b-adc6-602ed5705c8b,PAS,channelGroup,4.4.2,ENHT/PAS.xml,HTTP Listener,6663,4,JavaScript Writer|TCP Sender,,False,True,True,41d6d461cd1c
+Kingston,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,DICOM,channelGroup,4.5.2,Kingston/DICOM.xml,DICOM Listener,11112,2,File Writer|HTTP Sender,,True,True,True,0ee21578368f
+Kingston,OpenEyes Correspondence,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,[Default Group],channelGroup,4.5.2,Kingston/Default Group.xml,File Reader,,2,TCP Sender,,False,True,True,1c66d5b50f5f
+Kingston,OpenEyes DICOM Channel,ba5419a3-24a5-48a2-bd9b-5cb2072e87f4,[Default Group],channelGroup,4.5.2,Kingston/Default Group.xml,DICOM Listener,11119,1,HTTP Sender,,True,True,True,e35821d31aca
+Kingston,OpenEyes DICOM IOLMaster Channel,eee5caa4-786f-451b-9a89-f00aeb46f935,[Default Group],channelGroup,4.5.2,Kingston/Default Group.xml,DICOM Listener,11118,2,File Writer|HTTP Sender,,True,True,True,345f8bc49929
+Kingston,OpenEyes PAS,6c3a10d1-968d-468e-9355-008946825b20,PAS,channelGroup,4.5.2,Kingston/PAS.xml,TCP Listener,6662,3,HTTP Sender,V2,False,True,True,6ae471b527f3
+MEH,AIS OUT,8439efef-2f9a-46c9-9385-888b4c2d0b92,,channel,4.5.2,MEH/AIS OUT.xml,HTTP Listener,6664,2,HTTP Sender|JavaScript Writer,,False,True,True,9a6ac8bec4e8
+MEH,AIS Sender,8c65e82d-cad1-44e9-b56e-efd400d726af,,channel,4.5.2,MEH/AIS Sender.xml,Channel Reader,,1,TCP Sender,,False,False,True,f2c2d1041a3b
+MEH,DICOM,319fcf7f-ef08-4564-9dd1-33be634edfd4,,channel,4.5.2,MEH/DICOM.xml,DICOM Listener,11112,2,File Writer|HTTP Sender,,True,True,True,a2bce122c5fa
+MEH,Docman,04524f4d-5201-4c16-b66f-26c3d7783d85,,channel,4.5.2,MEH/Docman.xml,File Reader,,1,File Writer,,False,True,True,b175e5d7c09b
+MEH,OpenEyes PAS Query v2,969561b8-b516-4fce-9b3e-6865d6f19602,,channel,4.5.2,MEH/OpenEyes PAS Query v2.xml,HTTP Listener,6663,4,JavaScript Writer|TCP Sender,,False,True,True,a9340ad55e50
+MEH,OpenEyes PAS v2,7d6b6b87-29ff-49e2-b4e5-38022c768b24,,channel,4.5.2,MEH/OpenEyes PAS v2.xml,TCP Listener,6661,6,HTTP Sender,V1|V2,False,True,True,5670aecae023
+Newmedica,DICOM,99f6d548-97f8-4400-96c4-ea388e72d48e,DICOM,channelGroup,4.5.2,Newmedica/DICOM.xml,DICOM Listener,11114,3,File Writer|HTTP Sender|JavaScript Writer,,True,True,True,fb82e62bf0d8
+Newmedica,Docman,d77eae0b-4d62-4f53-ba0d-703daeabc3ed,[Default Group],channelGroup,4.5.2,Newmedica/Default Group.xml,File Reader,,1,File Writer,,False,True,True,52e78abc6d56
+Newmedica,Generic Document processor,c878f575-333c-4357-955a-95c572350204,[Default Group],channelGroup,4.5.2,Newmedica/Default Group.xml,Channel Reader,,1,HTTP Sender,,True,True,False,cab5f6b2b685
+Newmedica,Generic Document processor OLD,95e0a91d-6127-4e4b-b6f7-0431f641036f,[Default Group],channelGroup,4.5.2,Newmedica/Default Group.xml,Channel Reader,,1,HTTP Sender,,True,True,False,6023e0f88fd6
+Newmedica,OpenEyes Document In,0e8bdcb1-966a-4f0a-beb5-72bc6a027d12,[Default Group],channelGroup,4.5.2,Newmedica/Default Group.xml,TCP Listener,8559,9,HTTP Sender|JavaScript Writer,V1,False,True,True,8f1932bdea86
+Newmedica,OpenEyes PAS In,1fac4399-a6ee-4fed-aa6a-1aea903485ee,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,TCP Listener,8558,10,Channel Writer|HTTP Sender|JavaScript Writer,V1,False,True,True,a12a96beaec9
+Newmedica,OpenEyes PAS Out,18755f08-f96f-4896-bdee-0aa655ee62bb,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,HTTP Listener,6663,3,JavaScript Writer|TCP Sender,,False,True,True,1e54c339301b
+Newmedica,PAS In LOCAL-1-0,ffa240cd-f1be-42c1-a986-ef9a203d7e58,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,a2093f88023c
+Newmedica,PAS In LOCAL-184-0,26d6b455-48e9-4b65-ae7f-f030dcaa0a8b,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,9318f936a0f5
+Newmedica,PAS In LOCAL-186-0,9f82c6ab-6ab2-4d76-895f-aa4ca1b8d0a7,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,15eaddf4d4ec
+Newmedica,PAS In LOCAL-187-0,bd18bf88-46ff-462e-b181-5302b98e4f1f,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,9aebbb38fcc4
+Newmedica,PAS In LOCAL-188-0,b155ec7f-2e73-475b-b565-b2b509d079ef,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,e9611304c193
+Newmedica,PAS In LOCAL-189-0,9f9973dd-419c-4166-b45f-1dbe999146ea,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,dd214daa169c
+Newmedica,PAS In LOCAL-190-0,09ebb81b-cb25-4357-ba16-9e845cd19241,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,380d9d3171f2
+Newmedica,PAS In LOCAL-191-0,f01ab7a5-b8e2-46a0-8a30-caea6fddeb38,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,d8473df29274
+Newmedica,PAS In LOCAL-192-0,4eca83af-de0f-4a6e-b316-83100f2e132e,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,fea94e0afba2
+Newmedica,PAS In LOCAL-204-0,4173965c-f78b-43dd-8840-b65790281a08,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,86ed7a32028f
+Newmedica,PAS In LOCAL-205-0,ebd7b20d-130e-41ed-bec4-027592d8f678,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,925f1c9c5e7d
+Newmedica,PAS In LOCAL-206-0,4e8138ae-4407-4fa0-beb4-21a6cae9b2b8,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,474302995e81
+Newmedica,PAS In LOCAL-207-0,79666d06-1c95-4a94-a51e-ee1a74c07e31,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,a1b8c2c705e0
+Newmedica,PAS In LOCAL-208-0,44d1367a-e0fe-4154-b2a3-7128382cf845,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,f46c3fd18397
+Newmedica,PAS In LOCAL-209-0,60ae6aac-a8d0-46fc-a873-ee4c65a3952e,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,c37b5ef7d194
+Newmedica,PAS In LOCAL-210-0,008a3a87-4ffd-4b4d-b992-3364c6974183,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,3aa3ebe62d0d
+Newmedica,PAS In LOCAL-211-0,1013f884-3dfa-43d1-9ad2-96eb4024d3b1,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,51ae8411ebff
+Newmedica,PAS In LOCAL-212-0,1d89d5ec-49c2-4677-b8e7-43243e545bc7,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,ce670a8a5fc0
+Newmedica,PAS In LOCAL-213-0,9924758f-6dd3-4556-8776-72084e8a4f12,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,e0cbce548977
+Newmedica,PAS In LOCAL-214-0,0a330e7d-25b4-4588-b102-3dd780a130ed,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,55ea74ac6ecd
+Newmedica,PAS In LOCAL-215-0,bc05215d-34c3-4486-a3ea-40134491d392,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,4d35d753d831
+Newmedica,PAS In LOCAL-216-0,3e4d1367-d4e0-4bed-9034-f21b50351583,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,14cb0bfdde33
+Newmedica,PAS In LOCAL-217-0,b53952c7-8d31-4f8f-8f7b-ce536a0b6c7e,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,e46a74d4c932
+Newmedica,PAS In LOCAL-218-0,566f5c0b-fa86-458a-8b6e-74593f0782af,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,32f08b37a818
+Newmedica,PAS In LOCAL-219-0,d7b58099-c50c-4a1a-8d67-a4d80d0a0ed9,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,9faacb9823f8
+Newmedica,PAS In LOCAL-221-0,f80bfe7c-e2f9-4560-9b08-80460de6fb31,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,ddb426c7e395
+Newmedica,PAS In LOCAL-222-0,33b1c017-edf4-4feb-81b8-e59eb1f63f09,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,6f1545eb935d
+Newmedica,PAS In LOCAL-223-0,81982f7b-ec91-42a8-a5ed-8352265f2e17,PAS,channelGroup,4.5.2,Newmedica/PAS.xml,Channel Reader,,9,HTTP Sender|JavaScript Writer,V1|V3,False,True,False,76929d940642
+Optegra,DOCUMENTS IN,1208a953-4fe1-457a-85b3-f17f56a5b1c1,[Default Group],channelGroup,4.5.2,Optegra/Default Group.xml,TCP Listener,6662,1,HTTP Sender,,True,True,True,e495ae31f0ce
+Optegra,Docman,04524f4d-5201-4c16-b66f-26c3d7783d85,[Default Group],channelGroup,4.5.2,Optegra/Default Group.xml,File Reader,,2,File Writer|JavaScript Writer,,False,True,False,a63ed5b8df1a
+Optegra,Document Migration,1a5ecbc6-de5e-4bb1-bb23-fad5d2c25488,[Default Group],channelGroup,4.5.2,Optegra/Default Group.xml,File Reader,,3,HTTP Sender,,False,True,False,f9d3837dd04b
+Optegra,HFA2,81492d92-15a9-4109-8b65-9d95aa131200,Dicom,channelGroup,4.5.2,Optegra/Dicom.xml,DICOM Listener,11113,2,File Writer|HTTP Sender,,True,True,True,a253e7120144
+Optegra,IOL,c14efd23-2c1c-4e53-a59f-dcfe0e727c3b,Dicom,channelGroup,4.5.2,Optegra/Dicom.xml,DICOM Listener,11112,3,File Writer|HTTP Sender|JavaScript Writer,,True,True,True,a15d8161b6ad
+Optegra,PAS IN V2,d69815ee-68d1-4dcb-8896-8b12ba06a9c4,PAS,channelGroup,4.5.2,Optegra/PAS.xml,TCP Listener,6661,5,HTTP Sender,V2,False,True,True,1a94c78daf9b
+Pennine,DICOM_11118,da67d2ba-db52-4f50-898b-b534d71450ab,[Default Group],channelGroup,4.4.2,Pennine/Default Group.xml,DICOM Listener,11118,2,File Writer|HTTP Sender,,True,True,True,8742b8c0cabc
+Pennine,DICOM_11119,2d01d348-a78d-42b7-a206-410d30a2ff8b,[Default Group],channelGroup,4.4.2,Pennine/Default Group.xml,DICOM Listener,11119,2,File Writer|HTTP Sender,,True,True,True,68ad1a8c59c9
+Pennine,OpenEyes DICOM Channel,ba5419a3-24a5-48a2-bd9b-5cb2072e87f4,DICOM,channelGroup,4.4.2,Pennine/DICOM.xml,DICOM Listener,11119,1,HTTP Sender,,True,True,True,e5af3ea82b0b
+Pennine,OpenEyes DICOM IOLMaster Channel,eee5caa4-786f-451b-9a89-f00aeb46f935,DICOM,channelGroup,4.4.2,Pennine/DICOM.xml,DICOM Listener,11118,2,File Writer|HTTP Sender,,True,True,True,7a58a6dfc79b
+Pennine,OpenEyes PAS,6c3a10d1-968d-468e-9355-008946825b20,PAS,channelGroup,4.4.2,Pennine/PAS.xml,TCP Listener,6662,3,HTTP Sender,V1,False,True,True,2222fd5d6b22
+Pennine,OpenEyes PAS Query,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,PAS,channelGroup,4.4.2,Pennine/PAS.xml,HTTP Listener,6663,3,JavaScript Writer|TCP Sender,,False,True,True,e297e94019f4
+Portsmouth,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,[Default Group],channelGroup,4.4.2,Portsmouth/Default Group.xml,DICOM Listener,11112,2,File Writer|HTTP Sender,,True,True,True,3f687012d665
+Portsmouth,DOCUMENT-OUT-Drop,29925e07-6c04-4dda-99f0-125c09824f97,[Default Group],channelGroup,4.4.2,Portsmouth/Default Group.xml,File Reader,,1,File Writer,,False,True,True,ec5795c98301
+Portsmouth,DOCUMENT-OUT-Minestrone,04524f4d-5201-4c16-b66f-26c3d7783d85,[Default Group],channelGroup,4.4.2,Portsmouth/Default Group.xml,File Reader,,1,File Writer,,False,True,True,336b002cf39d
+Portsmouth,DOCUMENTS IN HL7,402e6dfd-1747-477f-8f75-7f4da2c97bc8,[Default Group],channelGroup,4.4.2,Portsmouth/Default Group.xml,TCP Listener,6662,1,HTTP Sender,,True,True,True,bf8ed4b9ac94
+Portsmouth,General Documents IN,f703f9cd-a6ee-42e6-8550-c6a9c3fb1c73,[Default Group],channelGroup,4.4.2,Portsmouth/Default Group.xml,File Reader,,2,HTTP Sender,,True,True,True,81e811337cc2
+Portsmouth,IOL Documents IN,70aa29b6-b425-427a-93d8-a82cb4e65edf,[Default Group],channelGroup,4.4.2,Portsmouth/Default Group.xml,File Reader,,2,HTTP Sender,,True,True,True,7941afbb7837
+Portsmouth,Migration Documents IN,3493b21f-fe49-482f-8614-2bb95bf1d799,[Default Group],channelGroup,4.4.2,Portsmouth/Default Group.xml,File Reader,,2,HTTP Sender,,True,True,True,ad9ef7bf940a
+Portsmouth,PAS IN V2,d69815ee-68d1-4dcb-8896-8b12ba06a9c4,[Default Group],channelGroup,4.4.2,Portsmouth/Default Group.xml,TCP Listener,6661,5,HTTP Sender,V2,False,True,True,b264096f5145
+Portsmouth,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,[Default Group],channelGroup,4.4.2,Portsmouth/Default Group.xml,HTTP Listener,6663,4,JavaScript Writer|TCP Sender,,False,True,True,c6e6455c7136
+Sussex,DICOM,c14efd23-2c1c-4e53-a59f-dcfe0e727c3b,[Default Group],channelGroup,4.4.2,Sussex/Default Group.xml,DICOM Listener,11112,3,File Writer|HTTP Sender|JavaScript Writer,,True,True,True,f468ee0e0f5b
+Sussex,Document Delivery,375fe7b2-d55c-4c60-b66f-dc2000c8ea95,[Default Group],channelGroup,4.4.2,Sussex/Default Group.xml,File Reader,,1,File Writer,,False,True,True,caef8f17a877
+Sussex,PAS IN,d69815ee-68d1-4dcb-8896-8b12ba06a9c4,[Default Group],channelGroup,4.4.2,Sussex/Default Group.xml,TCP Listener,6661,6,HTTP Sender|JavaScript Writer,V1|V2,False,True,True,367ef55d6fcf
+Sussex,PAS IN - Migration,6b9477af-6106-41b7-bd2e-3273c1c9b2d3,[Default Group],channelGroup,4.4.2,Sussex/Default Group.xml,TCP Listener,6662,5,HTTP Sender,V1|V2,False,True,True,b0e3c17c1e24
+Sussex,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,[Default Group],channelGroup,4.4.2,Sussex/Default Group.xml,HTTP Listener,6663,4,JavaScript Writer|TCP Sender,,False,True,True,bc814021cdfe
+Wales,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,,channel,4.4.2,Wales/DICOM.xml,DICOM Listener,11118,2,File Writer|HTTP Sender,,True,True,True,cd95e46f02c2
+Wales,OpenEyes Query - ABUHB,2e678abc-78ba-4220-93d3-846f765fd8dd,,channel,4.4.2,Wales/OpenEyes Query - ABUHB.xml,HTTP Listener,6668,3,JavaScript Writer|Web Service Sender,,False,True,True,a86cbaa1dfc2
+Wales,OpenEyes Query - BCUHB - Central,3b655b56-5d80-403e-a61e-97c3abf919a4,,channel,4.4.2,Wales/OpenEyes Query - BCUHB - Central.xml,HTTP Listener,6662,3,JavaScript Writer|Web Service Sender,,False,True,True,8ce231c442c0
+Wales,OpenEyes Query - BCUHB - West,dbb9ec40-fc78-4f3c-82b6-552838ffe1d4,,channel,4.4.2,Wales/OpenEyes Query - BCUHB - West.xml,HTTP Listener,6663,3,JavaScript Writer|Web Service Sender,,False,True,True,b7d39dcf2ed8
+Wales,OpenEyes Query - CTMUHB,0fa224a7-fe33-46ae-af0e-96d0ffd134c3,,channel,4.4.2,Wales/OpenEyes Query - CTMUHB.xml,HTTP Listener,6667,3,JavaScript Writer|Web Service Sender,,False,True,True,4dbb90cc1bcd
+Wales,OpenEyes Query - CVUHB,9b5a6e96-dfbf-4a1d-b29b-59ccb6c3505d,,channel,4.4.2,Wales/OpenEyes Query - CVUHB.xml,HTTP Listener,6664,3,JavaScript Writer|Web Service Sender,,False,True,True,c3bb69305503
+Wales,OpenEyes Query - HDUHB,dcf60125-aa97-45b9-a819-d54008394dea,,channel,4.4.2,Wales/OpenEyes Query - HDUHB.xml,HTTP Listener,6665,3,JavaScript Writer|Web Service Sender,,False,True,True,a91aba109c9d
+Wales,OpenEyes Query - PTHB,e29c8a88-35df-4bbd-89b2-864153cfb42d,,channel,4.4.2,Wales/OpenEyes Query - PTHB.xml,HTTP Listener,6666,3,JavaScript Writer|Web Service Sender,,False,True,True,87ffc9ae417e
+Wales,OpenEyes Query - SBUHB,0e97b0f7-75db-41c8-b287-b4c0b574608b,,channel,4.4.2,Wales/OpenEyes Query - SBUHB.xml,HTTP Listener,6669,3,JavaScript Writer|Web Service Sender,,False,True,True,b337eb549cfa
+Wales,PAS IN,7a7288a3-5ade-46bc-921d-56baf0a6bf06,,channel,4.4.2,Wales/PAS IN.xml,TCP Listener,6661,5,HTTP Sender,V1,False,True,True,6ef8a28a3543

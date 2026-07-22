@@ -1,0 +1,156 @@
+{
+  "by_bridgelink_version": {
+    "4.4.2": 34,
+    "4.5.2": 64,
+    "4.6.1": 4
+  },
+  "by_category": {
+    "AIS Integration": 2,
+    "DICOM Ingestion": 15,
+    "Document / Correspondence Ingestion": 6,
+    "Document / Correspondence Outbound": 13,
+    "IOLMaster / Biometry Import": 2,
+    "PAS Inbound (HL7 -> PASAPI)": 42,
+    "PAS Outbound (query/response to remote PAS)": 9,
+    "PAS Query / PDQ (MPI SOAP)": 8,
+    "PayloadProcessor Submission": 5
+  },
+  "by_confidence": {
+    "confirmed": 96,
+    "inferred": 6
+  },
+  "by_instance": {
+    "Bedford": 5,
+    "Bolton": 4,
+    "EK": 7,
+    "ENHT": 4,
+    "Kingston": 5,
+    "MEH": 6,
+    "Newmedica": 35,
+    "Optegra": 6,
+    "Pennine": 6,
+    "Portsmouth": 9,
+    "Sussex": 5,
+    "Wales": 10
+  },
+  "by_outbound_scheme": {
+    "http": 77,
+    "https": 2,
+    "mixed": 9,
+    "none": 14
+  },
+  "by_reuse_class": {
+    "client-specific": 41,
+    "reusable-with-config": 61
+  },
+  "by_source_transport": {
+    "Channel Reader": 31,
+    "DICOM Listener": 18,
+    "File Reader": 18,
+    "HTTP Listener": 18,
+    "TCP Listener": 17
+  },
+  "by_storage_mode": {
+    "DEVELOPMENT": 26,
+    "PRODUCTION": 76
+  },
+  "channel_count": 102,
+  "description": "Estate aggregates over the 102-channel corpus; load first for grounding.",
+  "instances": [
+    "Bedford",
+    "Bolton",
+    "EK",
+    "ENHT",
+    "Kingston",
+    "MEH",
+    "Newmedica",
+    "Optegra",
+    "Pennine",
+    "Portsmouth",
+    "Sussex",
+    "Wales"
+  ],
+  "provenance": {
+    "records_confirmed": 96,
+    "records_with_deepdive": 75
+  },
+  "security_reliability": {
+    "channels_development_storage": 26,
+    "channels_no_queue": 101,
+    "channels_no_retry": 97,
+    "channels_plaintext_only_to_web": 77,
+    "channels_tls": 11,
+    "http_listeners_no_auth": 18
+  },
+  "shared_channel_ids": {
+    "04524f4d-5201-4c16-b66f-26c3d7783d85": [
+      "ENHT:Docman",
+      "MEH:Docman",
+      "Optegra:Docman",
+      "Portsmouth:DOCUMENT-OUT-Minestrone"
+    ],
+    "06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c": [
+      "Bedford:PAS OUT",
+      "Bolton:PAS OUT",
+      "EK:PAS OUT",
+      "Kingston:OpenEyes Correspondence",
+      "Pennine:OpenEyes PAS Query",
+      "Portsmouth:PAS OUT",
+      "Sussex:PAS OUT"
+    ],
+    "375fe7b2-d55c-4c60-b66f-dc2000c8ea95": [
+      "Bedford:Document OUT",
+      "Sussex:Document Delivery"
+    ],
+    "6c3a10d1-968d-468e-9355-008946825b20": [
+      "Kingston:OpenEyes PAS",
+      "Pennine:OpenEyes PAS"
+    ],
+    "7a04b9d1-70ac-4008-b809-732b88267f5c": [
+      "Bolton:CORRESPONDENCE OUT",
+      "EK:Filedrop Correspondence"
+    ],
+    "7a7288a3-5ade-46bc-921d-56baf0a6bf06": [
+      "Bolton:PAS IN",
+      "ENHT:PAS In",
+      "Wales:PAS IN"
+    ],
+    "ba5419a3-24a5-48a2-bd9b-5cb2072e87f4": [
+      "Kingston:OpenEyes DICOM Channel",
+      "Pennine:OpenEyes DICOM Channel"
+    ],
+    "c14efd23-2c1c-4e53-a59f-dcfe0e727c3b": [
+      "Bedford:DICOM",
+      "Bolton:DICOM",
+      "Optegra:IOL",
+      "Sussex:DICOM"
+    ],
+    "d69815ee-68d1-4dcb-8896-8b12ba06a9c4": [
+      "Bedford:PAS IN",
+      "Optegra:PAS IN V2",
+      "Portsmouth:PAS IN V2",
+      "Sussex:PAS IN"
+    ],
+    "da67d2ba-db52-4f50-898b-b534d71450ab": [
+      "EK:DICOM",
+      "ENHT:DICOM",
+      "Kingston:DICOM",
+      "Pennine:DICOM_11118",
+      "Portsmouth:DICOM",
+      "Wales:DICOM"
+    ],
+    "eee5caa4-786f-451b-9a89-f00aeb46f935": [
+      "Kingston:OpenEyes DICOM IOLMaster Channel",
+      "Pennine:OpenEyes DICOM IOLMaster Channel"
+    ],
+    "f703f9cd-a6ee-42e6-8550-c6a9c3fb1c73": [
+      "Bedford:Document Upload PP",
+      "Portsmouth:General Documents IN"
+    ]
+  },
+  "template_families": {
+    "(none)": 66,
+    "pas-inbound-newmedica-local": 28,
+    "pas-query-mpi-wales": 8
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "family": "pas-inbound-newmedica-local",
+  "exemplar": "PAS In LOCAL-1-0",
+  "members": 28,
+  "byte_exact": true,
+  "parameters": [
+    {
+      "name": "CHANNEL_ID",
+      "kind": "uuid",
+      "occurrences": 2,
+      "note": "channel id (self-referenced in the channelMap)"
+    },
+    {
+      "name": "PRACTICE_CODE",
+      "kind": "string",
+      "occurrences": 1,
+      "note": "practice code in the channel name"
+    },
+    {
+      "name": "RESPOND_AFTER_PROCESSING",
+      "kind": "bool",
+      "occurrences": 1,
+      "note": "source respond-after-processing toggle"
+    },
+    {
+      "name": "DEST_ID",
+      "kind": "uuid",
+      "occurrences": 1,
+      "note": "destination connector id"
+    },
+    {
+      "name": "PRACTICE_NAME",
+      "kind": "string",
+      "occurrences": 1,
+      "note": "practice / clinic display name"
+    },
+    {
+      "name": "UI_RED",
+      "kind": "int",
+      "occurrences": 1,
+      "note": "channel list colour (cosmetic)"
+    },
+    {
+      "name": "UI_GREEN",
+      "kind": "int",
+      "occurrences": 1,
+      "note": "channel list colour (cosmetic)"
+    },
+    {
+      "name": "UI_BLUE",
+      "kind": "int",
+      "occurrences": 1,
+      "note": "channel list colour (cosmetic)"
+    }
+  ]
+}

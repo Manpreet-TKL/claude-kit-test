@@ -1,0 +1,178 @@
+[
+  {
+    "channel_id": "c14efd23-2c1c-4e53-a59f-dcfe0e727c3b",
+    "channel_name": "DICOM",
+    "instance": "Sussex",
+    "canonical_path": "canonical/Sussex/DICOM.xml",
+    "hl7": {
+      "is_hl7": false,
+      "version": null,
+      "message_types": [],
+      "trigger_events": [],
+      "ack": {"mode": "none", "detail": "DICOM Listener source, not an HL7v2 listener.", "evidence": "Sussex | DICOM | c14efd23-2c1c-4e53-a59f-dcfe0e727c3b | canonical/Sussex/DICOM.xml | sourceConnector DICOMReceiverProperties lines 10-15"},
+      "inbound_segments_used": [],
+      "field_map": []
+    },
+    "oe_api": {
+      "calls_oe": true,
+      "calls": [
+        {"method": "POST", "path": "/api/v1/request/queue/add", "api_version": "api/v1", "resource": "PayloadProcessor", "payload_shape": "Raw DICOM bytes; query parameters institution_id=1, identifier_type=LOCAL-1-0, file_name=originalFilename, content_type=application/dicom, system_message=local_AET, request_type=dicom_request, and source_platform.", "evidence": "Sussex | DICOM | c14efd23-2c1c-4e53-a59f-dcfe0e727c3b | canonical/Sussex/DICOM.xml | PayloadProcessor API Send connector lines 488-576"}
+      ]
+    },
+    "auth": {
+      "method": "HTTP Basic preemptive",
+      "credential_source": "connector field: PayloadProcessor API Send username api and redacted password",
+      "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": false, "relogin_trigger": "per-message preemptive Basic request; no session or re-login script", "evidence": "Sussex | DICOM | c14efd23-2c1c-4e53-a59f-dcfe0e727c3b | canonical/Sussex/DICOM.xml | PayloadProcessor API Send connector lines 571-576; only configurationMap defaultPatientIdentifierType is read at transformer lines 207-226"}
+    },
+    "routing": {"inbound_from": "DICOM Listener :11112", "outbound_to": ["file /mnt/dicom for qualifying Zeiss IOLMaster objects", "OpenEyes PayloadProcessor"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "DICOM tags Patient Name, DOB, Other ID, Patient ID, sex, Study ID, Series Number, Study UID, file meta version, manufacturer, model and SOP class are copied from the DICOM response into channelMap; IOLMaster file output is removed unless manufacturer/model/SOP UID qualify.", "location": "Sussex | DICOM | c14efd23-2c1c-4e53-a59f-dcfe0e727c3b | canonical/Sussex/DICOM.xml | getDicomHeaders response transformer lines 343-376", "confidence": "confirmed"},
+      {"claim": "local_AET determines identifier_type/institution_id via local/global-N-N matching, and local or remote AET determines source_platform generic, imagenet or forum.", "location": "Sussex | DICOM | c14efd23-2c1c-4e53-a59f-dcfe0e727c3b | canonical/Sussex/DICOM.xml | source transformer scripts lines 204-250", "confidence": "confirmed"},
+      {"claim": "The HTTP payload is raw message data and its documented parameters are configured on PayloadProcessor API Send.", "location": "Sussex | DICOM | c14efd23-2c1c-4e53-a59f-dcfe0e727c3b | canonical/Sussex/DICOM.xml | PayloadProcessor API Send connector lines 511-576", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "The DICOM-related mapper steps at lines 63-183 are disabled; the active response transformer supplies the channelMap values used by routing."
+  },
+  {
+    "channel_id": "375fe7b2-d55c-4c60-b66f-dc2000c8ea95",
+    "channel_name": "Document Delivery",
+    "instance": "Sussex",
+    "canonical_path": "canonical/Sussex/Document Delivery.xml",
+    "hl7": {
+      "is_hl7": false,
+      "version": null,
+      "message_types": [],
+      "trigger_events": [],
+      "ack": {"mode": "none", "detail": "Raw binary File Reader and File Writer transfer.", "evidence": "Sussex | Document Delivery | 375fe7b2-d55c-4c60-b66f-dc2000c8ea95 | canonical/Sussex/Document Delivery.xml | source transformer lines 82-104 and SFTP connector lines 161-175"},
+      "inbound_segments_used": [],
+      "field_map": []
+    },
+    "oe_api": {"calls_oe": false, "calls": []},
+    "auth": {
+      "method": "other",
+      "credential_source": "connector fields: File Reader anonymous/redacted password; SFTP redacted username/redacted password",
+      "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "na", "relogin_trigger": "na", "evidence": "Sussex | Document Delivery | 375fe7b2-d55c-4c60-b66f-dc2000c8ea95 | canonical/Sussex/Document Delivery.xml | File Reader lines 53-80 and SFTP connector lines 135-161"}
+    },
+    "routing": {"inbound_from": "file /mnt/docman", "outbound_to": ["SFTP file share 10.216.11.37/Live/Incoming/"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "Reads binary files excluding names containing Internal, deletes after processing, and writes raw bytes to SFTP using originalFilename.", "location": "Sussex | Document Delivery | 375fe7b2-d55c-4c60-b66f-dc2000c8ea95 | canonical/Sussex/Document Delivery.xml | File Reader lines 53-80; SFTP connector lines 135-161", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "Although the destination has an unused HL7v2 outbound template, its configured template is ${message.rawData}; no HL7 parsing or field mapping is active."
+  },
+  {
+    "channel_id": "6b9477af-6106-41b7-bd2e-3273c1c9b2d3",
+    "channel_name": "PAS IN - Migration",
+    "instance": "Sussex",
+    "canonical_path": "canonical/Sussex/PAS IN - Migration.xml",
+    "hl7": {
+      "is_hl7": true,
+      "version": "2.4",
+      "message_types": ["ADT"],
+      "trigger_events": ["A01", "A02", "A03", "A05", "A08", "A11", "A12", "A13", "A38", "A40"],
+      "ack": {"mode": "auto", "detail": "MLLP TCP source auto-generates HL7 acknowledgements before processing: AA success, AE error, AR rejection.", "evidence": "Sussex | PAS IN - Migration | 6b9477af-6106-41b7-bd2e-3273c1c9b2d3 | canonical/Sussex/PAS IN - Migration.xml | source connector lines 12-54 and HL7 response generation lines 104-127"},
+      "inbound_segments_used": ["MSH", "PID", "PD1", "NK1", "PV1", "PV2", "EVN", "MRG"],
+      "field_map": [
+        {"source": "PID-3.1 where PID-3.5=FACIL", "target": "Patient.HospitalNumber and V2 Patient URL HospitalNumber", "note": "selects FACIL identifier; identifier type is fixed LOCAL-1-0", "confidence": "confirmed"},
+        {"source": "PID-3.1 where PID-3.5=NHS", "target": "Patient.NHSNumber", "note": "selected by XSLT", "confidence": "confirmed"},
+        {"source": "PID-5.5, PID-5.2, PID-5.3, PID-5.1", "target": "Patient.Title, FirstName, Surname", "note": "title case normalized; given-name components are joined", "confidence": "confirmed"},
+        {"source": "PID-7.1 and PID-8.1", "target": "Patient.DateOfBirth and Gender", "note": "DOB YYYYMMDD becomes YYYY-MM-DD; 1=M, 2=F, otherwise U", "confidence": "confirmed"},
+        {"source": "PID-11.*, PID-13.*, PID-22.1, PID-29.1, PID-30.1", "target": "Patient address, phone/mobile/email, ethnic group, date/deceased state", "note": "address repeats; GB default; phones truncated to 20; NS becomes Z; death date reformatted", "confidence": "confirmed"},
+        {"source": "NK1-2.*, NK1-4.*, NK1-5.* and PD1-3.*, PD1-4.*", "target": "Patient ContactList, Practice, GP", "note": "builds next-of-kin and optometrist contacts; GP is first 8 chars or default code", "confidence": "confirmed"},
+        {"source": "PV1-19.1, PV2-8.1 fallback PV1-44.1, PV1-3.1/PV1-6.1, PV1-9.2 fallback PV1-9.1", "target": "PatientAppointment VisitNumber, date/time, Clinic, Doctor", "note": "PV1-6 used for A12; datetime split into ISO date and HH:mm", "confidence": "confirmed"},
+        {"source": "EVN-2.1, MSH-9.2, PV2-24.1, PV2-27.1, PV1-6.1 and PV1-3.9", "target": "PatientAppointment Status mapping", "note": "derives Scheduled, Did Not Attend, transfer, arrival, departure or discharge status", "confidence": "confirmed"},
+        {"source": "MRG-1.1 where MRG-1.5=FACIL and PID-3.1 where PID-3.5=FACIL", "target": "PatientMerge SecondaryPatientNumber and PrimaryPatientNumber", "note": "sent only for A40", "confidence": "confirmed"}
+      ]
+    },
+    "oe_api": {
+      "calls_oe": true,
+      "calls": [
+        {"method": "PUT", "path": "PASAPI/V2/Patient/${SecondaryHospitalNumber}", "api_version": "V2", "resource": "Patient", "payload_shape": "PatientXML constructed from MRG and PID demographics for A40.", "evidence": "Sussex | PAS IN - Migration | 6b9477af-6106-41b7-bd2e-3273c1c9b2d3 | canonical/Sussex/PAS IN - Migration.xml | PASAPI - Secondary Patient connector lines 163-208 and transformer lines 217-553"},
+        {"method": "PUT", "path": "PASAPI/V2/Patient/${HospitalNumber}", "api_version": "V2", "resource": "Patient", "payload_shape": "Patient XML with demographics, identifiers, addresses, contacts, practice/GP, language and risks; excludes M05.", "evidence": "Sussex | PAS IN - Migration | 6b9477af-6106-41b7-bd2e-3273c1c9b2d3 | canonical/Sussex/PAS IN - Migration.xml | PASAPI - Patient connector lines 703-748 and transformer lines 757-1086; filter lines 1222-1236"},
+        {"method": "PUT", "path": "PASAPI/V2/PatientAppointment/${VisitID}", "api_version": "V2", "resource": "PatientAppointment", "payload_shape": "PatientId plus appointment date/time and Doctor, Clinic, AdmitSource, VisitNumber and derived Status mapping items; X-OE-Partial-Record header.", "evidence": "Sussex | PAS IN - Migration | 6b9477af-6106-41b7-bd2e-3273c1c9b2d3 | canonical/Sussex/PAS IN - Migration.xml | Clinic List - PUT connector lines 1243-1327; Appointment Filter lines 1500-1521"},
+        {"method": "DELETE", "path": "PASAPI/V2/PatientAppointment/${VisitID}", "api_version": "V2", "resource": "PatientAppointment", "payload_shape": "No body; invoked only for A38.", "evidence": "Sussex | PAS IN - Migration | 6b9477af-6106-41b7-bd2e-3273c1c9b2d3 | canonical/Sussex/PAS IN - Migration.xml | Clinic List - DELETE connector lines 1532-1577 and filter lines 1750-1762"},
+        {"method": "PUT", "path": "PASAPI/V1/PatientMerge/${HospitalNumber}/identifier-type/LOCAL-1-0", "api_version": "V1", "resource": "PatientMerge", "payload_shape": "PatientMerge XML with PrimaryPatientNumber=HospitalNumber and SecondaryPatientNumber=SecondaryHospitalNumber; A40 only.", "evidence": "Sussex | PAS IN - Migration | 6b9477af-6106-41b7-bd2e-3273c1c9b2d3 | canonical/Sussex/PAS IN - Migration.xml | PASAPI - Patient Merge connector lines 1773-1818 and filter lines 1997-2003"}
+      ]
+    },
+    "auth": {"method": "HTTP Basic preemptive", "credential_source": "connector fields: username api and redacted password on each PASAPI HTTP sender", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": false, "relogin_trigger": "per-message preemptive Basic request; no session or re-login script", "evidence": "Sussex | PAS IN - Migration | 6b9477af-6106-41b7-bd2e-3273c1c9b2d3 | canonical/Sussex/PAS IN - Migration.xml | HTTP sender authentication fields lines 203-207, 743-747, 1290-1294, 1572-1576 and 1813-1817"}},
+    "routing": {"inbound_from": "TCP MLLP listener :6662", "outbound_to": ["OpenEyes PASAPI V2 Patient", "OpenEyes PASAPI V2 PatientAppointment", "OpenEyes PASAPI V1 PatientMerge"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "Patient upsert skips M05; appointments accept A01/A05/A08/A11/A03/A13/A02/A12 except A08 with PV1-4.1 CANCL; appointment delete accepts A38; merge and secondary patient accept A40.", "location": "Sussex | PAS IN - Migration | 6b9477af-6106-41b7-bd2e-3273c1c9b2d3 | canonical/Sussex/PAS IN - Migration.xml | destination filters lines 682-696, 1222-1236, 1500-1521, 1750-1762 and 1997-2003", "confidence": "confirmed"},
+      {"claim": "The active mappings are otherwise byte-for-byte the same as PAS IN; Migration differs in source port 6662, has no disabled Nothing destination, and export metadata marks it disabled.", "location": "Sussex | PAS IN - Migration | 6b9477af-6106-41b7-bd2e-3273c1c9b2d3 | canonical/Sussex/PAS IN - Migration.xml | source connector line 14, destinationConnectors ending line 2013, export metadata line 2061; compared directly with canonical/Sussex/PAS IN.xml", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "Migration is a separately identified, currently disabled channel. Its active transformer and PASAPI routing are identical to PAS IN; the source port is 6662 rather than 6661."
+  },
+  {
+    "channel_id": "d69815ee-68d1-4dcb-8896-8b12ba06a9c4",
+    "channel_name": "PAS IN",
+    "instance": "Sussex",
+    "canonical_path": "canonical/Sussex/PAS IN.xml",
+    "hl7": {
+      "is_hl7": true,
+      "version": "2.4",
+      "message_types": ["ADT"],
+      "trigger_events": ["A01", "A02", "A03", "A05", "A08", "A11", "A12", "A13", "A38", "A40"],
+      "ack": {"mode": "auto", "detail": "MLLP TCP source auto-generates AA, AE or AR acknowledgements before processing.", "evidence": "Sussex | PAS IN | d69815ee-68d1-4dcb-8896-8b12ba06a9c4 | canonical/Sussex/PAS IN.xml | source connector lines 12-54 and HL7 response generation lines 104-127"},
+      "inbound_segments_used": ["MSH", "PID", "PD1", "NK1", "PV1", "PV2", "EVN", "MRG"],
+      "field_map": [
+        {"source": "PID-3.1 where PID-3.5=FACIL", "target": "Patient.HospitalNumber and V2 Patient URL HospitalNumber", "note": "selects FACIL identifier; identifier type is fixed LOCAL-1-0", "confidence": "confirmed"},
+        {"source": "PID-3.1 where PID-3.5=NHS", "target": "Patient.NHSNumber", "note": "selected by XSLT", "confidence": "confirmed"},
+        {"source": "PID-5.5, PID-5.2, PID-5.3, PID-5.1", "target": "Patient.Title, FirstName, Surname", "note": "title case normalized; given-name components are joined", "confidence": "confirmed"},
+        {"source": "PID-7.1 and PID-8.1", "target": "Patient.DateOfBirth and Gender", "note": "DOB YYYYMMDD becomes YYYY-MM-DD; 1=M, 2=F, otherwise U", "confidence": "confirmed"},
+        {"source": "PID-11.*, PID-13.*, PID-22.1, PID-29.1, PID-30.1", "target": "Patient address, phone/mobile/email, ethnic group, date/deceased state", "note": "address repeats; GB default; phones truncated to 20; NS becomes Z; death date reformatted", "confidence": "confirmed"},
+        {"source": "NK1-2.*, NK1-4.*, NK1-5.* and PD1-3.*, PD1-4.*", "target": "Patient ContactList, Practice, GP", "note": "builds next-of-kin and optometrist contacts; GP is first 8 chars or default code", "confidence": "confirmed"},
+        {"source": "PV1-19.1, PV2-8.1 fallback PV1-44.1, PV1-3.1/PV1-6.1, PV1-9.2 fallback PV1-9.1", "target": "PatientAppointment VisitNumber, date/time, Clinic, Doctor", "note": "PV1-6 used for A12; datetime split into ISO date and HH:mm", "confidence": "confirmed"},
+        {"source": "EVN-2.1, MSH-9.2, PV2-24.1, PV2-27.1, PV1-6.1 and PV1-3.9", "target": "PatientAppointment Status mapping", "note": "derives Scheduled, Did Not Attend, transfer, arrival, departure or discharge status", "confidence": "confirmed"},
+        {"source": "MRG-1.1 where MRG-1.5=FACIL and PID-3.1 where PID-3.5=FACIL", "target": "PatientMerge SecondaryPatientNumber and PrimaryPatientNumber", "note": "sent only for A40", "confidence": "confirmed"}
+      ]
+    },
+    "oe_api": {
+      "calls_oe": true,
+      "calls": [
+        {"method": "PUT", "path": "PASAPI/V2/Patient/${SecondaryHospitalNumber}", "api_version": "V2", "resource": "Patient", "payload_shape": "PatientXML constructed from MRG and PID demographics for A40.", "evidence": "Sussex | PAS IN | d69815ee-68d1-4dcb-8896-8b12ba06a9c4 | canonical/Sussex/PAS IN.xml | PASAPI - Secondary Patient connector lines 163-208 and transformer lines 217-553"},
+        {"method": "PUT", "path": "PASAPI/V2/Patient/${HospitalNumber}", "api_version": "V2", "resource": "Patient", "payload_shape": "Patient XML with demographics, identifiers, addresses, contacts, practice/GP, language and risks; excludes M05.", "evidence": "Sussex | PAS IN | d69815ee-68d1-4dcb-8896-8b12ba06a9c4 | canonical/Sussex/PAS IN.xml | PASAPI - Patient connector lines 703-748 and transformer lines 757-1086; filter lines 1222-1236"},
+        {"method": "PUT", "path": "PASAPI/V2/PatientAppointment/${VisitID}", "api_version": "V2", "resource": "PatientAppointment", "payload_shape": "PatientId plus appointment date/time and Doctor, Clinic, AdmitSource, VisitNumber and derived Status mapping items; X-OE-Partial-Record header.", "evidence": "Sussex | PAS IN | d69815ee-68d1-4dcb-8896-8b12ba06a9c4 | canonical/Sussex/PAS IN.xml | Clinic List - PUT connector lines 1243-1327; Appointment Filter lines 1500-1521"},
+        {"method": "DELETE", "path": "PASAPI/V2/PatientAppointment/${VisitID}", "api_version": "V2", "resource": "PatientAppointment", "payload_shape": "No body; invoked only for A38.", "evidence": "Sussex | PAS IN | d69815ee-68d1-4dcb-8896-8b12ba06a9c4 | canonical/Sussex/PAS IN.xml | Clinic List - DELETE connector lines 1532-1577 and filter lines 1750-1762"},
+        {"method": "PUT", "path": "PASAPI/V1/PatientMerge/${HospitalNumber}/identifier-type/LOCAL-1-0", "api_version": "V1", "resource": "PatientMerge", "payload_shape": "PatientMerge XML with PrimaryPatientNumber=HospitalNumber and SecondaryPatientNumber=SecondaryHospitalNumber; A40 only.", "evidence": "Sussex | PAS IN | d69815ee-68d1-4dcb-8896-8b12ba06a9c4 | canonical/Sussex/PAS IN.xml | PASAPI - Patient Merge connector lines 1773-1818 and filter lines 1997-2003"}
+      ]
+    },
+    "auth": {"method": "HTTP Basic preemptive", "credential_source": "connector fields: username api and redacted password on each PASAPI HTTP sender", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": false, "relogin_trigger": "per-message preemptive Basic request; no session or re-login script", "evidence": "Sussex | PAS IN | d69815ee-68d1-4dcb-8896-8b12ba06a9c4 | canonical/Sussex/PAS IN.xml | HTTP sender authentication fields lines 203-207, 743-747, 1290-1294, 1572-1576 and 1813-1817"}},
+    "routing": {"inbound_from": "TCP MLLP listener :6661", "outbound_to": ["OpenEyes PASAPI V2 Patient", "OpenEyes PASAPI V2 PatientAppointment", "OpenEyes PASAPI V1 PatientMerge"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "Patient upsert skips M05; appointments accept A01/A05/A08/A11/A03/A13/A02/A12 except A08 with PV1-4.1 CANCL; appointment delete accepts A38; merge and secondary patient accept A40.", "location": "Sussex | PAS IN | d69815ee-68d1-4dcb-8896-8b12ba06a9c4 | canonical/Sussex/PAS IN.xml | destination filters lines 682-696, 1222-1236, 1500-1521, 1750-1762 and 1997-2003", "confidence": "confirmed"},
+      {"claim": "PAS IN has an additional disabled JavaScript Writer named Nothing that returns 1; it does not route data.", "location": "Sussex | PAS IN | d69815ee-68d1-4dcb-8896-8b12ba06a9c4 | canonical/Sussex/PAS IN.xml | Nothing connector lines 2018-2212", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "Compared directly with PAS IN - Migration: active mappings and PASAPI filters are identical; PAS IN is enabled and listens on 6661."
+  },
+  {
+    "channel_id": "06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c",
+    "channel_name": "PAS OUT",
+    "instance": "Sussex",
+    "canonical_path": "canonical/Sussex/PAS OUT.xml",
+    "hl7": {
+      "is_hl7": true,
+      "version": "2.4",
+      "message_types": ["QBP", "RSP"],
+      "trigger_events": ["Q21", "K21"],
+      "ack": {"mode": "application", "detail": "The MLLP TCP sender validates returned HL7 acknowledgement codes AA/CA, AE/CE, AR/CR and waits up to 60 seconds; the HTTP listener returns a generated PatientList response.", "evidence": "Sussex | PAS OUT | 06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c | canonical/Sussex/PAS OUT.xml | Send Q21 TCP connector lines 172-197 and response validation lines 224-238; Respond script lines 835-838"},
+      "inbound_segments_used": ["Parameters", "QPD", "PID", "PD1"],
+      "field_map": [
+        {"source": "HTTP XML Parameters.hosnum", "target": "outbound QPD-3.1", "note": "only populated when hosnum exists; an empty QPD-3.1 prevents Send Q21", "confidence": "confirmed"},
+        {"source": "returned PID-3.1 where PID-3.5=FACIL or NHS", "target": "PatientList.Patient.PatientIdentifierList values", "note": "FACIL output code is literal ABC; NHS output code is NHS", "confidence": "confirmed"},
+        {"source": "returned PID-5.*, PID-7.1, PID-8.1", "target": "PatientList title, name, DOB, gender", "note": "title case normalized; DOB YYYYMMDD becomes YYYY-MM-DD", "confidence": "confirmed"},
+        {"source": "returned PID-11.*, PID-13.*, PID-22.1, PID-29.1 and PD1-3.3/PD1-4.1", "target": "PatientList address, phones, ethnic group, date of death, practice and GP", "note": "home address country is fixed GB; phones truncated to 20", "confidence": "confirmed"}
+      ]
+    },
+    "oe_api": {"calls_oe": false, "calls": []},
+    "auth": {"method": "none", "credential_source": "connector field", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "na", "relogin_trigger": "na", "evidence": "Sussex | PAS OUT | 06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c | canonical/Sussex/PAS OUT.xml | Send Q21 TCP connector lines 150-197; no authentication or globalMap/globalChannelMap access in active scripts"}},
+    "routing": {"inbound_from": "HTTP listener :6663", "outbound_to": ["remote PAS TCP MLLP 10.179.63.224:43442"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "The source transforms HTTP XML to HL7v2 QBP^Q21, sets a current datetime and message ID, and copies Parameters.hosnum to QPD-3.1.", "location": "Sussex | PAS OUT | 06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c | canonical/Sussex/PAS OUT.xml | source transformer lines 50-137", "confidence": "confirmed"},
+      {"claim": "Send Q21 only runs when QPD-3.1 has a value; its response is parsed as HL7v2 then XSLT-transformed to PatientList, otherwise the response is an empty PatientList.", "location": "Sussex | PAS OUT | 06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c | canonical/Sussex/PAS OUT.xml | Send Q21 filter lines 370-380; Convert K21 to XML script lines 413-423; response XSLT lines 560-620; Respond script lines 835-838", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "The message type and trigger event are confirmed by the outbound QBP^Q21 template and the destination named Convert K21 to XML. The channel is a PAS query bridge, not an OpenEyes API caller."
+  }
+]

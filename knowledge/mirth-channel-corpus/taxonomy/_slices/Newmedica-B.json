@@ -1,0 +1,1514 @@
+[
+  {
+    "channel_id": "ffa240cd-f1be-42c1-a986-ef9a203d7e58",
+    "channel_name": "PAS In LOCAL-1-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-1-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the Anytown practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is false.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-1-0 (ffa240cd-f1be-42c1-a986-ef9a203d7e58) has HL7V2 Channel Reader source, AA/AE/AR response generation, and HTTP sender destinations.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-1-0.xml sourceConnector lines 7-115 and destinationConnectors lines 121-3211",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "Destination hosts are PASAPI V1/V3 Patient, V3 PatientAppointment, V3 PatientMerge, and V3 DidNotAttend; transformers map HL7 fields and filters select A40 and appointment/ReportFile conditions.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-1-0.xml destination connector properties, transformers, and filters lines 121-3211",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "26d6b455-48e9-4b65-ae7f-f030dcaa0a8b",
+    "channel_name": "PAS In LOCAL-184-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-184-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the Suffolk practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is false.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-184-0 (26d6b455-48e9-4b65-ae7f-f030dcaa0a8b) is structurally identical to LOCAL-1-0 except channel identity and export metadata practice label Anytown to Suffolk; all remaining differences are channel/group export identifiers or display colour metadata.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-184-0.xml full-file comparison with canonical/Newmedica/PAS In LOCAL-1-0.xml; LOCAL-186-0 sourceConnector difference is lines 13-15",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The directly compared identical structure includes Channel Reader source, PASAPI V1/V3 HTTP destinations, HL7 to PASAPI transformers, and A40/appointment/ReportFile filters.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-184-0.xml sourceConnector and destinationConnectors (full-file structural comparison)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "9f82c6ab-6ab2-4d76-895f-aa4ca1b8d0a7",
+    "channel_name": "PAS In LOCAL-186-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-186-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the Bristol practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is true.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-186-0 (9f82c6ab-6ab2-4d76-895f-aa4ca1b8d0a7) is structurally identical to LOCAL-1-0 except respondAfterProcessing changes from false to true; all remaining differences are channel/group export identifiers or display colour metadata.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-186-0.xml full-file comparison with canonical/Newmedica/PAS In LOCAL-1-0.xml; LOCAL-186-0 sourceConnector difference is lines 13-15",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The directly compared identical structure includes Channel Reader source, PASAPI V1/V3 HTTP destinations, HL7 to PASAPI transformers, and A40/appointment/ReportFile filters.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-186-0.xml sourceConnector and destinationConnectors (full-file structural comparison)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "bd18bf88-46ff-462e-b181-5302b98e4f1f",
+    "channel_name": "PAS In LOCAL-187-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-187-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the Exeter practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is false.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-187-0 (bd18bf88-46ff-462e-b181-5302b98e4f1f) is structurally identical to LOCAL-1-0 except channel identity and export metadata practice label Anytown to Exeter; all remaining differences are channel/group export identifiers or display colour metadata.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-187-0.xml full-file comparison with canonical/Newmedica/PAS In LOCAL-1-0.xml; LOCAL-186-0 sourceConnector difference is lines 13-15",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The directly compared identical structure includes Channel Reader source, PASAPI V1/V3 HTTP destinations, HL7 to PASAPI transformers, and A40/appointment/ReportFile filters.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-187-0.xml sourceConnector and destinationConnectors (full-file structural comparison)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "b155ec7f-2e73-475b-b565-b2b509d079ef",
+    "channel_name": "PAS In LOCAL-188-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-188-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the Gloucestershire practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is false.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-188-0 (b155ec7f-2e73-475b-b565-b2b509d079ef) is structurally identical to LOCAL-1-0 except channel identity and export metadata practice label Anytown to Gloucestershire; all remaining differences are channel/group export identifiers or display colour metadata.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-188-0.xml full-file comparison with canonical/Newmedica/PAS In LOCAL-1-0.xml; LOCAL-186-0 sourceConnector difference is lines 13-15",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The directly compared identical structure includes Channel Reader source, PASAPI V1/V3 HTTP destinations, HL7 to PASAPI transformers, and A40/appointment/ReportFile filters.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-188-0.xml sourceConnector and destinationConnectors (full-file structural comparison)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "9f9973dd-419c-4166-b45f-1dbe999146ea",
+    "channel_name": "PAS In LOCAL-189-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-189-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the Leeds practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is false.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-189-0 (9f9973dd-419c-4166-b45f-1dbe999146ea) is structurally identical to LOCAL-1-0 except channel identity and export metadata practice label Anytown to Leeds; all remaining differences are channel/group export identifiers or display colour metadata.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-189-0.xml full-file comparison with canonical/Newmedica/PAS In LOCAL-1-0.xml; LOCAL-186-0 sourceConnector difference is lines 13-15",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The directly compared identical structure includes Channel Reader source, PASAPI V1/V3 HTTP destinations, HL7 to PASAPI transformers, and A40/appointment/ReportFile filters.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-189-0.xml sourceConnector and destinationConnectors (full-file structural comparison)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "09ebb81b-cb25-4357-ba16-9e845cd19241",
+    "channel_name": "PAS In LOCAL-190-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-190-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the Leicester practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is false.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-190-0 (09ebb81b-cb25-4357-ba16-9e845cd19241) is structurally identical to LOCAL-1-0 except channel identity and export metadata practice label Anytown to Leicester; all remaining differences are channel/group export identifiers or display colour metadata.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-190-0.xml full-file comparison with canonical/Newmedica/PAS In LOCAL-1-0.xml; LOCAL-186-0 sourceConnector difference is lines 13-15",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The directly compared identical structure includes Channel Reader source, PASAPI V1/V3 HTTP destinations, HL7 to PASAPI transformers, and A40/appointment/ReportFile filters.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-190-0.xml sourceConnector and destinationConnectors (full-file structural comparison)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "f01ab7a5-b8e2-46a0-8a30-caea6fddeb38",
+    "channel_name": "PAS In LOCAL-191-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-191-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the Lincolnshire practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is false.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-191-0 (f01ab7a5-b8e2-46a0-8a30-caea6fddeb38) is structurally identical to LOCAL-1-0 except channel identity and export metadata practice label Anytown to Lincolnshire; all remaining differences are channel/group export identifiers or display colour metadata.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-191-0.xml full-file comparison with canonical/Newmedica/PAS In LOCAL-1-0.xml; LOCAL-186-0 sourceConnector difference is lines 13-15",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The directly compared identical structure includes Channel Reader source, PASAPI V1/V3 HTTP destinations, HL7 to PASAPI transformers, and A40/appointment/ReportFile filters.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-191-0.xml sourceConnector and destinationConnectors (full-file structural comparison)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "4eca83af-de0f-4a6e-b316-83100f2e132e",
+    "channel_name": "PAS In LOCAL-192-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-192-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the Newcastle practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is false.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-192-0 (4eca83af-de0f-4a6e-b316-83100f2e132e) is structurally identical to LOCAL-1-0 except channel identity and export metadata practice label Anytown to Newcastle; all remaining differences are channel/group export identifiers or display colour metadata.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-192-0.xml full-file comparison with canonical/Newmedica/PAS In LOCAL-1-0.xml; LOCAL-186-0 sourceConnector difference is lines 13-15",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The directly compared identical structure includes Channel Reader source, PASAPI V1/V3 HTTP destinations, HL7 to PASAPI transformers, and A40/appointment/ReportFile filters.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-192-0.xml sourceConnector and destinationConnectors (full-file structural comparison)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "4173965c-f78b-43dd-8840-b65790281a08",
+    "channel_name": "PAS In LOCAL-204-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-204-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the Norfolk practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is false.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-204-0 (4173965c-f78b-43dd-8840-b65790281a08) is structurally identical to LOCAL-1-0 except channel identity and export metadata practice label Anytown to Norfolk; all remaining differences are channel/group export identifiers or display colour metadata.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-204-0.xml full-file comparison with canonical/Newmedica/PAS In LOCAL-1-0.xml; LOCAL-186-0 sourceConnector difference is lines 13-15",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The directly compared identical structure includes Channel Reader source, PASAPI V1/V3 HTTP destinations, HL7 to PASAPI transformers, and A40/appointment/ReportFile filters.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-204-0.xml sourceConnector and destinationConnectors (full-file structural comparison)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "ebd7b20d-130e-41ed-bec4-027592d8f678",
+    "channel_name": "PAS In LOCAL-205-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-205-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the Barlborough practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is false.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-205-0 (ebd7b20d-130e-41ed-bec4-027592d8f678) is structurally identical to LOCAL-1-0 except channel identity and export metadata practice label Anytown to Barlborough; all remaining differences are channel/group export identifiers or display colour metadata.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-205-0.xml full-file comparison with canonical/Newmedica/PAS In LOCAL-1-0.xml; LOCAL-186-0 sourceConnector difference is lines 13-15",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The directly compared identical structure includes Channel Reader source, PASAPI V1/V3 HTTP destinations, HL7 to PASAPI transformers, and A40/appointment/ReportFile filters.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-205-0.xml sourceConnector and destinationConnectors (full-file structural comparison)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "4e8138ae-4407-4fa0-beb4-21a6cae9b2b8",
+    "channel_name": "PAS In LOCAL-206-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-206-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the North Derbyshire practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is false.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-206-0 (4e8138ae-4407-4fa0-beb4-21a6cae9b2b8) is structurally identical to LOCAL-1-0 except channel identity and export metadata practice label Anytown to North Derbyshire; all remaining differences are channel/group export identifiers or display colour metadata.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-206-0.xml full-file comparison with canonical/Newmedica/PAS In LOCAL-1-0.xml; LOCAL-186-0 sourceConnector difference is lines 13-15",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The directly compared identical structure includes Channel Reader source, PASAPI V1/V3 HTTP destinations, HL7 to PASAPI transformers, and A40/appointment/ReportFile filters.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-206-0.xml sourceConnector and destinationConnectors (full-file structural comparison)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "79666d06-1c95-4a94-a51e-ee1a74c07e31",
+    "channel_name": "PAS In LOCAL-207-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-207-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the Plymouth practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is false.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-207-0 (79666d06-1c95-4a94-a51e-ee1a74c07e31) is structurally identical to LOCAL-1-0 except channel identity and export metadata practice label Anytown to Plymouth; all remaining differences are channel/group export identifiers or display colour metadata.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-207-0.xml full-file comparison with canonical/Newmedica/PAS In LOCAL-1-0.xml; LOCAL-186-0 sourceConnector difference is lines 13-15",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The directly compared identical structure includes Channel Reader source, PASAPI V1/V3 HTTP destinations, HL7 to PASAPI transformers, and A40/appointment/ReportFile filters.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-207-0.xml sourceConnector and destinationConnectors (full-file structural comparison)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  },
+  {
+    "channel_id": "44d1367a-e0fe-4154-b2a3-7128382cf845",
+    "channel_name": "PAS In LOCAL-208-0",
+    "instance": "Newmedica",
+    "source_file": "Newmedica/PAS.xml",
+    "canonical_path": "canonical/Newmedica/PAS In LOCAL-208-0.xml",
+    "category": "PAS Inbound (HL7 -> PASAPI)",
+    "functional_purpose": "Receives PAS HL7v2 messages through Mirth channel routing and synchronises OpenEyes patient, appointment, merge, and did-not-attend data for the Shrewsbury practice.",
+    "business_process": "Patient demographics, attendance, appointment, patient merge, and DNA synchronisation.",
+    "source_system": "PAS via Mirth Channel Reader",
+    "destination_systems": [
+      "OpenEyes PASAPI"
+    ],
+    "source_connector": {
+      "type": "Channel Reader",
+      "port": null
+    },
+    "destination_connectors": [
+      {
+        "name": "PASAPI - Patient",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/Patient/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - PUT/DELETE",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientAppointment/${VisitID}"
+      },
+      {
+        "name": "PASAPI - Patient Merge",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/PatientMerge/${HospitalNumber}"
+      },
+      {
+        "name": "Clinic List - DNA",
+        "type": "HTTP Sender",
+        "endpoint": "http://web/PASAPI/V3/DidNotAttend"
+      }
+    ],
+    "protocol": "HTTP",
+    "message_format": "HL7v2",
+    "hl7_version": "2.4",
+    "hl7_message_types": [
+      "ADT",
+      "SIU"
+    ],
+    "hl7_trigger_events": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A11",
+      "A12",
+      "A13",
+      "A38",
+      "A40",
+      "S12",
+      "S13",
+      "S14",
+      "S15",
+      "S26"
+    ],
+    "ack_behaviour": "HL7 response generation is AA/AE/AR; source responseVariable is None and respondAfterProcessing is false.",
+    "oe_endpoints": [
+      "PASAPI/V1/Patient",
+      "PASAPI/V3/Patient",
+      "PASAPI/V3/PatientAppointment",
+      "PASAPI/V3/PatientMerge",
+      "PASAPI/V3/DidNotAttend"
+    ],
+    "oe_api_versions": [
+      "V1",
+      "V3"
+    ],
+    "auth_method": "HTTP Basic preemptive (api with redacted password)",
+    "main_filters": [
+      "A40 selects secondary patient and patient merge handling.",
+      "M05 is excluded from patient/referral handling.",
+      "Appointment handling selects listed ADT/SIU events and excludes ReportFile OBX."
+    ],
+    "main_transformer_stages": [
+      "Maps PV1 institution to a LOCAL practice identifier.",
+      "Builds PASAPI patient XML from PID, PV1, PV2, PD1, and MRG fields.",
+      "Derives hospital number, visit metadata, booking type, and DNA data in channelMap for destinations."
+    ],
+    "depends_on": [],
+    "error_handling": "Transformer scripts catch exceptions, log errors, and use empty mapping values; response transformers inspect PASAPI warnings.",
+    "retry_behaviour": "All HTTP destinations have queueEnabled false and retryCount 0 (retryIntervalMillis 10000).",
+    "queue_behaviour": "No destination queueing; source queue buffer size is 1000.",
+    "logging": "Logs transformer exceptions and PASAPI warnings; patient-derived context may be logged.",
+    "stateful": false,
+    "safe_to_replay": false,
+    "reusable_vs_client_specific": "reusable-with-config",
+    "evidence": [
+      {
+        "claim": "Newmedica PAS In LOCAL-208-0 (44d1367a-e0fe-4154-b2a3-7128382cf845) is structurally identical to LOCAL-1-0 except channel identity and export metadata practice label Anytown to Shrewsbury; all remaining differences are channel/group export identifiers or display colour metadata.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-208-0.xml full-file comparison with canonical/Newmedica/PAS In LOCAL-1-0.xml; LOCAL-186-0 sourceConnector difference is lines 13-15",
+        "confidence": "confirmed"
+      },
+      {
+        "claim": "The directly compared identical structure includes Channel Reader source, PASAPI V1/V3 HTTP destinations, HL7 to PASAPI transformers, and A40/appointment/ReportFile filters.",
+        "location": "Newmedica/PAS.xml; canonical/Newmedica/PAS In LOCAL-208-0.xml sourceConnector and destinationConnectors (full-file structural comparison)",
+        "confidence": "confirmed"
+      }
+    ],
+    "confidence": "confirmed"
+  }
+]

@@ -1,0 +1,136 @@
+[
+  {
+    "channel_id": "da67d2ba-db52-4f50-898b-b534d71450ab",
+    "channel_name": "DICOM",
+    "instance": "ENHT",
+    "canonical_path": "canonical/ENHT/DICOM.xml",
+    "hl7": {
+      "is_hl7": false,
+      "version": null,
+      "message_types": [],
+      "trigger_events": [],
+      "ack": {"mode": "none", "detail": "DICOM receiver uses its configured automatic DICOM response, not HL7 ACK/NACK.", "evidence": "ENHT | DICOM | da67d2ba-db52-4f50-898b-b534d71450ab | canonical/ENHT/DICOM.xml | sourceConnector DICOMReceiverProperties lines 9-85"},
+      "inbound_segments_used": [],
+      "field_map": []
+    },
+    "oe_api": {
+      "calls_oe": true,
+      "calls": [
+        {"method": "POST", "path": "/api/v1/request/queue/add", "api_version": "api/v1", "resource": "PayloadProcessor", "payload_shape": "Binary ${DICOMMESSAGE} as application/dicom with form parameters institution_id=1, identifier_type=LOCAL-1-0, file_name=${originalFilename}, content_type=application/dicom, system_message=${local_AET}, request_type=dicom_request, and source_platform=${source_platform}.", "evidence": "ENHT | DICOM | da67d2ba-db52-4f50-898b-b534d71450ab | canonical/ENHT/DICOM.xml | destination PayloadProcessor API Send lines 355-440"}
+      ]
+    },
+    "auth": {
+      "method": "HTTP Basic preemptive",
+      "credential_source": "PayloadProcessor API Send connector username api and redacted password field",
+      "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "false", "relogin_trigger": "per-message preemptive Basic authentication; no login or retry-on-401 script", "evidence": "ENHT | DICOM | da67d2ba-db52-4f50-898b-b534d71450ab | canonical/ENHT/DICOM.xml | destination PayloadProcessor API Send lines 416-421; deploy/undeploy scripts lines 482-489"}
+    },
+    "routing": {"inbound_from": "DICOM Listener :11112", "outbound_to": ["PayloadProcessor /api/v1/request/queue/add", "file /mnt/dicom for qualifying Zeiss IOLMaster objects"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "DICOM tags 00100010, 00100030, 00101000, 00100020, 00100040, 00200010, 00200011, 0020000D, 00020003, 00080070, 00081090 and 00080016 are mapped to channel variables; they are not sent as explicit OE request parameters.", "location": "ENHT | DICOM | da67d2ba-db52-4f50-898b-b534d71450ab | canonical/ENHT/DICOM.xml | source transformer MapperSteps lines 86-205", "confidence": "confirmed"},
+      {"claim": "identifier_type and institution_id are derived from the local AET or configurationMap default, while source_platform is derived from local/remote AET containing imagenet or forum.", "location": "ENHT | DICOM | da67d2ba-db52-4f50-898b-b534d71450ab | canonical/ENHT/DICOM.xml | source transformer JavaScript steps 14-15, lines 207-259", "confidence": "confirmed"},
+      {"claim": "The IOLMaster file destination is removed unless manufacturer contains zeiss, model contains iolmaster, and SOP Class UID is one of two configured values.", "location": "ENHT | DICOM | da67d2ba-db52-4f50-898b-b534d71450ab | canonical/ENHT/DICOM.xml | source transformer JavaScript step 16, lines 260-276", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "Non-HL7 DICOM ingestion. The fixed HTTP parameters institution_id and identifier_type differ from the source-transformer channelMap values of the same names."
+  },
+  {
+    "channel_id": "04524f4d-5201-4c16-b66f-26c3d7783d85",
+    "channel_name": "Docman",
+    "instance": "ENHT",
+    "canonical_path": "canonical/ENHT/Docman.xml",
+    "hl7": {"is_hl7": false, "version": null, "message_types": [], "trigger_events": [], "ack": {"mode": "none", "detail": "Raw file channel with no HL7 processing.", "evidence": "ENHT | Docman | 04524f4d-5201-4c16-b66f-26c3d7783d85 | canonical/ENHT/Docman.xml | source transformer lines 55-73"}, "inbound_segments_used": [], "field_map": []},
+    "oe_api": {"calls_oe": false, "calls": []},
+    "auth": {"method": "other", "credential_source": "Destination 1 SFTP connector redacted username/password fields", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "na", "relogin_trigger": "na", "evidence": "ENHT | Docman | 04524f4d-5201-4c16-b66f-26c3d7783d85 | canonical/ENHT/Docman.xml | Destination 1 SFTP properties lines 105-137; empty deploy/undeploy scripts lines 201-208"}},
+    "routing": {"inbound_from": "file /mnt/docman", "outbound_to": ["SFTP remote file system"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "Reads binary files matching ^OPENEYES_(?!Internal).*$ from /mnt/docman every 5 seconds and deletes them after processing.", "location": "ENHT | Docman | 04524f4d-5201-4c16-b66f-26c3d7783d85 | canonical/ENHT/Docman.xml | sourceConnector File Reader lines 9-54", "confidence": "confirmed"},
+      {"claim": "Writes the original filename and raw encoded data through an SFTP File Writer with keepConnectionOpen=true.", "location": "ENHT | Docman | 04524f4d-5201-4c16-b66f-26c3d7783d85 | canonical/ENHT/Docman.xml | Destination 1 properties lines 76-145", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "No OpenEyes HTTP API call or transformer JavaScript mapping."
+  },
+  {
+    "channel_id": "7a7288a3-5ade-46bc-921d-56baf0a6bf06",
+    "channel_name": "PAS In",
+    "instance": "ENHT",
+    "canonical_path": "canonical/ENHT/PAS In.xml",
+    "hl7": {
+      "is_hl7": true,
+      "version": "2.4",
+      "message_types": ["ADT"],
+      "trigger_events": ["A01", "A02", "A03", "A04", "A05", "A08", "A11", "A12", "A13", "A38", "A40"],
+      "ack": {"mode": "auto", "detail": "MLLP listener is configured Auto-generate (Before processing); HL7 response generation uses AA, AE and AR codes.", "evidence": "ENHT | PAS In | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/ENHT/PAS In.xml | sourceConnector lines 9-55 and HL7 responseGenerationProperties lines 72-82"},
+      "inbound_segments_used": ["MSH", "EVN", "PID", "PD1", "PV1", "PV2", "MRG"],
+      "field_map": [
+        {"source": "PID-3.1 where PID-3.5=FACIL", "target": "Patient/HospitalNumber and URL ${HospitalNumber}", "note": "primary patient XSLT and HospitalNumber JavaScript select FACIL identifier", "confidence": "confirmed"},
+        {"source": "PID-3.1 where PID-3.5=NHS", "target": "Patient/NHSNumber", "note": "XSLT selects NHS identifier", "confidence": "confirmed"},
+        {"source": "PID-5.1/.2/.3/.5", "target": "Patient/Surname, FirstName, Title", "note": "middle name appended to FirstName; title case-normalized", "confidence": "confirmed"},
+        {"source": "PID-7.1", "target": "Patient/DateOfBirth", "note": "YYYYMMDD converted to YYYY-MM-DD", "confidence": "confirmed"},
+        {"source": "PID-8.1", "target": "Patient/Gender", "note": "F and M retained, all other values become U", "confidence": "confirmed"},
+        {"source": "PID-11.1-.7 of P, HOME, CORR or TMP repetitions", "target": "Patient/AddressList/Address", "note": "maps address components; default Country GB and Type HOME", "confidence": "confirmed"},
+        {"source": "PID-13", "target": "Patient/TelephoneNumber, MobilePhoneNumber, Email", "note": "numeric phone validation and length under 21; primary uses MOB and Internet values", "confidence": "confirmed"},
+        {"source": "PID-22.1, PID-29.1, PID-30.1, PID-35.1", "target": "Patient/EthnicGroup, IsDeceased, DateOfDeath, Risks", "note": "NKN becomes Z; death date formatted YYYY-MM-DD", "confidence": "confirmed"},
+        {"source": "PD1-3.3 and PD1-4.1", "target": "Patient/Practice/Code and Patient/GP/Code", "note": "GP code truncated to eight characters", "confidence": "confirmed"},
+        {"source": "PID-15.4/.5", "target": "Patient/LanguageCode and InterpreterRequired", "note": "direct mapping", "confidence": "confirmed"},
+        {"source": "PV1-19.1", "target": "PatientAppointment URL and AppointmentMapping VisitNumber", "note": "channelMap VisitID", "confidence": "confirmed"},
+        {"source": "PV2-8.1, fallback PV1-44.1", "target": "PatientAppointment/AppointmentDate and AppointmentTime", "note": "split and format HL7 datetime", "confidence": "confirmed"},
+        {"source": "PV1-3.1, or PV1-6.1 for A12", "target": "AppointmentMapping Clinic", "note": "whitespace removed", "confidence": "confirmed"},
+        {"source": "PD1-4.1", "target": "AppointmentMapping Doctor", "note": "falls back to Unknown", "confidence": "confirmed"},
+        {"source": "PV1-14.1", "target": "AppointmentMapping AdmitSource", "note": "default none", "confidence": "confirmed"},
+        {"source": "EVN-2.1, MSH-9.2, PV1-3.9/.6/.44, PV2-24/.27", "target": "AppointmentMapping Status", "note": "constructs Scheduled, Did Not Attend, transfer, departure, attendance, arrival or discharge status text", "confidence": "confirmed"},
+        {"source": "MRG-1.1 where MRG-1.5=FACIL", "target": "PatientMerge/SecondaryPatientNumber and secondary Patient HospitalNumber", "note": "used for merge and the A40 secondary Patient createOnly request", "confidence": "confirmed"}
+      ]
+    },
+    "oe_api": {
+      "calls_oe": true,
+      "calls": [
+        {"method": "PUT", "path": "PASAPI/V2/Patient/${HospitalNumber}", "api_version": "V2", "resource": "Patient", "payload_shape": "Patient XML built by XSLT with identifiers, demographic data, address list, contacts, ethnicity, death, practice/GP, language, interpreter and risks; excluded only for M05.", "evidence": "ENHT | PAS In | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/ENHT/PAS In.xml | destination PASAPI - Patient lines 627-1110"},
+        {"method": "PUT", "path": "PASAPI/V2/Patient/${SecondaryHospitalNumber}", "api_version": "V2", "resource": "Patient", "payload_shape": "Patient XML with createOnly=1, HospitalNumber from MRG FACIL and source-specific contact/GP variations; filtered to A40.", "evidence": "ENHT | PAS In | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/ENHT/PAS In.xml | destination PASAPI - Secondary Patient lines 148-626"},
+        {"method": "PUT", "path": "PASAPI/V2/PatientAppointment/${VisitID}", "api_version": "V2", "resource": "PatientAppointment", "payload_shape": "PatientId from prior Patient response; identifier type LOCAL-1-0; appointment date/time and mappings Doctor, Clinic, AdmitSource, VisitNumber and Status; X-OE-Partial-Record header 0.", "evidence": "ENHT | PAS In | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/ENHT/PAS In.xml | destination Clinic List - PUT lines 1112-1400"},
+        {"method": "DELETE", "path": "PASAPI/V2/PatientAppointment/${VisitID}", "api_version": "V2", "resource": "PatientAppointment", "payload_shape": "Empty body; destination filter is A38.", "evidence": "ENHT | PAS In | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/ENHT/PAS In.xml | destination Clinic List - DELETE lines 1401-1641"},
+        {"method": "PUT", "path": "PASAPI/V2/PatientMerge/${HospitalNumber}", "api_version": "V2", "resource": "PatientMerge", "payload_shape": "PatientMerge XML with PrimaryPatientNumber ${HospitalNumber}, SecondaryPatientNumber ${SecondaryHospitalNumber}, IdentifierTypeCode LOCAL-1-0; filtered to A40.", "evidence": "ENHT | PAS In | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/ENHT/PAS In.xml | destination PASAPI - Patient Merge lines 1642-1890"}
+      ]
+    },
+    "auth": {"method": "HTTP Basic preemptive", "credential_source": "each PASAPI HTTP destination connector username api and redacted password field", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "false", "relogin_trigger": "per-message preemptive Basic authentication; no login/token script", "evidence": "ENHT | PAS In | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/ENHT/PAS In.xml | all five HTTP destination properties and empty deploy/undeploy scripts lines 1891-1898"}},
+    "routing": {"inbound_from": "MLLP TCP listener :6661", "outbound_to": ["OpenEyes PASAPI V2 Patient", "OpenEyes PASAPI V2 PatientAppointment", "OpenEyes PASAPI V2 PatientMerge"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "Source is an MLLP TCP listener on port 6661 with HL7 v2 parsing and an example inbound template declaring version 2.4.", "location": "ENHT | PAS In | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/ENHT/PAS In.xml | sourceConnector lines 9-146 and destination templates", "confidence": "confirmed"},
+      {"claim": "Patient response transformers mark non-GP/non-Practice warnings as errors and save response XML Id to channelMap PatientId for the appointment call.", "location": "ENHT | PAS In | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/ENHT/PAS In.xml | Patient response transformer lines 539-578 and 1024-1063", "confidence": "confirmed"},
+      {"claim": "Appointment PUT filter accepts A01, A05, A08, A11, A03, A13, A02 and A12, but excludes A08 where PV1-4.1 is CANCL.", "location": "ENHT | PAS In | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/ENHT/PAS In.xml | Clinic List - PUT Appointment Filter lines 1369-1400", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "The secondary Patient A40 branch concretely differs from the primary Patient branch: it uses MRG FACIL as HospitalNumber and emits createOnly=1."
+  },
+  {
+    "channel_id": "cbc80f6b-73ad-491b-adc6-602ed5705c8b",
+    "channel_name": "PAS Out",
+    "instance": "ENHT",
+    "canonical_path": "canonical/ENHT/PAS Out.xml",
+    "hl7": {
+      "is_hl7": true,
+      "version": "2.4",
+      "message_types": ["QBP", "RSP"],
+      "trigger_events": ["Q21", "K21"],
+      "ack": {"mode": "none", "detail": "The HTTP listener returns transformed Patient XML or <PatientList/> rather than an HL7 ACK/NACK.", "evidence": "ENHT | PAS Out | cbc80f6b-73ad-491b-adc6-602ed5705c8b | canonical/ENHT/PAS Out.xml | destination Respond lines 832-1040"},
+      "inbound_segments_used": ["QPD", "PID", "PD1"],
+      "field_map": [
+        {"source": "HTTP Parameters/hosnum", "target": "outbound QPD-3.1", "note": "used first when non-empty", "confidence": "confirmed"},
+        {"source": "HTTP Parameters/nhsnum", "target": "outbound QPD-3.1", "note": "used only when hosnum is empty", "confidence": "confirmed"},
+        {"source": "generated current time", "target": "outbound MSH-7.1", "note": "yyyyMMddHHmmss", "confidence": "confirmed"},
+        {"source": "connector message ID", "target": "outbound MSH-10.1", "note": "direct assignment", "confidence": "confirmed"},
+        {"source": "K21 PID-3.5/.1 repetitions", "target": "HTTP Patient/PatientIdentifierList/PatientIdentifier Code/Value", "note": "all PID-3 repetitions become identifiers", "confidence": "confirmed"},
+        {"source": "K21 PID-5, PID-7, PID-8, PID-11, PID-13, PID-15, PID-22, PID-29, PID-30, PID-35, PD1-3, PD1-4", "target": "HTTP Patient demographic, address, contact, language, death, risks, practice and GP elements", "note": "XSLT applies title normalization, date formatting, gender mapping and address/contact conditions", "confidence": "confirmed"}
+      ]
+    },
+    "oe_api": {"calls_oe": false, "calls": []},
+    "auth": {"method": "none", "credential_source": "none", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "na", "relogin_trigger": "na", "evidence": "ENHT | PAS Out | cbc80f6b-73ad-491b-adc6-602ed5705c8b | canonical/ENHT/PAS Out.xml | HTTP listener NoneHttpAuthProperties lines 9-49 and empty deploy/undeploy scripts lines 1039-1046"}},
+    "routing": {"inbound_from": "HTTP listener :6663", "outbound_to": ["remote PAS MLLP TCP :20002", "HTTP response Patient XML"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "Builds a QBP^Q21 message from the HTTP request, assigns MSH timestamp and message ID, and places hosnum or nhsnum into QPD-3.1.", "location": "ENHT | PAS Out | cbc80f6b-73ad-491b-adc6-602ed5705c8b | canonical/ENHT/PAS Out.xml | source transformer JavaScript steps lines 51-78", "confidence": "confirmed"},
+      {"claim": "Sends the encoded HL7 query over MLLP to a configured remote TCP endpoint, and only continues when QPD-3.1 is non-empty.", "location": "ENHT | PAS Out | cbc80f6b-73ad-491b-adc6-602ed5705c8b | canonical/ENHT/PAS Out.xml | destination Send Q21 properties and filter lines 156-396", "confidence": "confirmed"},
+      {"claim": "Converts the Send Q21 response to XML, then transforms K21 response segments to Patient XML before returning it from the HTTP response path.", "location": "ENHT | PAS Out | cbc80f6b-73ad-491b-adc6-602ed5705c8b | canonical/ENHT/PAS Out.xml | Convert K21 to XML lines 397-535 and Create response XSLT lines 536-831", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "No OpenEyes API call. The source HTTP endpoint is unauthenticated; the channel is a synchronous HTTP-to-MLLP demographic query bridge."
+  }
+]

@@ -1,0 +1,125 @@
+[
+  {
+    "channel_id": "7a04b9d1-70ac-4008-b809-732b88267f5c",
+    "channel_name": "CORRESPONDENCE OUT",
+    "instance": "Bolton",
+    "canonical_path": "canonical/Bolton/CORRESPONDENCE OUT.xml",
+    "hl7": {"is_hl7": false, "version": null, "message_types": [], "trigger_events": [], "ack": {"mode": "none", "detail": "RAW file channel; no HL7 parser or ACK configuration.", "evidence": "Bolton | CORRESPONDENCE OUT | 7a04b9d1-70ac-4008-b809-732b88267f5c | canonical/Bolton/CORRESPONDENCE OUT.xml | source transformer lines 82-100"}, "inbound_segments_used": [], "field_map": []},
+    "oe_api": {"calls_oe": false, "calls": []},
+    "auth": {"method": "none", "credential_source": "na", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "na", "relogin_trigger": "na", "evidence": "Bolton | CORRESPONDENCE OUT | 7a04b9d1-70ac-4008-b809-732b88267f5c | canonical/Bolton/CORRESPONDENCE OUT.xml | deploy/undeploy scripts lines 210-215 return without map access"}},
+    "routing": {"inbound_from": "file /mnt/docman/", "outbound_to": ["SMB file share sys479.xrbh.nhs.uk/OpenEyesLetters-Live"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "Reads RAW binary files from /mnt/docman/ and deletes them after processing.", "location": "Bolton | CORRESPONDENCE OUT | 7a04b9d1-70ac-4008-b809-732b88267f5c | canonical/Bolton/CORRESPONDENCE OUT.xml | source File Reader properties lines 53-80", "confidence": "confirmed"},
+      {"claim": "Writes original raw data to the configured SMB share using the original filename.", "location": "Bolton | CORRESPONDENCE OUT | 7a04b9d1-70ac-4008-b809-732b88267f5c | canonical/Bolton/CORRESPONDENCE OUT.xml | Copy file to share File Writer properties lines 135-156", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "The source and destination use file/SMB connector credentials, including redacted connector passwords, but there is no OpenEyes HTTP call or persisted login."
+  },
+  {
+    "channel_id": "c14efd23-2c1c-4e53-a59f-dcfe0e727c3b",
+    "channel_name": "DICOM",
+    "instance": "Bolton",
+    "canonical_path": "canonical/Bolton/DICOM.xml",
+    "hl7": {"is_hl7": false, "version": null, "message_types": [], "trigger_events": [], "ack": {"mode": "none", "detail": "DICOM listener with auto-generated DICOM response, not HL7v2.", "evidence": "Bolton | DICOM | c14efd23-2c1c-4e53-a59f-dcfe0e727c3b | canonical/Bolton/DICOM.xml | DICOM Listener properties lines 10-59"}, "inbound_segments_used": [], "field_map": []},
+    "oe_api": {"calls_oe": true, "calls": [
+      {"method": "POST", "path": "/api/v1/request/queue/add", "api_version": "api/v1", "resource": "PayloadProcessor", "payload_shape": "Binary DICOM body (application/dicom), with institution_id and identifier_type derived from Local AET/default configuration; file_name, system_message=local_AET, request_type=dicom_request, and source_platform derived from local/remote AET.", "evidence": "Bolton | DICOM | c14efd23-2c1c-4e53-a59f-dcfe0e727c3b | canonical/Bolton/DICOM.xml | PayloadProcessor API Send HTTP Sender properties lines 537-605; source transformer steps lines 203-250"}
+    ]},
+    "auth": {"method": "HTTP Basic preemptive", "credential_source": "connector field: PayloadProcessor API Send username api and redacted password", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "false", "relogin_trigger": "per-message preemptive Basic authentication; no login flow", "evidence": "Bolton | DICOM | c14efd23-2c1c-4e53-a59f-dcfe0e727c3b | canonical/Bolton/DICOM.xml | PayloadProcessor API Send authentication properties lines 597-601; deploy/undeploy scripts lines 660-665"}},
+    "routing": {"inbound_from": "DICOM listener :11112", "outbound_to": ["PayloadProcessor /api/v1/request/queue/add", "file /mnt/dicom for qualifying Zeiss IOLMaster DICOM"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "Extracts DICOM patient, study, device, SOP class, and AET metadata into channelMap; identifier_type/institution_id comes from a Local AET regex or configurationMap default.", "location": "Bolton | DICOM | c14efd23-2c1c-4e53-a59f-dcfe0e727c3b | canonical/Bolton/DICOM.xml | source transformer mapper and JavaScript steps lines 63-250", "confidence": "confirmed"},
+      {"claim": "The file writer is restricted to Zeiss IOLMaster with either listed supported SOP Class UID.", "location": "Bolton | DICOM | c14efd23-2c1c-4e53-a59f-dcfe0e727c3b | canonical/Bolton/DICOM.xml | IolMaster file writer filter lines 483-503", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "DICOM tag mapping is not represented in hl7.field_map because this channel does not parse or emit HL7v2."
+  },
+  {
+    "channel_id": "7a7288a3-5ade-46bc-921d-56baf0a6bf06",
+    "channel_name": "PAS IN",
+    "instance": "Bolton",
+    "canonical_path": "canonical/Bolton/PAS IN.xml",
+    "hl7": {
+      "is_hl7": true,
+      "version": "2.4",
+      "message_types": ["ADT"],
+      "trigger_events": ["A01", "A02", "A03", "A04", "A05", "A08", "A11", "A12", "A13", "A38", "A40"],
+      "ack": {"mode": "auto", "detail": "MLLP TCP listener auto-generates HL7 ACK before processing: AA success, AE error, AR rejected.", "evidence": "Bolton | PAS IN | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/Bolton/PAS IN.xml | source TCP Listener and HL7 response generation properties lines 10-95"},
+      "inbound_segments_used": ["MSH", "EVN", "PID", "PD1", "PV1", "PV2", "PR1", "MRG", "NK1"],
+      "field_map": [
+        {"source": "PID-3.1 where PID-3.5=NHS", "target": "Patient.NHSNumber", "note": "XSLT selection.", "confidence": "confirmed"},
+        {"source": "PID-3.1 where PID-3.5=FACIL", "target": "Patient.HospitalNumber and Patient endpoint path", "note": "FACIL selection; channelMap HospitalNumber also drives paths.", "confidence": "confirmed"},
+        {"source": "PID-5.5", "target": "Patient.Title", "note": "Capitalizes first character, lowercases remainder, removes spaces.", "confidence": "confirmed"},
+        {"source": "PID-5.2 and PID-5.3", "target": "Patient.FirstName", "note": "Given name plus optional middle name separated by space.", "confidence": "confirmed"},
+        {"source": "PID-5.1", "target": "Patient.Surname", "note": "Direct.", "confidence": "confirmed"},
+        {"source": "PID-7.1", "target": "Patient.DateOfBirth", "note": "YYYYMMDD converted to YYYY-MM-DD.", "confidence": "confirmed"},
+        {"source": "PID-8.1", "target": "Patient.Gender", "note": "F and M retained; other values become U.", "confidence": "confirmed"},
+        {"source": "PID-11.1/.2/.3", "target": "Patient.AddressList.Address.Line1/Line2/City", "note": "Direct.", "confidence": "confirmed"},
+        {"source": "PID-11.4 and PID-11.5", "target": "Patient.AddressList.Address.County/Postcode", "note": "Uses .4 as County and .5 as Postcode when .5 exists; otherwise output logic reverses intended values as coded.", "confidence": "confirmed"},
+        {"source": "PID-11.7", "target": "Patient.AddressList.Address.Type", "note": "H becomes HOME; all other values become CORR.", "confidence": "confirmed"},
+        {"source": "PID-13.1, PID-14.1, and PID-13 repetitions", "target": "Patient.TelephoneNumber/MobilePhoneNumber/Email", "note": "Primary patient transform uses PID-13.1 telephone, PID-14.1 mobile, and Internet-coded PID-13.3 email.", "confidence": "confirmed"},
+        {"source": "PID-22.1", "target": "Patient.EthnicGroup", "note": "NKN and NSP map to ZX in primary transform.", "confidence": "confirmed"},
+        {"source": "PID-30.1 and PID-29.1", "target": "Patient.IsDeceased and DateOfDeath", "note": "Y maps IsDeceased to 1 and formats date of death YYYY-MM-DD; otherwise IsDeceased is 0.", "confidence": "confirmed"},
+        {"source": "PD1-3.3 and PD1-4.1", "target": "Patient.Practice.Code and GP.Code", "note": "GP code is first eight characters, defaulting to G9999981 when PD1-4.1 absent.", "confidence": "confirmed"},
+        {"source": "PID-15.4 and PID-15.5", "target": "Patient.LanguageCode and InterpreterRequired", "note": "Direct.", "confidence": "confirmed"},
+        {"source": "PID-35.1 repetitions", "target": "Patient.Risks", "note": "Concatenated values within Risks.", "confidence": "confirmed"},
+        {"source": "NK1-2, NK1-4, NK1-5", "target": "Patient.ContactList.PatientContact", "note": "Creates next-of-kin contacts except NK1-2.1=NS; maps name, address, telephone, mobile and NET-coded email.", "confidence": "confirmed"},
+        {"source": "PV1-19.1 and PV1-19.4", "target": "PatientAppointment endpoint VisitID", "note": "Concatenated as value_component4 for normal patient path.", "confidence": "confirmed"},
+        {"source": "PV1-44.1", "target": "PatientAppointment.AppointmentDate and AppointmentTime", "note": "Formats YYYY-MM-DD and HH:MM.", "confidence": "confirmed"},
+        {"source": "PV1-3.1/.2", "target": "PatientAppointment mapping Clinic/Session", "note": "Clinic uses .1; Session uses .2 then falls back to .1.", "confidence": "confirmed"},
+        {"source": "PV1-9.3/.2/.1", "target": "PatientAppointment mapping Doctor", "note": "Formats first name, surname and number as a display value.", "confidence": "confirmed"},
+        {"source": "MSH-9.2, EVN-2.1, PV1-6.1, PV1-14.1, PV1-44.1, PV2-27.1", "target": "PatientAppointment mapping Status", "note": "Builds status such as Attended, Did Not Attend, Transferred, Departed, Arrived or Discharged by event and timing.", "confidence": "confirmed"},
+        {"source": "PR1-3.2 with PV1-3.1 and MSH-9.2", "target": "PatientAppointment mapping Procedure or ProcedureInjection", "note": "Only for clinic H2 and A05; normalizes listed procedure text.", "confidence": "confirmed"},
+        {"source": "MRG-1.1 where MRG-1.5=FACIL", "target": "PatientMerge.SecondaryPatientNumber", "note": "Primary number is HospitalNumber from PID-2.1 where PID-2.5=PAS in the merge-specific branch.", "confidence": "confirmed"},
+        {"source": "PV1-14.1=DNA with MSH-9.2=A05", "target": "DidNotAttend HospitalNumber/Date/Comments", "note": "Sends local identifier type and comments including ClinicCode.", "confidence": "confirmed"}
+      ]
+    },
+    "oe_api": {"calls_oe": true, "calls": [
+      {"method": "PUT", "path": "PASAPI/V2/Patient/${HospitalNumber}", "api_version": "V2", "resource": "Patient", "payload_shape": "Patient XML with identifiers, demographics, address, contact data, ethnicity, death data, practice/GP, language, risks and next-of-kin contacts; excludes M05.", "evidence": "Bolton | PAS IN | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/Bolton/PAS IN.xml | PASAPI - Patient properties lines 652-678, XSLT lines 682-791, filter lines 1160-1173"},
+      {"method": "PUT", "path": "PASAPI/V2/Patient/${SecondaryHospitalNumber}", "api_version": "V2", "resource": "Patient", "payload_shape": "Secondary Patient XML from PID demographics, with local identifier type; filtered to A40.", "evidence": "Bolton | PAS IN | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/Bolton/PAS IN.xml | PASAPI - Secondary Patient properties lines 171-197, XSLT lines 201-267, filter lines 608-620"},
+      {"method": "PUT", "path": "PASAPI/V2/PatientAppointment/${VisitID}", "api_version": "V2", "resource": "PatientAppointment", "payload_shape": "PatientAppointment XML containing PatientId, identifier type, appointment date/time and Doctor, Clinic, Session, Status, and optional Procedure mapping items; X-OE-Partial-Record: 0.", "evidence": "Bolton | PAS IN | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/Bolton/PAS IN.xml | Clinic List - PUT properties lines 1204-1262 and appointment filter lines 1434-1469"},
+      {"method": "DELETE", "path": "PASAPI/V2/PatientAppointment/${VisitID}", "api_version": "V2", "resource": "PatientAppointment", "payload_shape": "No body; only when prior Patient destination d1 was sent and MSH-9.2=A38, subject to clinic exclusions.", "evidence": "Bolton | PAS IN | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/Bolton/PAS IN.xml | Clinic List - DELETE properties lines 1500-1526 and filter lines 1695-1725"},
+      {"method": "PUT", "path": "PASAPI/V1/PatientMerge/${HospitalNumber}/identifier-type/LOCAL-1-0", "api_version": "V1", "resource": "PatientMerge", "payload_shape": "PatientMerge XML containing PrimaryPatientNumber and SecondaryPatientNumber; filtered to A40.", "evidence": "Bolton | PAS IN | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/Bolton/PAS IN.xml | PASAPI - Patient Merge properties lines 1756-1785 and filter lines 1957-1969"},
+      {"method": "PUT", "path": "PASAPI/V2/DidNotAttend", "api_version": "V2", "resource": "DidNotAttend", "payload_shape": "DidNotAttend XML with HospitalNumber, IdentifierType LOCAL-1-0, VisitDate and Did Not Attend - ClinicCode comment; X-OE-Partial-Record: 0.", "evidence": "Bolton | PAS IN | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/Bolton/PAS IN.xml | Clinic List - DNA properties lines 2001-2039 and filter lines 2209-2224"}
+    ]},
+    "auth": {"method": "HTTP Basic preemptive", "credential_source": "connector fields: api plus redacted password for Patient, Secondary Patient, PatientAppointment and PatientMerge; redacted username plus redacted password for DidNotAttend", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "false", "relogin_trigger": "per-message preemptive Basic authentication; no login flow", "evidence": "Bolton | PAS IN | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/Bolton/PAS IN.xml | HTTP authentication properties lines 188-192, 669-673, 1228-1232, 1517-1521, 1773-1777 and 2025-2029; deploy/undeploy scripts lines 2267-2272"}},
+    "routing": {"inbound_from": "MLLP TCP listener :6661", "outbound_to": ["OpenEyes PASAPI V2 Patient", "OpenEyes PASAPI V2 PatientAppointment", "OpenEyes PASAPI V1 PatientMerge", "OpenEyes PASAPI V2 DidNotAttend"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "Parses HL7v2 over MLLP and its supplied template declares HL7 2.4 ADT^A05.", "location": "Bolton | PAS IN | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/Bolton/PAS IN.xml | source connector lines 10-57 and destination inbound template line 1034", "confidence": "confirmed"},
+      {"claim": "Patient field mapping is explicitly implemented by the PASAPI - Patient XSLT and supporting JavaScript mapper steps.", "location": "Bolton | PAS IN | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/Bolton/PAS IN.xml | PASAPI - Patient transformer lines 680-1032", "confidence": "confirmed"},
+      {"claim": "Appointment status, procedure and routing conditions are computed from HL7 fields, not channel name.", "location": "Bolton | PAS IN | 7a7288a3-5ade-46bc-921d-56baf0a6bf06 | canonical/Bolton/PAS IN.xml | transformer JavaScript steps lines 901-1031 and appointment filters lines 1434-1469, 1695-1725, 2209-2224", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "PASAPI V1 PatientMerge is deliberately retained alongside V2 Patient, PatientAppointment and DidNotAttend calls."
+  },
+  {
+    "channel_id": "06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c",
+    "channel_name": "PAS OUT",
+    "instance": "Bolton",
+    "canonical_path": "canonical/Bolton/PAS OUT.xml",
+    "hl7": {
+      "is_hl7": true,
+      "version": "2.4",
+      "message_types": ["QRY", "K21"],
+      "trigger_events": ["A19", "K21"],
+      "ack": {"mode": "custom", "detail": "HTTP listener returns TransformedResponse as PatientList XML, or an empty PatientList; it does not return an HL7 ACK.", "evidence": "Bolton | PAS OUT | 06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c | canonical/Bolton/PAS OUT.xml | HTTP source responseVariable d6 lines 20-45 and Respond JavaScript Writer lines 808-835"},
+      "inbound_segments_used": ["Parameters", "MSH", "QRD", "PID", "PD1"],
+      "field_map": [
+        {"source": "HTTP Parameters.hosnum", "target": "outbound QRY^A19 QRD-8.1", "note": "Preferred lookup parameter.", "confidence": "confirmed"},
+        {"source": "HTTP Parameters.nhsnum", "target": "outbound QRY^A19 QRD-8.1 and QRD-8.9", "note": "Used if hosnum absent; QRD-8.9 set to NHS.", "confidence": "confirmed"},
+        {"source": "generated current datetime", "target": "outbound QRY^A19 MSH-7.1 and QRD-1.1", "note": "yyyyMMddHHmmss.", "confidence": "confirmed"},
+        {"source": "Mirth connector message ID", "target": "outbound QRY^A19 MSH-10.1 and QRD-4.1", "note": "Direct.", "confidence": "confirmed"},
+        {"source": "returned K21 PID-3.1 where PID-3.5=FACIL/NHS", "target": "HTTP PatientList.Patient.PatientIdentifierList", "note": "Outputs identifier codes ABC and NHS.", "confidence": "confirmed"},
+        {"source": "returned K21 PID-5, PID-7, PID-8, PID-11, PID-13, PID-22, PID-29, PD1", "target": "HTTP PatientList.Patient demographic, address, telephone, ethnicity, death date, practice and GP fields", "note": "XSLT formats dates as YYYY-MM-DD and title case.", "confidence": "confirmed"}
+      ]
+    },
+    "oe_api": {"calls_oe": false, "calls": []},
+    "auth": {"method": "none", "credential_source": "na", "session_persistence": {"uses_global_map": false, "keys": [], "token_or_cookie_cached": "na", "relogin_trigger": "na", "evidence": "Bolton | PAS OUT | 06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c | canonical/Bolton/PAS OUT.xml | HTTP listener authType NONE lines 10-15; deploy/undeploy scripts lines 1017-1022"}},
+    "routing": {"inbound_from": "HTTP listener :6663", "outbound_to": ["remote PAS MLLP TCP sender :3017"], "channel_writer_targets": []},
+    "evidence": [
+      {"claim": "Accepts unauthenticated HTTP requests and builds an HL7v2 QRY^A19 from HTTP parameters.", "location": "Bolton | PAS OUT | 06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c | canonical/Bolton/PAS OUT.xml | source HTTP Listener properties lines 10-49 and transformer JavaScript steps lines 52-83", "confidence": "confirmed"},
+      {"claim": "Sends the QRY over MLLP, requires a response, converts returned HL7 K21 to XML, and returns PatientList XML to the HTTP caller.", "location": "Bolton | PAS OUT | 06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c | canonical/Bolton/PAS OUT.xml | Send Q21 TCP Sender lines 147-195; Convert K21 to XML lines 386-421; response XSLT lines 556-620", "confidence": "confirmed"}
+    ],
+    "confidence": "confirmed",
+    "notes": "The outbound QRY template explicitly contains QRY^A19 and version 2.4. The response transformer is named Convert K21 to XML and converts the returned HL7 message without independently checking MSH-9."
+  }
+]

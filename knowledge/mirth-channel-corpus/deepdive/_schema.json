@@ -1,0 +1,45 @@
+{
+  "description": "Per-channel DEEP record for Phases 4 (HL7 behaviour), 5 (OpenEyes API usage) and 6 (auth / persisted-login). One JSON array per instance batch at deepdive/_slices/<instance>.json. Requires reading the transformer JavaScript and connector config, not just structure. Every non-trivial field must be backed by an evidence[] entry.",
+  "record": {
+    "channel_id": "string (copy from canonical/_manifest.csv)",
+    "channel_name": "string",
+    "instance": "string",
+    "canonical_path": "string",
+    "hl7": {
+      "is_hl7": "true if the channel parses or emits HL7v2, else false",
+      "version": "e.g. 2.4 or null",
+      "message_types": ["ADT", "SIU", "QBP", "..."],
+      "trigger_events": ["A01", "A28", "S12", "Q22", "..."],
+      "ack": {"mode": "auto | application | custom | none", "detail": "how ACK/NACK is generated", "evidence": "location"},
+      "inbound_segments_used": ["MSH", "PID", "PV1", "..."],
+      "field_map": [
+        {"source": "HL7 field e.g. PID-3.1", "target": "OE/PASAPI field or request param e.g. hos_num / PatientIdentifier", "note": "transform/coercion applied", "confidence": "confirmed|inferred"}
+      ]
+    },
+    "oe_api": {
+      "calls_oe": "true/false",
+      "calls": [
+        {"method": "GET|POST|PUT", "path": "PASAPI/V2/Patient | /api/v1/Document/create | request/queue/add", "api_version": "V1|V2|V3|api/v1", "resource": "Patient|PatientAppointment|PatientMerge|DidNotAttend|AISFlags|Document|PayloadProcessor", "payload_shape": "short description of the body built", "evidence": "location"}
+      ]
+    },
+    "auth": {
+      "method": "HTTP Basic preemptive | none | other",
+      "credential_source": "connector field | configurationMap:<key> | globalMap:<key> (NEVER the value)",
+      "session_persistence": {
+        "uses_global_map": "true/false",
+        "keys": ["globalMap/globalChannelMap keys read or written for auth/session"],
+        "token_or_cookie_cached": "true/false/na",
+        "relogin_trigger": "what forces a re-auth (401, expiry, per-message), or na",
+        "evidence": "location"
+      }
+    },
+    "routing": {
+      "inbound_from": "listener :port | file <path> | channel reader <source> | http",
+      "outbound_to": ["OpenEyes PASAPI", "PayloadProcessor", "remote PAS host:port", "file share", "..."],
+      "channel_writer_targets": ["downstream channel name or id, for cross-channel dataflow"]
+    },
+    "evidence": [{"claim": "", "location": "connector/filter/transformer/script + approx line", "confidence": "confirmed|inferred"}],
+    "confidence": "confirmed|inferred",
+    "notes": "anomalies, clone relationships, or gaps"
+  }
+}

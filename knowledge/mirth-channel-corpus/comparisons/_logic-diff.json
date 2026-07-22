@@ -1,0 +1,202 @@
+{
+  "06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c": {
+    "members": [
+      "Bedford/PAS OUT",
+      "Bolton/PAS OUT",
+      "EK/PAS OUT",
+      "Kingston/OpenEyes Correspondence",
+      "Pennine/OpenEyes PAS Query",
+      "Portsmouth/PAS OUT",
+      "Sussex/PAS OUT"
+    ],
+    "verdict": "DIVERGES",
+    "src_uniform": false,
+    "destnames_uniform": false,
+    "scripts_uniform": false,
+    "n_scripts": {
+      "Bedford/PAS OUT": 8,
+      "Bolton/PAS OUT": 7,
+      "EK/PAS OUT": 9,
+      "Kingston/OpenEyes Correspondence": 6,
+      "Pennine/OpenEyes PAS Query": 5,
+      "Portsmouth/PAS OUT": 7,
+      "Sussex/PAS OUT": 7
+    }
+  },
+  "da67d2ba-db52-4f50-898b-b534d71450ab": {
+    "members": [
+      "EK/DICOM",
+      "ENHT/DICOM",
+      "Kingston/DICOM",
+      "Pennine/DICOM_11118",
+      "Portsmouth/DICOM",
+      "Wales/DICOM"
+    ],
+    "verdict": "IDENTICAL-LOGIC",
+    "src_uniform": true,
+    "destnames_uniform": true,
+    "scripts_uniform": true,
+    "n_scripts": {
+      "EK/DICOM": 3,
+      "ENHT/DICOM": 3,
+      "Kingston/DICOM": 3,
+      "Pennine/DICOM_11118": 3,
+      "Portsmouth/DICOM": 3,
+      "Wales/DICOM": 3
+    }
+  },
+  "c14efd23-2c1c-4e53-a59f-dcfe0e727c3b": {
+    "members": [
+      "Bedford/DICOM",
+      "Bolton/DICOM",
+      "Optegra/IOL",
+      "Sussex/DICOM"
+    ],
+    "verdict": "DIVERGES",
+    "src_uniform": true,
+    "destnames_uniform": true,
+    "scripts_uniform": false,
+    "n_scripts": {
+      "Bedford/DICOM": 6,
+      "Bolton/DICOM": 7,
+      "Optegra/IOL": 6,
+      "Sussex/DICOM": 6
+    }
+  },
+  "d69815ee-68d1-4dcb-8896-8b12ba06a9c4": {
+    "members": [
+      "Bedford/PAS IN",
+      "Optegra/PAS IN V2",
+      "Portsmouth/PAS IN V2",
+      "Sussex/PAS IN"
+    ],
+    "verdict": "DIVERGES",
+    "src_uniform": true,
+    "destnames_uniform": false,
+    "scripts_uniform": false,
+    "n_scripts": {
+      "Bedford/PAS IN": 26,
+      "Optegra/PAS IN V2": 23,
+      "Portsmouth/PAS IN V2": 23,
+      "Sussex/PAS IN": 25
+    }
+  },
+  "04524f4d-5201-4c16-b66f-26c3d7783d85": {
+    "members": [
+      "ENHT/Docman",
+      "MEH/Docman",
+      "Optegra/Docman",
+      "Portsmouth/DOCUMENT-OUT-Minestrone"
+    ],
+    "verdict": "DIVERGES",
+    "src_uniform": true,
+    "destnames_uniform": false,
+    "scripts_uniform": false,
+    "n_scripts": {
+      "ENHT/Docman": 0,
+      "MEH/Docman": 0,
+      "Optegra/Docman": 1,
+      "Portsmouth/DOCUMENT-OUT-Minestrone": 0
+    }
+  },
+  "7a7288a3-5ade-46bc-921d-56baf0a6bf06": {
+    "members": [
+      "Bolton/PAS IN",
+      "ENHT/PAS In",
+      "Wales/PAS IN"
+    ],
+    "verdict": "DIVERGES",
+    "src_uniform": true,
+    "destnames_uniform": false,
+    "scripts_uniform": false,
+    "n_scripts": {
+      "Bolton/PAS IN": 25,
+      "ENHT/PAS In": 23,
+      "Wales/PAS IN": 23
+    }
+  },
+  "375fe7b2-d55c-4c60-b66f-dc2000c8ea95": {
+    "members": [
+      "Bedford/Document OUT",
+      "Sussex/Document Delivery"
+    ],
+    "verdict": "IDENTICAL-LOGIC",
+    "src_uniform": true,
+    "destnames_uniform": true,
+    "scripts_uniform": true,
+    "n_scripts": {
+      "Bedford/Document OUT": 0,
+      "Sussex/Document Delivery": 0
+    }
+  },
+  "f703f9cd-a6ee-42e6-8550-c6a9c3fb1c73": {
+    "members": [
+      "Bedford/Document Upload PP",
+      "Portsmouth/General Documents IN"
+    ],
+    "verdict": "DIVERGES",
+    "src_uniform": true,
+    "destnames_uniform": false,
+    "scripts_uniform": false,
+    "n_scripts": {
+      "Bedford/Document Upload PP": 2,
+      "Portsmouth/General Documents IN": 2
+    }
+  },
+  "7a04b9d1-70ac-4008-b809-732b88267f5c": {
+    "members": [
+      "Bolton/CORRESPONDENCE OUT",
+      "EK/Filedrop Correspondence"
+    ],
+    "verdict": "IDENTICAL-LOGIC",
+    "src_uniform": true,
+    "destnames_uniform": true,
+    "scripts_uniform": true,
+    "n_scripts": {
+      "Bolton/CORRESPONDENCE OUT": 0,
+      "EK/Filedrop Correspondence": 0
+    }
+  },
+  "ba5419a3-24a5-48a2-bd9b-5cb2072e87f4": {
+    "members": [
+      "Kingston/OpenEyes DICOM Channel",
+      "Pennine/OpenEyes DICOM Channel"
+    ],
+    "verdict": "IDENTICAL-LOGIC",
+    "src_uniform": true,
+    "destnames_uniform": true,
+    "scripts_uniform": true,
+    "n_scripts": {
+      "Kingston/OpenEyes DICOM Channel": 0,
+      "Pennine/OpenEyes DICOM Channel": 0
+    }
+  },
+  "eee5caa4-786f-451b-9a89-f00aeb46f935": {
+    "members": [
+      "Kingston/OpenEyes DICOM IOLMaster Channel",
+      "Pennine/OpenEyes DICOM IOLMaster Channel"
+    ],
+    "verdict": "IDENTICAL-LOGIC",
+    "src_uniform": true,
+    "destnames_uniform": true,
+    "scripts_uniform": true,
+    "n_scripts": {
+      "Kingston/OpenEyes DICOM IOLMaster Channel": 0,
+      "Pennine/OpenEyes DICOM IOLMaster Channel": 0
+    }
+  },
+  "6c3a10d1-968d-468e-9355-008946825b20": {
+    "members": [
+      "Kingston/OpenEyes PAS",
+      "Pennine/OpenEyes PAS"
+    ],
+    "verdict": "DIVERGES",
+    "src_uniform": true,
+    "destnames_uniform": true,
+    "scripts_uniform": false,
+    "n_scripts": {
+      "Kingston/OpenEyes PAS": 12,
+      "Pennine/OpenEyes PAS": 12
+    }
+  }
+}

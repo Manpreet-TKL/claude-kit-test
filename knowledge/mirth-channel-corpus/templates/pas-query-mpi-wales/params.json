@@ -1,0 +1,38 @@
+{
+  "family": "pas-query-mpi-wales",
+  "exemplar": "OpenEyes Query - ABUHB",
+  "members": 8,
+  "byte_exact": false,
+  "parameters": [
+    {
+      "name": "CHANNEL_ID",
+      "kind": "uuid",
+      "occurrences": 1,
+      "note": "channel id"
+    },
+    {
+      "name": "BOARD",
+      "kind": "string",
+      "occurrences": 1,
+      "note": "health board short name"
+    },
+    {
+      "name": "LISTEN_PORT",
+      "kind": "int",
+      "occurrences": 1,
+      "note": "HTTP listener port"
+    },
+    {
+      "name": "BOARD_CODE",
+      "kind": "int",
+      "occurrences": 2,
+      "note": "MPI assigning-authority code (QPD-3.2 and XSLT vSender)"
+    },
+    {
+      "name": "ARCHIVE_ENABLED",
+      "kind": "bool",
+      "occurrences": 1,
+      "note": "message archive toggle"
+    }
+  ]
+}

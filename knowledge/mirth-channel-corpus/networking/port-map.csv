@@ -1,0 +1,68 @@
+instance,channel_name,channel_id,direction,transport,port,endpoint,enabled
+Bedford,DICOM,c14efd23-2c1c-4e53-a59f-dcfe0e727c3b,inbound-listen,DICOM Listener,11112,listen 0.0.0.0:11112,true
+Bedford,PAS IN,d69815ee-68d1-4dcb-8896-8b12ba06a9c4,inbound-listen,TCP Listener,6661,listen 0.0.0.0:6661,true
+Bedford,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,inbound-listen,HTTP Listener,6663,listen 0.0.0.0:6663,true
+Bedford,PAS IN,d69815ee-68d1-4dcb-8896-8b12ba06a9c4,outbound-tcp,TCP Sender,7072,192.168.21.142:7072,false
+Bedford,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,outbound-tcp,TCP Sender,8027,192.168.192.3:8027,true
+Bolton,DICOM,c14efd23-2c1c-4e53-a59f-dcfe0e727c3b,inbound-listen,DICOM Listener,11112,listen 0.0.0.0:11112,true
+Bolton,PAS IN,7a7288a3-5ade-46bc-921d-56baf0a6bf06,inbound-listen,TCP Listener,6661,listen 0.0.0.0:6661,true
+Bolton,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,inbound-listen,HTTP Listener,6663,listen 0.0.0.0:6663,true
+Bolton,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,outbound-tcp,TCP Sender,3017,10.157.96.169:3017,true
+EK,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,inbound-listen,DICOM Listener,11112,listen 0.0.0.0:11112,true
+EK,PAS IN,2a67566e-e26d-4bd9-9e9b-1ea0806c5da4,inbound-listen,TCP Listener,6661,listen 0.0.0.0:6661,true
+EK,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,inbound-listen,HTTP Listener,6663,listen 0.0.0.0:6663,true
+EK,PAS IN Maidstone,712ec2e2-92a4-4f7a-bc3d-b216faeddc39,inbound-listen,TCP Listener,6671,listen 0.0.0.0:6671,true
+EK,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,outbound-tcp,TCP Sender,19000,10.240.11.20:19000,false
+EK,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,outbound-tcp,TCP Sender,19002,10.240.8.126:19002,true
+ENHT,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,inbound-listen,DICOM Listener,11112,listen 0.0.0.0:11112,true
+ENHT,PAS In,7a7288a3-5ade-46bc-921d-56baf0a6bf06,inbound-listen,TCP Listener,6661,listen 0.0.0.0:6661,true
+ENHT,PAS Out,cbc80f6b-73ad-491b-adc6-602ed5705c8b,inbound-listen,HTTP Listener,6663,listen 0.0.0.0:6663,true
+ENHT,PAS Out,cbc80f6b-73ad-491b-adc6-602ed5705c8b,outbound-tcp,TCP Sender,20002,192.168.113.89:20002,true
+Kingston,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,inbound-listen,DICOM Listener,11112,listen 0.0.0.0:11112,true
+Kingston,OpenEyes DICOM IOLMaster Channel,eee5caa4-786f-451b-9a89-f00aeb46f935,inbound-listen,DICOM Listener,11118,listen 0.0.0.0:11118,true
+Kingston,OpenEyes DICOM Channel,ba5419a3-24a5-48a2-bd9b-5cb2072e87f4,inbound-listen,DICOM Listener,11119,listen 0.0.0.0:11119,true
+Kingston,OpenEyes PAS,6c3a10d1-968d-468e-9355-008946825b20,inbound-listen,TCP Listener,6662,listen 0.0.0.0:6662,true
+Kingston,OpenEyes Correspondence,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,outbound-tcp,TCP Sender,5623,10.51.84.239:5623,true
+Kingston,OpenEyes Correspondence,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,outbound-tcp,TCP Sender,5623,10.51.84.239:5623,true
+MEH,DICOM,319fcf7f-ef08-4564-9dd1-33be634edfd4,inbound-listen,DICOM Listener,11112,listen 0.0.0.0:11112,true
+MEH,OpenEyes PAS v2,7d6b6b87-29ff-49e2-b4e5-38022c768b24,inbound-listen,TCP Listener,6661,listen 0.0.0.0:6661,true
+MEH,OpenEyes PAS Query v2,969561b8-b516-4fce-9b3e-6865d6f19602,inbound-listen,HTTP Listener,6663,listen 0.0.0.0:6663,true
+MEH,AIS OUT,8439efef-2f9a-46c9-9385-888b4c2d0b92,inbound-listen,HTTP Listener,6664,listen 0.0.0.0:6664,true
+MEH,AIS Sender,8c65e82d-cad1-44e9-b56e-efd400d726af,outbound-tcp,TCP Sender,8021,192.168.192.3:8021,true
+MEH,OpenEyes PAS Query v2,969561b8-b516-4fce-9b3e-6865d6f19602,outbound-tcp,TCP Sender,8021,192.168.192.3:8021,true
+Newmedica,DICOM,99f6d548-97f8-4400-96c4-ea388e72d48e,inbound-listen,DICOM Listener,11114,listen 0.0.0.0:11114,true
+Newmedica,OpenEyes PAS Out,18755f08-f96f-4896-bdee-0aa655ee62bb,inbound-listen,HTTP Listener,6663,listen 0.0.0.0:6663,true
+Newmedica,OpenEyes PAS In,1fac4399-a6ee-4fed-aa6a-1aea903485ee,inbound-listen,TCP Listener,8558,listen 0.0.0.0:8558,true
+Newmedica,OpenEyes Document In,0e8bdcb1-966a-4f0a-beb5-72bc6a027d12,inbound-listen,TCP Listener,8559,listen 0.0.0.0:8559,true
+Newmedica,OpenEyes PAS Out,18755f08-f96f-4896-bdee-0aa655ee62bb,outbound-tcp,TCP Sender,6667,172.20.128.37:6667,true
+Optegra,IOL,c14efd23-2c1c-4e53-a59f-dcfe0e727c3b,inbound-listen,DICOM Listener,11112,listen 0.0.0.0:11112,true
+Optegra,HFA2,81492d92-15a9-4109-8b65-9d95aa131200,inbound-listen,DICOM Listener,11113,listen 0.0.0.0:11113,true
+Optegra,PAS IN V2,d69815ee-68d1-4dcb-8896-8b12ba06a9c4,inbound-listen,TCP Listener,6661,listen 0.0.0.0:6661,true
+Optegra,DOCUMENTS IN,1208a953-4fe1-457a-85b3-f17f56a5b1c1,inbound-listen,TCP Listener,6662,listen 0.0.0.0:6662,true
+Pennine,DICOM_11118,da67d2ba-db52-4f50-898b-b534d71450ab,inbound-listen,DICOM Listener,11118,listen 0.0.0.0:11118,true
+Pennine,OpenEyes DICOM IOLMaster Channel,eee5caa4-786f-451b-9a89-f00aeb46f935,inbound-listen,DICOM Listener,11118,listen 0.0.0.0:11118,true
+Pennine,DICOM_11119,2d01d348-a78d-42b7-a206-410d30a2ff8b,inbound-listen,DICOM Listener,11119,listen 0.0.0.0:11119,true
+Pennine,OpenEyes DICOM Channel,ba5419a3-24a5-48a2-bd9b-5cb2072e87f4,inbound-listen,DICOM Listener,11119,listen 0.0.0.0:11119,true
+Pennine,OpenEyes PAS,6c3a10d1-968d-468e-9355-008946825b20,inbound-listen,TCP Listener,6662,listen 0.0.0.0:6662,true
+Pennine,OpenEyes PAS Query,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,inbound-listen,HTTP Listener,6663,listen 0.0.0.0:6663,true
+Pennine,OpenEyes PAS Query,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,outbound-tcp,TCP Sender,8400,192.168.96.60:8400,true
+Portsmouth,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,inbound-listen,DICOM Listener,11112,listen 0.0.0.0:11112,true
+Portsmouth,PAS IN V2,d69815ee-68d1-4dcb-8896-8b12ba06a9c4,inbound-listen,TCP Listener,6661,listen 0.0.0.0:6661,true
+Portsmouth,DOCUMENTS IN HL7,402e6dfd-1747-477f-8f75-7f4da2c97bc8,inbound-listen,TCP Listener,6662,listen 0.0.0.0:6662,true
+Portsmouth,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,inbound-listen,HTTP Listener,6663,listen 0.0.0.0:6663,true
+Portsmouth,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,outbound-tcp,TCP Sender,30029,192.168.27.203:30029,true
+Sussex,DICOM,c14efd23-2c1c-4e53-a59f-dcfe0e727c3b,inbound-listen,DICOM Listener,11112,listen 0.0.0.0:11112,true
+Sussex,PAS IN,d69815ee-68d1-4dcb-8896-8b12ba06a9c4,inbound-listen,TCP Listener,6661,listen 0.0.0.0:6661,true
+Sussex,PAS IN - Migration,6b9477af-6106-41b7-bd2e-3273c1c9b2d3,inbound-listen,TCP Listener,6662,listen 0.0.0.0:6662,true
+Sussex,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,inbound-listen,HTTP Listener,6663,listen 0.0.0.0:6663,true
+Sussex,PAS OUT,06f0b8b8-5ea0-41a4-a0bc-04b89fb5193c,outbound-tcp,TCP Sender,43442,10.179.63.224:43442,true
+Wales,DICOM,da67d2ba-db52-4f50-898b-b534d71450ab,inbound-listen,DICOM Listener,11118,listen 0.0.0.0:11118,true
+Wales,PAS IN,7a7288a3-5ade-46bc-921d-56baf0a6bf06,inbound-listen,TCP Listener,6661,listen 0.0.0.0:6661,true
+Wales,OpenEyes Query - BCUHB - Central,3b655b56-5d80-403e-a61e-97c3abf919a4,inbound-listen,HTTP Listener,6662,listen 0.0.0.0:6662,true
+Wales,OpenEyes Query - BCUHB - West,dbb9ec40-fc78-4f3c-82b6-552838ffe1d4,inbound-listen,HTTP Listener,6663,listen 0.0.0.0:6663,true
+Wales,OpenEyes Query - CVUHB,9b5a6e96-dfbf-4a1d-b29b-59ccb6c3505d,inbound-listen,HTTP Listener,6664,listen 0.0.0.0:6664,true
+Wales,OpenEyes Query - HDUHB,dcf60125-aa97-45b9-a819-d54008394dea,inbound-listen,HTTP Listener,6665,listen 0.0.0.0:6665,true
+Wales,OpenEyes Query - PTHB,e29c8a88-35df-4bbd-89b2-864153cfb42d,inbound-listen,HTTP Listener,6666,listen 0.0.0.0:6666,true
+Wales,OpenEyes Query - CTMUHB,0fa224a7-fe33-46ae-af0e-96d0ffd134c3,inbound-listen,HTTP Listener,6667,listen 0.0.0.0:6667,true
+Wales,OpenEyes Query - ABUHB,2e678abc-78ba-4220-93d3-846f765fd8dd,inbound-listen,HTTP Listener,6668,listen 0.0.0.0:6668,true
+Wales,OpenEyes Query - SBUHB,0e97b0f7-75db-41c8-b287-b4c0b574608b,inbound-listen,HTTP Listener,6669,listen 0.0.0.0:6669,true
