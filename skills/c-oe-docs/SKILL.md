@@ -45,6 +45,14 @@ everything else is ranked by keyword overlap against title/slug/label/group.
 in-container path, then `$PWD` - first one with `data/coverage.json` wins. Override with
 `--docs-root DIR` or `OE_DOCS_ROOT`.
 
+**If no docs root resolves**, the corpus simply isn't on this machine - the module lives
+outside this kit and is too large to vendor into it. Say so and offer to clone it, rather
+than falling back to app source silently:
+
+    git clone git@github.com:ToukanLabs/oedocumentation-test.git ~/Temp10/oedocumentation-test
+
+Then re-run the resolver; no other setup is needed (`resolve.py` is dependency-free).
+
 ## Answering discipline
 
 1. Resolve -> open the top page (`--show`). If the match is weak (low score / wrong branch),
@@ -59,14 +67,17 @@ in-container path, then `$PWD` - first one with `data/coverage.json` wins. Overr
 
 ## Other mechanisms (available; use the resolver first)
 
-- **coverage + sitemap joint index.** `data/coverage.json` (route -> doc_slug, status,
-  source_ref) pairs with the `oe-frontend-tests` sitemap (per-page DOM/control selectors) to
-  answer "which control on which screen" alongside "what does it do". Join on `uri`.
+- **coverage + page-index joint index.** `data/coverage.json` (route -> doc_slug, status,
+  source_ref) pairs with `c-oe-nav`'s `subs/page-index.md` (every screen's exact URL and
+  reach path) to answer "which control on which screen" alongside "what does it do". Join
+  on `uri`.
 - **Docset bundles for a Claude Project.** `yiic oedocs export --section=<s>` (and
   `docbuilder buildAll`) lower the corpus into self-contained docset bundles - drop a
   section's bundle into a Claude Project to ground a whole conversation in one manual.
 - **oe-map symbol -> doc_slug enrichment.** `source_ref` on each unit (e.g.
   `modules/OphCiExamination/...#action`) lets an oe-map code lookup jump straight from a
-  symbol to its documentation page, and back.
+  symbol to its documentation page, and back. oe-map is a separate host-local tool, not
+  part of this kit - skip this route if `~/oe-map` isn't checked out; `source_ref` on its
+  own already points at the file and symbol.
 
 When loaded as context with no task, reply only `Context loaded.`

@@ -159,4 +159,10 @@ Gotchas and adjacent commands:
 - **Seeders** (scenario builders): Yii-only `protected/seeders/` (`BaseSeeder`,
   `SeederBuilder`, `seeders/*Seeder.php`), driven by `./yiic seeder
   --event_type=... --seeder_class=...` to build whole clinical events for demo/test.
-  No Laravel seeders exist.
+  No Laravel seeders exist. Worked invocation, from the command's own `getHelp()`:
+  `./yiic seeder --event_type=OphCiExamination --seeder_class=InjectionManagementSeeder --eye_id=3 --right_injection_count=4 --left_injection_count=3 --patient_id=17895`.
+  `SeederCommand` defaults `firm_id=297`, `institution_id=1`, `site_id=1` - i.e. the
+  defaults are themselves sample-DB ids. They are **Cypress-scoped** (`protected/seeders/README.md`:
+  built to stand a scenario up for end-to-end testing), not a documented setup path, so a
+  seeder is a fine shortcut while *discovering* a bug but never appears in a ticket's steps;
+  see `c-oe-repro/subs/env-setup.md`, which writes the equivalent admin-UI clicks instead.

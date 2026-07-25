@@ -1,0 +1,3 @@
+interface:
+  display_name: "oe-probe-chrome"
+  short_description: "Drive OpenEyes in a real Chrome via the Claude-in-Chrome sidecar for interactive/gesture-heavy walks"

@@ -49,7 +49,9 @@ GITHUB_MODE=""                                  # -g / --with-github / "" (leave
 GITHUB_REMOVE=0                                 # --without-github sets to 1
 CODEX_MODE=""                                   # -x / --with-codex / "" (leave alone)
 CODEX_REMOVE=0                                  # --without-codex sets to 1
-SKILLS_AUTO=""                                  # -s on|off: flip disable-model-invocation across kit skills; "" -> off (plain runs restore true)
+CHROME_PROFILE_REMOVE=0                         # -B / --without-chrome-profile: unwire the old host-profile overlay
+WALKER_SETUP=0                                  # -w / --setup-walker: run docker/oe-chrome-agent/setup-walker.sh
+SKILLS_AUTO=""                                  # -s on|off: flip disable-model-invocation across kit skills; "" = leave as authored (report only)
 LOGOUT_MCP=""                                   # -l codex|github|atlassian|all: clear stored MCP credentials and exit (standalone action)
 PRUNE_BEFORE=""                                 # -d <days|date>: archive+delete sessions last active before the cutoff; "" = off
 CLEANUP_PERIOD_DAYS="${CLEANUP_PERIOD_DAYS:-365}"  # settings.json cleanupPeriodDays - Claude Code's own transcript retention
@@ -62,7 +64,7 @@ usage() {
 Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                   [-m <default|plan|acceptEdits|auto|dontAsk|bypassPermissions>]
                   [-s <on|off>] [-d <days|YYYY-MM-DD>]
-                  [-r] [-F] [-n] [-U] [-y] [-j] [-c] [-a | -A] [-g | -G] [-x | -X]
+                  [-r] [-F] [-n] [-U] [-y] [-j] [-c] [-a | -A] [-g | -G] [-x | -X] [-B] [-w]
 
   Every option has a single-letter (-x) and a long (--word) form.
   Short flags may be bundled: -jc == -j -c (value-taking -p / -m / -s / -d must be last).
@@ -152,20 +154,47 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       scope) and remove the kit's codex-compat links
                       (~/.codex/AGENTS.md + skill links). generated/.codex.env
                       and your ~/.codex login are left alone.
-  -s, --skills-auto   on|off (default off). Set the model-invocation gate on
-                      every kit skill in place (the SKILL.md files are live
-                      symlink targets):
-                      on   rewrites 'disable-model-invocation: true' -> 'false',
-                           so Claude may auto-pull any skill whose description
+  -B, --without-chrome-profile
+                      Undo the old host-profile overlay: remove the
+                      ~/.config/google-chrome symlink, but only if it points
+                      into this kit (foreign symlinks and real dirs are left
+                      alone). The oe-chrome-agent no longer uses a host
+                      profile - its Chrome profile lives in the container and
+                      dies with it, and only the two saved logins persist, in
+                      generated/oe-chrome-agent/ (see docs/chrome-agent.md).
+                      Reports generated/google-chrome/ if that old profile is
+                      still on disk; deleting it is left to you.
+  -w, --setup-walker  Run docker/oe-chrome-agent/setup-walker.sh: asks for the
+                      OE deployment's docker network, boots the container
+                      (always named claude-chrome, build output silenced -
+                      on failure it tells you to re-run setup-walker.sh
+                      directly to see why), and pauses for the one-time
+                      /login + extension sign-in, then saves both into
+                      generated/oe-chrome-agent/ so no later container needs
+                      them again (the pause is skipped once they are saved).
+                      OE_URL defaults to http://web; setup-walker.sh -u
+                      overrides. Needs nothing else wired first - the Chrome
+                      profile is created inside the container. With -y, reads
+                      the saved network from generated/.oe-chrome-agent.env
+                      instead of prompting (errors if OE_NETWORK isn't
+                      already known).
+  -s, --skills-auto   on|off. Set the model-invocation gate on every kit skill
+                      in place (the SKILL.md files are live symlink targets):
+                      on   snapshots each skill's current value to
+                           generated/skills-auto.state, then rewrites
+                           'disable-model-invocation: true' -> 'false', so
+                           Claude may auto-pull any skill whose description
                            matches the task.
-                      off  rewrites 'false' -> 'true', restoring the exact
-                           per-skill state 'on' started from. Skills that never
-                           carried the flag (the deliberate auto-load set) are
-                           untouched in both directions. Restart Claude Code to
-                           pick up the change.
-                      Omitting -s means off: every plain run restores the
-                      canonical mostly-true state, so -s on only lasts until
-                      the next install.
+                      off  restores every skill to its snapshotted value and
+                           clears the snapshot. With no snapshot it sets all
+                           flagged skills to 'true' (everything manual) and
+                           says so - it never guesses by inverting.
+                      Skills that never carried the flag (the deliberate
+                      auto-load set) are untouched in both directions. Restart
+                      Claude Code to pick up the change.
+                      Omitting -s changes nothing: the committed per-skill
+                      values are the intended state, and a plain run only
+                      reports them.
   -d, --prune-sessions
                       <days|date>. Archive-then-delete conversations whose last
                       activity is older than the cutoff - a bare number means
@@ -316,6 +345,12 @@ while [[ $# -gt 0 ]]; do
     -X | --without-codex)
         CODEX_REMOVE=1
         ;;
+    -B | --without-chrome-profile)
+        CHROME_PROFILE_REMOVE=1
+        ;;
+    -w | --setup-walker)
+        WALKER_SETUP=1
+        ;;
     -s | --skills-auto)
         requireValue "$@"
         SKILLS_AUTO="${2}"
@@ -364,6 +399,7 @@ codex_agents_md="${codex_home}/AGENTS.md"
 codex_skills_dir="${codex_home}/skills"
 codex_skills_manifest="${codex_home}/.claude-kit-skills"   # names of skills linked for codex, for prune-on-removal
 skills_src_dir="${kit_root}/skills"
+skills_auto_state="${generated_dir}/skills-auto.state"      # pre-flip per-skill gate values, so -s off restores rather than inverts
 memory_src_dir="${kit_root}/memory"
 claude_md_src="${kit_root}/claude-md/CLAUDE.md"
 statusline_src="${kit_root}/settings/statusline.sh"
@@ -529,11 +565,11 @@ case "${STATUSLINE_REFRESH}" in
         exit 1
         ;;
 esac
-# No -s -> off: a plain run always restores the canonical mostly-true state, so
-# a previous -s on never lingers past the next install.
+# No -s: leave every skill exactly as committed. The per-skill values in git are
+# the authored intent, so a plain run must not rewrite 40-odd tracked files as a
+# side effect of installing.
 case "${SKILLS_AUTO}" in
-    '')     SKILLS_AUTO="off" ;;
-    on|off) ;;
+    ''|on|off) ;;
     *) echo "Invalid --skills-auto '${SKILLS_AUTO}' - must be on|off" >&2; exit 1 ;;
 esac
 # Resolve the prune cutoff to an epoch now: a bare number is days-ago, anything
@@ -1528,43 +1564,98 @@ writeOpenAiSkillMeta() {
     fi
 }
 
-# -s/--skills-auto: flip the model-invocation gate on every kit skill in place.
-# The SKILL.md files are live symlink targets, so the change reaches ~/.claude
-# with no re-link - but skills bind at session start, so a restart is needed.
-# Only an existing disable-model-invocation line inside the frontmatter is
-# rewritten (true->false for on, false->true for off); skills that never carried
-# the flag (the deliberate auto-load set) are untouched in both directions, so
-# 'off' restores exactly the per-skill state 'on' started from. Runs every
-# install - SKILLS_AUTO defaults to off, so a plain run undoes a prior -s on.
-applySkillsInvocation() {
-    [ -d "${skills_src_dir}" ] || { echo "  no skills/ dir in kit - skipped"; return 0; }
-    local from to
-    if [ "${SKILLS_AUTO}" = "on" ]; then
-        from="true"; to="false"
-    else
-        from="false"; to="true"
-    fi
-    local f changed=0
+# Read a skill's disable-model-invocation value, or "" if it carries no flag.
+# Restricted to the frontmatter block (line 2 up to the closing ---), so a
+# literal mention in a skill body is never seen.
+skillGateValue() {
+    sed -n "2,/^---\$/p" "$1" | sed -n 's/^disable-model-invocation: \(true\|false\)$/\1/p' | head -1
+}
+
+# Rewrite a skill's disable-model-invocation value in place, same frontmatter
+# restriction. The SKILL.md files are live symlink targets, so the change
+# reaches ~/.claude with no re-link - but skills bind at session start.
+setSkillGateValue() {
+    sed -i "2,/^---\$/ s/^disable-model-invocation: \(true\|false\)\$/disable-model-invocation: $2/" "$1"
+}
+
+# One "<skill> <auto|manual>" line per flagged skill, plus the always-auto count.
+reportSkillsInvocation() {
+    [ -d "${skills_src_dir}" ] || return 0
+    local f v auto=0 manual=0 always=0
     for f in "${skills_src_dir}"/*/SKILL.md; do
         [ -f "${f}" ] || continue
-        # Restrict matching and rewriting to the frontmatter block (line 2 up to
-        # the closing ---), so a literal mention in a skill body is never touched.
-        if sed -n "2,/^---\$/p" "${f}" | grep -q "^disable-model-invocation: ${from}\$"; then
-            sed -i "2,/^---\$/ s/^disable-model-invocation: ${from}\$/disable-model-invocation: ${to}/" "${f}"
-            echo "  ${from}->${to}  ${f#"${kit_root}"/}"
-            changed=$((changed+1))
-        fi
+        v="$(skillGateValue "${f}")"
+        case "${v}" in
+            true)  manual=$((manual+1)) ;;
+            false) auto=$((auto+1)) ;;
+            *)     always=$((always+1)) ;;
+        esac
     done
-    if [ "${changed}" -eq 0 ]; then
-        if [ "${SKILLS_AUTO}" = "on" ]; then
-            echo "  all flagged skills already auto-invokable - no change"
-        else
-            echo "  all flagged skills already manual - no change"
-        fi
+    echo "  ${auto} auto-invokable, ${manual} manual, ${always} always-auto (no flag)"
+}
+
+# -s/--skills-auto: flip the model-invocation gate across kit skills.
+#
+# 'on' snapshots each flagged skill's current value to generated/skills-auto.state
+# before setting everything to false, and 'off' puts those exact values back -
+# a blind false->true inversion would silently demote skills that were authored
+# auto-invokable rather than flipped there. Skills carrying no flag at all (the
+# deliberate auto-load set) are untouched in both directions. With no -s the
+# function only reports: the committed values are the authored intent.
+applySkillsInvocation() {
+    [ -d "${skills_src_dir}" ] || { echo "  no skills/ dir in kit - skipped"; return 0; }
+
+    if [ -z "${SKILLS_AUTO}" ]; then
+        echo "  left as committed (pass -s on|off to change)"
+        reportSkillsInvocation
+        return 0
+    fi
+
+    local f name v changed=0
+
+    if [ "${SKILLS_AUTO}" = "on" ]; then
+        : > "${skills_auto_state}"
+        for f in "${skills_src_dir}"/*/SKILL.md; do
+            [ -f "${f}" ] || continue
+            v="$(skillGateValue "${f}")"
+            [ -n "${v}" ] || continue
+            name="$(basename "$(dirname "${f}")")"
+            printf '%s\t%s\n' "${name}" "${v}" >> "${skills_auto_state}"
+            [ "${v}" = "false" ] && continue
+            setSkillGateValue "${f}" false
+            echo "  true->false  ${f#"${kit_root}"/}"
+            changed=$((changed+1))
+        done
+        echo "  snapshot written to ${skills_auto_state#"${kit_root}"/}"
+    elif [ -f "${skills_auto_state}" ]; then
+        while IFS=$'\t' read -r name v; do
+            f="${skills_src_dir}/${name}/SKILL.md"
+            [ -f "${f}" ] || { echo "  skipped ${name} - no longer in the kit"; continue; }
+            [ "$(skillGateValue "${f}")" = "${v}" ] && continue
+            setSkillGateValue "${f}" "${v}"
+            echo "  restored ${v}  ${f#"${kit_root}"/}"
+            changed=$((changed+1))
+        done < "${skills_auto_state}"
+        rm -f "${skills_auto_state}"
+        echo "  snapshot consumed and cleared"
     else
-        echo "  flipped ${changed} skill(s) to auto-invocation ${SKILLS_AUTO}"
+        echo "  no snapshot to restore - setting every flagged skill to manual"
+        for f in "${skills_src_dir}"/*/SKILL.md; do
+            [ -f "${f}" ] || continue
+            [ "$(skillGateValue "${f}")" = "false" ] || continue
+            setSkillGateValue "${f}" true
+            echo "  false->true  ${f#"${kit_root}"/}"
+            changed=$((changed+1))
+        done
+    fi
+
+    if [ "${changed}" -eq 0 ]; then
+        echo "  nothing to change"
+    else
+        echo "  ${changed} skill(s) rewritten"
         echo "  restart Claude Code to pick up the change (skills bind at session start)"
     fi
+    reportSkillsInvocation
 }
 
 # Adopt every real ~/.claude/projects/<slug>/memory dir into the kit
@@ -1618,6 +1709,35 @@ syncMemory() {
         ln -s -- "${kitmem}" "${live}"
         echo "  link  -> ${live} -> ${kitmem}"
     done
+}
+
+# Undo the host-profile overlay an older kit put in place: ~/.config/google-chrome
+# symlinked onto generated/google-chrome/, so docker/oe-chrome-agent could bind-mount
+# its Chrome profile out of the kit. The agent no longer has a host-side profile -
+# Chrome's data dir lives in the container and is destroyed with it, and the only thing
+# that persists is generated/oe-chrome-agent/ (two small login files; see
+# docker/oe-chrome-agent/save-state.sh and docs/chrome-agent.md). That leaves the link
+# and the old profile as dead weight on hosts that ran the earlier layout.
+#
+# Only ever removes the link, and only when it points into THIS kit - a real directory
+# (a genuine desktop Chrome profile) or a foreign symlink is left alone. The profile
+# directory itself is only reported, never deleted: it may hold a browser history worth
+# keeping, so binning it is the human's call.
+# Driven by CHROME_PROFILE_REMOVE.
+unwireChromeProfile() {
+    local live="${HOME}/.config/google-chrome"
+    local kitdir="${generated_dir}/google-chrome"
+
+    if [ -L "${live}" ] && [ "$(readlink "${live}")" = "${kitdir}" ]; then
+        rm -f -- "${live}"
+        echo "  removed ${live} (kit link)"
+    else
+        echo "  ${live} is not a link into this kit - nothing to remove"
+    fi
+
+    if [ -d "${kitdir}" ]; then
+        echo "  ${kitdir} is still on disk ($(du -sh "${kitdir}" 2>/dev/null | cut -f1)) and is no longer used - delete it by hand if you don't want its browsing history"
+    fi
 }
 
 # Rebuild ~/.claude/skills/<name> symlinks from scratch on every run, and keep an
@@ -1933,7 +2053,21 @@ if [ "${CODEX_MODE}" = "on" ] || [ "${CODEX_REMOVE}" = "1" ]; then
     echo -e "[Done]\n"
 fi
 
-echo "Ensuring skill auto-invocation state (${SKILLS_AUTO})..."
+if [ "${CHROME_PROFILE_REMOVE}" = "1" ]; then
+    echo "Unwiring the old oe-chrome-agent Chrome profile overlay..."
+    unwireChromeProfile
+    echo -e "[Done]\n"
+fi
+
+if [ "${WALKER_SETUP}" = "1" ]; then
+    echo "Setting up the oe-chrome-agent walker..."
+    walker_flags=(-q)   # keep the docker build out of install.sh's output; errors still surface
+    [ "${ASSUME_YES}" = "1" ] && walker_flags+=(-y)
+    "${kit_root}/docker/oe-chrome-agent/setup-walker.sh" "${walker_flags[@]}"
+    echo -e "[Done]\n"
+fi
+
+echo "Checking skill auto-invocation state${SKILLS_AUTO:+ (-s ${SKILLS_AUTO})}..."
 applySkillsInvocation
 echo -e "[Done]\n"
 

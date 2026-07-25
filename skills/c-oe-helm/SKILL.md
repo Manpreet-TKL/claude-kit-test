@@ -15,11 +15,12 @@ a service is a values-only edit.**
 Location: canonical repo `git@github.com:ToukanLabs/helm.git`, checked out at
 `~/helm` on this host (chart at `~/helm/openeyes`, docs under `~/helm/docs/`).
 The repo `.gitignore` excludes the umbrella `/values.yaml` and `secrets.toml` -
-both are supplied per environment, so a fresh clone ships neither. The
-per-environment copies under `~/charts` (`nl`, `alpha`, `prod`, `uat`, `train`)
-are the legacy layout, each carrying its own `values.yaml` + `secrets.toml`
-(and some local bug fixes - see `~/charts-bugfix-analysis.md`). helm/kubectl
-binaries are NOT installed on this host - renders and deploys happen elsewhere.
+both are supplied per environment, so a fresh clone ships neither. The legacy
+layout kept per-environment copies (`nl`, `alpha`, `prod`, `uat`, `train`), each
+carrying its own `values.yaml` + `secrets.toml` and some local bug fixes; that
+tree is no longer checked out on this host, so `~/charts-bugfix-analysis.md` is
+the surviving record of what diverged. helm/kubectl binaries are NOT installed
+on this host - renders and deploys happen elsewhere.
 
 ## Chart identity
 

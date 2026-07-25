@@ -2,7 +2,7 @@
 
 When the atlas (`subs/paths.md`) and the fix branch's view code don't settle a label, a gesture, or an outcome - or the user wants proof - drive the real instance. **Run the walk in a cheap subagent**; only distilled steps come back to the main session (~2-5k tokens instead of 30-100k).
 
-The probe runs **inside the web container itself** via `docker exec` - the standard `oe-web-live` image (~99% of deployments) already ships Node, Puppeteer and Chrome (docman renders lightning previews with them). One driver covers everything: UI gestures, JS-rendered labels, and firing endpoints for proof. Nothing is installed, nothing is written to the image, no second container. For the rare image without the bundled browser (dev/debug images carry Playwright; browserless/remote-chrome stacks like monkey have no in-container browser) - or when a Playwright run is explicitly requested - use the fallback: `subs/probe-playwright.md`.
+The probe runs **inside the web container itself** via `docker exec` - the standard `oe-web-live` image (~99% of deployments) already ships Node, Puppeteer and Chrome (docman renders lightning previews with them). One driver covers everything: UI gestures, JS-rendered labels, and firing endpoints for proof. Nothing is installed, nothing is written to the image, no second container. For the rare image without the bundled browser (dev/debug images carry Playwright; browserless/remote-chrome stacks like monkey have no in-container browser) - or when a Playwright run is explicitly requested - load the `oe-probe-playwright` skill instead (its driver, `scripts/journey.playwright.mjs`, still lives in this skill's `scripts/`).
 
 ## When to probe
 
@@ -46,7 +46,7 @@ The full per-step dump repeats the whole page's chrome every step, so **the driv
 
 - The driver is a logged-in browser: `{"goto":"/eventImage/getImageInfo?event_id=123"}` fires an endpoint with the session, and a following `{"read":"body"}` prints the JSON response.
 - Real POSTs fire the way the app makes them - goto the page whose JS sends them (an event's print view POSTs `/eventImage/generateImage/<id>` on load).
-- Observe the server-side effect with a plain `docker exec` before and after the journey, e.g. `docker exec <stack>-web-1 sh -c 'ls -1 /tmp/oe_pdf* 2>/dev/null | wc -l'` - the pairing is what makes Steps to Reproduce provable.
+- Observe the server-side effect with a plain `docker exec` before and after the journey, e.g. `docker exec <stack>-web-1 sh -c 'ls -1 /tmp/oe_pdf* 2>/dev/null | wc -l'` - the pairing is what makes Steps to Reproduce provable. The same before/after shape generalises to the app's own logs (Yii `application.log`, the `OEExceptionHandlerLogs` JSON, PHP errors, the `audit` table): mark before, slice after. **`c-oe-repro/subs/logs.md` carries those one-liners and their fragilities** - use it rather than restating paths here, and note its caveat that the log bracket only fires on crash-class faults, so a clean slice never means "no bug". Whatever the walk is proving, it still has to end on one explicit predicate - usually a `{"read":"<tight selector>"}`.
 
 ## Subagent prompt template
 

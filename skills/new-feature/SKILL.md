@@ -48,10 +48,8 @@ Build the plan as an ordered list of phases. For each phase, name:
   | `Plan`                | Architect a step-by-step implementation plan when the design space is non-trivial.       |
   | `claude-code-guide`   | Questions about Claude Code itself, the Agent SDK, or the Anthropic API.                 |
   | `general-purpose`     | Open-ended multi-step research or coding work that doesn't fit the specialised agents.   |
-  | `code-review`         | Independent diff review at the end of an implementation phase.                           |
-  | `verify`              | Drive the running app to confirm the feature actually works end-to-end.                  |
 
-  Prefer running independent subagents **in parallel** (single message, multiple `Agent` calls) when their work doesn't depend on each other.
+  Prefer running independent subagents **in parallel** (single message, multiple `Agent` calls) when their work doesn't depend on each other. Two review/verify steps are skills rather than subagents: `/code-review` for an independent diff pass, and `/run` to drive the running app and confirm the feature works end-to-end.
 
 - **Verify check.** One concrete thing that proves the phase is done - a test name, a `curl` you'll run, a screenshot, a log line.
 
@@ -68,9 +66,9 @@ A good plan reads like:
    -> verify: `yiic migrate --all` and `phpunit tests/unit/.../FooTest.php` both green
 
 4. UI      , Opus inline, wire form + controller
-   -> verify: manual click-through (verify agent) + screenshot of success state
+   -> verify: manual click-through (/run) + screenshot of success state
 
-5. Review  , code-review subagent, final diff pass
+5. Review  , /code-review on the working diff
    -> verify: no high-severity findings
 ```
 
@@ -98,7 +96,7 @@ This is the line you'll re-quote at the end of every phase to check you haven't 
 | "Update the readme" | no |
 | "Investigate why X breaks" | no - debugging, not building |
 
-The skill is `disable-model-invocation: true` - Claude will not auto-load it. Invoke by name when you genuinely want this shape imposed on the work.
+Invoke by name when you genuinely want this shape imposed on the work - the table above is the trigger test, not a hint to reach for it on every task.
 
 ## What this skill is **not**
 

@@ -15,3 +15,5 @@
 settings/.atlassian.env
 settings/.github.env
 settings/.codex.env
+# oe-chrome-agent session outputs (screenshots/GIFs), not kit content.
+/docker/oe-chrome-agent/artifacts/

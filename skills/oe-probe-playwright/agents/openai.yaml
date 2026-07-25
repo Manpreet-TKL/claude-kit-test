@@ -1,0 +1,3 @@
+interface:
+  display_name: "oe-probe-playwright"
+  short_description: "Drive a running OpenEyes instance with Playwright when the bundled Puppeteer probe can't run"

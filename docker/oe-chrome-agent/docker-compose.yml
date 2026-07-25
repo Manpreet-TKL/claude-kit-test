@@ -1,0 +1,32 @@
+services:
+  oe-chrome-agent:
+    build: { context: . }
+    image: claude-kit-oe-chrome-agent
+    container_name: claude-chrome   # fixed, not project-prefixed - one walker per host
+    # Matches docker/codex/Dockerfile's convention: run as the invoking host user so files
+    # written into the mounted volumes stay user-owned. `export UID GID` before `up` (bash
+    # doesn't export UID/GID to subprocesses by default) or compose falls back to 1000:1000.
+    user: "${UID:-1000}:${GID:-1000}"
+    environment:
+      # http://web matches the OE deploy template's service name - compose aliases it on
+      # the network regardless of project prefix (snail-web-1, cat-web-1, ...), verified live.
+      OE_URL: "${OE_URL:-http://web}"
+      CHROME_KIOSK: "${CHROME_KIOSK:-0}"   # kiosk hides extension prompts - keep off unless recording
+      OE_USERNAME: "${OE_USERNAME:-admin}"
+      OE_PASSWORD: "${OE_PASSWORD:-admin}"
+      OE_INSTITUTION_ID: "${OE_INSTITUTION_ID:-1}"
+      OE_SITE_ID: "${OE_SITE_ID:-1}"
+    ports:
+      - "127.0.0.1:${NOVNC_PORT:-6080}:6080"   # noVNC web client - localhost only, tunnel in over SSH
+    volumes:
+      # The ONLY persistent state: two logins, ~1KB of JSON (see save-state.sh). The Chrome
+      # profile and ~/.claude both live in the container's writable layer and are destroyed
+      # with it, so every recreate is a clean browser that still comes up signed in.
+      - ../../generated/oe-chrome-agent:/home/agent/state
+      - ./artifacts:/home/agent/artifacts   # screenshots/GIFs, host-visible - mkdir -p artifacts before first `up`
+    networks: [oe_net]
+    stdin_open: true
+    tty: true
+
+networks:
+  oe_net: { external: true, name: "${OE_NETWORK}" }   # the OpenEyes deployment's docker network

@@ -4,7 +4,7 @@
 // The primary driver is ../scripts/journey.mjs (Puppeteer, runs inside the web-live
 // container). Use THIS one when the image carries Playwright instead (dev/debug),
 // when connecting to an existing browser over CDP (browserless/remote-chrome), or
-// in the Playwright sidecar container. Invocation: ../subs/probe-playwright.md
+// in the Playwright sidecar container. Invocation: the `oe-probe-playwright` skill.
 //
 //   node journey.playwright.mjs <actions.json | - | '[...]'>  [--shot <dir>]
 //   docker exec -i -e OE_ACTIONS='[...]' -w /var/www/openeyes <ctr> \

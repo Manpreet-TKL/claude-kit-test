@@ -1,0 +1,17 @@
+{
+  "MetricsReportingEnabled": false,
+  "DefaultBrowserSettingEnabled": false,
+  "ExtensionInstallForcelist": [
+    "fcoeoabgfenejglbffodgkkbkcdhcgfn;https://clients2.google.com/service/update2/crx"
+  ],
+  "ExtensionInstallBlocklist": ["*"],
+  "IncognitoModeAvailability": 1,
+  "BrowserSignin": 0,
+  "PasswordManagerEnabled": false,
+  "AutofillAddressEnabled": false,
+  "AutofillCreditCardEnabled": false,
+  "DefaultNotificationsSetting": 2,
+  "DownloadDirectory": "/home/agent/artifacts",
+  "PromptForDownloadLocation": false,
+  "RestoreOnStartup": 5
+}

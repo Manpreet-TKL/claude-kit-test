@@ -26,7 +26,7 @@ Inspect messages: parse `<connectorMessage>` by `<metaDataId>`; `<sent>` holds t
 
 - `GET/PUT /server/globalScripts` - mirror the exact map schema, mutate only the `Deploy` entry, PUT -> 204. Deploy any channel to make it run.
 - `GET/PUT /server/configurationMap` - **PUT REPLACES the whole map** (GET -> merge -> PUT); 204. Good as a server-side, never-exported secret store for a demo box.
-- Deploy-script template: `/home/toukan/common.js` - resolves each var `/run/secrets/<name>` -> env `<name>` -> config map -> default, puts it UPPER-CASED into `globalMap`, and pre-builds derived headers (`globalMap.put('OE_API_AUTH', 'Basic ' + base64(user+':'+pass))`).
+- Deploy-script template: `common.js` (at `~/mcauto/scripts/common.js` when that repo is checked out) - resolves each var `/run/secrets/<name>` -> env `<name>` -> config map -> default, puts it UPPER-CASED into `globalMap`, and pre-builds derived headers (`globalMap.put('OE_API_AUTH', 'Basic ' + base64(user+':'+pass))`).
 
 ## Secret-freeness acceptance test
 

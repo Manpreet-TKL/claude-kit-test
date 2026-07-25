@@ -27,7 +27,7 @@ Pin the `mc` image to the BridgeLink line for the OE version (kit pins the patch
 
 ## Secrets stay out of exports (globalMap pattern)
 
-Channel XML committed to git contains only `${VAR}`, never a password. The global Deploy script (template `/home/toukan/common.js`) resolves each var `/run/secrets` -> env -> config map -> default into `globalMap`, pre-building derived headers (`OE_API_AUTH` = `Basic <base64>`). Channel / code-template / global-script exports are secret-free; the full **Server Configuration export is NOT** (it embeds the configuration map) - never commit it. `PUT /server/configurationMap` replaces the whole map: GET -> merge -> PUT. No git plugin - "push to git" = export XML, then commit.
+Channel XML committed to git contains only `${VAR}`, never a password. The global Deploy script (template `~/mcauto/scripts/common.js` when that repo is checked out) resolves each var `/run/secrets` -> env -> config map -> default into `globalMap`, pre-building derived headers (`OE_API_AUTH` = `Basic <base64>`). Channel / code-template / global-script exports are secret-free; the full **Server Configuration export is NOT** (it embeds the configuration map) - never commit it. `PUT /server/configurationMap` replaces the whole map: GET -> merge -> PUT. No git plugin - "push to git" = export XML, then commit.
 
 ## Gotchas
 

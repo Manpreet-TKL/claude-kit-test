@@ -270,25 +270,31 @@ Neither flag = `mcpServers.codex` is left exactly as-is on re-runs.
 
 ### 14. Skills auto-invoke toggle (`--skills-auto on|off`)
 
-Most kit skills carry `disable-model-invocation: true`, so Claude only loads them when
-you invoke them by name. `-s on` rewrites that line to `false` in every kit `SKILL.md`
-(the files are live symlink targets - no re-link needed, but skills bind at session
-start, so restart Claude Code), letting Claude auto-pull any skill whose description
-matches the task. `-s off` rewrites `false` back to `true`:
+A kit skill carrying `disable-model-invocation: true` is loaded only when you invoke it
+by name; `false` lets Claude auto-pull it when its description matches the task. `-s on`
+rewrites `true` to `false` across every kit `SKILL.md` (the files are live symlink
+targets - no re-link needed, but skills bind at session start, so restart Claude Code):
 
 ```bash
 ./install.sh -s on  -p standard -yU    # everything auto-invokable
 ./install.sh -s off -p standard -yU    # back to how it was
 ```
 
+Before flipping, `-s on` snapshots each flagged skill's current value to
+`generated/skills-auto.state`, and `-s off` puts those exact values back and clears the
+snapshot. That matters because the flip is not symmetric: a skill authored `false` must
+stay `false` through an `on`/`off` round trip, and a blind `false` -> `true` inversion
+would quietly demote it. Run `-s off` with no snapshot and it sets every flagged skill
+to manual and says so, rather than guessing.
+
 Only an *existing* flag line inside the frontmatter is touched - the deliberate
 always-auto skills (`c-ascii`, `c-frontend-design`, `c-oe-docs`, `c-oe-helm`, `c-oe-ui`) carry no
-flag and are ignored in both directions, so `off` restores exactly the per-skill state
-`on` started from. The change is a plain git diff in `skills/` - revert with git if
-ever needed.
+flag and are ignored in both directions. The change is a plain git diff in `skills/` -
+revert with git if ever needed.
 
-**Omitting `-s` means `off`** - every plain run restores the canonical mostly-`true`
-state, so `-s on` is deliberately temporary: it lasts only until the next install.
+**Omitting `-s` changes nothing.** The committed per-skill values are the authored
+intent, so a plain run only reports the current tally (`N auto-invokable, M manual,
+K always-auto`) instead of rewriting 40-odd tracked files as an install side effect.
 
 ### 15. Conversation pruning + retention (`--prune-sessions`, `CLEANUP_PERIOD_DAYS`)
 

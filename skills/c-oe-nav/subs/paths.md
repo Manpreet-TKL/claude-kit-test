@@ -51,6 +51,8 @@ Top toolbar > shortcuts icon. Each item is `#js-nav-shortcuts-subnav a[href="<ur
 
 Notable destination details: Add Patient - 'Create new patient' `[data-test="save-patient"]`. Reports - lands on "Diagnoses report"; 'Display report' `[data-test="display-report-button"]`, 'Download report' `[data-test="download-report-button"]`. Partial bookings - 'Print all' `#btn_print_all`, 'Print selected' `#btn_print`. Theatre Diaries - heading "Search schedules"; 'Print' `#btn_print_diary`, 'Print list' `#btn_print_diary_list`. Patient Merge - heading "Merge Requests"; Filter / Add / Delete `#rq_delete`. Practices - "Practices: viewing 1 - 20 of 271", 'Create Practice'; rows -> `/practice/view/:id`. Practitioners - 'Add'; rows -> `/gp/view/:id`. Genetics - heading "Patients", Search `[data-test="search_bnt"]`. Virtual Clinic / Internal referrals (PatientTicketing) - per-ticket 'Review Patient' / 'Open record' `[data-test="ticket-action"]`. List pages paginate with `[data-test="pagination-previous|next"]`.
 
+Real field-level docs (filter fields, buttons, selectors) for all 20 one-page utility screens above plus Practices/Practitioners/Trials/Virtual Clinic are in `subs/app-forms.md` - check there before reading the module's controller/view PHP or probing by hand.
+
 ## Patient search -> patient summary
 
 - `/` is the search screen; the top toolbar also carries a patient-search field on every page. Accepts surname ("SMITH" / "SMITH, John"), hospital number, NHS number. Result rows have **no href** - they open via a JS row-click (true of most OE list rows). Sample patient 17891 is "BLACKWELL, Elizabeth (Mrs)".
@@ -95,18 +97,7 @@ All 23 event types on develop/26.x ('Select New Event' label -> `event_type_id`,
 | Request Form | 49 | OphCoRequestForm |
 | Therapy Application | 35 | OphCoTherapyapplication |
 
-Create-form field labels are **not** in this atlas - read them from `protected/modules/<Module>/views/default/form_*.php` on the fix branch, or probe. One exception, recorded because repros keep landing on it:
-
-### Document create form (OphCoDocument, event_type_id 40) - verified live v11.0.18 (2026-07)
-
-The trigger path for the PDF/render temp-file bug family (`oe_pdf` stubs, `magick-*` pixel cache): upload a PDF, then build its page previews.
-
-- 'Event Sub Type' dropdown `#Element_OphCoDocument_Document_event_sub_type` (empty option '-- Select --'; options from `ophcodocument_sub_types` - sample id 1 = "General").
-- 'Upload' row radios: 'Single file' `#upload_single` (checked by default), 'Right/Left sides'.
-- File input `#Document_single_document_row_id` (`.js-document-file-input`) is `display:none` - the probe's upload action works on it anyway. Drop-zone label: "Click to select file, DROP here or press Ctrl + V to paste".
-- In-container test PDF (web-live ships ghostscript; one `showpage` per page): `gs -q -o /tmp/twopage.pdf -sDEVICE=pdfwrite -dDEVICEWIDTHPOINTS=300 -dDEVICEHEIGHTPOINTS=300 -c "showpage showpage"`.
-- 'Save' `#et_save` -> lands on `/OphCoDocument/default/view/<event_id>` - take the id from the URL for endpoint work.
-- Page previews build server-side (`createPdfPreviewImages()`): fire logged-in `GET /eventImage/getImageInfo?event_id=<id>` (the same path the lightning-viewer icon fires) and re-fire after a few seconds until the JSON shows `page_count`. Temp-leak pairing: `docker exec <stack>-web-1 sh -c 'ls -1 /tmp/oe_pdf* 2>/dev/null | wc -l'` before/after.
+Create-form field labels for all 23 event types above are in `subs/event-forms.md` - one section each (label, selector, type, required-ness, default/pre-fill), read from the view PHP on `develop` and live-checked against the running app. Check there before reading `protected/modules/<Module>/views/default/form_*.php` or probing by hand.
 
 ## Event view / edit / delete
 
@@ -114,6 +105,8 @@ The trigger path for the PDF/render temp-file bug family (`oe_pdf` stubs, `magic
 - Delete flow: confirm with 'Yes - DELETE Event' `[data-test="delete-event"]`, cancel `#et_canceldelete`. Operation booking views add 'Put on Hold' `#et_put_on_hold` / `#et_cancel_put_on_hold`. Save on create/edit forms is `#et_save`.
 - Episode sidebar subspecialty letters (GL, CA, ...) link to OEscape charts `/patient/oescape?subspecialty_id=<id>&patient_id=<pid>`.
 - Rich sample event views on 17891 (all Glaucoma episode): Examination `/OphCiExamination/default/view/3686607`, Correspondence `.../3686608`, Operation note `/OphTrOperationnote/default/view/3686606`, Consent `/OphTrConsent/default/view/3686605`, Operation booking `.../3686604`, Laser `/OphTrLaser/default/view/3686602`, Prescription `/OphDrPrescription/default/view/3686592`, Message `/OphCoMessaging/default/view/3686590`, Biometry `/OphInBiometry/default/view/3686331`, Generic/Visual Fields `/OphGeneric/default/view/3686718`.
+- Need a sample event id beyond that list? `grep '^| patient-record\|^| patient-summary' subs/page-index.md` already enumerates every event-view URL/heading reachable from 17891's timeline - check there before re-probing one by hand.
+- Real field-level docs (section headings, fields, buttons) for the 10 distinct event-view module templates behind those 24 crawled pages are in `subs/app-forms.md`'s "Patient record - event views" section - check there before reading `protected/modules/<Module>/views/default/view.php` or probing by hand.
 
 ## Worklist (clinic manager)
 
@@ -128,10 +121,47 @@ Single-URL app at `/worklist/view` - every sub-view is an in-page panel/tab/dial
 
 ## Admin
 
-- Menu > Admin -> `/admin` redirects to `/admin/users`. Sidebar `.oe-full-side-panel.admin-panels`, sections **alphabetical**, the current section expanded to show its pages (~267 pages total on develop).
-- Sections (30, verified v11.0.18; develop's crawl had 33): Biometry, CVI, Checklists, Consent form, Core, Correspondence, Disorders, Document, Drugs, Event Export, Examination, Generic event, Genetics, Intravitreal injection, Investigation management, Lab results, Laser, Leaflets, Message, Operation booking, Operation note, PASAPI, PatientTicketing, Payload processor API, Procedure management, Request forms, SSO settings, System, Therapy application, Worklist.
+- Menu > Admin -> `/admin` redirects to `/admin/users`. Sidebar `.oe-full-side-panel.admin-panels`, sections **alphabetical**, the current section expanded to show its pages (267 pages total across the 33 sections below - not the 390 figure elsewhere in this file, which is the whole-site crawl across all 62 areas, admin + non-admin).
 - Core's pages (the most-touched admin area, verified v11.0.18): Users, Institutions, Sites, Teams, Subspecialty (+ Subsections), Contexts and Services, Patient Identifier Types, Patient Shortcodes, Contacts, Contact labels, Commissioning bodies (+ services, service types, body types), Data sources, Element/Event Type Custom Text, Event deletion requests, Ethnic Groups, Examination Event Logs, LDAP Configurations, PAS Configuration, SSO Configurations.
 - Module sections use **module-prefixed** routes, not `/admin/...`: e.g. Examination `/OphCiExamination/admin/<Thing>`, plus `/oeadmin/...`, `/Admin/...`, `/sso/...`.
-- Biggest sections: examination (77 pages), core (25), drugs (18), operation-booking (16), intravitreal-injection (15), correspondence and cvi (10 each).
 - Lookup-table admin pages follow one pattern: heading "Edit <Thing>s", rows with 'Add' `[data-test="add-row"]`, 'Save' `[data-test="save-rows"]` (some settings pages use `#et_admin-save`), delete per row `[data-test="delete-row"]`.
-- When `~/oe-frontend-tests/docs/sitemap/` exists, `areas/admin__<section>.md` lists every page in a section with its exact URL and heading - use it as an accelerator; otherwise probe.
+- A second generic pattern, seen across Biometry/Drugs/Examination/Operation Booking/PatientTicketing/Worklist lookup pages: multi-select rows + 'Add selected to current institution' / 'Remove selected from current institution' (some pages: 'Enable'/'Disable' instead of 'Add'/'Remove') - an institution-mapping variant of the same lookup-table pattern, not bespoke per-page behaviour.
+- A third generic pattern, seen on Core's Commissioning bodies/services/types pages and CVI's Local Authorities: checkbox multi-select + a themed 'Remove <Thing>(s)' bulk button instead of per-row delete - same lookup-table pattern, bulk-delete variant.
+- Real field-level docs (label, selector, type, required-ness, default/pre-fill) for the ~86 admin pages with genuinely non-generic fields are in `subs/admin-forms.md`, one `###` per section (matching the table below) with a `####` per documented page. The other ~181 pages are the plain lookup-table pattern(s) above and don't get bespoke entries.
+- All 33 sections, from the develop crawl (`UNRELEASED (develop - dev)`, 2026-06-25). Every page's exact URL, route and reach path is vendored in `subs/page-index.md` - `grep '^| admin/<section>' subs/page-index.md` before probing by hand. Regenerate both with `scripts/build-page-index.sh` when the crawl is refreshed.
+
+| Section | Pages | Sitemap file |
+|---|---|---|
+| Allergies | 5 | `areas/admin__allergies.md` |
+| Biometry | 2 | `areas/admin__biometry.md` |
+| Checklists | 2 | `areas/admin__checklists.md` |
+| Consent Form | 8 | `areas/admin__consent-form.md` |
+| Core | 25 | `areas/admin__core.md` |
+| Correspondence | 10 | `areas/admin__correspondence.md` |
+| CVI | 10 | `areas/admin__cvi.md` |
+| Disorders | 5 | `areas/admin__disorders.md` |
+| Document | 1 | `areas/admin__document.md` |
+| Drugs | 18 | `areas/admin__drugs.md` |
+| Event Export | 1 | `areas/admin__event-export.md` |
+| Examination | 77 | `areas/admin__examination.md` |
+| Generic Event | 6 | `areas/admin__generic-event.md` |
+| Genetics | 3 | `areas/admin__genetics.md` |
+| Intravitreal Injection | 15 | `areas/admin__intravitreal-injection.md` |
+| Investigation Management | 1 | `areas/admin__investigation-management.md` |
+| Lab Results | 1 | `areas/admin__lab-results.md` |
+| Laser | 3 | `areas/admin__laser.md` |
+| Leaflets | 2 | `areas/admin__leaflets.md` |
+| Medical Device Usage | 2 | `areas/admin__medical-device-usage.md` |
+| Message | 2 | `areas/admin__message.md` |
+| Operation Booking | 16 | `areas/admin__operation-booking.md` |
+| Operation Note | 8 | `areas/admin__operation-note.md` |
+| PASAPI | 1 | `areas/admin__pasapi.md` |
+| PatientTicketing | 5 | `areas/admin__patientticketing.md` |
+| Payload Processor API | 6 | `areas/admin__payload-processor-api.md` |
+| Procedure Management | 9 | `areas/admin__procedure-management.md` |
+| Referral | 2 | `areas/admin__referral.md` |
+| Request Forms | 3 | `areas/admin__request-forms.md` |
+| SSO Settings | 2 | `areas/admin__sso-settings.md` |
+| System | 2 | `areas/admin__system.md` |
+| Therapy Application | 7 | `areas/admin__therapy-application.md` |
+| Worklist | 7 | `areas/admin__worklist.md` |

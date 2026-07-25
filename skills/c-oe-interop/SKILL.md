@@ -43,5 +43,5 @@ OpenEyes integrates with hospital systems (PAS, medical/imaging devices, documen
 
 ## Key anchors
 
-- Source guide: `/home/toukan/oe_interop_guide.doc` (Confluence MHTML export, v1.1.1, 8 Jun 2026).
+- Source guide: the OpenEyes interoperability guide, Confluence MHTML export v1.1.1, 8 Jun 2026. It was transcribed into this skill's `subs/` and is no longer on this host - re-export it from Confluence if you need the original.
 - Siblings: `c-mirth` (BridgeLink/Mirth engine + REST), `c-mcchannels` (the actual OE PAS/interop channels), `c-pasapi` (PASAPI v2 + OpenMRS->BridgeLink->OE flow), `c-oe-iolmaster-import` and `c-oe-payload-processor` (DICOM/device-result importers feeding device events).

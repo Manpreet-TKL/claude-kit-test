@@ -37,13 +37,19 @@ satellite>. Target <branch - e.g. release/26.0.x>. Back-port? list both.
 > as the GitHub Summary.
 
 ### Steps to Reproduce
-> A generic, **frontend-only** click-path any user can follow without knowing what the
+> An **optional** `**Environment setup**` preamble comes first when - and only when - a stock
+> sample database lacks a configuration the fault needs (a second site, an extra role, an
+> enabled event type). Same rules as the steps below, admin-UI clicks only. **Omit it
+> entirely when nothing is needed**, which is the common case.
+>
+> Then a generic, **frontend-only** click-path any user can follow without knowing what the
 > page does - numbered, **one sentence per step**, each naming the exact control by its
 > on-screen label (quoted) and where it sits. Client-agnostic (actor by role, data by
-> *kind*, never creds/seed/sample-DB). Start at login if a session is needed; end on an
-> observable check. Rules, worked example and special cases live in the **`c-oe-repro`**
-> skill - run it if the steps aren't already in this conversation.
-> 1. Log in as an administrator (a user with full access).
+> *kind*, never creds/seed/sample-DB); no container names, paths or CLI in either block.
+> Start at login if a session is needed; end on an observable check. Rules, worked example
+> and special cases live in the **`c-oe-repro`** skill - run it if the steps aren't already
+> in this conversation.
+> 1. Log in.
 
 ### Current Outcome
 > What actually happens at the end of the steps. One or two lines.
@@ -118,8 +124,10 @@ Paste each block into the matching section of the live OE PR template.
 ### Notes for Reviewers
 > Simple bullets: edge cases, clinical-safety invariants touched and how handled,
 > stack-specific verification that doesn't belong in Steps (cache clears, container
-> names), related-but-unfixed occurrences (file:line + recommended approach).
-> Skip if genuinely nothing to add.
+> names), deployment/infra preconditions that aren't user-clickable (an integration
+> channel, a cron, a feature env var, a module switch), what the repro's log bracket
+> caught and which files were attached to the ticket, related-but-unfixed occurrences
+> (file:line + recommended approach). Skip if genuinely nothing to add.
 ```
 
 Section shape by type: the Steps/Current/Expected triad fits Bug and Regression; drop it for feature/planning types. Skip lighter sections when the change is self-evident; never pad; if a fault can't be reduced to clean steps (intermittent, data-dependent), say what you can - don't fabricate.
@@ -127,6 +135,10 @@ Section shape by type: the Steps/Current/Expected triad fits Bug and Regression;
 ## Steps to Reproduce - owned by `c-oe-repro`
 
 The rules, the worked example, and the special cases (performance/refactor tickets with no repro, client-data-dependent faults, intermittent alerts) now live in the **`c-oe-repro`** skill. If the Steps to Reproduce aren't already in this conversation, run `c-oe-repro` to produce them before assembling the folder, then paste its blockquote into the `## Steps to Reproduce` block. Essentials it enforces: frontend-only, followable blind by someone who has never used the page, client-agnostic (no creds/seed/hospital numbers), plain language (no code), ends on an observable check. Drop the section entirely for types with no user-observable behaviour (performance/internal refactor).
+
+`c-oe-repro` returns **up to two blockquotes** - an optional `**Environment setup**` block, then the steps themselves - because a developer configures their sample database once to match the reporter's instance and only then follows the repro. Paste both into this section, setup first. **A missing setup block is normal, not an omission**: most faults need no configuration a stock sample database lacks, and the output is then exactly the single blockquote this template has always taken.
+
+It also returns a plain-text **Evidence** list (version, R1/R2 replay results, the terminal predicate, the support identifier, and a path to a log bundle). That is for you, not a paste target - nothing from it goes into the ticket description. Log slices and screenshots are ticket *attachments*; the parts a reviewer needs in prose go in *Notes for Reviewers*.
 
 ## Jira ticket type - pick exactly one
 
