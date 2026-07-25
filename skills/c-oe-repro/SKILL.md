@@ -42,6 +42,13 @@ Still unknown after that? **Hand the walk to a cheap (Haiku) subagent** and ask 
 
 > **Chrome discovers the path. Puppeteer proves it. Confirmation replays never run in Chrome.**
 
+**Say which browser you are driving before you drive it.** Every walk is one of two things and the user should never have to guess which they are paying for:
+
+1. **Claude in Chrome** (`oe-probe-chrome`, the walker sidecar) - **the default**. Announce it in one line before the first drive: *"Walking this in Claude in Chrome"*, plus what it will cost if the walk is more than a couple of stages.
+2. **Puppeteer/Playwright** (`journey.mjs`, `oe-probe-playwright`) - cheaper and scriptable, but blind to gestures, canvas and rich-text/iframe state.
+
+Default to Chrome and **ask before switching to the scripted lane**, naming why (the path is already canned, the predicate is plain DOM text, it is a bulk sweep). Switching the other way - starting scripted and escalating to Chrome because the predicate turned out to be JS or gesture state - is a cost increase: say so and get a yes first.
+
 Enter rung 3 by invoking the **`oe-probe-chrome`** skill, which owns `drive.sh` - never by hand-rolling a `docker exec` into the container. Scope that session to one job (find and narrate the click path), then immediately distil it into `c-oe-nav/subs/canned/<journey>.md` so every later run of the journey is rung 1.
 
 ## The rules - what makes steps followable

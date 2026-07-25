@@ -7,7 +7,7 @@
 # Reach for this when you want the container itself gone - a different OE deployment, a
 # different network, or a handover.
 #
-# Default: destroy the container, keeping the two saved logins in generated/oe-chrome-agent/ -
+# Default: destroy the container, keeping the two saved logins in ~/.claude/oe-chrome-agent/ -
 # a same-day, same-user reset that needs no re-authentication afterwards.
 # -f/--full: also delete those saved logins, for a shared host or a handover. The next
 # boot then needs an interactive /login and extension sign-in again.
@@ -53,8 +53,8 @@ done
 ##################################################
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-kit_root="$(dirname "$(dirname "${script_dir}")")"
-state_dir="${kit_root}/generated/oe-chrome-agent"
+# shellcheck source=state-dir.sh
+. "${script_dir}/state-dir.sh"   # sets state_dir, exports OE_CHROME_STATE_DIR for compose down
 container="${CHROME_CONTAINER:-claude-chrome}"
 # down needs the compose file to interpolate; the real values don't matter for teardown.
 export OE_NETWORK="${OE_NETWORK:-bridge}"

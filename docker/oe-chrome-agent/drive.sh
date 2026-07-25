@@ -55,6 +55,15 @@ while [[ $# -gt 0 ]]; do
 done
 
 ##################################################
+### VARIABLES (See end of script for execution) ##
+##################################################
+
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+log_file="${script_dir}/artifacts/drive.log"
+# shellcheck source=state-dir.sh
+. "${script_dir}/state-dir.sh"   # sets state_dir (the saved logins live outside the kit)
+
+##################################################
 ### CHECKS (See end of script for execution)    ##
 ##################################################
 
@@ -65,9 +74,19 @@ echo "Checking a prompt was given..."
 [ -n "${prompt}" ] || { echo "No prompt - usage: ./drive.sh [-s <id>] [-t <tag>] [-f <map>] \"<prompt>\""; exit 1; }
 echo "[OK]"
 
+echo "Checking the saved logins exist..."
+if [ ! -f "${state_dir}/claude-credentials.json" ] || [ ! -f "${state_dir}/extension-state.json" ]; then
+    echo "No saved logins in ${state_dir}"
+    echo "The walker needs a one-time CLI /login and extension sign-in before it can drive."
+    echo "Generate them now with the guided first run:  ${script_dir}/setup-walker.sh"
+    echo "(or, if you have already signed in inside a running container, just ${script_dir}/save-state.sh)"
+    exit 1
+fi
+echo "[OK]"
+
 echo "Checking the agent container is running..."
 container="$(docker ps -q --filter "name=^claude-chrome$" | head -n1)"
-[ -n "${container}" ] || { echo "claude-chrome container not running - docker compose up -d first"; exit 1; }
+[ -n "${container}" ] || { echo "claude-chrome container not running - run ${script_dir}/setup-walker.sh, or docker compose up -d"; exit 1; }
 echo "[OK]"
 
 if [ -n "${map_file}" ]; then
@@ -78,13 +97,6 @@ fi
 
 echo "Checks complete ..."
 echo "-------------------------------"
-
-##################################################
-### VARIABLES (See end of script for execution) ##
-##################################################
-
-script_dir="$(cd "$(dirname "$0")" && pwd)"
-log_file="${script_dir}/artifacts/drive.log"
 
 ##################################################
 ### FUNCTIONS (See end of script for execution) ##

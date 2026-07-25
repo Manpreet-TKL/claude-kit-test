@@ -16,13 +16,17 @@ A single-script Claude Code setup. Run `./install.sh -q` to configure `~/.claude
 │   │   └── yolo.json       # tier 4 - git mutations + `rm -rf` still denied, secrets reads go through (container/VM only)
 │   ├── shift-enter.json    # newline-on-shift-enter fragment
 │   ├── mcp-atlassian.json  # Atlassian Remote MCP fragment (opt-in)
-│   ├── .atlassian.env.example # Jira/Confluence creds template -> copy to generated/.atlassian.env
-│   ├── .github.env.example # GitHub read-only PAT template -> copy to generated/.github.env
-│   └── .codex.env.example  # Codex agent defaults template -> copy to generated/.codex.env
-├── generated/              # ALL machine-local creds/config (gitignored wholesale; back this up)
-│   ├── .atlassian.env      #   real Jira/Confluence creds (created by install.sh -j/-c)
-│   ├── .github.env         #   real GitHub PAT          (created by install.sh -g)
-│   └── .codex.env          #   Codex model/sandbox knobs (created by install.sh -x; no secret)
+│   ├── .atlassian.env.example # Jira/Confluence creds template -> copy to ~/.claude/mcp-env/.atlassian.env
+│   ├── .github.env.example # GitHub read-only PAT template -> copy to ~/.claude/mcp-env/.github.env
+│   └── .codex.env.example  # Codex agent defaults template -> copy to generated/.codex.env (no secret)
+├── generated/              # machine-local config, NO secrets (gitignored; back this up)
+│   ├── .codex.env          #   Codex model/sandbox knobs (created by install.sh -x; no secret)
+│   ├── .oe-chrome-agent.env #  walker network + OE URL     (created by install.sh -w; no secret)
+│   └── mcp-on/             #   one-shot MCP startup-gate flags
+│                           # SECRETS LIVE OUTSIDE THIS REPO - see below:
+│                           #   ~/.claude/mcp-env/.atlassian.env   (install.sh -j/-c)
+│                           #   ~/.claude/mcp-env/.github.env      (install.sh -g)
+│                           #   ~/.claude/oe-chrome-agent/         (install.sh -w, walker logins)
 ├── skills/                 # each dir symlinked into ~/.claude/skills/<name>
 │   │                       #   context skills are prefixed c-; manual (disable-model-invocation) is the default
 │   ├── c-frontend-design/  #   auto-load ┐ no disable-model-invocation -
@@ -53,7 +57,7 @@ The installer writes / merges:
 - `~/.claude/CLAUDE.md` - **symlinked** to `claude-md/CLAUDE.md` in this kit (never-commit/push rules + condensed Karpathy guidelines); editing the kit file is live.
 - `~/.claude/skills/<name>` - symlinked to `skills/<name>` in this kit.
 
-Machine-local credentials and config the installer generates (Atlassian / GitHub / Codex) all land in **one gitignored folder, `generated/`**, so you can back up that single folder, `git reset --hard` + `git clean -fdx` the whole kit, and drop it back in - see [Backing up generated config](#backing-up-generated-config). MCP server registrations themselves are written by the `claude` CLI to `~/.claude.json` (not `settings.json`).
+**No secret ever lives inside this repo.** Tokens, cookies, keys and saved sessions go under `~/.claude/` - `~/.claude/mcp-env/` for the Atlassian and GitHub credentials, `~/.claude/oe-chrome-agent/` for the Chrome walker's two saved logins. This kit is a git repo with a remote, so anything in its working tree is one `git add -f`, one `.gitignore` edit or one archive away from being published; `.gitignore` is a convenience, not a security control. What the installer *does* keep in the gitignored `generated/` folder is machine-local **non-secret** config (Codex model knobs, the walker's network/URL, the MCP startup-gate flags) - see [Backing up generated config](#backing-up-generated-config). MCP server registrations themselves are written by the `claude` CLI to `~/.claude.json` (not `settings.json`), and those *do* embed the token, which is why `~/.claude.json` is also outside the kit.
 
 It backs up the pre-existing `settings.json` to `settings.json.bak` only when the merged content actually differs, so a no-op re-run preserves your existing backup. The first time it converts a real `~/.claude/CLAUDE.md` (or `statusline.sh`) into the kit symlink it backs that file up to `*.bak`; once it's a symlink there's nothing left to back up. `settings.json` is edited as JSON via `jq` (never blind text-append).
 
@@ -224,7 +228,7 @@ analogue of the never-`git push`/never-`git commit` hard floor. The human raises
 (see the `create-oe-pr` skill).
 
 Authentication is a **fine-grained, read-only** personal access token (with `openeyes`
-org access), stored in `generated/.github.env` (mode 600, gitignored) - never on the
+org access), stored in `~/.claude/mcp-env/.github.env` (mode 600, gitignored) - never on the
 `docker` command line. After opting in, restart Claude Code and run `/githubmcp` to
 verify. Full setup, token minting, rotation, and teardown live in
 **[docs/github.md](docs/github.md)**.
@@ -343,7 +347,7 @@ removes:
 
 - **codex** - `~/.codex/auth.json` (the ChatGPT session). The registration stays in
   place; a fresh container `login` brings the tools straight back.
-- **github / atlassian** - the `generated/` env file **and** the `~/.claude.json`
+- **github / atlassian** - the `~/.claude/mcp-env/` env file **and** the `~/.claude.json`
   registration, because that registration embeds the token.
 
 Everything is local-only: each block prints where to revoke the token server-side
@@ -388,22 +392,30 @@ If `--reset` archived directories you turn out to need, they're at `~/.claude-ba
 
 ## Backing up generated config
 
-Every credential and machine-local setting the installer writes *into the kit* lives in
-one gitignored folder: **`generated/`** (`.atlassian.env`, `.github.env`, `.codex.env`).
-Nothing else in the repo is machine-specific. So you can wipe the kit back to a pristine
-checkout and keep your creds with a back-up / restore around the reset:
+Machine-local state splits in two, and the split is deliberate:
+
+| Where | What | Backed up by |
+|---|---|---|
+| `~/claude-kit/generated/` (gitignored) | non-secret knobs: `.codex.env`, `.oe-chrome-agent.env`, `mcp-on/` | copy the folder |
+| `~/.claude/mcp-env/`, `~/.claude/oe-chrome-agent/`, `~/.claude/.credentials.json` | every actual secret | outside the kit; `install.sh --fresh` preserves them |
+
+Nothing else in the repo is machine-specific, so you can wipe the kit back to a pristine
+checkout with a back-up / restore around the reset - and your credentials are not even in
+the blast radius:
 
 ```bash
 cp -a ~/claude-kit/generated /tmp/claude-kit-generated.bak   # 1. back up the one folder
 cd ~/claude-kit && git reset --hard && git clean -fdx        # 2. pristine checkout (clears generated/)
-cp -a /tmp/claude-kit-generated.bak/. ~/claude-kit/generated/ # 3. drop creds back in
-./install.sh -p standard -y                                  # 4. re-apply (re-registers MCP servers from the env files)
+cp -a /tmp/claude-kit-generated.bak/. ~/claude-kit/generated/ # 3. drop the knobs back in
+./install.sh -p standard -y                                  # 4. re-apply (re-registers MCP servers from ~/.claude/mcp-env/)
 ```
 
 `git reset --hard` alone won't touch `generated/` (it's ignored); it's `git clean -fdx`
 that removes it - hence the back-up. Step 4 re-reads the env files non-interactively and
-re-registers any MCP servers. An older install with creds still in `settings/.*.env` is
-migrated into `generated/` automatically on the next run.
+re-registers any MCP servers. An older install with creds still in `settings/.*.env` or
+`generated/.*.env` has them migrated to `~/.claude/mcp-env/` automatically on the next
+run, and the in-repo copies removed.
 
 (MCP server registrations also live in `~/.claude.json`, outside the kit - re-running
-install.sh with the relevant `-j`/`-c`/`-g`/`-x` flags rebuilds them from `generated/`.)
+install.sh with the relevant `-j`/`-c`/`-g`/`-x` flags rebuilds them from
+`~/.claude/mcp-env/`.)

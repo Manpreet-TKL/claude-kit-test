@@ -48,9 +48,9 @@ cd ~/claude-kit
 ./install.sh -g -p standard
 ```
 
-If `generated/.github.env` does not already contain the token, install.sh prompts for
+If `~/.claude/mcp-env/.github.env` does not already contain the token, install.sh prompts for
 `GITHUB_PERSONAL_ACCESS_TOKEN` (hidden) and an optional `GITHUB_TOOLSETS` filter. The
-value is saved to `generated/.github.env` (mode 600, gitignored). install.sh then
+value is saved to `~/.claude/mcp-env/.github.env` (mode 600, gitignored). install.sh then
 registers the server at **user scope** via `claude mcp add-json github ... -s user`
 (stored in `~/.claude.json`, not `settings.json` - Claude Code reads MCP servers only
 from there). Restart Claude Code to pick up the changes, then run `/githubmcp` to verify.
@@ -66,7 +66,7 @@ Claude Code to have the server up from the start.
 
 ## Token rotation
 
-Edit `generated/.github.env` to replace the old token, then re-run with `-y` to apply
+Edit `~/.claude/mcp-env/.github.env` to replace the old token, then re-run with `-y` to apply
 silently:
 
 ```bash
@@ -80,16 +80,16 @@ silently:
 ```
 
 Deregisters the server (`claude mcp remove github -s user`). The credentials file
-`generated/.github.env` is left in place - delete it manually to clear the token, and
+`~/.claude/mcp-env/.github.env` is left in place - delete it manually to clear the token, and
 revoke the PAT at https://github.com/settings/personal-access-tokens.
 
 To clear the credentials in one go, `./install.sh -l github` (allowed on every
-permission tier) deregisters the server AND removes `generated/.github.env`, then
+permission tier) deregisters the server AND removes `~/.claude/mcp-env/.github.env`, then
 exits - the PAT itself still needs revoking at GitHub.
 
 ## The credentials file
 
-`generated/.github.env` is plain shell:
+`~/.claude/mcp-env/.github.env` is plain shell:
 
 ```bash
 GITHUB_PERSONAL_ACCESS_TOKEN=github_pat_...
@@ -99,7 +99,7 @@ GITHUB_TOOLSETS=repos,pull_requests,issues   # optional; blank = server default
 It is listed in `.gitignore` and never committed. It does **not** hold
 `GITHUB_READ_ONLY` - that constant lives in `install.sh` so read-only can't be disabled
 by editing this file. The file is never touched by `--without-github` - only a manual
-`rm generated/.github.env` removes it.
+`rm ~/.claude/mcp-env/.github.env` removes it.
 
 ## Troubleshooting
 
@@ -107,7 +107,7 @@ by editing this file. The file is never touched by `--without-github` - only a m
 |---|---|
 | `docker not found` | Install Docker, then re-run install.sh. |
 | First call to the server is slow / hangs briefly | Docker is pulling the image on first use. Pre-pull with `docker pull ghcr.io/github/github-mcp-server`. |
-| MCP server shows as `failed` in `/mcp` | Gated off (the default at every session start) - `touch ~/claude-kit/generated/mcp-on/github` and reconnect it in `/mcp`. If it fails again after that: bad/expired token - check `generated/.github.env` and re-run `-g`. |
+| MCP server shows as `failed` in `/mcp` | Gated off (the default at every session start) - `touch ~/claude-kit/generated/mcp-on/github` and reconnect it in `/mcp`. If it fails again after that: bad/expired token - check `~/.claude/mcp-env/.github.env` and re-run `-g`. |
 | `401` / bad credentials | The PAT is missing, expired, or revoked. Mint a fresh fine-grained read-only PAT and re-run `-g -y`. |
 | Reads of a known repo return 404 / empty | The fine-grained PAT lacks access to that repo or the `openeyes` org. Re-mint with the org as resource owner and the repos selected. |
 | A write tool is missing | Expected - read-only mode (`GITHUB_READ_ONLY=1`) hides all write tools. The human raises PRs (see the `create-oe-pr` skill). |

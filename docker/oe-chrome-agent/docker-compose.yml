@@ -22,7 +22,10 @@ services:
       # The ONLY persistent state: two logins, ~1KB of JSON (see save-state.sh). The Chrome
       # profile and ~/.claude both live in the container's writable layer and are destroyed
       # with it, so every recreate is a clean browser that still comes up signed in.
-      - ../../generated/oe-chrome-agent:/home/agent/state
+      # Deliberately OUTSIDE the kit - it is a git repo with a remote, and a credential in
+      # its working tree can be published by accident. See state-dir.sh, which the host
+      # scripts source to export this same value.
+      - ${OE_CHROME_STATE_DIR:-${HOME}/.claude/oe-chrome-agent}:/home/agent/state
       - ./artifacts:/home/agent/artifacts   # screenshots/GIFs, host-visible - mkdir -p artifacts before first `up`
     networks: [oe_net]
     stdin_open: true

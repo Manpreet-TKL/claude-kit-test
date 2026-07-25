@@ -1,9 +1,9 @@
 #!/bin/bash -l
 # Manpreet 25/07/2026
 # Host-side wrapper: runs sync-state.sh inside the running walker, which writes the two logins
-# into generated/oe-chrome-agent/ so the next container - which gets a brand-new, empty Chrome
-# profile - comes up already signed in. That is the whole persistence story: ~1KB of JSON, not
-# a 280MB Chrome profile.
+# into ~/.claude/oe-chrome-agent/ (see state-dir.sh - never into the kit) so the next container
+# - which gets a brand-new, empty Chrome profile - comes up already signed in. That is the
+# whole persistence story: ~1KB of JSON, not a 280MB Chrome profile.
 #
 # What is saved:
 #   claude-credentials.json  the CLI's /login OAuth credential (~/.claude/.credentials.json)
@@ -35,8 +35,8 @@ set -e
 ##################################################
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-kit_root="$(dirname "$(dirname "${script_dir}")")"
-state_dir="${kit_root}/generated/oe-chrome-agent"
+# shellcheck source=state-dir.sh
+. "${script_dir}/state-dir.sh"   # sets state_dir (outside the kit - see that file)
 container="${CHROME_CONTAINER:-claude-chrome}"
 
 ##################################################

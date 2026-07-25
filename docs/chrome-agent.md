@@ -12,7 +12,7 @@ the native-messaging pairing pre-seeded, the CLI's tool permissions pre-allowed,
 extension's own site permission for `OE_URL` seeded directly into its LevelDB grant store,
 and OE already logged in (CDP auto-login below the extension). The human signs in exactly
 **once, ever** on a host - the CLI's `/login` and the extension's own claude.ai login - and
-those two are lifted out into `generated/oe-chrome-agent/` as ~1 KB of JSON that every later
+those two are lifted out into `~/.claude/oe-chrome-agent/` as ~1 KB of JSON that every later
 container restores at boot, kept current automatically from then on (see "What persists").
 
 **Every start is a clean browser.** The entrypoint wipes the container's own state - Chrome
@@ -114,7 +114,13 @@ The bind mounts are untouched by design: `~/state` (the saved logins) and `~/art
 (screenshots and GIFs, host-visible).
 
 What survives is deliberately tiny - **two login files, about 1 KB of JSON**, in
-`generated/oe-chrome-agent/`:
+`~/.claude/oe-chrome-agent/` - **outside the kit on purpose**. `~/claude-kit` is a git repo
+with a remote, and a live OAuth credential in its working tree is one `git add -f` or one
+archive of the folder away from being published; `.gitignore` is not a security control.
+The path is resolved in one place, `docker/oe-chrome-agent/state-dir.sh`, which the four
+host scripts source and which exports `OE_CHROME_STATE_DIR` for `docker-compose.yml` to
+interpolate - set that variable to relocate it. `install.sh --fresh` preserves the
+directory alongside `.credentials.json`.
 
 | File | What it is |
 |---|---|
@@ -188,7 +194,12 @@ docker compose up -d --build
 ```
 
 Nothing needs wiring on the host first - the profile is created inside the container and
-`generated/oe-chrome-agent/` is created on demand.
+`~/.claude/oe-chrome-agent/` is created on demand. **Chrome is never installed on this
+host**; the only Chrome involved is the one inside the image.
+
+`drive.sh` refuses to run when those two login files are absent and points at
+`setup-walker.sh` to generate them, so a missing credential fails with an instruction
+rather than a confusing agent error.
 
 The container is always named `claude-chrome` (fixed in `docker-compose.yml`, not
 project-prefixed) - `docker exec claude-chrome ...` / `docker compose exec oe-chrome-agent
@@ -236,7 +247,7 @@ Doing 3 before 2 asks for the password twice, which is the only reason the order
 prescribed.
 
 `setup-walker.sh` then runs `save-state.sh`, which copies both logins into
-`generated/oe-chrome-agent/`. If you signed in outside the walker, the harvest on the next
+`~/.claude/oe-chrome-agent/`. If you signed in outside the walker, the harvest on the next
 boot picks them up anyway - but run `docker/oe-chrome-agent/save-state.sh` by hand if you
 are about to `down` rather than restart, since `down` destroys the writable layer before
 any harvest can run.
@@ -321,7 +332,7 @@ different OE deployment, a different network, a handover.
 
 Default: sync the two logins out (`down` destroys the writable layer, and with it anything the
 container refreshed since the last drive), then `docker compose down`. The saved logins in
-`generated/oe-chrome-agent/` survive, so the next boot needs no manual steps at all.
+`~/.claude/oe-chrome-agent/` survive, so the next boot needs no manual steps at all.
 `-f | --full` skips that sync and deletes those two files, for a shared host or a handover -
 next boot needs the "First run only" steps again.
 
@@ -329,7 +340,7 @@ next boot needs the "First run only" steps again.
 
 | Symptom | Likely cause |
 |---|---|
-| "Permission denied by user" on navigation in a `-p` run | The boot-time seed (`seed-extension-state.mjs`) hasn't run yet, failed, or `generated/oe-chrome-agent/extension-state.json` is missing - check `docker logs claude-chrome` for its permission line; if it says "skipped", do the one-time manual "always allow" pass over noVNC (see "First run only"), then `./save-state.sh`. |
+| "Permission denied by user" on navigation in a `-p` run | The boot-time seed (`seed-extension-state.mjs`) hasn't run yet, failed, or `~/.claude/oe-chrome-agent/extension-state.json` is missing - check `docker logs claude-chrome` for its permission line; if it says "skipped", do the one-time manual "always allow" pass over noVNC (see "First run only"), then `./save-state.sh`. |
 | "Claude in Chrome requires permission" in a `-p` run | CLI tool gate - the `~/.claude/settings.json` seed is missing (pre-dates this layout?); pass `--allowedTools "mcp__claude-in-chrome"` or recreate the container. |
 | `claude -p ... "<prompt>"` says input must be provided via stdin | `--allowedTools` swallowed the trailing prompt argument - pipe the prompt via stdin. |
 | Extension logged out / asks to sign in | `reset-session.sh -f \| --full` ran, the saved tokens in `extension-state.json` expired, or `save-state.sh` was never run after the first sign-in - independent of the CLI's `/login`. Open the pre-opened options tab over noVNC (or navigate to `chrome-extension://fcoeoabgfenejglbffodgkkbkcdhcgfn/options.html`), click **Log in** again, then `./save-state.sh`. |

@@ -49,7 +49,7 @@ script (not a model) reduces N summaries to one answer.
 
 Usage: `./jira_filter_download.sh -f 19720 -a` or
 `./jira_filter_download.sh -j '<jql>' -o /path`. Sources
-`generated/.atlassian.env` (classic unscoped token - scoped tokens 401 at the
+`~/.claude/mcp-env/.atlassian.env` (classic unscoped token - scoped tokens 401 at the
 site URL). It bakes in the REST-path gotchas so callers do not rediscover them:
 
 - Enhanced search (`/rest/api/3/search/jql`) returns `total: -1`; the only count

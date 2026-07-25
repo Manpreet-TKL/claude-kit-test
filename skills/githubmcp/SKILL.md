@@ -6,7 +6,7 @@ disable-model-invocation: false
 
 # GitHub MCP (read-only) - context + gate enable
 
-Load how the kit's GitHub MCP works, make its tools available (enabling the startup gate if needed), and load the project context for GitHub work. Everything goes through the `mcp__github__*` MCP tools - never `curl` the GitHub API, never read `~/claude-kit/generated/.github.env`.
+Load how the kit's GitHub MCP works, make its tools available (enabling the startup gate if needed), and load the project context for GitHub work. Everything goes through the `mcp__github__*` MCP tools - never `curl` the GitHub API, never read `~/claude-kit/~/.claude/mcp-env/.github.env`.
 
 The server is registered **read-only** (`GITHUB_READ_ONLY=1`): it exposes only read tools, so creating PRs/branches, pushing, commenting, and merging are impossible by construction. This mirrors the hard rule "never write out to GitHub." The human raises PRs - see the `create-oe-pr` skill; never use `gh` or `git push`/`git commit` to do it for them.
 
@@ -18,7 +18,7 @@ The server is registered **read-only** (`GITHUB_READ_ONLY=1`): it exposes only r
 Beyond that one `touch`, take no other action: no docker commands, no `install.sh` runs, and never a fallback to `curl` or the REST API - when a call fails, stop and relay the matching advice below; the user runs the fix.
 
 - **Permission denied** -> the `mcp__github` allow rule is missing for this tier - advise `~/claude-kit/install.sh -p <tier> -y` (or adding `mcp__github` to `permissions.allow`).
-- **401 / bad credentials** -> the PAT in `generated/.github.env` is missing, expired, or lacks access - advise minting a fresh fine-grained read-only PAT and re-running `~/claude-kit/install.sh -g -p <tier> -y`.
+- **401 / bad credentials** -> the PAT in `~/.claude/mcp-env/.github.env` is missing, expired, or lacks access - advise minting a fresh fine-grained read-only PAT and re-running `~/claude-kit/install.sh -g -p <tier> -y`.
 - **Reconnect still fails** -> advise restarting Claude Code, touching the flag, and reconnecting in `/mcp` (or touching the flag before launch). The stdio container is launched by Claude Code itself - only the `/mcp` reconnect (or a restart) spawns it.
 
 ## Project context (the token's visible scope)

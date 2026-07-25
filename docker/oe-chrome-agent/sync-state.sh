@@ -1,7 +1,7 @@
 #!/bin/bash -l
 # Manpreet 25/07/2026
 # Runs INSIDE the walker: lifts the two logins out of this container into the mounted state
-# dir (~/state, which is generated/oe-chrome-agent/ on the host), so the next container comes
+# dir (~/state, which is ~/.claude/oe-chrome-agent/ on the host), so the next container comes
 # up already signed in. save-state.sh is the host-side wrapper around this.
 #
 # It runs on a schedule of events rather than a timer: the entrypoint calls it at boot before

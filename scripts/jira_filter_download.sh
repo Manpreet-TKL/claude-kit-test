@@ -2,7 +2,8 @@
 # Manpreet 20/07/2026
 # Download every ticket of a Jira filter (or raw JQL) to disk: keys.txt, full
 # issue JSON with all comments, and optionally the attachment binaries.
-# Credentials come from claude-kit generated/.atlassian.env (classic API token).
+# Credentials come from ~/.claude/mcp-env/.atlassian.env (classic API token) - the kit's
+# credential store, kept outside the repo so it can never be pushed.
 # Usage: ./jira_filter_download.sh -f 19720 -a
 #        ./jira_filter_download.sh -j 'project = TKLS AND status = "In Progress"' -o /home/toukan/tkls-corpus
 
@@ -50,8 +51,7 @@ while [[ $# -gt 0 ]]; do
     shift # move to next parameter
 done
 
-kit_folder=$(dirname "$(dirname "$(realpath "$0")")")
-env_file="${kit_folder}/generated/.atlassian.env"
+env_file="${HOME}/.claude/mcp-env/.atlassian.env"
 
 ##################################################
 ### CHECKS (See end of script for execution)    ##

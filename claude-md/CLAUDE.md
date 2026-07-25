@@ -5,6 +5,17 @@
 - **Never `git commit`.** Stage; show the diff. The human commits.
 - **Never `git push`.** Even on `--force`-prone branches. The human pushes.
 - **Never `--no-verify`, `--amend` published commits, or `git reset --hard`** without an explicit instruction in this turn.
+- **No secrets inside `~/claude-kit`.** It is a git repo with a remote, so anything
+  in its working tree is one `git add -f`, one `.gitignore` edit or one archive of
+  the folder away from being published - `.gitignore` is not a security control.
+  Any new mechanism that needs a credential, token, cookie, key or session writes it
+  under `~/.claude/<thing>/` (machine-local, never git-tracked) and reads it from
+  there; the kit may hold only the non-secret config that points at it. Same rule for
+  client data - real hostnames, internal IPs, patient-shaped payloads and
+  customer-identifying exports do not belong in the kit either.
+- **Everything runs in a container.** Nothing this kit drives is installed on the
+  host - no browser, no runtime, no CLI. If a task seems to need a host install, say
+  so and stop rather than installing it.
 
 ## Coding guidelines (condensed)
 

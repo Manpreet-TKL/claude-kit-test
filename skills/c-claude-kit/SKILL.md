@@ -22,7 +22,14 @@ When loaded as context with no task, reply only `Context loaded.` This skill is 
 - `knowledge/` - learnings from previous projects, read on demand when a topic comes up; fed by `compact-memories` archiving resolved work.
 - `handoff/` - handoff documents written by the `c-handoff` skill; contents gitignored (transient, may carry residual sensitive context); never read unless asked.
 - `docker/codex/` - Dockerfile for the locally-built `claude-kit-codex` image; `-x` builds it and runs the codex MCP server containerised (host `codex` binary only used when Docker is absent).
+- `docker/oe-chrome-agent/` - the OE walker sidecar (Chrome + a paired Claude Code CLI under Xvfb). Its two saved logins live **outside** the kit at `~/.claude/oe-chrome-agent/`, resolved by `docker/oe-chrome-agent/state-dir.sh` (override with `OE_CHROME_STATE_DIR`); only the non-secret network/URL answer is kept in `generated/.oe-chrome-agent.env`.
 - `docs/` - permissions, skills, statusline, sandbox, atlassian, github, codex.
+
+## Secrets: never in the kit
+
+The kit has a git remote, so **`.gitignore` is not a security control** - a gitignored secret in the working tree still ships via `git add -f`, a `.gitignore` edit, or an archive of the folder. Any new mechanism that needs a credential, token, cookie, key or session **writes it under `~/.claude/<thing>/`** (machine-local, mode 700/600, never git-tracked) and reads it back from there; the kit holds only the non-secret pointer. `install.sh --fresh` preserves those directories alongside `.credentials.json`, so the location is safe across a nuke-and-pave. The same rule covers client data: real hostnames, internal IPs, patient-shaped payloads and customer-identifying exports.
+
+`generated/` predates this rule and still holds the MCP env files (`.atlassian.env`, `.github.env`) - gitignored and never committed, but inside the repo. Don't add to it; new credentials go to `~/.claude/`.
 
 ## What install.sh writes into ~/.claude
 

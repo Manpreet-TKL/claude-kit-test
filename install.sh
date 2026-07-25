@@ -100,10 +100,10 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       Auth (.credentials.json), history.jsonl, and projects/
                       are preserved in place.
   -F, --fresh         NUKE AND PAVE. Back up projects/ (conversations),
-                      history.jsonl, and .credentials.json to
+                      history.jsonl, .credentials.json and the walker logins to
                       ~/.claude-backups/<timestamp>-fresh/, DELETE the whole
                       ~/.claude, reinstall Claude Code from scratch, then restore
-                      those three so you keep your conversations and stay logged
+                      those so you keep your conversations and stay logged
                       in - everything else (settings, caches, plugins, MCP
                       state) is regenerated clean. The kit is re-applied on top.
                       Interactive runs ask you to type 'fresh' to confirm; -y
@@ -111,14 +111,14 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
   -j, --with-jira     Configure the Jira section of the mcp-atlassian stdio
                       server. Prompts for JIRA_URL, JIRA_USERNAME,
                       JIRA_API_TOKEN, JIRA_PROJECTS_FILTER; saves to
-                      generated/.atlassian.env (gitignored). With -y, reads the
+                      ~/.claude/mcp-env/.atlassian.env (outside the kit). With -y, reads the
                       env file silently instead of prompting.
   -c, --with-confluence
                       Configure the Confluence section of the mcp-atlassian
                       stdio server. Prompts for CONFLUENCE_URL,
                       CONFLUENCE_USERNAME, CONFLUENCE_API_TOKEN,
                       CONFLUENCE_SPACES_FILTER; defaults to Jira values where
-                      they match. Saves to generated/.atlassian.env.
+                      they match. Saves to ~/.claude/mcp-env/.atlassian.env.
   -a, --with-atlassian
                       Shorthand for -j -c (configure both).
   -A, --without-atlassian
@@ -127,7 +127,7 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
   -g, --with-github   Configure the read-only github-mcp-server stdio server.
                       Prompts for GITHUB_PERSONAL_ACCESS_TOKEN (a fine-grained
                       read-only PAT) and an optional GITHUB_TOOLSETS filter;
-                      saves to generated/.github.env (gitignored). Read-only is
+                      saves to ~/.claude/mcp-env/.github.env (outside the kit). Read-only is
                       enforced (GITHUB_READ_ONLY=1) and is NOT configurable -
                       the server never exposes write tools. With -y, reads the
                       env file silently instead of prompting.
@@ -161,7 +161,7 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       alone). The oe-chrome-agent no longer uses a host
                       profile - its Chrome profile lives in the container and
                       dies with it, and only the two saved logins persist, in
-                      generated/oe-chrome-agent/ (see docs/chrome-agent.md).
+                      ~/.claude/oe-chrome-agent/ (see docs/chrome-agent.md).
                       Reports generated/google-chrome/ if that old profile is
                       still on disk; deleting it is left to you.
   -w, --setup-walker  Run docker/oe-chrome-agent/setup-walker.sh: asks for the
@@ -170,7 +170,7 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       on failure it tells you to re-run setup-walker.sh
                       directly to see why), and pauses for the one-time
                       /login + extension sign-in, then saves both into
-                      generated/oe-chrome-agent/ so no later container needs
+                      ~/.claude/oe-chrome-agent/ so no later container needs
                       them again (the pause is skipped once they are saved).
                       OE_URL defaults to http://web; setup-walker.sh -u
                       overrides. Needs nothing else wired first - the Chrome
@@ -216,9 +216,9 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       Local only: the printed pointers tell you where to revoke
                       each token server-side.
   -y, --yes           Non-interactive; accept default tier if not provided.
-                      With -j/-c, reads generated/.atlassian.env instead of
+                      With -j/-c, reads ~/.claude/mcp-env/.atlassian.env instead of
                       prompting (errors if the file or required vars are absent).
-                      With -g, reads generated/.github.env the same way.
+                      With -g, reads ~/.claude/mcp-env/.github.env the same way.
                       With -x, reads generated/.codex.env the same way (or uses
                       built-in defaults if absent).
   -n, --no-verify     Skip the verification checks after writing.
@@ -390,9 +390,14 @@ shift_enter_file="${kit_root}/settings/shift-enter.json"
 # All machine-local generated config lives under one folder (gitignored wholesale),
 # so it can be backed up and restored across a `git reset --hard` + `git clean -fdx`.
 generated_dir="${kit_root}/generated"
-atlassian_secrets="${generated_dir}/.atlassian.env"
-github_secrets="${generated_dir}/.github.env"
-codex_secrets="${generated_dir}/.codex.env"
+# Credentials live OUTSIDE the kit. It is a git repo with a remote, so a secret in its
+# working tree is one `git add -f`, one .gitignore edit or one archive of the folder away
+# from being published - gitignore is not a security control. ~/.claude is machine-local
+# and never git-tracked; --fresh preserves this folder alongside .credentials.json.
+mcp_env_dir="${HOME}/.claude/mcp-env"
+atlassian_secrets="${mcp_env_dir}/.atlassian.env"
+github_secrets="${mcp_env_dir}/.github.env"
+codex_secrets="${generated_dir}/.codex.env"   # model/sandbox knobs only, no secret - stays in the kit
 codex_docker_dir="${kit_root}/docker/codex"
 codex_home="${HOME}/.codex"
 codex_agents_md="${codex_home}/AGENTS.md"
@@ -604,7 +609,7 @@ if [ "${DO_FRESH}" = "1" ]; then
         fi
         fresh_archive="${HOME}/.claude-backups/$(date +%Y%m%d-%H%M%S)-fresh"
         mkdir -p "${fresh_archive}"
-        for _e in projects history.jsonl .credentials.json; do
+        for _e in projects history.jsonl .credentials.json oe-chrome-agent mcp-env; do
             if [ -e "${claude_dir}/${_e}" ]; then
                 cp -a "${claude_dir}/${_e}" "${fresh_archive}/${_e}"
                 echo "  backed up -> ${fresh_archive}/${_e}"
@@ -632,7 +637,7 @@ echo "[OK]"
 # --fresh: restore the archived conversations + auth into the clean install.
 if [ "${DO_FRESH}" = "1" ] && [ -n "${fresh_archive}" ]; then
     mkdir -p "${claude_dir}"
-    for _e in projects history.jsonl .credentials.json; do
+    for _e in projects history.jsonl .credentials.json oe-chrome-agent mcp-env; do
         if [ -e "${fresh_archive}/${_e}" ]; then
             cp -a "${fresh_archive}/${_e}" "${claude_dir}/${_e}"
             echo "  restored -> ${claude_dir}/${_e}"
@@ -663,20 +668,31 @@ ensureSettings() {
     fi
 }
 
-# Ensure the single generated-config folder exists and relocate any pre-consolidation
-# secrets (settings/.atlassian.env, settings/.github.env) into it. The whole folder is
-# gitignored, so a `git reset --hard` + `git clean -fdx` followed by restoring this one
-# folder is all that's needed to reset the kit while keeping local creds.
+# Ensure both config folders exist and relocate anything left in an older location.
+# generated/ (in the kit, gitignored) holds non-secret machine-local config; ~/.claude/mcp-env/
+# holds the credential-bearing env files and is deliberately outside the repo. Secrets are
+# migrated from either earlier home - settings/ (pre-consolidation) or generated/ - and the
+# move is one-way, so a kit that has been pushed or archived since still ends up clean.
 ensureGenerated() {
-    mkdir -p "${generated_dir}"
-    chmod 700 "${generated_dir}"
-    local legacy
-    for legacy in .atlassian.env .github.env .codex.env; do
-        if [ -f "${kit_root}/settings/${legacy}" ] && [ ! -f "${generated_dir}/${legacy}" ]; then
-            mv "${kit_root}/settings/${legacy}" "${generated_dir}/${legacy}"
-            echo "  migrated -> ${generated_dir}/${legacy} (was settings/${legacy})"
-        fi
+    mkdir -p "${generated_dir}" "${mcp_env_dir}"
+    chmod 700 "${generated_dir}" "${mcp_env_dir}"
+    local legacy old
+    for legacy in .atlassian.env .github.env; do
+        for old in "${kit_root}/settings/${legacy}" "${generated_dir}/${legacy}"; do
+            if [ -f "${old}" ] && [ ! -f "${mcp_env_dir}/${legacy}" ]; then
+                mv "${old}" "${mcp_env_dir}/${legacy}"
+                chmod 600 "${mcp_env_dir}/${legacy}"
+                echo "  migrated -> ${mcp_env_dir}/${legacy} (was ${old#"${kit_root}"/})"
+            elif [ -f "${old}" ]; then
+                rm -f "${old}"
+                echo "  removed stale duplicate ${old#"${kit_root}"/} (live copy is ${mcp_env_dir}/${legacy})"
+            fi
+        done
     done
+    if [ -f "${kit_root}/settings/.codex.env" ] && [ ! -f "${codex_secrets}" ]; then
+        mv "${kit_root}/settings/.codex.env" "${codex_secrets}"
+        echo "  migrated -> ${codex_secrets} (was settings/.codex.env)"
+    fi
 }
 
 # --reset: move Claude Code's auto-generated bloat into ~/.claude-backups/<ts>/.
@@ -973,7 +989,7 @@ applyAtlassian() {
             echo "  Jira: loaded from ${atlassian_secrets}"
         else
             echo ""
-            echo "  Jira credentials (saved to generated/.atlassian.env, gitignored)"
+            echo "  Jira credentials (saved to ~/.claude/mcp-env/.atlassian.env, gitignored)"
             read -r -p "  JIRA_URL [${jira_url:-https://openeyes.atlassian.net}]: " _in
             jira_url="${_in:-${jira_url:-https://openeyes.atlassian.net}}"
             read -r -p "  JIRA_USERNAME [${jira_user:-manpreet.singh@toukanlabs.com}]: " _in
@@ -1138,7 +1154,7 @@ applyGitHub() {
         echo "  GitHub: loaded from ${github_secrets}"
     else
         echo ""
-        echo "  GitHub credentials (saved to generated/.github.env, gitignored)"
+        echo "  GitHub credentials (saved to ~/.claude/mcp-env/.github.env, gitignored)"
         echo "  Use a fine-grained read-only PAT with access to the openeyes org."
         read -r -s -p "  GITHUB_PERSONAL_ACCESS_TOKEN (hidden$([ -n "${gh_token}" ] && echo ', enter to keep existing')): " _in
         echo ""
@@ -1715,8 +1731,8 @@ syncMemory() {
 # symlinked onto generated/google-chrome/, so docker/oe-chrome-agent could bind-mount
 # its Chrome profile out of the kit. The agent no longer has a host-side profile -
 # Chrome's data dir lives in the container and is destroyed with it, and the only thing
-# that persists is generated/oe-chrome-agent/ (two small login files; see
-# docker/oe-chrome-agent/save-state.sh and docs/chrome-agent.md). That leaves the link
+# that persists is ~/.claude/oe-chrome-agent/ (two small login files, deliberately outside
+# the kit; see docker/oe-chrome-agent/save-state.sh and docs/chrome-agent.md). That leaves the link
 # and the old profile as dead weight on hosts that ran the earlier layout.
 #
 # Only ever removes the link, and only when it points into THIS kit - a real directory
@@ -1994,7 +2010,8 @@ printSummary() {
     echo "  guidelines  : ${claude_md_file}  (symlinked from ${claude_md_src})"
     echo "  skills      : ${claude_skills_dir}/  (symlinked from ${skills_src_dir})"
     echo "  memory      : ${claude_dir}/projects/<project>/memory  (symlinked from ${memory_src_dir})"
-    echo "  generated   : ${generated_dir}/  (machine-local creds/config; gitignored, back this up)"
+    echo "  generated   : ${generated_dir}/  (machine-local config, no secrets; gitignored, back this up)"
+    echo "  secrets     : ${mcp_env_dir}/ + ${HOME}/.claude/oe-chrome-agent/  (outside the kit, never pushed)"
     echo "  autocompact : ${AUTOCOMPACT_PCT}% / ${AUTOCOMPACT_WINDOW} tokens"
     echo "  retention   : cleanupPeriodDays=${CLEANUP_PERIOD_DAYS}"
     echo "-------------------------------"

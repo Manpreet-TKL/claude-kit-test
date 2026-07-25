@@ -5,15 +5,19 @@
 *.tmp
 .vscode/
 .idea/
-# All machine-local generated config / secrets live in one folder, so it can be
-# backed up and restored across a `git reset --hard` + `git clean -fdx`.
+# Machine-local generated config, non-secret knobs only. Secrets never live in this
+# repo at all - they sit under ~/.claude/ (see claude-md/CLAUDE.md). A .gitignore is
+# not a security control: one `git add -f` or one archive and an ignored file ships.
 /generated/
 # Handoff documents are transient conversation snapshots and may carry residual
 # sensitive context - keep the folder, ignore its contents.
 /handoff/*.md
-# Legacy locations (pre-consolidation) - keep ignored in case an old install lingers.
+# Legacy secret locations, now moved to ~/.claude/mcp-env/ - kept ignored in case an
+# old install lingers. install.sh migrates and removes them on its next run.
 settings/.atlassian.env
 settings/.github.env
 settings/.codex.env
+generated/.atlassian.env
+generated/.github.env
 # oe-chrome-agent session outputs (screenshots/GIFs), not kit content.
 /docker/oe-chrome-agent/artifacts/

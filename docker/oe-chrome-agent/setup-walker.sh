@@ -9,6 +9,10 @@
 # install.sh -w | --setup-walker,
 # which always adds -q so the build stays out of install.sh's terse output - on a
 # build failure it still tells you to re-run this script directly to see why.
+#
+# The two logins are written to ~/.claude/oe-chrome-agent/, never into the kit - see
+# state-dir.sh for why. Only the network/URL answer is saved in the kit, in
+# generated/.oe-chrome-agent.env; neither value is a secret.
 
 abort() {
     echo >&2 '
@@ -72,8 +76,9 @@ done
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 kit_root="$(dirname "$(dirname "${script_dir}")")"
 generated_dir="${kit_root}/generated"
-state_dir="${generated_dir}/oe-chrome-agent"
-config_file="${generated_dir}/.oe-chrome-agent.env"
+config_file="${generated_dir}/.oe-chrome-agent.env"   # network + URL only, no credentials
+# shellcheck source=state-dir.sh
+. "${script_dir}/state-dir.sh"   # sets state_dir, exports OE_CHROME_STATE_DIR for compose
 
 ##################################################
 ### CHECKS (See end of script for execution)    ##
@@ -88,7 +93,8 @@ echo "[OK]"
 
 echo "Checking the state dir exists (created empty on first run)..."
 mkdir -p "${state_dir}"
-echo "[OK]"
+chmod 700 "${state_dir}"
+echo "[OK] ${state_dir}"
 
 echo "Checking docker-compose.yml is present..."
 [ -f "${script_dir}/docker-compose.yml" ] || { echo "docker-compose.yml not found next to this script"; exit 1; }
