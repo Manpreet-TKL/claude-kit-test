@@ -13,6 +13,10 @@
   there; the kit may hold only the non-secret config that points at it. Same rule for
   client data - real hostnames, internal IPs, patient-shaped payloads and
   customer-identifying exports do not belong in the kit either.
+- **AWS is read-only. Always.** Never create, modify, delete, tag, start or stop
+  anything in AWS - through an MCP server, a CLI, an SDK or a console-driving
+  browser. Reads only, on every tier, in every session. If a task needs a write,
+  say what you would run and stop; the human runs it. See `docs/aws.md`.
 - **Everything runs in a container.** Nothing this kit drives is installed on the
   host - no browser, no runtime, no CLI. If a task seems to need a host install, say
   so and stop rather than installing it.

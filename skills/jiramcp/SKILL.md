@@ -16,7 +16,7 @@ Load how the kit's Atlassian MCP works, make its tools available (enabling the s
 Beyond that one `touch`, take no other action: no docker commands, no `install.sh` runs, and never a fallback to the REST API - when a call fails, stop and relay the matching advice below; the user runs the fix.
 
 - **Permission denied** -> the `mcp__atlassian` allow rule is missing for this tier - advise `~/claude-kit/install.sh -p <tier> -y` (or adding `mcp__atlassian` to `permissions.allow`).
-- **401 / auth errors** -> bad token or wrong URL in `~/.claude/mcp-env/.atlassian.env` - advise fixing it and re-running `~/claude-kit/install.sh --with-atlassian -y` (scoped API tokens don't work here - see `docs/atlassian.md`).
+- **401 / auth errors** -> bad token or wrong URL in `~/.claude/mcp-env/.atlassian.env` - advise fixing it and re-running `~/claude-kit/install.sh -jc -y` (scoped API tokens don't work here - see `docs/atlassian.md`).
 - **Reconnect still fails** -> advise restarting Claude Code, touching the flag, and reconnecting in `/mcp` (or touching the flag before launch). The stdio container is launched by Claude Code itself - only the `/mcp` reconnect (or a restart) spawns it.
 
 ## Project context (the token's visible scope)

@@ -1,0 +1,3 @@
+interface:
+  display_name: "awsmcp"
+  short_description: "AWS MCP context + gate enable (read-only, never writes)"

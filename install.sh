@@ -49,10 +49,11 @@ GITHUB_MODE=""                                  # -g / --with-github / "" (leave
 GITHUB_REMOVE=0                                 # --without-github sets to 1
 CODEX_MODE=""                                   # -x / --with-codex / "" (leave alone)
 CODEX_REMOVE=0                                  # --without-codex sets to 1
-CHROME_PROFILE_REMOVE=0                         # -B / --without-chrome-profile: unwire the old host-profile overlay
+AWS_MODE=""                                     # -a / --with-aws / "" (leave alone)
+AWS_REMOVE=0                                    # --without-aws sets to 1
 WALKER_SETUP=0                                  # -w / --setup-walker: run docker/oe-chrome-agent/setup-walker.sh
 SKILLS_AUTO=""                                  # -s on|off: flip disable-model-invocation across kit skills; "" = leave as authored (report only)
-LOGOUT_MCP=""                                   # -l codex|github|atlassian|all: clear stored MCP credentials and exit (standalone action)
+LOGOUT_MCP=""                                   # -l codex|github|atlassian|aws|all: clear stored MCP credentials and exit (standalone action)
 PRUNE_BEFORE=""                                 # -d <days|date>: archive+delete sessions last active before the cutoff; "" = off
 CLEANUP_PERIOD_DAYS="${CLEANUP_PERIOD_DAYS:-365}"  # settings.json cleanupPeriodDays - Claude Code's own transcript retention
 STATUSLINE_REFRESH="${STATUSLINE_REFRESH:-5}"   # statusLine.refreshInterval (seconds) - timer re-runs on top of event-driven updates; 0 = events only
@@ -64,7 +65,8 @@ usage() {
 Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                   [-m <default|plan|acceptEdits|auto|dontAsk|bypassPermissions>]
                   [-s <on|off>] [-d <days|YYYY-MM-DD>]
-                  [-r] [-F] [-n] [-U] [-y] [-j] [-c] [-a | -A] [-g | -G] [-x | -X] [-B] [-w]
+                  [-r] [-F] [-n] [-U] [-y] [-j] [-c] [-J] [-g | -G] [-x | -X]
+                  [-a | -A] [-w]
 
   Every option has a single-letter (-x) and a long (--word) form.
   Short flags may be bundled: -jc == -j -c (value-taking -p / -m / -s / -d must be last).
@@ -119,9 +121,8 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       CONFLUENCE_USERNAME, CONFLUENCE_API_TOKEN,
                       CONFLUENCE_SPACES_FILTER; defaults to Jira values where
                       they match. Saves to ~/.claude/mcp-env/.atlassian.env.
-  -a, --with-atlassian
-                      Shorthand for -j -c (configure both).
-  -A, --without-atlassian
+                      (Both at once is -jc - flags bundle.)
+  -J, --without-atlassian
                       Deregister the atlassian MCP server (claude mcp remove,
                       user scope). Credentials file is left in place.
   -g, --with-github   Configure the read-only github-mcp-server stdio server.
@@ -154,16 +155,20 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       scope) and remove the kit's codex-compat links
                       (~/.codex/AGENTS.md + skill links). generated/.codex.env
                       and your ~/.codex login are left alone.
-  -B, --without-chrome-profile
-                      Undo the old host-profile overlay: remove the
-                      ~/.config/google-chrome symlink, but only if it points
-                      into this kit (foreign symlinks and real dirs are left
-                      alone). The oe-chrome-agent no longer uses a host
-                      profile - its Chrome profile lives in the container and
-                      dies with it, and only the two saved logins persist, in
-                      ~/.claude/oe-chrome-agent/ (see docs/chrome-agent.md).
-                      Reports generated/google-chrome/ if that old profile is
-                      still on disk; deleting it is left to you.
+  -a, --with-aws      Configure the read-only AWS MCP server
+                      (awslabs aws-api-mcp-server, run as a container). Prompts
+                      for AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and
+                      AWS_REGION; saves to ~/.claude/mcp-env/.aws.env (outside
+                      the kit). Use a DEDICATED read-only IAM user's key, never
+                      a personal login. Read-only is enforced
+                      (READ_OPERATIONS_ONLY=true) and is NOT configurable - the
+                      server refuses any CLI command that is not on its
+                      read-only list. Note that the AWS-managed ReadOnlyAccess
+                      policy still permits secret and object reads; deny those
+                      at the IAM end (see docs/aws.md). With -y, reads the env
+                      file silently instead of prompting.
+  -A, --without-aws   Deregister the aws MCP server (claude mcp remove, user
+                      scope). Credentials file is left in place.
   -w, --setup-walker  Run docker/oe-chrome-agent/setup-walker.sh: asks for the
                       OE deployment's docker network, boots the container
                       (always named claude-chrome, build output silenced -
@@ -206,12 +211,12 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       vanish from claude --resume but nothing is destroyed
                       (delete the archive yourself to free the disk).
                       Interactive runs show a summary and ask y/N; -y skips.
-  -l, --logout        <codex|github|atlassian|all>. Log out of an MCP and EXIT -
-                      a standalone action, nothing else runs (which is why the
-                      permission tiers can always-allow `install.sh -l *`).
+  -l, --logout        <codex|github|atlassian|aws|all>. Log out of an MCP and
+                      EXIT - a standalone action, nothing else runs (which is why
+                      the permission tiers can always-allow `install.sh -l *`).
                       Removes the stored credentials: ~/.codex/auth.json for
-                      codex; for github/atlassian also the generated/ env file
-                      AND the ~/.claude.json registration (it embeds the token).
+                      codex; for github/atlassian/aws also the env file AND the
+                      ~/.claude.json registration (it embeds the credentials).
                       codex stays registered - sign back in and it works again.
                       Local only: the printed pointers tell you where to revoke
                       each token server-side.
@@ -219,6 +224,7 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       With -j/-c, reads ~/.claude/mcp-env/.atlassian.env instead of
                       prompting (errors if the file or required vars are absent).
                       With -g, reads ~/.claude/mcp-env/.github.env the same way.
+                      With -a, reads ~/.claude/mcp-env/.aws.env the same way.
                       With -x, reads generated/.codex.env the same way (or uses
                       built-in defaults if absent).
   -n, --no-verify     Skip the verification checks after writing.
@@ -229,15 +235,15 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
   -h, --help          This message.
 
 MCP startup gate:
-  Every MCP server (-j/-c/-a/-g/-x) is registered behind a one-shot startup
+  Every MCP server (-j/-c/-g/-x/-a) is registered behind a one-shot startup
   gate: a new session starts NO MCP containers/processes - each server shows
   "failed" in /mcp until requested. To start one mid-session run
-  touch ~/claude-kit/generated/mcp-on/<atlassian|github|codex> and reconnect
+  touch ~/claude-kit/generated/mcp-on/<atlassian|github|codex|aws> and reconnect
   the server in /mcp (its tools bind on the late connect). The flag is
   consumed on start, so the next session begins gated again - touch it just
   before launching Claude Code to have a server up from the start.
   install.sh pre-arms the flag for every server it (re-)registers, so the
-  session right after a -j/-c/-a/-g/-x run connects without a manual touch;
+  session right after a -j/-c/-g/-x/-a run connects without a manual touch;
   that first start consumes the flag as usual.
 
 Env overrides:
@@ -326,11 +332,7 @@ while [[ $# -gt 0 ]]; do
     -c | --with-confluence)
         CONFLUENCE_MODE="on"
         ;;
-    -a | --with-atlassian)
-        JIRA_MODE="on"
-        CONFLUENCE_MODE="on"
-        ;;
-    -A | --without-atlassian)
+    -J | --without-atlassian)
         ATLASSIAN_REMOVE=1
         ;;
     -g | --with-github)
@@ -345,8 +347,11 @@ while [[ $# -gt 0 ]]; do
     -X | --without-codex)
         CODEX_REMOVE=1
         ;;
-    -B | --without-chrome-profile)
-        CHROME_PROFILE_REMOVE=1
+    -a | --with-aws)
+        AWS_MODE="on"
+        ;;
+    -A | --without-aws)
+        AWS_REMOVE=1
         ;;
     -w | --setup-walker)
         WALKER_SETUP=1
@@ -397,6 +402,7 @@ generated_dir="${kit_root}/generated"
 mcp_env_dir="${HOME}/.claude/mcp-env"
 atlassian_secrets="${mcp_env_dir}/.atlassian.env"
 github_secrets="${mcp_env_dir}/.github.env"
+aws_secrets="${mcp_env_dir}/.aws.env"
 codex_secrets="${generated_dir}/.codex.env"   # model/sandbox knobs only, no secret - stays in the kit
 codex_docker_dir="${kit_root}/docker/codex"
 codex_home="${HOME}/.codex"
@@ -421,8 +427,8 @@ statusline_bak="${statusline_file}.bak"
 # -l/--logout: clear stored MCP credentials, then exit - deliberately standalone,
 # BEFORE any pre-flight prompt or install step, so the permission tiers can
 # always-allow `install.sh -l *` knowing it can only ever log out. Local-only:
-# each block prints where to revoke the token server-side. The atlassian/github
-# registrations embed their tokens in ~/.claude.json, so those are deregistered
+# each block prints where to revoke the token server-side. The atlassian/github/aws
+# registrations embed their credentials in ~/.claude.json, so those are deregistered
 # too; codex's registration holds no secret and stays - a fresh container login
 # brings it straight back without a re-run.
 logoutMcp() {
@@ -457,6 +463,27 @@ logoutMcp() {
             echo "github: nothing stored"
         fi
     fi
+    if [ "${target}" = "aws" ] || [ "${target}" = "all" ]; then
+        did=0
+        if command -v claude >/dev/null 2>&1; then
+            if claude mcp remove aws -s user >/dev/null 2>&1; then
+                echo "aws: deregistered from ~/.claude.json (the registration embeds the access key)"
+                did=1
+            fi
+        else
+            echo "aws: claude CLI not found - check ~/.claude.json for a leftover aws registration (it embeds the access key)" >&2
+        fi
+        if [ -f "${aws_secrets}" ]; then
+            rm -f "${aws_secrets}"
+            echo "aws: removed ${aws_secrets}"
+            did=1
+        fi
+        if [ "${did}" = "1" ]; then
+            echo "aws: deactivate + delete the access key itself in IAM -> Users -> <user> -> Security credentials"
+        else
+            echo "aws: nothing stored"
+        fi
+    fi
     if [ "${target}" = "atlassian" ] || [ "${target}" = "all" ]; then
         did=0
         if command -v claude >/dev/null 2>&1; then
@@ -483,9 +510,9 @@ logoutMcp() {
 
 if [ -n "${LOGOUT_MCP}" ]; then
     case "${LOGOUT_MCP}" in
-        codex | github | atlassian | all) : ;;
+        codex | github | atlassian | aws | all) : ;;
         *)
-            echo "Invalid --logout target '${LOGOUT_MCP}' - use codex, github, atlassian or all" >&2
+            echo "Invalid --logout target '${LOGOUT_MCP}' - use codex, github, atlassian, aws or all" >&2
             trap : 0
             exit 1
             ;;
@@ -1211,6 +1238,128 @@ applyGitHub() {
     echo "  restart Claude Code to pick up the new MCP server"
 }
 
+# Configure or remove the aws MCP server via the claude CLI at user scope
+# (registered in ~/.claude.json, like atlassian/github). Read-only by construction:
+# READ_OPERATIONS_ONLY=true is baked in below, so the server refuses any CLI
+# command outside its read-only list - the AWS analogue of GITHUB_READ_ONLY. That
+# is a guard rail, not the boundary: the IAM principal behind the key must be
+# read-only too (see docs/aws.md). Driven by AWS_MODE, AWS_REMOVE.
+applyAws() {
+    # --without-aws: deregister the server (user scope) and return.
+    if [ "${AWS_REMOVE}" = "1" ]; then
+        command -v claude >/dev/null 2>&1 || {
+            echo "  claude CLI not found - cannot remove the aws MCP server" >&2
+            return 1
+        }
+        if claude mcp remove aws -s user >/dev/null 2>&1; then
+            echo "  removed aws MCP server (user scope)"
+        else
+            echo "  aws MCP server not registered at user scope - nothing to remove"
+        fi
+        rm -f "${generated_dir}/mcp-on/aws"
+        echo "  credentials file ${aws_secrets} left in place - delete manually to clear the key"
+        return
+    fi
+
+    [ "${AWS_MODE}" = "on" ] || return 0
+
+    command -v docker >/dev/null 2>&1 || {
+        echo "  docker not found - the aws MCP runs as a container (public.ecr.aws/awslabs-mcp/awslabs/aws-api-mcp-server)" >&2
+        echo "  install Docker and retry" >&2
+        return 1
+    }
+    command -v claude >/dev/null 2>&1 || {
+        echo "  claude CLI not found - needed to register the MCP server (claude mcp add-json)" >&2
+        return 1
+    }
+
+    # Load whatever is already saved so a re-run can keep the existing key.
+    local aws_key aws_secret aws_region
+    if [ -f "${aws_secrets}" ]; then
+        # shellcheck source=/dev/null
+        . "${aws_secrets}"
+        aws_key="${AWS_ACCESS_KEY_ID:-}"
+        aws_secret="${AWS_SECRET_ACCESS_KEY:-}"
+        aws_region="${AWS_REGION:-}"
+    fi
+
+    local noninteractive=0
+    [ "${ASSUME_YES}" = "1" ] || [ ! -t 0 ] && noninteractive=1
+
+    if [ "${noninteractive}" = "1" ]; then
+        { [ -n "${aws_key}" ] && [ -n "${aws_secret}" ]; } || {
+            echo "  AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY missing in ${aws_secrets} - cannot configure AWS non-interactively" >&2
+            return 1
+        }
+        echo "  AWS: loaded from ${aws_secrets}"
+    else
+        echo ""
+        echo "  AWS credentials (saved to ~/.claude/mcp-env/.aws.env, outside the kit)"
+        echo "  Use a DEDICATED read-only IAM user's access key, never a personal login -"
+        echo "  CloudTrail then attributes agent activity separately from yours."
+        read -r -s -p "  AWS_ACCESS_KEY_ID (hidden$([ -n "${aws_key}" ] && echo ', enter to keep existing')): " _in
+        echo ""
+        [ -n "${_in}" ] && aws_key="${_in}"
+        [ -n "${aws_key}" ] || { echo "  AWS_ACCESS_KEY_ID cannot be empty" >&2; return 1; }
+        read -r -s -p "  AWS_SECRET_ACCESS_KEY (hidden$([ -n "${aws_secret}" ] && echo ', enter to keep existing')): " _in
+        echo ""
+        [ -n "${_in}" ] && aws_secret="${_in}"
+        [ -n "${aws_secret}" ] || { echo "  AWS_SECRET_ACCESS_KEY cannot be empty" >&2; return 1; }
+        read -r -p "  AWS_REGION [${aws_region:-eu-west-2}]: " _in
+        aws_region="${_in:-${aws_region:-eu-west-2}}"
+    fi
+    aws_region="${aws_region:-eu-west-2}"
+
+    {
+        echo "AWS_ACCESS_KEY_ID=${aws_key}"
+        echo "AWS_SECRET_ACCESS_KEY=${aws_secret}"
+        echo "AWS_REGION=${aws_region}"
+    } > "${aws_secrets}"
+    chmod 600 "${aws_secrets}"
+    echo "  saved -> ${aws_secrets}"
+
+    # Build the env object. The three safety settings are fixed constants - not
+    # sourced from the file - so read-only can never be turned off by editing
+    # creds: READ_OPERATIONS_ONLY refuses non-read CLI commands, no-access keeps
+    # the server out of the local filesystem, and telemetry (on by default
+    # upstream) is off because the commands describe client infrastructure.
+    local env_json
+    env_json="$(jq -n \
+        --arg key    "${aws_key}" \
+        --arg secret "${aws_secret}" \
+        --arg region "${aws_region}" \
+        '{AWS_ACCESS_KEY_ID: $key,
+          AWS_SECRET_ACCESS_KEY: $secret,
+          AWS_REGION: $region,
+          READ_OPERATIONS_ONLY: "true",
+          AWS_API_MCP_TELEMETRY: "false",
+          AWS_API_MCP_ALLOW_UNRESTRICTED_LOCAL_FILE_ACCESS: "no-access"}')"
+
+    # Same "sh -c" + gate + named-container reuse as github: at most one aws MCP
+    # container ever exists, and one bare "-e VAR" per key so the access key never
+    # appears on the command line.
+    local image="public.ecr.aws/awslabs-mcp/awslabs/aws-api-mcp-server:latest"
+    local cname="claude-mcp-aws"
+    local gate run_cmd
+    gate="$(mcpGate aws)"
+    run_cmd="$(jq -rn --arg gate "${gate}" --argjson env "${env_json}" --arg img "${image}" --arg name "${cname}" \
+        '$gate + "docker rm -f \($name) >/dev/null 2>&1; exec docker run -i --rm --name \($name) " + ($env | keys | map("-e " + .) | join(" ")) + " " + $img')"
+
+    local server_json
+    server_json="$(jq -n --arg cmd "${run_cmd}" --argjson env "${env_json}" \
+        '{command: "sh", args: ["-c", $cmd], env: $env}')"
+    claude mcp remove aws -s user >/dev/null 2>&1 || true
+    claude mcp add-json aws "${server_json}" -s user >/dev/null
+    touch "${generated_dir}/mcp-on/aws"
+    echo "  registered aws MCP (docker/aws-api-mcp-server, read-only) at user scope (~/.claude.json)"
+    echo "  default region: ${aws_region} (anything else needs an explicit --region)"
+    echo "  READ-ONLY IS A GUARD RAIL, NOT THE BOUNDARY - the IAM principal must be read-only,"
+    echo "  and should explicitly Deny secretsmanager:GetSecretValue, ssm:GetParameter,"
+    echo "  s3:GetObject and kms:Decrypt (managed ReadOnlyAccess allows all four). See docs/aws.md."
+    echo "  gated + pre-armed: connects on your NEXT session start (or /mcp -> aws -> reconnect now); later sessions need touch ${generated_dir}/mcp-on/aws (flag is one-shot)"
+    echo "  restart Claude Code to pick up the new MCP server"
+}
+
 # Configure or remove the codex MCP server via the claude CLI at user scope
 # (registered in ~/.claude.json, like atlassian/github). Docker-first: OpenAI ships
 # no official CLI image, so this builds docker/codex/Dockerfile locally as
@@ -1727,35 +1876,6 @@ syncMemory() {
     done
 }
 
-# Undo the host-profile overlay an older kit put in place: ~/.config/google-chrome
-# symlinked onto generated/google-chrome/, so docker/oe-chrome-agent could bind-mount
-# its Chrome profile out of the kit. The agent no longer has a host-side profile -
-# Chrome's data dir lives in the container and is destroyed with it, and the only thing
-# that persists is ~/.claude/oe-chrome-agent/ (two small login files, deliberately outside
-# the kit; see docker/oe-chrome-agent/save-state.sh and docs/chrome-agent.md). That leaves the link
-# and the old profile as dead weight on hosts that ran the earlier layout.
-#
-# Only ever removes the link, and only when it points into THIS kit - a real directory
-# (a genuine desktop Chrome profile) or a foreign symlink is left alone. The profile
-# directory itself is only reported, never deleted: it may hold a browser history worth
-# keeping, so binning it is the human's call.
-# Driven by CHROME_PROFILE_REMOVE.
-unwireChromeProfile() {
-    local live="${HOME}/.config/google-chrome"
-    local kitdir="${generated_dir}/google-chrome"
-
-    if [ -L "${live}" ] && [ "$(readlink "${live}")" = "${kitdir}" ]; then
-        rm -f -- "${live}"
-        echo "  removed ${live} (kit link)"
-    else
-        echo "  ${live} is not a link into this kit - nothing to remove"
-    fi
-
-    if [ -d "${kitdir}" ]; then
-        echo "  ${kitdir} is still on disk ($(du -sh "${kitdir}" 2>/dev/null | cut -f1)) and is no longer used - delete it by hand if you don't want its browsing history"
-    fi
-}
-
 # Rebuild ~/.claude/skills/<name> symlinks from scratch on every run, and keep an
 # explicit record (${skills_manifest}) of which skills install.sh created - so a
 # skill deleted from the kit has its link removed from ~/.claude on the next run.
@@ -2064,15 +2184,15 @@ if [ "${GITHUB_MODE}" = "on" ] || [ "${GITHUB_REMOVE}" = "1" ]; then
     echo -e "[Done]\n"
 fi
 
-if [ "${CODEX_MODE}" = "on" ] || [ "${CODEX_REMOVE}" = "1" ]; then
-    echo "Applying Codex MCP settings..."
-    applyCodex
+if [ "${AWS_MODE}" = "on" ] || [ "${AWS_REMOVE}" = "1" ]; then
+    echo "Applying AWS MCP settings..."
+    applyAws
     echo -e "[Done]\n"
 fi
 
-if [ "${CHROME_PROFILE_REMOVE}" = "1" ]; then
-    echo "Unwiring the old oe-chrome-agent Chrome profile overlay..."
-    unwireChromeProfile
+if [ "${CODEX_MODE}" = "on" ] || [ "${CODEX_REMOVE}" = "1" ]; then
+    echo "Applying Codex MCP settings..."
+    applyCodex
     echo -e "[Done]\n"
 fi
 

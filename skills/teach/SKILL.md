@@ -1,7 +1,7 @@
 ---
 name: teach
 description: Teach a topic over many sessions in a persistent markdown lesson workspace
-disable-model-invocation: true
+disable-model-invocation: false
 argument-hint: "What would you like to learn about?"
 ---
 

@@ -1,5 +1,3 @@
 interface:
   display_name: "teach"
-  short_description: "Teach a topic over many sessions in a persistent lesson workspace"
-policy:
-  allow_implicit_invocation: false
+  short_description: "Teach a topic over many sessions in a persistent markdown lesson workspace"

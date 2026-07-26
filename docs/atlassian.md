@@ -42,7 +42,7 @@ Configure Confluence only:
 Configure both at once:
 
 ```bash
-./install.sh --with-atlassian -p standard   # shorthand for -j -c
+./install.sh -jc -p standard                # jira + confluence (flags bundle)
 ```
 
 If `~/.claude/mcp-env/.atlassian.env` does not already contain the relevant values,
@@ -113,9 +113,9 @@ It is listed in `.gitignore` and never committed. It is also never touched by
 |---|---|
 | `docker not found` | Install Docker, then re-run install.sh. |
 | First call to the server is slow / hangs briefly | Docker is pulling the image on first use. Pre-pull with `docker pull ghcr.io/sooperset/mcp-atlassian:latest`. |
-| MCP server shows as `failed` in `/mcp` | Gated off (the default at every session start) - `touch ~/claude-kit/generated/mcp-on/atlassian` and reconnect it in `/mcp`. If it fails again after that: bad token or wrong URL - check `~/.claude/mcp-env/.atlassian.env` and re-run `--with-atlassian`. |
+| MCP server shows as `failed` in `/mcp` | Gated off (the default at every session start) - `touch ~/claude-kit/generated/mcp-on/atlassian` and reconnect it in `/mcp`. If it fails again after that: bad token or wrong URL - check `~/.claude/mcp-env/.atlassian.env` and re-run `-jc`. |
 | `401` from Jira even though the token shows as recently "accessed" in id.atlassian.com | The token is a **scoped** API token. Scoped tokens are refused at the site URL (`https://<site>.atlassian.net`) and only work through the gateway (`https://api.atlassian.com/ex/jira/<cloudId>`), which this server's basic-auth mode never calls. The gateway returns `{"code":401,"message":"Unauthorized; scope does not match"}` rather than a bad-credential error. Use a **classic (unscoped)** API token, or switch to OAuth 2.0 (see "Using a scoped token instead" below). |
-| `searchJiraIssues` returns nothing for known tickets | Project key not in `JIRA_PROJECTS_FILTER` - add it and re-run `--with-atlassian -y`. |
+| `searchJiraIssues` returns nothing for known tickets | Project key not in `JIRA_PROJECTS_FILTER` - add it and re-run `-jc -y`. |
 | Settings applied but Claude Code says "no servers" | Restart Claude Code - MCP config is read at startup. |
 
 ## Using a scoped token instead (OAuth 2.0)

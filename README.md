@@ -21,6 +21,7 @@ A single-script Claude Code setup. Run `./install.sh -q` to configure `~/.claude
 │   ├── mcp-atlassian.json  # Atlassian Remote MCP fragment (opt-in)
 │   ├── .atlassian.env.example # Jira/Confluence creds template -> copy to ~/.claude/mcp-env/.atlassian.env
 │   ├── .github.env.example # GitHub read-only PAT template -> copy to ~/.claude/mcp-env/.github.env
+│   ├── .aws.env.example    # AWS read-only IAM key template -> copy to ~/.claude/mcp-env/.aws.env
 │   └── .codex.env.example  # Codex agent defaults template -> copy to generated/.codex.env (no secret)
 ├── generated/              # machine-local config, NO secrets (gitignored; back this up)
 │   ├── .codex.env          #   Codex model/sandbox knobs (created by install.sh -x; no secret)
@@ -29,6 +30,7 @@ A single-script Claude Code setup. Run `./install.sh -q` to configure `~/.claude
 │                           # SECRETS LIVE OUTSIDE THIS REPO - see below:
 │                           #   ~/.claude/mcp-env/.atlassian.env   (install.sh -j/-c)
 │                           #   ~/.claude/mcp-env/.github.env      (install.sh -g)
+│                           #   ~/.claude/mcp-env/.aws.env         (install.sh -a)
 │                           #   ~/.claude/oe-chrome-agent/         (install.sh -w, walker logins)
 ├── skills/                 # each dir symlinked into ~/.claude/skills/<name>
 │   │                       #   context skills are prefixed c-; manual (disable-model-invocation) is the default
@@ -42,7 +44,7 @@ A single-script Claude Code setup. Run `./install.sh -q` to configure `~/.claude
 │   ├── c-bash-style/ c-yiic-command-style/ c-note-style/       # house style - manual
 │   ├── c-claude-kit/ c-dblogin/ c-docbuilder-docset/ c-notes-app/  # kit/repo context - manual
 │   ├── create-pr/ create-oe-pr/ create-oe-module/ new-feature/ performance-indexes-rollup/  # workflow - manual
-│   └── jiramcp/ githubmcp/ codexmcp/ devopstickets/            # MCP preflight - manual; no "Context loaded"
+│   └── jiramcp/ githubmcp/ awsmcp/ codexmcp/ devopstickets/    # MCP preflight - manual; no "Context loaded"
 └── docs/
     ├── permissions.md      # how the 4 tiers work, deny -> ask -> allow
     ├── skills.md           # CLAUDE.md vs SKILL.md, sub-skills, naming
@@ -50,7 +52,8 @@ A single-script Claude Code setup. Run `./install.sh -q` to configure `~/.claude
     ├── sandbox.md          # running without prompts in a container/VM
     ├── atlassian.md        # Jira + Confluence via Atlassian MCP - setup + teardown
     ├── github.md           # GitHub (read-only) via github-mcp-server - setup + teardown
-    └── codex.md            # OpenAI Codex agents via codex mcp-server - setup + teardown
+    ├── codex.md            # OpenAI Codex agents via codex mcp-server - setup + teardown
+    └── aws.md              # AWS (read-only) via aws-api-mcp-server - setup + limitations
 ```
 
 The installer writes / merges:
@@ -60,7 +63,7 @@ The installer writes / merges:
 - `~/.claude/CLAUDE.md` - **symlinked** to `claude-md/CLAUDE.md` in this kit (never-commit/push rules + condensed Karpathy guidelines); editing the kit file is live.
 - `~/.claude/skills/<name>` - symlinked to `skills/<name>` in this kit.
 
-**No secret ever lives inside this repo.** Tokens, cookies, keys and saved sessions go under `~/.claude/` - `~/.claude/mcp-env/` for the Atlassian and GitHub credentials, `~/.claude/oe-chrome-agent/` for the Chrome walker's two saved logins. This kit is a git repo with a remote, so anything in its working tree is one `git add -f`, one `.gitignore` edit or one archive away from being published; `.gitignore` is a convenience, not a security control. What the installer *does* keep in the gitignored `generated/` folder is machine-local **non-secret** config (Codex model knobs, the walker's network/URL, the MCP startup-gate flags) - see [Backing up generated config](#backing-up-generated-config). MCP server registrations themselves are written by the `claude` CLI to `~/.claude.json` (not `settings.json`), and those *do* embed the token, which is why `~/.claude.json` is also outside the kit.
+**No secret ever lives inside this repo.** Tokens, cookies, keys and saved sessions go under `~/.claude/` - `~/.claude/mcp-env/` for the Atlassian, GitHub and AWS credentials, `~/.claude/oe-chrome-agent/` for the Chrome walker's two saved logins. This kit is a git repo with a remote, so anything in its working tree is one `git add -f`, one `.gitignore` edit or one archive away from being published; `.gitignore` is a convenience, not a security control. What the installer *does* keep in the gitignored `generated/` folder is machine-local **non-secret** config (Codex model knobs, the walker's network/URL, the MCP startup-gate flags) - see [Backing up generated config](#backing-up-generated-config). MCP server registrations themselves are written by the `claude` CLI to `~/.claude.json` (not `settings.json`), and those *do* embed the token, which is why `~/.claude.json` is also outside the kit.
 
 It backs up the pre-existing `settings.json` to `settings.json.bak` only when the merged content actually differs, so a no-op re-run preserves your existing backup. The first time it converts a real `~/.claude/CLAUDE.md` (or `statusline.sh`) into the kit symlink it backs that file up to `*.bak`; once it's a symlink there's nothing left to back up. `settings.json` is edited as JSON via `jq` (never blind text-append).
 
@@ -193,11 +196,11 @@ The installer manages the Claude Code CLI itself, so a brand-new machine needs n
 - **Install if absent.** If `~/.claude` doesn't exist, install.sh runs `curl -fsSL https://claude.ai/install.sh | bash` to install Claude Code before configuring it.
 - **Update if present.** Otherwise it runs **`claude update`** to pull the latest CLI before applying config. Skip with `--no-update` (`-U`) when offline or when the CLI is managed by a package manager; it's auto-skipped right after a from-scratch install (already current) and if `claude` isn't on `PATH`. A failed update warns and continues rather than aborting.
 
-### 11. Jira + Confluence (`--with-atlassian` / `--without-atlassian`)
+### 11. Jira + Confluence (`-j` + `-c` / `--without-atlassian`)
 
-**All three MCP servers (sections 11-13) register behind a one-shot startup gate.** A new
+**All four MCP servers (sections 11-14) register behind a one-shot startup gate.** A new
 session starts **no** MCP containers - each server shows `failed` in `/mcp` until you
-request it: `touch ~/claude-kit/generated/mcp-on/<atlassian|github|codex>` then
+request it: `touch ~/claude-kit/generated/mcp-on/<atlassian|github|aws|codex>` then
 reconnect the server in `/mcp` (its tools bind on the late connect - verified; stdio
 servers are never auto-retried, so nothing respawns behind your back). The flag is
 consumed on start, so the next session begins gated again - touch it just before
@@ -206,8 +209,8 @@ launching Claude Code to have a server up from the start.
 Merge or remove the Atlassian Remote MCP server entry in `settings.json`:
 
 ```bash
-./install.sh --with-atlassian    -p standard -y    # opt in
-./install.sh --without-atlassian -p standard -y    # tear down
+./install.sh -jc                  -p standard -y    # opt in  (--with-jira + --with-confluence)
+./install.sh --without-atlassian -p standard -y    # tear down (-J)
 ```
 
 Authentication is OAuth-based and happens inside Claude Code via `/mcp` - no tokens stored in this repo. Full setup + teardown (including revoking the OAuth grant on Atlassian's side) lives in **[docs/atlassian.md](docs/atlassian.md)**.
@@ -238,7 +241,33 @@ verify. Full setup, token minting, rotation, and teardown live in
 
 Neither flag = `mcpServers.github` is left exactly as-is on re-runs.
 
-### 13. OpenAI Codex agents (`--with-codex` / `--without-codex`)
+### 13. AWS - read-only (`--with-aws` / `--without-aws`)
+
+Register or remove the **awslabs `aws-api-mcp-server`** container so Claude can read
+AWS state (`call_aws`, `suggest_aws_commands`) instead of clicking through the console:
+
+```bash
+./install.sh --with-aws    -p standard -y    # opt in  (-a)
+./install.sh --without-aws -p standard -y    # tear down (-A)
+```
+
+**Claude never changes anything in AWS.** No create, modify, delete, tag, start or
+stop - a hard rule in `CLAUDE.md`, backed by `READ_OPERATIONS_ONLY=true` baked into
+the registration (the server refuses any command off its read-only list) and by a
+`Bash(aws *)` deny on every tier so there is no route around the MCP. Telemetry is
+off and the server gets no local filesystem access.
+
+Authentication is a **dedicated read-only IAM user's** access key, stored in
+`~/.claude/mcp-env/.aws.env` (mode 600, outside the kit) - never on the `docker`
+command line. Note that the managed `ReadOnlyAccess` policy still permits
+`secretsmanager:GetSecretValue`, `ssm:GetParameter`, `s3:GetObject` and
+`kms:Decrypt`; deny those explicitly. Full setup and the limitations that matter
+live in **[docs/aws.md](docs/aws.md)**; the environment it reads is described in
+`knowledge/aws-production-deployments.md`.
+
+Neither flag = `mcpServers.aws` is left exactly as-is on re-runs.
+
+### 14. OpenAI Codex agents (`--with-codex` / `--without-codex`)
 
 Register or remove **OpenAI Codex** as an MCP server so Claude can spawn one or
 many autonomous Codex coding agents. Like Atlassian/GitHub it runs **in Docker**:
@@ -275,7 +304,7 @@ write action. Full setup, model/sandbox tuning, and teardown:
 
 Neither flag = `mcpServers.codex` is left exactly as-is on re-runs.
 
-### 14. Skills auto-invoke toggle (`--skills-auto on|off`)
+### 15. Skills auto-invoke toggle (`--skills-auto on|off`)
 
 A kit skill carrying `disable-model-invocation: true` is loaded only when you invoke it
 by name; `false` lets Claude auto-pull it when its description matches the task. `-s on`
@@ -303,7 +332,7 @@ revert with git if ever needed.
 intent, so a plain run only reports the current tally (`N auto-invokable, M manual,
 K always-auto`) instead of rewriting 40-odd tracked files as an install side effect.
 
-### 15. Conversation pruning + retention (`--prune-sessions`, `CLEANUP_PERIOD_DAYS`)
+### 16. Conversation pruning + retention (`--prune-sessions`, `CLEANUP_PERIOD_DAYS`)
 
 Two controls over conversation history:
 
@@ -329,7 +358,7 @@ disk. Interactive runs print a summary (count, projects, size) and ask `y/N`; `-
 skips the prompt. `memory/` dirs and `history.jsonl` (up-arrow prompt history) are
 never touched.
 
-### 16. Memory backup (`memory/`)
+### 17. Memory backup (`memory/`)
 
 Claude Code saves cross-conversation memories under `~/.claude/projects/<slug>/memory/`
 - plain markdown, but outside git and gone if `~/.claude` is lost. On every run
@@ -340,7 +369,7 @@ floors match `syncSkills` - correct links untouched, foreign symlinks skipped wi
 warning, and if both a real dir and a kit dir exist nothing is merged silently. After
 `--fresh` (or on a new machine) the link pass recreates the symlinks from the kit copy.
 
-### 17. MCP logout (`--logout codex|github|atlassian|all`)
+### 18. MCP logout (`--logout codex|github|atlassian|aws|all`)
 
 `./install.sh -l <mcp>` logs out of an MCP and **exits** - a standalone action that
 runs nothing else, which is why every permission tier always-allows
@@ -350,11 +379,12 @@ removes:
 
 - **codex** - `~/.codex/auth.json` (the ChatGPT session). The registration stays in
   place; a fresh container `login` brings the tools straight back.
-- **github / atlassian** - the `~/.claude/mcp-env/` env file **and** the `~/.claude.json`
-  registration, because that registration embeds the token.
+- **github / atlassian / aws** - the `~/.claude/mcp-env/` env file **and** the
+  `~/.claude.json` registration, because that registration embeds the credentials.
 
 Everything is local-only: each block prints where to revoke the token server-side
-(GitHub token settings, Atlassian API-tokens page, ChatGPT authorized apps).
+(GitHub token settings, Atlassian API-tokens page, IAM access keys, ChatGPT
+authorized apps).
 
 ---
 

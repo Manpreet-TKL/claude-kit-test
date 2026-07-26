@@ -7,6 +7,7 @@
     "Bash",
     "mcp__atlassian",
     "mcp__github",
+    "mcp__aws",
     "mcp__codex",
     "Bash(~/claude-kit/install.sh -l *)",
     "Bash(bash ~/claude-kit/install.sh -l *)"
@@ -14,6 +15,7 @@
   "deny": [
     "Bash(git push *)",
     "Bash(git commit *)",
+    "Bash(aws *)",
     "Bash(rm -rf /*)",
     "Bash(rm -rf ~*)"
   ]

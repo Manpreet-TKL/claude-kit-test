@@ -206,7 +206,7 @@ project-prefixed) - `docker exec claude-chrome ...` / `docker compose exec oe-ch
 ...` both work, one by container name, one by compose service name.
 
 Automated: `./install.sh -w` (docker build output silenced) or
-`docker/oe-chrome-agent/setup-walker.sh` on its own (verbose build - if the silenced `-w`
+`docker/oe-chrome-agent/setup-walker.sh` on its own (verbose build - if the silenced `-o`
 path fails, re-run this directly to see why). It asks for `OE_NETWORK` (saved to
 `generated/.oe-chrome-agent.env` and reused as the default next time; `-y` skips the prompt
 and reads that file), runs the two commands above, waits for the container to boot, and
