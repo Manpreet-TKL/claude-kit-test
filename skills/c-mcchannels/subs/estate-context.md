@@ -3,7 +3,7 @@
 The three channels this skill documents (from `~/mc_channels/`) are not one-offs - each
 is a **shared lineage that recurs across the wider client estate**. Their channel ids are
 3 of the 12 ids that appear in more than one instance. The full 13-instance / 102-channel
-analysis is at `~/claude-kit/knowledge/mirth-channel-corpus/`; this sub distils what it adds.
+analysis is at `~/mirth-channel-corpus/`; this sub distils what it adds.
 
 | Skill reference channel | id (short) | Estate siblings (instance:name) | Categories the id lands in |
 |---|---|---|---|
@@ -29,7 +29,7 @@ with the same id/name behaves the same:
 
 Rule when editing from these references: verify the target channel's connectors and
 transformer; do not port behaviour by id or name. Per-channel records with evidence
-pointers are in `~/claude-kit/knowledge/mirth-channel-corpus/ai-corpus/channels.jsonl`.
+pointers are in `~/mirth-channel-corpus/ai-corpus/channels.jsonl`.
 
 ## 2. The secret pattern is the estate norm (confirms the GOTCHA)
 
@@ -38,7 +38,7 @@ Basic password in clear - value redacted in the corpus) is not local to `~/mc_ch
 the **same single `api` credential recurs 356 times across the whole estate** (one shared
 service account; finding SEC-2). The secret-safe `${VAR}` + `OE_API_AUTH` pattern this
 skill describes is exactly right; the corpus formalises it into a two-placeholder-class
-template model (`~/claude-kit/knowledge/mirth-channel-corpus/templates/README.md`):
+template model (`~/mirth-channel-corpus/templates/README.md`):
 
 - **site-parameter tokens** (`${LISTEN_PORT}`, `${BOARD_CODE}`, ...) filled from
   `sites.csv` at **render** time - safe to commit;
@@ -50,7 +50,7 @@ and Wales PDQ (8 per-board, logic-exact).
 
 ## 3. Security / reliability facts when touching these channels
 
-From the Phase 13 findings (`~/claude-kit/knowledge/mirth-channel-corpus/security/findings.md`) - all
+From the Phase 13 findings (`~/mirth-channel-corpus/security/findings.md`) - all
 evidence-cited and mostly topology-conditional; flag them, do not restate as absolutes:
 
 - **Plaintext to `web` (SEC-1):** OE HTTP Sender calls go to `http://web/...` (the
@@ -69,7 +69,7 @@ evidence-cited and mostly topology-conditional; flag them, do not restate as abs
 
 ## 4. The machine-readable corpus
 
-For any estate-wide question, point at `~/claude-kit/knowledge/mirth-channel-corpus/ai-corpus/`:
+For any estate-wide question, point at `~/mirth-channel-corpus/ai-corpus/`:
 `summary.json` (aggregates - load first), `channels.jsonl` (per-channel record with
 provenance + evidence), `glossary.md`, `schema.json`. Generic Mirth mechanics stay in
 `c-mirth`; PASAPI endpoint detail stays in `c-pasapi`; this skill stays the per-channel

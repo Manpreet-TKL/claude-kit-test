@@ -65,4 +65,9 @@ and should become `${OE_IDENTIFIER_TYPE}`.
   secret-free-export rules.
 - `subs/estate-context.md` - how the three reference channels sit in the 13-instance
   estate: shared-lineage drift (name != function), the estate-wide shared `api` secret,
-  the template model, and the security/reliability findings. Full corpus: ~/claude-kit/knowledge/mirth-channel-corpus.
+  the template model, and the security/reliability findings. Full corpus: ~/mirth-channel-corpus.
+
+For how the wider estate **behaves** - the filter vocabulary, identifier selection, the
+HL7-to-PASAPI field map and what each of the 12 sites does differently - load
+`c-mirth-estate`. It answers those from its own body; this skill stays scoped to the three
+channels in `~/mc_channels/`.

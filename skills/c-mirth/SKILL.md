@@ -8,7 +8,7 @@ disable-model-invocation: false
 
 When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself - it just loads knowledge; act only on instructions given in the conversation.
 
-BridgeLink 4.6.1 (Innovar fork of Mirth Connect). **"Mirth", "Mirth Connect", "`mc`" and "BridgeLink" are used interchangeably** - the same integration engine; `mc` is the container/service name, BridgeLink is the Innovar fork of Mirth Connect that ships. Container `*-mc-1`, network `<proj>_backend`, `-Xmx512m`. Pin image tags to a patch (`4.6.1` - there is no bare `4.6`). Curl recipes, lifecycle commands, Rhino snippets: `subs/reference.md`. OE PAS specifics: `c-pasapi` skill.
+BridgeLink 4.6.1 (Innovar fork of Mirth Connect). **"Mirth", "Mirth Connect", "`mc`" and "BridgeLink" are used interchangeably** - the same integration engine; `mc` is the container/service name, BridgeLink is the Innovar fork of Mirth Connect that ships. Container `*-mc-1`, network `<proj>_backend`, `-Xmx512m`. Pin image tags to a patch (`4.6.1` - there is no bare `4.6`). Curl recipes, lifecycle commands, Rhino snippets: `subs/reference.md`. OE PAS specifics: `c-pasapi` skill. How the client channel estate actually behaves - filters, routing, field maps, per-site deltas: `c-mirth-estate` skill.
 
 ## Mirth/BridgeLink version by OE release
 

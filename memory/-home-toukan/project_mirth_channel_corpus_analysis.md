@@ -12,7 +12,7 @@ Started 2026-07-21. Analyse all Mirth Connect / BridgeLink channel exports under
 `/home/toukan/client-mirth-channels` (READ-ONLY corpus) and produce documentation,
 templates, deployment automation design, an AI knowledge corpus, and an expanded
 [[c-mcchannels]] skill. Full 16-phase brief; output tree at
-`/home/toukan/claude-kit/knowledge/mirth-channel-corpus/`.
+`/home/toukan/mirth-channel-corpus/`.
 
 Corpus facts (evidence, 2026-07-21): 13 instances (Bedford, Bolton, EK, ENHT,
 Kingston, MEH, Newmedica, Optegra, Pennine, Portsmouth, Sussex, Wales), 46 XML

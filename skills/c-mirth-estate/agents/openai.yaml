@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-mirth-estate"
+  short_description: "How the client Mirth estate behaves - flows, filters, per-site deltas"

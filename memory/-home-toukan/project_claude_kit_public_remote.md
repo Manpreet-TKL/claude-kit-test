@@ -19,12 +19,15 @@ Two consequences:
    `~/.claude/oe-chrome-agent/` (walker logins). `install.sh` migrates legacy in-repo
    copies out on its next run. See [[feedback_bulk_jira_download_bash_not_mcp]] for the
    script that reads the Atlassian one.
-2. **The client-derived material is Manpreet's to handle, not mine.** That covers
-   `knowledge/mirth-channel-corpus/`, the `c-mcchannels` skill and its subs,
-   `knowledge/bolton-performance.md`, and the Mirth analysis memory file
-   ([[project_mirth_channel_corpus_analysis]]). Between them they carry named client
-   organisations, internal hostnames and IPs, per-site security findings and one live
-   shared service-account credential in clear - all already pushed.
+2. **The client-derived material is Manpreet's to handle, not mine.** That covers the
+   `c-mcchannels` skill and its subs, `knowledge/bolton-performance.md`, and the Mirth
+   analysis memory file ([[project_mirth_channel_corpus_analysis]]). Between them they
+   carry named client organisations, internal hostnames and IPs, per-site security
+   findings and one live shared service-account credential in clear - all already
+   pushed. The Mirth channel corpus itself was **moved out of the kit** on 2026-07-25
+   to `~/mirth-channel-corpus` (still untracked there) and its removal staged for
+   Manpreet to commit; the kit keeps only the sanitised `c-mirth-estate` skill
+   distilled from it.
 
 **Why:** asked directly on 2026-07-25 whether to redact these, Manpreet chose "leave
 for you" on both the credential and the client identifiers. A well-meant redaction
