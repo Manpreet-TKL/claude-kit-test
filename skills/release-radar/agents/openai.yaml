@@ -1,0 +1,3 @@
+interface:
+  display_name: "release-radar"
+  short_description: "Sweep tracked platform releases into a dated digest in radar/"

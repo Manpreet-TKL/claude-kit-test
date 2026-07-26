@@ -5,7 +5,10 @@ A single-script Claude Code setup. Run `./install.sh -q` to configure `~/.claude
 ```
 ~/claude-kit/
 ├── install.sh              # the only entry point
+├── windows-install.ps1     # Windows/PowerShell installer - project-local .claude, copies instead of symlinks
 ├── README.md               # this file
+├── radar/
+│   └── release-radar.md    # dated upstream-release digests, written by the release-radar skill
 ├── claude-md/
 │   └── CLAUDE.md           # global instructions; symlinked into ~/.claude/CLAUDE.md (edits are live)
 ├── settings/
