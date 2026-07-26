@@ -8,7 +8,7 @@ disable-model-invocation: false
 
 When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself - it just loads knowledge; act only on instructions given in the conversation.
 
-For Manpreet's knowledge-base notes - not code comments, commit messages, READMEs, or PR text. Canonical examples: `/home/toukan/notes_sample.txt`. Detailed conventions and examples: `subs/reference.md`. Notes are text-only, grep-discoverable, act-on-able in seconds.
+For the DevOps team's knowledge-base notes - not code comments, commit messages, READMEs, or PR text. Detailed conventions and examples: `subs/reference.md`. Notes are text-only, grep-discoverable, act-on-able in seconds.
 
 ## Shape (top -> bottom)
 
@@ -19,11 +19,11 @@ For Manpreet's knowledge-base notes - not code comments, commit messages, README
 
 1.) Step                    <- exact form `1.)`; sub-items `a.)`; one imperative each
 2.) Step that runs a command
-# 2.) Comment matching the step
+# Comment matching the step, no step number
 <command on its own line, no $ prompt>
 
 <raw reference URLs, one per line>
----------------------------...(~135 dashes separate notes in one file)
+---------------------------...(~135 dashes, only when a file holds more than one note)
 ```
 
 ## Rules
@@ -38,4 +38,5 @@ For Manpreet's knowledge-base notes - not code comments, commit messages, README
 - Mark unfinished notes `***Not Finished***` at the top; a stub beats no note.
 - As short as correct: procedural prose is a smell - convert it to numbered steps.
 - No blank lines between numbered steps - steps run flush; blank lines appear only after the title line and after the description block.
-- Deliver every drafted note by Writing it to a file under /home/toukan (e.g. /home/toukan/<topic>-note.txt) and stating the path - never print the note body in chat: copying from the CLI inside screen mangles it (OSC 52 base64 leak).
+- A run of ~135 dashes separates notes only when a file holds more than one note; a single-note file ends after its references, with no dashes.
+- Always deliver a drafted note by Writing it to a file - never print the note body in chat, because copying from the CLI inside screen mangles it (OSC 52 base64 leak). Write to the current working directory when it is a sensible home for it, otherwise /home/toukan (e.g. /home/toukan/<topic>-note.txt), and state the absolute path.

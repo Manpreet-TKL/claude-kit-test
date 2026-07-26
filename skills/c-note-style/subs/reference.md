@@ -20,20 +20,26 @@ State the situation, nothing else - "If you need to terminate SSH sessions other
 
 ## Command blocks
 
-Each command on its own line, preceded by a `#` comment matching the step number, so the block runs as a script:
+Each command on its own line, preceded by a `#` comment saying what the command does, so the block runs as a script. The comment never carries a step number:
 
 ```
-# 1.) Add a second key to the machine
+# Add a second key to the machine
 ssh-keygen -q -t rsa -b 4096 -C "sysadmin@toukanlabs.com" -N '' -f ~/.ssh/id_rsa2 <<<n && cat ~/.ssh/id_rsa2.pub
-# 3.) Test you have access to git
+# Test you have access to git
 ssh -Tv git@github-toukan
 ```
 
-No `$`/`>` prompts. SQL/config blocks sit on their own lines without a leading `#`. Keep cleanup commands in the note (`# 4.) Remove it after done` / `sudo apt remove nethogs && sudo apt autoremove`). Multi-line one-liners are fine if they're a single logical action.
+No `$`/`>` prompts. SQL/config blocks sit on their own lines without a leading `#`. Keep cleanup commands in the note (`# Remove it after done` / `sudo apt remove nethogs && sudo apt autoremove`). Multi-line one-liners are fine if they're a single logical action.
 
 ## References
 
 Raw URLs at the bottom, one per line, no markdown. Anything needing more than a sentence lives behind the link.
+
+## Separators and delivery
+
+A `~135`-dash rule separates one note from the next. It only appears when a file holds more than one note - a file with a single note simply ends after its references.
+
+Every drafted note is Written to a file and the absolute path stated; the body is never printed in chat. Put it in the current working directory when that is a sensible home for it, otherwise `/home/toukan/<topic>-note.txt`.
 
 ## Other note types
 
