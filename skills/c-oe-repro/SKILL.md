@@ -51,6 +51,8 @@ Default to Chrome and **ask before switching to the scripted lane**, naming why 
 
 Enter rung 3 by invoking the **`oe-probe-chrome`** skill, which owns `drive.sh` - never by hand-rolling a `docker exec` into the container. Scope that session to one job (find and narrate the click path), then immediately distil it into `c-oe-nav/subs/canned/<journey>.md` so every later run of the journey is rung 1.
 
+**The first drive of a new reproduction is always `./drive.sh -r -t <slug> "<prompt>"`.** `-r` reboots the walker so the browser is genuinely cold - no inherited tabs, drafts, site grants or stale OE session - because a repro that only works from the last walk's leftovers is not a repro. Each drive then copies its screenshots and result out to `~/repro-evidence/<date>-<slug>/` on its own; that folder is what the Evidence block cites. Both rules are stated in full in `oe-probe-chrome`.
+
 ## The rules - what makes steps followable
 
 Write for someone who has never used the page and has *only these steps* (not the Description). They apply to **both** blockquotes.

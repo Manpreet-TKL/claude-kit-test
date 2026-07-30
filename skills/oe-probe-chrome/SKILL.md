@@ -33,7 +33,12 @@ cd ~/claude-kit/docker/oe-chrome-agent
 ./drive.sh "<prompt>"
 ```
 
-Under the hood: `printf '%s' "<prompt>" | docker exec -i claude-chrome claude -p --chrome --allowedTools "mcp__claude-in-chrome" --output-format json`. Multi-turn: `-s <session-id>`; tag logs: `-t <name>`; prepend a walk map: `-f <map-file>`.
+Under the hood: `printf '%s' "<prompt>" | docker exec -i claude-chrome claude -p --chrome --allowedTools "mcp__claude-in-chrome" --output-format json`. Multi-turn: `-s <session-id>`; tag logs and name the evidence folder: `-t <name>`; prepend a walk map: `-f <map-file>`; reboot first: `-r`; evidence elsewhere: `-e <dir>`.
+
+### Two rules that are not optional
+
+1. **Reboot before the first drive of a new reproduction.** `./drive.sh -r -t <slug> "<prompt>"`. Without `-r` the walk inherits the last walk's browser: whatever tabs, autosave drafts, half-filled forms and site grants it left behind, and an OE session that may be days old. A repro that starts there is not deterministic, and a repro that cannot be reproduced from a cold start is not a repro. `-r` restarts the container, which makes the entrypoint wipe the Chrome profile, `~/.claude` and `/tmp` and lay a fresh profile down from the baked template, then waits for the OE auto-login to land before driving. Later drives *within the same* reproduction skip `-r` - the point is a clean start, not a clean step. `-r` and `-s` are mutually exclusive and the script refuses the pair: the restart deletes the very transcript `-s` resumes.
+2. **The evidence always leaves the container, and `drive.sh` does it for you.** Every drive copies each `/tmp/claude-chrome-*` file plus the walk's own JSON result into `~/repro-evidence/<date>-<tag>/`, and prints `EVIDENCE: <dir>` at the end. This is not tidiness. The extension writes screenshots into `/tmp`, the entrypoint clears `/tmp` on every boot, and rule 1 makes a boot the first thing the next reproduction does - so evidence still sitting in the container is evidence with a countdown on it. Pass a real `-t <slug>` so the folder is findable, and cite that folder in the repro's Evidence block. `~/repro-evidence` is outside `~/claude-kit` on purpose: the kit has a public remote and a walk photographs whatever the page happened to be showing.
 
 **Check `ls ~/claude-kit/skills/c-oe-nav/subs/canned/` first** - if this exact journey was already walked, replay it with `./drive.sh -f subs/canned/<journey>.md "<what to re-verify>"` instead of a fresh exploratory walk. After a genuinely novel walk, distill it into a new `subs/canned/<journey>.md` file (same format as the existing ones) and add it to the index in `c-oe-nav/SKILL.md`.
 

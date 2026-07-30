@@ -19,15 +19,19 @@ Always under `~/pullrequests/` - `~/pullrequests/<repo>-pr-<slug>/` (ticket ref 
 - `PR.md` - a short **form**, not prose, carrying: an **Apply onto** base line (`<branch> @ <sha>`, so the patch can be rebased on the far side), **Branch** (must start `fix/` or `feature/`), **Commit title(s)** (suggested `git commit -m` message(s) you author yourself), a **Description** (a short what-and-why paragraph), and an **`## Apply`** command block - the far-side commands with concrete values. No Jira ticket / type / affects-version / fix-version fields - those live only in `create-oe-pr`. Full shape: `subs/reference.md`.
 - `changes.patch` - a single unified-diff patch against the base, capturing every change - additions, edits, **and deletions** - as content, not commits. No clone, no `files/`, no `patches/`; the patch is the whole change and stays tiny to copy away. It carries **no commit messages and no identity** - no author name or email anywhere in the folder - and applies as **unstaged working-tree changes only** (`git apply --3way`, never `git am`), so you review, stage, and author the commit(s) yourself on the far side; the result is indistinguishable from editing the code locally and pushing it yourself. `PR.md` records the base as `Apply onto: <branch> @ <sha>` and carries the exact apply commands in its `## Apply` block; a moved base is no problem - `git apply --3way` re-bases it. Mark new files `(new)` in the Description. See `subs/reference.md` -> *Building the patch*.
 
-## The shared index: `~/pullrequests.md`
+## The shared index: `~/pullrequests/pullrequests.md`
 
-After writing the folder, append **exactly one line** to `~/pullrequests.md` (create it if absent) - a markdown link to the PR folder plus an em-dash, single-line summary. One line per PR, newest at the bottom; never touch existing lines. This file is a shareable register of every PR raised, shared with `create-oe-pr`.
+After writing the folder, append **exactly one line** to `~/pullrequests/pullrequests.md` (create it if absent) - a markdown link to the PR folder plus an em-dash, single-line summary. One line per PR, newest at the bottom; never touch existing lines except to repoint a link on the move to `pushed/` (below). This file is a shareable register of every PR raised, shared with `create-oe-pr`. It sits alongside the PR folders, so links are relative to `~/pullrequests/` with no directory prefix.
 
 ```
-- [<repo>-pr-<slug>](pullrequests/<repo>-pr-<slug>/) - <single-line explanation of the PR>
+- [<repo>-pr-<slug>](<repo>-pr-<slug>/) - <single-line explanation of the PR>
 ```
 
-Once you've pushed a PR, move its folder into `~/pullrequests/pushed/`; the index line stays as-is.
+Once you've pushed a PR, move its folder into `~/pullrequests/pushed/` and repoint that PR's index link to `pushed/<folder>/` - the link text and summary stay unchanged, only the target gains the prefix, so the link keeps resolving:
+
+```
+- [<repo>-pr-<slug>](pushed/<repo>-pr-<slug>/) - <unchanged summary>
+```
 
 ## Field judgements
 

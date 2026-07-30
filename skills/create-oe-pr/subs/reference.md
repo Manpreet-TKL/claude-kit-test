@@ -255,7 +255,8 @@ From a clean checkout:
    file, in order.
 5. `git log --oneline <base>..HEAD` - the subject(s) must read `[OE-12345] - ...`.
 6. `git push -u origin fix/OE-12345`, raise the PR, then move the folder into
-   `~/pullrequests/pushed/` (back on the machine where the folder was authored).
+   `~/pullrequests/pushed/` and repoint its `pullrequests.md` link to
+   `pushed/<folder>/` (back on the machine where the folder was authored).
 
 **`git am` is never used.** It cannot create a commit without an author baked into the
 patch (`fatal: empty ident name`), and a baked author is exactly what this flow exists to

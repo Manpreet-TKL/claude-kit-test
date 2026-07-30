@@ -42,15 +42,19 @@ Look up the live lines when you can (`git ls-remote --heads origin 'release/*'`)
 
 The patch is cut against that base, and `PR.md` records it as `Apply onto: <branch> @ <sha>` (the `git ls-remote` sha). The far side supplies the *current* base at apply time, so a base that has moved on since is no problem - `git apply --3way` re-bases the change onto today's tree (see `subs/reference.md` -> *Building the patch*). This is exactly why the patch, not a clone, is the deliverable: nothing is welded to a stale base.
 
-## The shared index: `~/pullrequests.md`
+## The shared index: `~/pullrequests/pullrequests.md`
 
-After writing the folder, append **exactly one line** to `~/pullrequests.md` (create it if absent) - a markdown link to the PR folder plus an em-dash, single-line summary (reuse the Jira ticket title). One line per PR, newest at the bottom; never touch existing lines. This file is a shareable register of every PR raised, shared across `create-pr` and `create-oe-pr`.
+After writing the folder, append **exactly one line** to `~/pullrequests/pullrequests.md` (create it if absent) - a markdown link to the PR folder plus an em-dash, single-line summary (reuse the Jira ticket title). One line per PR, newest at the bottom; never touch existing lines except to repoint a link on the move to `pushed/` (below). This file is a shareable register of every PR raised, shared across `create-pr` and `create-oe-pr`. It sits alongside the PR folders, so links are relative to `~/pullrequests/` with no directory prefix.
 
 ```
-- [oe-pr-<slug>](pullrequests/oe-pr-<slug>/) - <single-line explanation of the PR>
+- [oe-pr-<slug>](oe-pr-<slug>/) - <single-line explanation of the PR>
 ```
 
-Use the repo-appropriate folder prefix in the link (`oe-pr` / `oe-iol-pr` / `oe-pay-pr`). Once you've pushed a PR, move its folder into `~/pullrequests/pushed/`; the index line stays as-is.
+Use the repo-appropriate folder prefix in the link (`oe-pr` / `oe-iol-pr` / `oe-pay-pr`). Once you've pushed a PR, move its folder into `~/pullrequests/pushed/` and repoint that PR's index link to `pushed/<folder>/` - the link text and summary stay unchanged, only the target gains the prefix, so the link keeps resolving:
+
+```
+- [oe-pr-<slug>](pushed/oe-pr-<slug>/) - <unchanged summary>
+```
 
 ## Field judgements
 

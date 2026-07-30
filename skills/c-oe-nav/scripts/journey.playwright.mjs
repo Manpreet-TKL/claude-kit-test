@@ -156,7 +156,7 @@ const acts = {
 
 const browser = env('OE_CDP_URL')
   ? await chromium.connectOverCDP(env('OE_CDP_URL'))
-  : await chromium.launch({ args: ['--no-sandbox'], ...(env('OE_CHROME') ? { executablePath: env('OE_CHROME') } : {}) });
+  : await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'], ...(env('OE_CHROME') ? { executablePath: env('OE_CHROME') } : {}) });
 try {
   const page = await (await browser.newContext({ viewport: { width: 1400, height: 900 } })).newPage();
   page.on('dialog', (d) => (ALLOW_WRITE ? d.accept() : d.dismiss()).catch(() => {}));

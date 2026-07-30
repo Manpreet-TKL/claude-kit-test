@@ -117,6 +117,8 @@ Single open element (DNA Sample). 'Consented By' pre-selects current user; 'Dna 
 
 **Live check (2026-07-24, develop, ctx 8/ep 601039):** form loaded but some details above didn't match live - 'Dna date' field selector is #Element_OphInDnasample_Sample_blood_date_0, not #Element_OphInDnasample_Sample_blood_date as written; 'Study(s)' field has no visible label in the form (shown as empty string), not labeled 'Study(s)' as written.
 
+**Reaching this form at all (develop, 2026-07-29):** DNA sample create is RBAC-gated by the module's API override `createOprn='OprnEditDnaSample'`, checked in `PatientEventController::resolveEventType` - a plain `admin` gets 'Permission denied for creating event type.' The sample DB ships **zero** Genetics role assignments and an **empty** `genetics_study` table, so a walk needs both a role grant and a study row seeded before the form is reachable and saveable. 'Type' also does **not** ship the '- Select -' placeholder the table claims: `et_ophindnasample_sample.type_id` has column default 1, so an untouched form silently validates as 'Blood'. The 'Study(s)' `<select>` adds fine via `selectOption`, but every save logs a `Failed to set unsafe attribute "MultiSelectList_..._Sample[studies"` warning from mass-assignment (harmless to the data).
+
 ### Did Not Attend create form (OphCiDidNotAttend, event_type_id 41) - written from develop view code, live-checked 2026-07-24
 
 - 'Comment' textarea #comments_comment (5 rows, autosize class; placeholder 'Enter comments here'; required).
@@ -132,7 +134,7 @@ The trigger path for the PDF/render temp-file bug family (`oe_pdf` stubs, `magic
 - 'Upload' row radios: 'Single file' `#upload_single` (checked by default), 'Right/Left sides'.
 - File input `#Document_single_document_row_id` (`.js-document-file-input`) is `display:none` - the probe's upload action works on it anyway. Drop-zone label: "Click to select file, DROP here or press Ctrl + V to paste".
 - In-container test PDF (web-live ships ghostscript; one `showpage` per page): `gs -q -o /tmp/twopage.pdf -sDEVICE=pdfwrite -dDEVICEWIDTHPOINTS=300 -dDEVICEHEIGHTPOINTS=300 -c "showpage showpage"`.
-- 'Save' `#et_save` -> lands on `/OphCoDocument/default/view/<event_id>` - take the id from the URL for endpoint work.
+- 'Save' `#et_save` -> lands on `/OphCoDocument/default/view/<event_id>` - take the id from the URL for endpoint work. A **disallowed file type** (e.g. `.txt`) raises a blocking JS alert that leaves `#et_save` unclickable until it is dismissed with `[data-test="alert-ok"]`.
 - Page previews build server-side (`createPdfPreviewImages()`): fire logged-in `GET /eventImage/getImageInfo?event_id=<id>` (the same path the lightning-viewer icon fires) and re-fire after a few seconds until the JSON shows `page_count`. Temp-leak pairing: `docker exec <stack>-web-1 sh -c 'ls -1 /tmp/oe_pdf* 2>/dev/null | wc -l'` before/after.
 
 ### Drug Administration create form (OphDrPGDPSD, event_type_id 48) - written from develop view code, live-checked 2026-07-24
@@ -148,6 +150,8 @@ Drug Administration uses widget-driven form with no traditional form_Element_* f
 - Save: Save button submits form to /OphDrPGDPSD/default/create (POST) and lands at /OphDrPGDPSD/default/view/<event_id> on success; creates Drug Administration event with assignments and medications.
 
 **Live check (2026-07-24, develop, ctx 8/ep 601039):** form loaded but some details above didn't match live - Comments textarea and 'Add comment' button not found - written table expects these to be visible on form (even if hidden by default, button should be present to toggle visibility).
+
+**Scripting the adder (develop, 2026-07-29):** `#js-add-medications` stays disabled for ~1.5s until the JS controller initialises - wait before clicking. The form keeps **both** adder dialogs (preset order and custom medications) in the DOM simultaneously, so every dialog selector (`.adder-search-input`, `.adder-search-result`, `ul[data-id="laterality"]`, `[data-test="add-icon-btn"]`) must be suffixed `:visible` or the hidden twin matches first and times out. `OpenEyes.UI.AdderDialog`'s medication search fires on the input's **keyup only**: `fill()` sets the value without triggering `findRefMedications`, so follow it with `{"press":"End"}` (any keyup with focus in the box) to run the search. Item-level validation errors render as an alert-box banner inside `#event-content`, not `.errorMessage`.
 
 ### Examination create form (OphCiExamination, event_type_id 27) - written from develop view code, live-checked 2026-07-24
 
@@ -302,6 +306,8 @@ Prescription draft-saveable without signature; finalization requires prescriber 
 - Save: Save redirects to /OphDrPrescription/default/view/<event_id>; Save Draft button allows unsigned draft; Save/Print buttons appear only when prescription is signed (signature toggles button visibility via JS).
 
 **Live check (2026-07-24, develop, ctx 8/ep 601039):** matched the live form, no corrections needed.
+
+**Scripting note (develop, 2026-07-29):** while unsigned there is **no `#et_save`** - only 'Save draft' (`#et_save_draft`) and 'PIN sign', so a scripted walk that clicks `#et_save` times out. A draft save still enforces most item validation (laterality when the route is Eye, Duration, Dispense Condition, Dispense Location) while allowing empty Frequency and Dose. Adding a drug through the search defaults Route to 'Eye'. Empty-save validation is a **modal UI Alert** ('Items cannot be blank.', dismiss with `[data-test="alert-ok"]`), not an inline error. Saving a taper row logs `Failed to set unsafe attribute "taper"` warnings on every save although the taper persists - log noise, not a fault.
 
 ### Request Form create form (OphCoRequestForm, event_type_id 49) - written from develop view code, live-checked 2026-07-24
 

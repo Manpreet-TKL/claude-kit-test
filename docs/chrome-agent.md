@@ -263,16 +263,30 @@ re-run `save-state.sh` so the refreshed grant persists.
 `./drive.sh "<prompt>"` starts a fresh session in the container, pipes the prompt via
 stdin, and prints result + token usage (also appended to `artifacts/drive.log`). No
 session resolution needed - fresh sessions are no longer denied (see above). Multi-turn
-continuity: `./drive.sh -s <session-id> "<prompt>"`; tag log lines with `-t <name>`;
-prepend a walk map with `-f <map-file>` (see "Walk maps" below).
+continuity: `./drive.sh -s <session-id> "<prompt>"`; tag log lines and the evidence folder
+with `-t <name>`; prepend a walk map with `-f <map-file>` (see "Walk maps" below); reboot
+first with `-r`; redirect the evidence with `-e <dir>`.
 
-Each run brackets the prompt with two housekeeping steps, both non-fatal:
+Each run brackets the prompt with three housekeeping steps, all non-fatal:
 
 - **Before** - `oe-login.mjs` collapses the tabs to one and re-asserts the OE session, so a
   walk always starts from exactly one tab at `OE_URL` (2-4s). **Skipped on `-s`**, because
   it also navigates that tab and would throw away where the resumed session was.
+- **After** - every `/tmp/claude-chrome-*` file plus the run's JSON result is copied to
+  `~/repro-evidence/<date>-<tag>/`, printed as a closing `EVIDENCE:` line. Mandatory rather
+  than tidy: the extension writes screenshots under `/tmp`, and `wipeContainerState` clears
+  `/tmp` on every boot, so uncopied evidence dies at the next restart. The directory is
+  outside the kit deliberately - `~/claude-kit` has a public remote, and a walk photographs
+  whatever the page was showing.
 - **After** - `sync-state.sh -s` writes the two logins back to the kit, since a prompt is
   the only thing that makes the CLI touch its rotating refresh token.
+
+`-r` restarts the container before driving and replaces the tab reset: the entrypoint wipes
+the profile, `~/.claude` and `/tmp`, lays a fresh profile down from the baked template, and
+`drive.sh` then waits for `noVNC ready` plus the OE auto-login's landing line (typically
+~25s, capped at 120s) before the prompt goes in. Use it for the first drive of any new
+reproduction, so the walk cannot inherit the previous one's tabs, drafts, grants or a
+days-old OE session. `-r` with `-s` is refused - the restart deletes the transcript.
 
 `-s <session-id>` is a **within-boot** facility: transcripts live in `~/.claude`, which the
 next start wipes, so a session id does not survive `docker compose restart`.

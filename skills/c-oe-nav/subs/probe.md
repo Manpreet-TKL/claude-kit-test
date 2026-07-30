@@ -42,6 +42,27 @@ The full per-step dump repeats the whole page's chrome every step, so **the driv
 - **Scope `read`s.** `{"read":"body"}` prints up to 2 000 chars; for a form, read a tight selector (`{"read":"#Element_..._event_sub_type"}`) rather than the whole page.
 - **Under `--verbose`, grep to what you need:** `... < scripts/journey.mjs --verbose 2>&1 | grep -iE '^url:|^### step|headings:|STEP FAILED|error|view/|required'`. One open Add Event dialog alone dumps ~20 event-type links; the hidden re-auth form `#js-login` and the global nav buttons/links recur on every page - ignore them.
 
+## The Playwright driver behaves differently (scripts/journey.playwright.mjs)
+
+Everything above describes `journey.mjs` (Puppeteer). The Playwright variant used on dev/debug images is **not** quiet and does **not** accept `{"dump":true}`:
+
+- It **auto-dumps after every step except `wait` and `read`** - no dump action exists, and passing one exits 2 with `unknown action "dump"` at that step. Briefs that promise a dump action send agents chasing a phantom.
+- **Validation banners land in the dump's `banners:` line.** Several modules (Examination, Drug Administration, DNA sample) render errors in a top alert box, so `{"read":".errorMessage"}` times out even when errors are plainly on screen. Read the dump, not that selector.
+- When any OpenEyes dialog is open the dump scopes to the popup, and its `page behind: "Timed out"` label is a **red herring** - that `h1` belongs to the always-present hidden `#js-overlay` re-auth panel, not a real session expiry.
+- A click that triggers a full navigation can throw an uncaught node exception during the post-click settle, killing the run **without** a `STEP FAILED` marker.
+- It captures no console output. When the fault *is* a console error, copy the script and add `page.on('pageerror', ...)` / `page.on('console', ...)` listeners next to the existing `page.on('dialog', ...)` line - a scratchpad copy, not an edit to the skill's driver.
+- Launch it with `--no-sandbox --disable-dev-shm-usage` (the script already does) - as root with a 64M `/dev/shm`, tabs crash otherwise.
+
+## Running walkers in parallel on one sample box
+
+Volume work (a bug hunt, a broad form sweep) wants several walkers at once. The app makes that unsafe on a *shared patient* and safe on *disjoint* ones:
+
+- **One patient per walker, always.** Create drafts are keyed `(event_type, patient, user)`, so two walkers on one patient share and steal each other's autosave draft, and a save by one deletes the other's draft, whose next autosave then 404s 'Cannot find draft'. `Patient::getOrCreateEpisodeForFirm()` is an unguarded find-then-insert with no unique key, so concurrent first-events in a new context can duplicate episodes.
+- Concurrent logins as the same user are fine - sessions are DB-backed with no single-session enforcement (idle expiry ~24 min) - but login defaults the context to `user->last_firm_id`, so **every walk must pick its context explicitly** or another walker's choice leaks into it.
+- Tag every walk with a unique query param (`&oewalk=<slug>`); it is the only reliable way to attribute log lines when several walkers share `application.log`.
+- Treat MySQL deadlocks, 'Cannot find draft' 404s and session-expiry redirects as **harness artifacts, never findings** - they are the signatures of the three mechanics above.
+- On a dev image, `protected/runtime/debug/<tag>.data` holds full POST bodies - the fastest proof that a value was lost client-side before submission - but the index rotates after ~58 requests, so read it immediately after the walk.
+
 ## Endpoints and proof - same driver, no other HTTP tool
 
 - The driver is a logged-in browser: `{"goto":"/eventImage/getImageInfo?event_id=123"}` fires an endpoint with the session, and a following `{"read":"body"}` prints the JSON response.
