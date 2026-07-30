@@ -29,7 +29,8 @@ and merges the bar **together with**:
 Per-statement cost, so it is worst exactly on the pages perf work targets
 (pages here issue 14k-42k statements). Check `printenv | grep YII_DEBUG_BAR_IPS`
 in the web container and the mtimes in `protected/runtime/debug/*.data` before
-trusting any measurement. Turning it off needs the env var unset and a container
+trusting any measurement. Parsing those `.data` files programmatically:
+`oe-debugbar-data-analysis.md`. Turning it off needs the env var unset and a container
 restart - the human's call, since the bar is also their yardstick.
 
 ## Per-page SQL time, measured by the database
