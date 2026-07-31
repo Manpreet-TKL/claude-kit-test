@@ -1,0 +1,3 @@
+interface:
+  display_name: "oe-unit-tests"
+  short_description: "OpenEyes PHPUnit practice - run commands, patterns, gotchas"
