@@ -131,9 +131,15 @@ buildPrompt() {
     # one and lands on a blank New Tab, and the pre-existing OE tab the boot opened is not in
     # it. Told only "the page in front of you", the walk stalls on chrome://newtab; left to
     # guess a URL, it guesses a public openeyes site and the navigation lockdown blocks it.
-    local oe_url
+    local oe_url device_id
     oe_url="$(docker exec "${container}" printenv OE_URL 2>/dev/null || true)"
     [ -n "${oe_url}" ] && echo "The OpenEyes instance under test is at ${oe_url} and the browser is already logged into it. Navigate there first if the current tab is not already showing it." && echo
+    # The account can list stale browser registrations left by discarded containers, and an
+    # unattended session refuses to pick one itself - it stalls the whole walk on a question
+    # nobody is there to answer. The saved bridgeDeviceId IS this container's identity, so the
+    # choice is pre-made here. Non-fatal: without it the hint is simply absent.
+    device_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("bridgeDeviceId",""))' "${state_dir}/extension-state.json" 2>/dev/null || true)"
+    [ -n "${device_id}" ] && echo "If the browser tooling asks which connected Chrome browser to drive, choose deviceId ${device_id} - that is this container's own Chrome; any other listed browser is a stale registration of the same container." && echo
     [ -n "${map_file}" ] && { cat "${map_file}"; echo; echo "---"; echo; }
     printf '%s' "${prompt}"
 }

@@ -125,7 +125,7 @@ directory alongside `.credentials.json`.
 | File | What it is |
 |---|---|
 | `claude-credentials.json` | the CLI's `/login` OAuth credential |
-| `extension-state.json` | the extension's claude.ai OAuth tokens plus the always-allow grant for the OE origin |
+| `extension-state.json` | the extension's claude.ai OAuth tokens, the always-allow grant for the OE origin, and its `bridgeDeviceId` - the "browser" identity the account sees. The id is pinned on purpose (2026-07-31): left to regenerate with each fresh profile, every container that signed in registered another "browser" on the account, until an unattended drive stalled on an interactive which-browser picker. |
 
 **Those two are kept current automatically**, which matters more than it looks: the
 extension's token lasts about a year, but the CLI's access token lasts ~8h and its *refresh*
@@ -172,9 +172,16 @@ defined winner.
   downloads straight to `~/artifacts` with no prompt.
 - `oe-lockdown.json`, written at boot by `writeLockdownPolicy` because the OE origin only
   exists in `$OE_URL` at runtime: `URLBlocklist: ["*"]` plus an allowlist of the OE host,
-  `claude.ai`, `anthropic.com`, `accounts.google.com`, the extension's own origin and a few
-  `chrome://` pages. Verified 2026-07-25: `example.com` and `google.com` return "This page is
-  blocked", OE and claude.ai load normally, and the extension's options page still opens.
+  the sign-in origins and a few `chrome://` pages. Verified 2026-07-25: `example.com` and
+  `google.com` return "This page is blocked", OE and claude.ai load normally, and the
+  extension's options page still opens. The sign-in origins are more than `claude.ai` +
+  `accounts.google.com` (learned the hard way 2026-07-31, each one a blocked first-run):
+  `claude.com` (the CLI's `/login` OAuth moved there post-rebrand), `localhost`/`127.0.0.1`
+  (that flow finishes on a loopback callback), `accounts.google.co.uk` (Google's regional
+  SetSID hop), and `hcaptcha.com` + `challenges.cloudflare.com` (the authorize page loads
+  its captcha in an iframe, and URLBlocklist blocks iframes - a blocked captcha looks like
+  an endless spinner then "Authorization failed", with the frame showing as
+  `chrome-error://chromewebdata` in `Page.getFrameTree`).
 
 The point is not tidiness. This container holds a live OAuth token and hands a browser to a
 model that reads whatever an OE page happens to contain, so confining that browser to the one
@@ -239,6 +246,9 @@ credential entry and one click:
    the **browser** option (not paste-a-code) - the OAuth page opens in the Chrome you are
    watching. Sign in there, then leave the CLI with Ctrl-D or `/exit`; unlike `attach`,
    `exec` doesn't stop the container on exit, so there's no detach sequence to remember.
+   This needs a real terminal: run it yourself in a normal shell, not through anything
+   that pipes stdin (`-it` fails with "cannot attach stdin to a TTY-enabled container
+   because stdin is not a terminal" otherwise).
 3. Back on the noVNC screen, switch to the extension's options tab (already open) and click
    **Log in**. Because step 2's browser flow left a claude.ai session in this same Chrome,
    this should reduce to a single **Authorize** click.
@@ -332,6 +342,28 @@ screenshot/GIF tools at `~/artifacts` - bind-mounted to
 else Docker creates it root-owned). For chromeless captures recreate with
 `CHROME_KIOSK=1`; drop back to `0` before any pass that needs a permission prompt.
 
+### Annotated screenshots without an agent
+
+Boxing an element in red and photographing it is mechanical, so it does not get an
+agentic session (two drives of exactly that cost about $1.10 on 2026-07-31; the script
+is free):
+
+```bash
+docker exec claude-chrome node /usr/local/bin/highlight-shot.mjs '<css-selector>' [url]
+docker cp claude-chrome:<printed path> ~/repro-evidence/<date>-<tag>/
+```
+
+`highlight-shot.mjs` navigates the existing tab (when a url is given), draws a red box
+around every selector match, scrolls each one to centre, and captures one viewport shot
+per element not already fully visible in an earlier one - one printed path per line. The
+boxes are `position:fixed` overlay divs, not CSS outlines: an outline is painted outside
+the element's box and gets clipped wherever the element touches a scrolling ancestor (OE
+scrolls inside `main#event-content`), which is exactly the half-drawn-box failure that
+motivated the script. Shots land in `/tmp/claude-chrome-highlight-*.png` - the `drive.sh`
+evidence prefix, so a following drive would sweep them out too - but `/tmp` dies at every
+boot, so `docker cp` promptly. Patient-shaped captures go to `~/repro-evidence/`, never
+`~/artifacts` (that dir is bind-mounted inside the kit).
+
 ## Teardown
 
 ```bash
@@ -371,3 +403,9 @@ next boot needs the "First run only" steps again.
 | `/chrome` shows "Extension: Not detected" on a brand-new host | Forcelist install needs egress to `clients2.google.com` on first boot - retry in ~60s. |
 | Chrome integration off despite `/login` | An `ANTHROPIC_API_KEY` in the env overrides the subscription login and disables it. |
 | An agent reports OE showing "For security reasons you have been logged out... Timed out" | **Not a real logout** (root-caused 2026-07-25). OE ships that login form hidden in the markup of every page, so it appears in the accessibility tree even while the session is live - an agent reading the tree rather than the rendered page will report it. Confirm before believing it: the rendered page shows the user and site in the header, and `docker exec claude-chrome node /usr/local/bin/oe-login.mjs` prints "no login form ... assuming already logged in" when the session is fine. |
+| Extension sign-in spins forever, then "Authorization failed" | Two known causes (both root-caused 2026-07-31). (a) The captcha iframe is blocked: an image whose entrypoint pre-dates 2026-07-31 lacks `hcaptcha.com`/`challenges.cloudflare.com` in the allowlist, and `URLBlocklist` blocks iframes as well as navigations - `Page.getFrameTree` over CDP shows the frame as `chrome-error://chromewebdata`. Rebuild, or patch the live policy (full-file `cat >` rewrite; `sed -i` fails, the policy dir itself isn't writable). (b) The extension's service worker is dead - see the next row. |
+| `Could not establish connection. Receiving end does not exist.` in the page console; `docker logs claude-chrome` full of `DidStartWorkerFail <ext-id>: 5` | The profile template shipped a `Default/Service Worker` dir: its registration store is tied to the path it was created under, so after the copy to `~/chrome-profile` the MV3 worker never starts and any page messaging the extension gets this error. Fixed in the Dockerfile 2026-07-31 (the dir is stripped from the template) - rebuild if the image pre-dates that. Healthy check: `curl -s 127.0.0.1:9222/json` inside the container lists a `service_worker` target for the extension. |
+| `/login` browser flow lands on "This link is blocked by your organisation" | Allowlist pre-dates the claude.com rebrand: the CLI's OAuth page moved to `claude.com`, finishes on a `http://localhost:<port>/callback` loopback redirect, and a Google sign-in can hop through `accounts.google.co.uk`. All four origins were added 2026-07-31 - rebuild, or patch the live policy as above. |
+| `./drive.sh` (or any walker script) fails with `Permission denied` | Exec bits lost - `chmod +x docker/oe-chrome-agent/*.sh` in the kit (git tracks the mode). |
+| A `-p` run stops with "Two Chrome browsers are connected to this account, pick which one to drive" | Phantom registrations from before 2026-07-31: the extension's `bridgeDeviceId` regenerated with every fresh profile, so each container that signed in registered another "browser" on the account. Defended twice over since: the id round-trips through `extension-state.json` (one identity forever, whatever gets rebuilt), and `drive.sh` pre-answers the picker in every prompt from that saved id. If a run still stalls, the saved state pre-dates the fix - run `./save-state.sh` against a booted, signed-in container to capture the id (the live value sits in the extension's LevelDB under `bridgeDeviceId`) - and stale entries can be removed in the claude.ai account's device settings. |
+| `sync-state.sh` says `/home/agent/state is not writable by this uid` | dockerd created `~/.claude/oe-chrome-agent` root-owned because the bind mount was referenced before the dir existed. One-off fix: `docker exec -u root claude-chrome chown $(id -u):$(id -g) /home/agent/state`. `state-dir.sh` now pre-creates it user-owned so this cannot recur. |

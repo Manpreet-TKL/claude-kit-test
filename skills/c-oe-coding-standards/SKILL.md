@@ -40,7 +40,7 @@ to `OEShared` / `OELaravel` code, otherwise legacy Yii.
 16. Reference classes with `::class`, never a quoted FQN string. -> [style](subs/style.md#class-constant)
 17. `const` over `static` for class constants. -> [style](subs/style.md#const-over-static)
 18. RFC string interpolation `{$var}`; avoid `${}` (deprecated PHP 8.2). -> [style](subs/style.md#string-interpolation)
-19. Short methods; abstract complex conditionals into well-named methods. -> [style](subs/style.md#short-methods)
+19. Short methods; abstract complex conditionals into well-named methods; logic well-placed - no bloated controller actions. -> [style](subs/style.md#short-methods)
 20. At most two levels of nesting, never more than three. -> [style](subs/style.md#nesting-depth)
 21. Member order: `public` -> `protected` -> `private`; static before instance. -> [style](subs/style.md#member-order)
 22. Type-hint parameters and return types. -> [style](subs/style.md#type-hints)
@@ -122,6 +122,8 @@ to `OEShared` / `OELaravel` code, otherwise legacy Yii.
 
 ## Testing
 
+Writing or running PHPUnit tests? Load the `oe-unit-tests` skill for the run commands, patterns and gotchas.
+
 68. PHPUnit 11: attributes not annotations (`#[CoversClass]`, `#[Group]`); data providers must be `static`. -> [testing](subs/testing.md#phpunit-attributes)
 69. Run via `oeunittests` (`--laravel` / `--shared` / `--group`); CI runs PHPUnit on every PR. -> [testing](subs/testing.md#running-tests)
 70. Pick the right base class (`ModelTestCase` / `OEDbTestCase` / `OELaravel\Tests\TestCase` / `InMemoryTestCase`); write no new fixture-based tests. -> [testing](subs/testing.md#base-classes)
@@ -131,15 +133,16 @@ to `OEShared` / `OELaravel` code, otherwise legacy Yii.
 74. Non-namespaced `DefaultController` route tests need `@runTestsInSeparateProcesses` + `@preserveGlobalState disabled`. -> [testing](subs/testing.md#process-isolation)
 75. Every support-ticket fix gets >=1 test reproducing the failure (urgent fixes: ship, then follow-up ticket adds it). -> [testing](subs/testing.md#regression-tests)
 76. New functionality gets at least an E2E happy-path test - prefer fast PHPUnit application-request over Cypress. -> [testing](subs/testing.md#new-functionality)
-77. Cypress for genuine JS interactivity / patient pathways; short suites run per-PR (keep fast), long suites run overnight. -> [testing](subs/testing.md#cypress)
+77. Tests consider expected **and unexpected** scenarios - edge cases, error/empty paths, and different user roles or states where relevant. -> [testing](subs/testing.md#test-scenarios)
+78. Cypress for genuine JS interactivity / patient pathways; short suites run per-PR (keep fast), long suites run overnight. -> [testing](subs/testing.md#cypress)
 
 ## Pull requests & merge
 
-78. PR clarity - use the GitHub feature/bug template; explain purpose, changes, testing. -> [process](subs/process.md#pr-clarity)
-79. All new code passes the standards (phpcs + phpstan + the checklist) and ships automated tests. -> [process](subs/process.md#standards-and-tests)
-80. UI follows IDG; a change to an old version must also work on newer versions (contributor's responsibility). -> [process](subs/process.md#ui-and-compatibility)
+79. PR clarity - use the GitHub feature/bug template; explain purpose, changes, testing. -> [process](subs/process.md#pr-clarity)
+80. All new code passes the standards (phpcs + phpstan + the checklist) and ships automated tests - add a test whenever possible. -> [process](subs/process.md#standards-and-tests)
+81. UI follows IDG; a change to an old version must also work on newer versions (contributor's responsibility). -> [process](subs/process.md#ui-and-compatibility)
 
 ---
 
-Related skills: `create-oe-module`, `c-oe-ui`, `c-bash-style`, `c-yiic-command-style`, `c-note-style`.
+Related skills: `oe-unit-tests` (PHPUnit practice), `create-oe-module`, `c-oe-ui`, `c-bash-style`, `c-yiic-command-style`, `c-note-style`.
 Extra subs: `subs/validators.md` (OE validator catalogue), `subs/disruptive-ops.md` (literal-`yes` confirms, secrets, demo caveats).

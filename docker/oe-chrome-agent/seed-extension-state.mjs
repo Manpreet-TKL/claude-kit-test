@@ -34,9 +34,13 @@ if (!EXTENSION_ID || !PROFILE_DIR) {
 const dbPath = `${PROFILE_DIR}/Default/Local Extension Settings/${EXTENSION_ID}`;
 
 // Only these keys round-trip. The rest of the store is a per-install cache (`features`,
-// ~230KB) or per-boot scratch (`anonymousId`, `bridgeDeviceId`, `codeVerifier`,
-// `oauthState`, `tabGroups`, `mcpConnected`) that the extension rebuilds by itself -
-// restoring them would pin stale values onto a new install for no gain.
+// ~230KB) or per-boot scratch (`anonymousId`, `codeVerifier`, `oauthState`, `tabGroups`,
+// `mcpConnected`) that the extension rebuilds by itself - restoring them would pin stale
+// values onto a new install for no gain. `bridgeDeviceId` is the deliberate exception
+// (2026-07-31): it is the device identity the account sees, and left to regenerate, every
+// container that signed in registered another "browser" on the account until unattended
+// drives hit an interactive which-browser picker. Pinning it keeps this container one
+// device on the account no matter how often it is rebuilt.
 const RESTORE_KEYS = [
   'accessToken',
   'refreshToken',
@@ -44,6 +48,7 @@ const RESTORE_KEYS = [
   'accountUuid',
   'lastActiveOrgHint',
   'permissionStorage',
+  'bridgeDeviceId',
 ];
 
 function readState() {

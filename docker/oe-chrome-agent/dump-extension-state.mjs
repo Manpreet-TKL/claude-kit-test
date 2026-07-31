@@ -27,6 +27,7 @@ const KEYS = [
   'accountUuid',
   'lastActiveOrgHint',
   'permissionStorage',
+  'bridgeDeviceId',
 ];
 const REQUIRED = ['accessToken', 'refreshToken'];
 

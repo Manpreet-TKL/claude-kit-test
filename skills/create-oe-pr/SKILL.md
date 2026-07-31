@@ -14,7 +14,7 @@ Instructions only - it does not scan the tree, run `git status`, or diff to disc
 - `git@github.com:openeyes/IOLMasterImport.git`
 - `git@github.com:openeyes/PayloadProcessor.git`
 
-OE PRs ship across NHS trusts and private clinics: the title becomes a customer-facing release-notes line and the writeup is read by people with no context for the original reporter. **Never `git commit` / `git push` / `--no-verify`** - you push it yourself. Suggest the `c-oe-coding-standards` skill before OE code is written (or now, if the change predates that suggestion). **The full PR.md template, Jira-type table, field rules, and gotchas are in `subs/reference.md` - read it before writing the folder.**
+OE PRs ship across NHS trusts and private clinics: the title becomes a customer-facing release-notes line and the writeup is read by people with no context for the original reporter. **Never `git commit` / `git push` / `--no-verify`** - you push it yourself. Suggest the `c-oe-coding-standards` skill before OE code is written (or now, if the change predates that suggestion). Reminder: before packaging, run the change past `c-oe-coding-standards` (load it and check the diff against the index). **The full PR.md template, Jira-type table, field rules, and gotchas are in `subs/reference.md` - read it before writing the folder.**
 
 ## The deliverable: one folder, always
 

@@ -15,3 +15,6 @@
 
 state_dir="${OE_CHROME_STATE_DIR:-${HOME}/.claude/oe-chrome-agent}"
 export OE_CHROME_STATE_DIR="${state_dir}"
+# Pre-create it user-owned: if compose's bind mount references it first, dockerd creates it
+# root-owned and sync-state.sh then can't write the logins back.
+mkdir -p "${state_dir}"

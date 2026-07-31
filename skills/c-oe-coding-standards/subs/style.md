@@ -44,7 +44,9 @@ Use `{$var}` or `$var`; avoid the `${var}` / `${(var)}` forms deprecated in PHP 
 
 ## Short methods
 
-Keep methods short - extract complex logic and multi-clause conditionals into descriptively-named methods.
+Keep methods short - extract complex logic and multi-clause conditionals into descriptively-named
+methods. Keep logic well-placed: no bloated controller actions - business logic belongs in
+models/services, the controller action stays a thin orchestrator.
 
 ```php
 if ($this->isEligibleForBooking($patient)) { ... }

@@ -60,6 +60,10 @@ RUN chmod 0644 /usr/local/bin/oe-login.mjs
 COPY open-options-tab.mjs /usr/local/bin/open-options-tab.mjs
 RUN chmod 0644 /usr/local/bin/open-options-tab.mjs
 
+# Agent-free annotated screenshots: red-box a selector's matches and capture, over CDP.
+COPY highlight-shot.mjs /usr/local/bin/highlight-shot.mjs
+RUN chmod 0644 /usr/local/bin/highlight-shot.mjs
+
 # Bare / auto-connects and scales instead of requiring the full vnc.html query string.
 COPY novnc-index.html /usr/share/novnc/index.html
 RUN chmod 0644 /usr/share/novnc/index.html
@@ -81,6 +85,10 @@ RUN chmod 0755 /usr/local/bin/sync-state.sh
 # once here purely so the managed policy above force-installs and unpacks the extension into
 # a profile skeleton; without this the extension is re-downloaded from the Web Store on
 # every container recreate, which the disposable-profile layout makes a routine event.
+# The Default/Service Worker dir must NOT ship in the template: its registration store is
+# tied to the profile path it was created under, so after the copy to ~/chrome-profile the
+# extension's MV3 worker persistently fails to start (DidStartWorkerFail, "Receiving end
+# does not exist" on any page messaging it). Chrome re-registers it cleanly at first boot.
 # 0777 because an arbitrary --user uid has to be able to copy this out at boot.
 RUN mkdir -p /opt/chrome-profile-template \
     && (google-chrome-stable --no-sandbox --disable-dev-shm-usage --headless=new --disable-gpu \
@@ -96,6 +104,7 @@ RUN mkdir -p /opt/chrome-profile-template \
        || { echo "extension pre-warm failed - see /tmp/prewarm.log"; cat /tmp/prewarm.log; exit 1; } \
     && rm -rf "/opt/chrome-profile-template/Default/Cache" \
               "/opt/chrome-profile-template/Default/Code Cache" \
+              "/opt/chrome-profile-template/Default/Service Worker" \
               "/opt/chrome-profile-template/SingletonLock" \
               "/opt/chrome-profile-template/SingletonSocket" \
               "/opt/chrome-profile-template/SingletonCookie" \
