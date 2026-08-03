@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 7ddcebe5-1588-40bc-a02d-e44660e57b8d
-  modified: 2026-07-28T17:02:39.851Z
+  modified: 2026-08-03T14:15:59.453Z
 ---
 
 The pptest cleardown ran clean on 2026-07-28: dump migrated to v26.1.0-pre2 (75s,
@@ -19,11 +19,12 @@ in `/home/toukan/cleardown/artifacts/`. Side DB `pptest` dropped (source dump ke
 Breadcrumbs and gotchas:
 
 - `oe-checkout.sh` hard-aborts when ANY module checkout in the container is dirty.
-  A `git stash push` inside the module unblocks it without reset --hard. A stash
-  named "cleardown-campaign: 51-SetupCCGandLA address-columns compat patch" was
-  left on the sample module in snail-web-1 (an address-columns compat fix to a
-  pre-migrate demo script; only demo imports run those, so migrating a restored
-  dump never needs it).
+  A `git stash push` inside the module unblocks it without reset --hard. The
+  "cleardown-campaign: 51-SetupCCGandLA address-columns compat patch" stash that
+  lived on the sample module in snail-web-1 is GONE (2026-08-03: web container
+  recreated; the fix is now upstream in sample develop, commit 060436f "fix risk
+  institutions + ccg demo script", so no stash or patch is needed anymore; patch
+  copy kept at /home/toukan/snail-sample-module-stash-cleardown-compat.patch).
 - `yiic cleardown report` takes NO profile flags (classification is
   profile-independent; it prints all three profiles' reference checks). Flags
   belong to index/verify only.

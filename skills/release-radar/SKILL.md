@@ -20,19 +20,23 @@ one short dated digest into `~/claude-kit/radar/release-radar.md`.
    `Last swept <date> - under a month, nothing to do (say "force" to override).`
    and stop. No web calls, no file write. `force` as an argument or anywhere in the
    user's message skips this check. An empty file (no `##` heading) is not a gate.
-3. Read `subs/sources.md`. For each product in the order listed there, `WebFetch` the
-   **primary** URL - always the same page, every run, so successive digests are
-   comparable. If it fails, `WebFetch` that product's **fallback** URL from the same
-   table. Only if both fail may you `WebSearch`, and then the bullet is tagged
-   `[via search]` so the drift is visible.
+3. Read `subs/sources.md`. `WebFetch` every product's **primary** URL - products are
+   independent, so batch the fetches in parallel; the digest is still assembled in
+   table order. Always the same page, every run, so successive digests are comparable.
+   If a primary fails, `WebFetch` that product's **fallback** URL from the same table.
+   Only if both fail may you `WebSearch`, and then the bullet is tagged `[via search]`
+   so the drift is visible.
 4. Report against that product's **"what to report"** entry and its **Scope** column -
    `cumulative` products re-list every qualifying feature above the floor each run,
    `since last run` products only report what is new. Nothing qualifying -> a single
    `- no change` bullet. A lookup that fails -> `- lookup failed: <reason>`; products
    are independent, one failure never aborts the sweep.
-5. Prepend the run to the file, newest-first, under `## <today>`, with one `###` per
+5. **Rollover.** Before prepending, move any `## YYYY-MM-DD` run more than 12 months
+   old, verbatim, into `~/claude-kit/radar/release-radar-<its year>.md` (newest-first
+   there too; create the file if missing).
+6. Prepend the run to the file, newest-first, under `## <today>`, with one `###` per
    product in the source-table order. 3-6 one-line bullets each.
-6. Print the same digest in chat, then the file path. Do not commit.
+7. Print the same digest in chat, then the file path. Do not commit.
 
 ## House rules
 
@@ -44,10 +48,13 @@ one short dated digest into `~/claude-kit/radar/release-radar.md`.
   about unreleased versions, no "coming soon".
 - Keep each bullet under ~120 chars. Lead with the version where one applies:
   `12.0 - ...`. One line per feature; do not merge two features into one bullet.
-- Open each product with a one-line `Now: <current version>` state line, then the
-  feature bullets.
+- Open each product with a one-line `Now: <current version>` state line. If its brief
+  in `subs/sources.md` carries a **Watching:** item, that item's status is the first
+  bullet every run, even when unchanged ("still none"). A Watching item that resolves
+  is reported once as resolved, then deleted from the brief. Then the feature bullets.
 - ASCII only, plain `-` for dashes, no emojis - house style applies to the file too.
-- The file only ever grows at the top. Never rewrite or prune an older run.
+- The live file only ever grows at the top. Never rewrite or prune a run's content -
+  runs older than 12 months roll over verbatim instead (procedure step 5).
 - Same pages every run. Never substitute a blog post, a vendor summary, a mirror or a
   search result for a product's table URL - a digest is only comparable to the previous
   one if it came from the same source.

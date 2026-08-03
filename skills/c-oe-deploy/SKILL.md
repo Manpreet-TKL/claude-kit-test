@@ -24,9 +24,11 @@ The `dev` mod swaps `web` to `oe-web-dev`, which clones openeyes at first boot (
 
 ## Build gates (abridged)
 
-`build.sh` refuses unless: disk <= 94% on `/`; every `.oedeploy` var is non-empty; no loose key files (keeper.csv, private.key, public-key.gpg, `~/.ssh/<client>{,.pub}`); `.env` exists; `my.cnf.d/my.cnf` present when `SERVICES` has `db`; `.env` keys match `templates/<appName>.env`; host mariadb client >= `DB_TAG` (and >= 10.6 for OE >= 7.0.0); `TZ` valid and equal to the host timezone; `DOMAIN_NAMES` all backtick-quoted (only checked when `SERVICES` has `tfk`). There is no `--force` and no typed-`yes` gate - the one interactive prompt is prod-with-running-containers, bypassed by `-y`. Remedies: `subs/build-gates.md`.
+`build.sh` refuses unless: disk <= 94% on `/`; every `.oedeploy` var is non-empty; no loose key files (keeper.csv, private.key, public-key.gpg, `~/.ssh/<client>{,.pub}`); `.env` exists; `my.cnf.d/my.cnf` present when `SERVICES` has `db`; `.env` keys match `templates/<appName>.env`; host mariadb client >= `DB_TAG` (and >= 10.6 for OE >= 7.0.0); `TZ` valid and equal to the host timezone; `DOMAIN_NAMES` all backtick-quoted (only checked when `SERVICES` has `tfk`). There is no `--force` and no typed-`yes` gate - the one interactive prompt is prod-with-running-containers, bypassed by `-y`. The env-match gate is a deployer reconciliation aid, not a design constraint: it compares key NAMES only (never values), fires only on a key missing from either side, and tripping it is routine - local-only keys are best avoided but happen, and when upstream pushes a new `templates/<app>.env` and main is merged into the instance, build.sh exiting with the list of differing keys for the deployer to reconcile is the normal workflow. Remedies: `subs/build-gates.md`.
 
 ## First run on a fresh host
+
+**Throwaway test instance? Always use the one-shot script when the checkout ships it** - `mv oe-deploy <env> && cd <env> && bash scripts/test-env-up.sh -y -ndp` (profiles `basic`|`full`, sizing `--my-cnf c4m16`, `-v` to watch) does the whole dance below in one shot: patches `.oedeploy`, generates secrets, drops the keeper CSV, picks free host ports, matches TZ, runs db-setup + build and force-loads the sample DB (admin/admin). Fresh instance only - it refuses when `.env` exists or `<env>_*` volumes linger; teardown is `docker compose down -v`. The manual steps below are for real deployments or checkouts without the script.
 
 ```
 mv oe-deploy <env> && cd <env>             # NEVER cp; never leave it named oe-deploy

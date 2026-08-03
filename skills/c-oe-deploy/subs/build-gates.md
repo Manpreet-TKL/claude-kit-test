@@ -21,7 +21,7 @@
 
 There is no MariaDB "data-volume-creation-tag" gate in `build.sh` - gates 8/9 are about the **client** version on the host and the OE-vs-DB minimum.
 
-Gate 7 is not just a tripwire - it is **how template changes reach instances**: when a pulled template update adds or renames keys, the gate lists exactly which keys to add to (or delete from) `.env`. Copy new keys verbatim from `templates/<appName>.env`; template defaults are chosen to preserve existing behaviour.
+Gate 7 is not just a tripwire - it is **how template changes reach instances**: when a pulled template update adds or renames keys, the gate lists exactly which keys to add to (or delete from) `.env`. Copy new keys verbatim from `templates/<appName>.env`; template defaults are chosen to preserve existing behaviour. It compares key names only - values are never compared - and fires only on a key missing from either side. It exists for the deployer, not the tooling: local-only keys are best avoided but do occur, and on an instance that merges main regularly the exit-and-reconcile cycle is the routine process, not a failure.
 
 ## "Type yes" - where it actually is
 
