@@ -2,7 +2,7 @@
 
 ## PR.md template (verbatim shape)
 
-Two `#` sections - **`# JIRA`** and **`# GITHUB`** - each a set of copy-paste blocks. Text above a `##`/`###` heading is plain `label: value` metadata; under a heading the heading stays OUT of the blockquote and each body is one `> `-quoted block. The GitHub blocks carry the PR prose ONLY - never the live template's tickboxes, emoji headings or Do-No-Harm reminder (the user fills those in by hand after raising).
+Two `#` sections - **`# JIRA`** and **`# GITHUB`** - each a set of copy-paste blocks. Text above a `##`/`###` heading is plain `label: value` metadata; under a heading the heading stays OUT of the blockquote and each body is one `> `-quoted block. **Never hard-wrap blockquote prose**: each paragraph, bullet or numbered step is one `> ` line however long - the blocks paste into Jira/GitHub fields where a mid-paragraph newline becomes a visible line break. The GitHub blocks carry the PR prose ONLY - never the live template's tickboxes, emoji headings or Do-No-Harm reminder (the user fills those in by hand after raising).
 
 ```
 # JIRA
@@ -32,23 +32,12 @@ Raised in <version, verbatim - e.g. v26.0.0-rc3>. Repo <openeyes/openeyes or a
 satellite>. Target <branch - e.g. release/26.0.x>. Back-port? list both.
 
 ### Description
-> What the change does and why, plain language, client-agnostic. Lead with the
-> user-visible behaviour and the problem it fixes. Always present. Reused verbatim
-> as the GitHub Summary.
+> What the change does and why, plain language, client-agnostic. Lead with the user-visible behaviour and the problem it fixes. Always present. Reused verbatim as the GitHub Summary.
 
 ### Steps to Reproduce
-> An **optional** `**Environment setup**` preamble comes first when - and only when - a stock
-> sample database lacks a configuration the fault needs (a second site, an extra role, an
-> enabled event type). Same rules as the steps below, admin-UI clicks only. **Omit it
-> entirely when nothing is needed**, which is the common case.
+> An **optional** `**Environment setup**` preamble comes first when - and only when - a stock sample database lacks a configuration the fault needs (a second site, an extra role, an enabled event type). Same rules as the steps below, admin-UI clicks only. **Omit it entirely when nothing is needed**, which is the common case.
 >
-> Then a generic, **frontend-only** click-path any user can follow without knowing what the
-> page does - numbered, **one sentence per step**, each naming the exact control by its
-> on-screen label (quoted) and where it sits. Client-agnostic (actor by role, data by
-> *kind*, never creds/seed/sample-DB); no container names, paths or CLI in either block.
-> Start at login if a session is needed; end on an observable check. Rules, worked example
-> and special cases live in the **`c-oe-repro`** skill - run it if the steps aren't already
-> in this conversation.
+> Then a generic, **frontend-only** click-path any user can follow without knowing what the page does - numbered, **one sentence per step**, each naming the exact control by its on-screen label (quoted) and where it sits. Client-agnostic (actor by role, data by *kind*, never creds/seed/sample-DB); no container names, paths or CLI in either block. Start at login if a session is needed; end on an observable check. Rules, worked example and special cases live in the **`c-oe-repro`** skill - run it if the steps aren't already in this conversation.
 > 1. Log in.
 
 ### Current Outcome
@@ -107,27 +96,17 @@ Paste each block into the matching section of the live OE PR template.
 ### Scope of Changes
 
 #### Solution
-> The approach, named not diffed - the mechanism and the one judgement call that
-> mattered (and the rejected alternative, if relevant).
+> The approach, named not diffed - the mechanism and the one judgement call that mattered (and the rejected alternative, if relevant).
 
 #### Files changed
-> One bullet per file: repo-relative path + one sentence on why. Mark (new) and
-> (incidental). The change to each path lives in `changes.patch` - this list is the map.
+> One bullet per file: repo-relative path + one sentence on why. Mark (new) and (incidental). The change to each path lives in `changes.patch` - this list is the map.
 > - protected/models/Patient.php - added a default scope excluding archived rows.
 
 #### Test
-> Exactly one of - Test added: <path> (run with `vendor/bin/phpunit <path>`); or
-> No test, justification: <paragraph - OK for UI-only/copy/migration with no
-> behavioural surface; not "ran out of time", not "this area has no tests">. Note per
-> change what covers it.
+> Exactly one of - Test added: <path> (run with `vendor/bin/phpunit <path>`); or No test, justification: <paragraph - OK for UI-only/copy/migration with no behavioural surface; not "ran out of time", not "this area has no tests">. Note per change what covers it.
 
 ### Notes for Reviewers
-> Simple bullets: edge cases, clinical-safety invariants touched and how handled,
-> stack-specific verification that doesn't belong in Steps (cache clears, container
-> names), deployment/infra preconditions that aren't user-clickable (an integration
-> channel, a cron, a feature env var, a module switch), what the repro's log bracket
-> caught and which files were attached to the ticket, related-but-unfixed occurrences
-> (file:line + recommended approach). Skip if genuinely nothing to add.
+> Simple bullets: edge cases, clinical-safety invariants touched and how handled, stack-specific verification that doesn't belong in Steps (cache clears, container names), deployment/infra preconditions that aren't user-clickable (an integration channel, a cron, a feature env var, a module switch), what the repro's log bracket caught and which files were attached to the ticket, related-but-unfixed occurrences (file:line + recommended approach). Skip if genuinely nothing to add.
 ```
 
 Section shape by type: the Steps/Current/Expected triad fits Bug and Regression; drop it for feature/planning types. Skip lighter sections when the change is self-evident; never pad; if a fault can't be reduced to clean steps (intermittent, data-dependent), say what you can - don't fabricate.

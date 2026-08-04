@@ -14,6 +14,8 @@ Multi-stage so the final image carries no git, composer or build-node toolchain.
 
 Each stage `COPY --from`s the previous one's whole WROOT, so the tree accretes: source -> +vendor -> +node_modules/Chrome -> +built assets.
 
+Stage 3's puppeteer postinstall honours the repo's `.puppeteerrc.cjs`, so the Chrome cache lands in `$WROOT/protected/runtime/.cache/puppeteer` and any directory the rc creates on load exists at build time; stage 5's `COPY --chown=www-data:www-data` then ships the whole tree - cache included - owned by www-data. Live containers therefore never hit the dev-image trap of a root task creating `.cache` intermediates first (Web-Dev clones source at runtime, where whichever user runs node first sets the ownership).
+
 ## Cache behaviour
 
 - `CACHEBUSTER` is an ARG of the **git stage**, so changing it re-runs checkout, composer, npm, vite - the works. That is the only supported way to force a fresh checkout of the same branch (`--no-cache` works too, at the cost of the apt layers).
