@@ -135,6 +135,39 @@ If the command takes options on the default action (like `DBReportsCommand`), `a
 
 SCHEMA DESCRIPTIONS holds `public static $tables` / `$columns` / `$contentTypes`-style lookup arrays.
 
+The three banners partition the class exhaustively, in that order. HELPER FUNCTIONS takes everything that is not an `action*` - including a worker written for a single action and Yii overrides such as `missingAction()` - and ACTIONS runs from its banner to the closing brace with only `action*` methods in it. A quick check on a finished command:
+
+```
+grep -n 'function ' <Name>Command.php | awk -F: -v b=<banner line> '$1>b' | grep -v 'function action'
+```
+
+Anything it prints (other than a comment) is in the wrong half of the file.
+
+## Method PHPDoc
+
+Every method has a header. Trivial helpers take a one-liner; anything with real parameters takes `@param`/`@return`:
+
+```php
+/** Print a timestamped progress line. */
+protected function log($msg)
+
+/** @return string the advisory lock name, qualified by staging schema. */
+protected function lockName()
+
+/**
+ * Stream one walk file into a staging table with LOAD DATA LOCAL INFILE.
+ *
+ * Needs its own PDO handle: the LOCAL INFILE attribute has to be set when
+ * the connection is opened, and the application handle is not opened with it.
+ *
+ * @param string $table   unqualified staging table name
+ * @param string $csvPath walk file to load
+ */
+protected function loadInfile($table, $csvPath)
+```
+
+A `//` line above a signature is not a header - make it a `/** ... */`. Where a docblock explains *why*, it sits on the method it describes; explaining `acquireLock()` in the docblock of the `lockName()` above it leaves both wrong.
+
 ## Action PHPDoc (numbered workflow + @param)
 
 ```php

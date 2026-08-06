@@ -29,7 +29,8 @@ docker exec -i -e OE_ACTIONS='[{"goto":"/patient/summary/17891"},{"click":"#add-
 
 - `-w /var/www/openeyes` so Puppeteer resolves from the app's `node_modules` and `.puppeteerrc.cjs` finds the bundled Chrome; `--input-type=module` because the ESM script arrives on stdin.
 - Swap `snail-web-1` for the target container. Creds/institution/site override via `-e OE_USERNAME/OE_PASSWORD/OE_INSTITUTION_ID/OE_SITE_ID`; `BASE_URL` defaults to `http://localhost`.
-- Screenshots only when a text dump is ambiguous: append `--shot /tmp/oeshots` and `docker cp` them out. Text first - screenshots cost subagent tokens.
+- Screenshots only when a text dump is ambiguous: append `--shot /tmp/oeshots`. **Getting them out is not `docker cp`** - the web container's `/tmp` is a tmpfs, and `docker cp` from it fails silently or with a confusing "no such file". Stream instead: `docker exec snail-web-1 cat /tmp/oeshots/step1.jpg > /host/path.jpg`. Text first - screenshots cost subagent tokens.
+- **Suppress the debug toolbar before capturing.** On a dev build the Yii toolbar is a 40px strip pinned to the bottom of every page and it lands in every full-page shot. It is `#yii2-debug` - hide it with injected CSS (or `document.getElementById('yii2-debug')?.remove()`) before the screenshot, exactly as `OeDocumentation`'s `resources/capture.cjs` does. Live images never render it, so a shot taken on one stack and not the other looks inconsistent for no visible reason.
 - `upload` files must be inside the container: `docker cp <file> snail-web-1:/tmp/x.pdf` first, reference `/tmp/x.pdf`, remove it after - or generate a test PDF in-container with `gs` (ships in web-live; one-liner in the Document create form section of `subs/paths.md`).
 - Exit codes: 0 ok, 2 step failed (the dump shows the state at failure - pick the right label from it), 3 login/infra.
 

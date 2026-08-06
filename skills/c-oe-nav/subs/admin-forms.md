@@ -1178,9 +1178,36 @@ Manages surgical and clinical procedures with comprehensive attributes including
 
 Save: Form posts to /oeadmin/procedure/edit with Procedure[...], opcs_codes[], benefits[], complications[], risks[], notes[], and calls saveChecklistSets() if procedure exists; returns to /oeadmin/procedure/list/ on success or redisplays form with validation errors.
 
-### Referral
+### Referral (2 pages total, 2 documented below)
 
-All 2 pages are the plain lookup-table pattern(s) documented in `paths.md` - no bespoke entries here. Sitemap: `areas/admin__referral.md`.
+**Use the four-segment routes only.** The short `/Referral/admin/<thing>` forms the module config declares are dead (BUG-144); `/Referral/ReferralAdmin/<Controller>/<action>` works. The sidebar group **Referral** sits between "Procedure management" and "Request forms" and renders its entries alphabetically, so Groups appears above Options even though the config declares Options first. Sitemap: `areas/admin__referral.md`.
+
+The underlying tables are `referral_referral`, `referral_referral_rtt_clock_state`, `referral_rtt_clock_state_option`, `referral_rtt_clock_state_option_group` and `referral_rtt_clock_state_valid_next`, each with a `_version` twin - **not** `referral` / `referral_rtt_clock_state`, which is the obvious guess and wrong.
+
+#### RTT Clock State Options
+
+List `/Referral/ReferralAdmin/RTTClockStateOption/index`, edit `.../edit?id=<id>` (also accepts `.../edit/id/<id>`). Form `#rtt-clock-state-option-form`, heading 'Add RTT Clock State Option' / 'Edit RTT Clock State Option' `[data-test="rtt-clock-state-option-heading"]`.
+
+- 'Type' \<select\> `#RTTClockStateOption_type` `[data-test="type-select"]` (empty option '- Select type -')
+- 'Code' \<text\> `#RTTClockStateOption_code` `[data-test="code-input"]` (the form's focus field)
+- 'Name' \<text\> `#RTTClockStateOption_display_value` `[data-test="name-input"]` - note the attribute is `display_value`, not `name`
+- 'Group' \<select\> `#RTTClockStateOption_group_id` `[data-test="group-select"]` (empty option '- No group -')
+- 'Guidance' \<textarea\> `#RTTClockStateOption_usage_guidance` `[data-test="guidance-input"]` (4 rows, autosize)
+- 'Allowed next options' \<multi-select widget\> `#valid-next-options` `[data-test="valid-next-options-select"]`, posts as `valid_next_option_ids[]`; options render as `<code> - <name>`
+- 'Clock running' \<checkbox\> `#RTTClockStateOption_clock_running` `[data-test="clock-running-checkbox"]` (unticked on a new record)
+- 'Active' \<checkbox\> `#RTTClockStateOption_active` `[data-test="active-checkbox"]` (ticked on a new record)
+
+Save: standard `OEHtml::submitButton()` plus a 'Cancel' that navigates to the list.
+
+#### RTT Clock State Option Groups
+
+List `/Referral/ReferralAdmin/RTTClockStateOptionGroup/index`, edit `.../edit?id=<id>`. The list is a **drag-to-reorder** table `[data-test="rtt-clock-state-option-groups-table"]` inside `#rtt-clock-state-option-group-sort-form`, columns (reorder handle) / Name / Active; rows are `[data-test="group-<id>"]`, clickable via `data-uri` (no href - the usual OE row-click), and the order posts to `.../sort` as `RTTClockStateOptionGroup[display_order][]`. Active shows as a tick/cross icon `[data-test="group-active-icon"]`, not text.
+
+Edit form `#rtt-clock-state-option-group-form`, heading 'Add/Edit RTT Clock State Option Group' `[data-test="rtt-clock-state-option-group-heading"]`:
+
+- 'Name' \<text\> `#RTTClockStateOptionGroup_name` `[data-test="group-name-input"]` (focus field)
+- 'Active' \<checkbox\> `#RTTClockStateOptionGroup_active` `[data-test="group-active-checkbox"]` (ticked on a new record)
+- `display_order` is a hidden field on the edit form - reordering is done on the list, not here.
 
 ### Request Forms (3 pages total, 2 documented below)
 

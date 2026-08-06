@@ -24,7 +24,7 @@ Predicate, run as JS in the walk:
 ['benefits','risks'].map(function(k){var id='Element_OphTrConsent_BenefitsAndRisks_'+k;var e=window.tinymce&&tinymce.get(id);return k+' | editor='+JSON.stringify(e?e.getContent():'NO_EDITOR');}).join(' ||| ')
 ```
 
-## Two preconditions, both easy to miss
+## Four preconditions, all easy to miss
 
 **1. The procedure must not already be on the form.**
 `views/default/procedure_selection.php:62-66` opens the `selected_procedures.forEach`
@@ -42,17 +42,31 @@ vitrectomy if required"), so any consent event that already has it is a dead end
 adder is a visible no-op. Two full Chrome walks were burned on event 3686998 for exactly
 this reason. **Always start from a fresh Consent form**, which carries no extra procedure.
 
-**2. The rich-text content must be paragraph-shaped, not a bullet list.**
+**2. `/patientEvent/create` does not open the form.** With `event_type_id=32` that address
+lands on a 'Please select booking' chooser, and a walk that types into it is typing into
+nothing. The form is at `<web>/OphTrConsent/Default/create?patient_id=<pid>&unbooked=1`
+(the chooser's Standard-form 'Create consent' button), and a saved event re-opens at
+`/OphTrConsent/default/update/<event_id>`.
+
+**3. The extra-procedures picker is empty until an admin list exists.**
+`ophtrconsent_procedure_extra` has to hold at least one row, added at
+**Admin > Consent > Extra Procedures**; the stock sample DB has exactly one ("Anterior
+vitrectomy if required"). The Subspecialty Assignment screen next to it changes nothing -
+the adder lists every row whatever the subspecialty (BUG-245 below), so do not spend a
+walk configuring it.
+
+**4. The rich-text content must be paragraph-shaped, not a bullet list.**
 `assets/js/module.js:434 handleTinyMCEInput()` rebuilds the editor from its own `<li>`
 children and `setContent()`s a `<ul>` over the top. A bullet list survives (its items are
 re-emitted); a `<p>` does not exist as far as that function is concerned and is dropped.
 
 ## Procedure
 
-1. Go to
-   `<web>/patientEvent/create?patient_id=<pid>&event_type_id=32&context_id=<ctx>&episode_id=<ep>`
-   (both `context_id` and `episode_id` are required, or it 400s "Episode/Context
-   mismatch"). Set 'Type' to 'Patient agreement' if the rest of the form is gated on it.
+1. Go to `<web>/OphTrConsent/Default/create?patient_id=<pid>&unbooked=1`. Set 'Type' to
+   'Patient agreement' if the rest of the form is gated on it. (Reaching the same form the
+   way a user does - `/patientEvent/create?patient_id=<pid>&event_type_id=32&context_id=<ctx>&episode_id=<ep>`,
+   both `context_id` and `episode_id` required or it 400s "Episode/Context mismatch" -
+   stops on the booking chooser; press 'Create consent' on the Standard form row.)
 2. Select all in 'Intended benefits' and in 'Material risks' and replace each with one
    plain sentence containing no bullet points. Click outside the box to commit.
 3. Run the predicate - **READING A**. It must show `<p>` and no `<li>`, or the walk is
@@ -95,7 +109,45 @@ risks' content** (confirmed 2026-07-25, 1.1.33-dev; register entry BUG-037).
   mass-assignment warnings from rendering the consent form, and no new exception log
   appeared. Exactly the silent-fault case `c-oe-repro/subs/logs.md` warns about: the
   bracket was never going to fire and the JS predicate is the entire oracle.
-- **Not confirmed:** the register's claim that the underlying `<textarea>.value` survives
+- **Not confirmed (still):** the register's claim that the underlying `<textarea>.value` survives
   and that Save is then rejected with "Benefits and risks ... cannot be blank". Neither
   walk saved, and the textarea half was only read on the earlier no-op walks. Re-read
   `textarea=` alongside `editor=` and click Save if that half of the report matters.
+
+**2. Extra Procedures Subspecialty Assignment configures nothing** (confirmed 2026-08-05,
+develop @ 53b077c0; register entry BUG-245).
+
+- **Repro:** Admin > Consent > Extra Procedures, add a procedure; Extra Procedures
+  Subspecialty Assignment, assign it to one subspecialty only; open a Consent form in a
+  *different* subspecialty and press the Extra Procedures adder.
+- **Observed:** the procedure is offered anyway, and so is every other row of the admin
+  list. `views/default/form_Element_OphTrConsent_ExtraProcedures.php` populates the adder
+  from an unfiltered `findAll()`, and nothing outside
+  `controllers/oeadmin/ExtraProceduresController.php` reads the assignment table at all -
+  so the screen stores intent and no consent form ever consults it.
+- Same walk: on an empty assignment list the screen's own `#add_new` handler computes
+  `order_value` as `NaN`, because it maxes over no rows.
+
+**3. A consent form is unsaveable for good once a decision contact exists** (confirmed
+2026-08-05, develop @ 53b077c0; register entry BUG-243). Spine variant: Type 4 ('4. Unable
+to consent'), whose extra elements this journey otherwise leaves alone.
+
+- **Repro:** on a Type 4 form, under 'Others involved in the decision making process' add
+  an OpenEyes user through the adder and Save; re-open the event with
+  `/OphTrConsent/default/update/<id>` and press Save again, changing nothing.
+- **Observed:** an unhandled exception page - "Unable to save contact address ... Country
+  cannot be blank" - not a validation summary, so a walk that only checks for the usual
+  error list reports "rejected, no errors given". The element replays the contact's NULL
+  `country_id` into its Address on every save, so the event can never be edited again.
+  Add contacts last, and read `error-context.md` rather than the visible page when a save
+  "fails silently".
+
+**4. A comment typed while adding a decision contact is discarded** (confirmed 2026-08-05,
+develop @ 53b077c0; register entry BUG-244).
+
+- **Repro:** same element, type a comment in the row's comment box in the same save that
+  adds the contact.
+- **Observed:** the row saves, the Comment column is empty and the stored `comment` is
+  NULL, with no warning. `Element_...OthersInvolvedDecisionMakingProcess::afterSave()`
+  applies `$post_data['comment'][$idx]` only on the branch updating a row that already
+  exists - and BUG-243 means there is no second save to apply it on.

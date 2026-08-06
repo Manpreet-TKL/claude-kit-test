@@ -40,7 +40,7 @@ suggested title(s), then push - the skill never does:>
     git push -u origin HEAD
 ```
 
-Keep it short; never pad. Never hard-wrap prose fields - the Description is one line per paragraph however long, since it gets pasted into PR/ticket fields where a mid-paragraph newline becomes a visible line break. If a fault can't be pinned down cleanly (intermittent, data-dependent), say what you can - don't fabricate.
+Keep it short; never pad. If a fault can't be pinned down cleanly (intermittent, data-dependent), say what you can - don't fabricate.
 
 ## Multiple commits
 
