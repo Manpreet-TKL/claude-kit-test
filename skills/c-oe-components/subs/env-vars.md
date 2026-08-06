@@ -6,7 +6,7 @@ What OE reads at boot. Sources vary by deployment (`.env`, compose-file `environ
 
 | Var | Effect |
 |---|---|
-| `OE_MODE` | `live` enables OPcache + caches + Sentry, disables `YII_DEBUG`. Anything else (`dev`, `test`, ...) = debug mode. **`TestHelper` checks `OE_MODE !== 'live'` before exposing any route.** |
+| `OE_MODE` | `live` enables OPcache + caches + Sentry, disables `YII_DEBUG`. Anything else (`dev`, `test`, ...) = debug mode. **`TestHelper` checks `OE_MODE !== 'live'` before exposing any route.** Set per image: `LIVE` in oe-web-live and oe-manager, `DEV` in oe-web-dev **and in the production-debug image**, which therefore reports `DEV` despite carrying frozen code - so it is a deployment label, not a "code is frozen" test. `DOCKER_CONTAINER=TRUE` is set in every image and distinguishes nothing (`c-oeimagebuilder` -> `subs/identify-image.md`). |
 | `OE_FORCE_YIILITE` | `1` forces `yiilite.php` even in debug. |
 | `OE_CONFIG_TEST_RUNNING` | `1` bypasses APCu cache for `OEConfig::getMergedConfig`. Set by the test bootstrap. |
 | `OE_ENABLE_VIRUS_SCANNING` | `true` turns on ClamAV upload scanning via `xenolope/quahog`. |

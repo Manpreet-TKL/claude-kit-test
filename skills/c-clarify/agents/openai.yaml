@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-clarify"
+  short_description: "Re-explain the last response or a given excerpt in very simple words."

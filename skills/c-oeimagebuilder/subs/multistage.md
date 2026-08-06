@@ -1,26 +1,26 @@
-# The 5-stage oe-web-live build
+# The 3-stage oe-web-live build
 
-Multi-stage so the final image carries no git, composer or build-node toolchain. It does **not** mean a slim payload: the final stage copies the **entire WROOT** from the npm stage, `node_modules` and puppeteer's bundled Chrome (~600 MB) included - in-container PDF rendering depends on them.
+Multi-stage so the final image carries no git or composer toolchain. It does **not** mean a slim payload: the final stage copies the **entire WROOT** from the deps stage, `node_modules` and puppeteer's bundled Chrome (~600 MB) included - in-container PDF rendering depends on them.
+
+The build was 5 stages historically (git -> composer -> npm -> vite -> final); checkout, composer and npm were merged into a single `deps` stage, which is why they now all run on the OE base image rather than on `alpine` / `chialab/php` / `node`.
 
 ## The stages (as in `Web-Live/dockerfile`)
 
 | # | Stage | FROM | What it actually runs |
 |---|---|---|---|
-| 1 | `git` | `alpine` (+ bash, git, openssh) | `oe-checkout.sh` over `--mount=type=ssh`: clones openeyes at `BUILD_BRANCH` (mandatory), each `MODULES` entry + always `eyedraw` into `protected/modules/` (falling back to `DEFAULT_BRANCH`), inits submodules, strips `.git`, writes `$WROOT/buildinfo.txt` (debug info panel) and `/config/modules.conf`. Then writes `protected/config/cachebuster.txt` from `CACHEBUSTER` (or a timestamp). |
-| 2 | `composer` | `chialab/php:${PHP_VERSION}` | `composer update --no-dev --optimize-autoloader --prefer-stable` - **update, not install**: deps re-resolve at build time within composer.json constraints; two builds of the same branch can differ. |
-| 3 | `npm` | `node:${NODE_MAJOR_VERSION}-${NODE_DEBIAN_VERSION}` | `npm install --omit=dev --no-save` - **install, not ci**, so package-lock is not authoritative either. Puppeteer's postinstall downloads Chrome-for-Testing (~600 MB) into the web root here. |
-| 4 | `vite` | `node:alpine` | Conditional: only if `package.json` has a `vite-build-only` script - `npm install --no-save && npm run vite-build-only`. No-op on branches without it. |
-| 5 | final | `${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}` (default `oe-web-base:php8.4-noble`) | `COPY --from=npm ${WROOT}` (everything, chowned www-data), `COPY --from=vite ${WROOT}/assets` over it, `COPY --from=git /config/modules.conf`; bakes the runtime ENVs, init scripts, `/imageinfo.txt`. |
+| 1 | `deps` | `${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}` (default `oe-web-base:php8.4-noble`) | apt-gets `git`/`bzip2`/`unzip`, `ssh-keyscan github.com`, then `oe-checkout.sh` over `--mount=type=ssh`: clones openeyes at `BUILD_BRANCH` (mandatory), each `MODULES` entry + always `eyedraw` into `protected/modules/` (falling back to `DEFAULT_BRANCH`), inits submodules, strips `.git`, writes `$WROOT/buildinfo.txt` and `/config/modules.conf`. Writes `protected/config/cachebuster.txt` from `CACHEBUSTER` (or a timestamp). **Deletes `*openeyes-live.ini` from both the cli and apache2 `conf.d`** - the live php hardening blocks composer. Installs composer (pinned by `COMPOSER_VERSION` when set), then `composer update --no-dev --optimize-autoloader --prefer-stable` - **update, not install**: deps re-resolve at build time within composer.json constraints. Then `npm install --omit=dev --no-save` - **install, not ci**, so package-lock is not authoritative either - followed by an explicit puppeteer re-fetch (`rm -rf` the cache's `chrome`/`chrome-headless-shell`, then `node node_modules/puppeteer/install.mjs`) so both amd64 and arm64 get a real download. |
+| 2 | `vite` | `node:alpine` | `COPY --from=deps ${WROOT}`, `NODE_ENV=development`, `mkdir -p ${WROOT}/assets`. Conditional: only if `package.json` has a `vite-build-only` script - `npm install --no-save && npm run vite-build-only`. No-op on branches without it, and both lines end `|| :` so a missing script never fails the build. |
+| 3 | final | `${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}` | `COPY --from=deps --chown=www-data:www-data ${WROOT}` (everything), `COPY --from=vite ... ${WROOT}/assets` over it, `COPY --from=deps /config/modules.conf`; `php oe-laravel/artisan optimize` if present; bakes the runtime ENVs (incl. its own `OE_MODE="LIVE"`, `NODE_ENV=production`, `APP_ENV=production`), init scripts, profile.d, apache configs, local scripts, runs `55-create-folders.sh`, writes `/imageinfo.txt`, and sets a `HEALTHCHECK` that greps `OK` out of `/healthCheck`. |
 
-Each stage `COPY --from`s the previous one's whole WROOT, so the tree accretes: source -> +vendor -> +node_modules/Chrome -> +built assets.
+The tree accretes across stages: source -> +vendor -> +node_modules/Chrome -> +built assets.
 
-Stage 3's puppeteer postinstall honours the repo's `.puppeteerrc.cjs`, so the Chrome cache lands in `$WROOT/protected/runtime/.cache/puppeteer` and any directory the rc creates on load exists at build time; stage 5's `COPY --chown=www-data:www-data` then ships the whole tree - cache included - owned by www-data. Live containers therefore never hit the dev-image trap of a root task creating `.cache` intermediates first (Web-Dev clones source at runtime, where whichever user runs node first sets the ownership).
+Stage 1's puppeteer install honours the repo's `.puppeteerrc.cjs`, so the Chrome cache lands in `$WROOT/protected/runtime/.cache/puppeteer` and any directory the rc creates on load exists at build time; stage 3's `COPY --chown=www-data:www-data` then ships the whole tree - cache included - owned by www-data. Live containers therefore never hit the dev-image trap of a root task creating `.cache` intermediates first (Web-Dev clones source at runtime, where whichever user runs node first sets the ownership).
 
 ## Cache behaviour
 
-- `CACHEBUSTER` is an ARG of the **git stage**, so changing it re-runs checkout, composer, npm, vite - the works. That is the only supported way to force a fresh checkout of the same branch (`--no-cache` works too, at the cost of the apt layers).
-- Because stages 2-3 use `update`/`install` rather than lockfile-exact commands, a cache hit on the git stage can still ship different dependency versions on a rebuild only if the cache is busted - with a full cache hit, nothing re-resolves.
-- `--ssh default` is needed for stage 1 (and Manager's sample clone); without an SSH agent the build dies at checkout.
+- `CACHEBUSTER` is an ARG of the **deps stage**, so changing it re-runs checkout, composer, npm and everything downstream. That is the only supported way to force a fresh checkout of the same branch (`--no-cache` works too, at the cost of the apt layers).
+- Because deps uses `update`/`install` rather than lockfile-exact commands, a rebuild can ship different dependency versions - but only if the cache is busted; with a full cache hit nothing re-resolves.
+- `--ssh default` is needed for the deps stage (and Manager's sample clone); without an SSH agent the build dies at checkout.
 
 ## Manager is not multi-stage
 
