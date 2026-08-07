@@ -195,9 +195,9 @@ The deliverable is `changes.patch` (one numbered file per commit when split), no
 clone - tiny to copy away, never pinned to a stale base (the far side applies it onto
 whatever the base is *now*), and **identity-free**: nothing in the file names an author,
 so the far-side commit is indistinguishable from a change the user made and committed
-locally. Each file is a plain `git diff` under a short documentation header:
+locally. Each file is a plain `git diff` under a short documentation header - two lines,
+starting at `Date:`:
 
-    From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
     Date: <date -R output>
     Subject: [PATCH] [OE-XXXXX] - <commit title>
 
@@ -211,12 +211,15 @@ locally. Each file is a plain `git diff` under a short documentation header:
   Record it in `PR.md` as `Apply onto: <branch> @ <sha>` (the `git ls-remote` sha). OE repos
   are private, so fetching the base ref relies on the user's configured git auth (askpass / SSH).
 - **Headers are documentation only** - `git apply` ignores everything before the first
-  `diff --git`. **Never write a `From:` line or any name/email**: an author baked into
-  the patch would override the applier's own identity, which is exactly what this flow
-  avoids (and why `git am` is never used - it refuses to run without one). `Date:` from
-  `date -R`. `Subject:` is `[PATCH] [OE-XXXXX] - <title>` on ONE line, key left as
-  literal X's - a real Jira key is never baked in. The all-zero sha on the `From ` magic
-  line is inert.
+  `diff --git`. **Never write a `From:` line or any name/email**, and no `From <sha> Mon
+  Sep 17 ...` mbox magic line either: an author baked into the patch would override the
+  applier's own identity, which is exactly what this flow avoids (and why `git am` is
+  never used - it refuses to run without one). The machine that builds the patch has its
+  own `user.name`/`user.email` (often a service account), so any identity that reaches
+  the file is the *wrong* one - the applier's git config must be the only source. `Date:`
+  from `date -R`. `Subject:` is `[PATCH] [OE-XXXXX] - <title>` on ONE line, key left as
+  literal X's - a real Jira key is never baked in. Never copy a header block from an
+  older patch file without checking it for an identity line first.
 - **Diff body** (the skill never commits, so never `git format-patch`): one unified
   `git diff` against the base from a checkout that has the change (`git -C <wc> diff <base>`,
   fetching the base ref first if absent), pasted under the `---` line. Keep the `index ...`
@@ -229,6 +232,10 @@ locally. Each file is a plain `git diff` under a short documentation header:
 - The headers are ignored by `git apply` (everything before the first `diff --git`), so
   `git apply --check changes.patch` in the target checkout is the cheap validity test - run
   it before delivering, and leave the checkout clean.
+- **Identity check, mandatory before delivering** - one grep over every patch file in the
+  folder; it must print nothing. If it prints anything, delete those lines and re-run it:
+
+      grep -niE '^(From|Signed-off-by|Co-authored-by|Author):|^From [0-9a-f]{7,}' ~/pullrequests/<folder>/changes*.patch
 
 ## Apply & push (what the user does on the far side - never the skill)
 
@@ -272,6 +279,35 @@ field. **`# GITHUB`**: each `##`/`###` block pastes into the matching section of
 PR template. The Description is reused verbatim as the Summary. The template's tickboxes, emoji
 headings and Do-No-Harm reminder are filled in by hand after raising - the skill never
 reproduces that chrome.
+
+## Prose rules - it must read as though the user hand-wrote the code
+
+Everything in `PR.md` is the user's own writing, describing code they wrote in their own
+checkout. Nothing about how the change reached them may show through.
+
+- **No packaging mechanics, anywhere.** Never write *patch*, `changes.patch`, *hunk*,
+  *apply*, `git apply`, *rebase*, *conflict*, *cherry-pick*, or *backport this diff* in any
+  Jira or GitHub block. Those words describe how the folder was delivered, not what the code
+  does, and they immediately give away that the change was handed over rather than typed.
+  Describe the code: "the query is batched", not "the hunk in `WorklistController.php`".
+  (The `## Apply & push` block is the sole exception - it is the user's own command list,
+  never a paste target.)
+- **Never name the branch(es) it was built or tested on.** No "based on `fix/OE-18251`", no
+  "tested on top of `feature/...`", no shas of other work. The PR page already shows the
+  merger the base and the head; naming a private working branch only raises questions about
+  code they cannot see. The one branch allowed in prose is the base in `Apply onto:`.
+- **How a request is served is not PR prose.** Say "the request", "per request",
+  "request-scoped" - never name the web server, the SAPI or the worker model. It is
+  irrelevant to what the code does, and it is the easiest thing to get wrong: **OpenEyes
+  does not use PHP-FPM**, it runs Apache with `mod_php`, so "restart PHP-FPM" or
+  "per-FPM-worker cache" is both off-topic and false. Where a note genuinely needs an
+  operational step, write what the reviewer actually does - restart the web container,
+  clear the cache - not the mechanism behind it.
+- **More generally, never assert a stack detail you have not verified on a running
+  instance.** If it is not load-bearing for the review, leave it out.
+- **No provenance of any kind** - no tooling, no generation, no "this was extracted from",
+  no reference to another PR folder the change was split out of. One change, written by the
+  user, explained by the user.
 
 ## OE field rules
 

@@ -64,13 +64,40 @@ to a stale base (the far side applies it onto whatever the base is *now*).
   Only `changes.patch` is kept; the checkout is not part of the deliverable. It captures
   additions, edits, and deletions as content - new files show `new file`, deletions `deleted
   file`. It carries **no commit messages and no identity** - plain `git diff` output, never
-  `git format-patch`; the far-side commits are authored entirely by the user's own git
-  config, indistinguishable from a local edit.
+  `git format-patch`; no header block, no `From <sha> Mon Sep 17` mbox line, no `From:` line,
+  no name or email anywhere. The machine that builds the patch has its own `user.name`/
+  `user.email` (often a service account), so any identity that reaches the file is the *wrong*
+  one: the far-side commits must be authored entirely by the user's own git config,
+  indistinguishable from a local edit.
+- **Identity check, mandatory before delivering** - one grep over the patch; it must print
+  nothing. If it prints anything, delete those lines and re-run it:
+
+      grep -niE '^(From|Signed-off-by|Co-authored-by|Author):|^From [0-9a-f]{7,}' ~/pullrequests/<folder>/changes*.patch
 - **Applying it (on the far side, in your live checkout):** the commands live in `PR.md`'s
   `## Apply` block with concrete values - branch off the current base, then `git apply --3way
   changes.patch` (a moved base degrades to conflict markers, not a reject). Everything lands
   **unstaged**; you review, stage, and write each commit yourself from the suggested title,
   then push. The skill never commits or pushes.
+
+## Prose rules - it must read as though the user hand-wrote the code
+
+The Description is the user's own writing about code they wrote in their own checkout.
+Nothing about how the change reached them may show through.
+
+- **No packaging mechanics.** Never write *patch*, `changes.patch`, *hunk*, *apply*,
+  *rebase*, *conflict*, or *cherry-pick* in the Description - those describe the delivery,
+  not the code, and give away that the change was handed over. Describe the code instead.
+  The `## Apply` block is the sole exception; it is the user's own command list.
+- **Never name the branch(es) it was built or tested on** - no "based on `fix/...`", no shas
+  of other work. The PR page already shows the reviewer the base and the head. The only
+  branch allowed in prose is the base in `Apply onto:`.
+- **How a request is served is not PR prose.** Say "the request", "per request",
+  "request-scoped" - never the web server, the runtime SAPI or the worker model. It is
+  irrelevant to what the code does and easy to get wrong. Where a note genuinely needs an
+  operational step, write what the reviewer does, not the mechanism behind it.
+- **Never assert a stack detail you have not verified** on the actual runtime. If it is not
+  load-bearing for the review, leave it out.
+- **No provenance** - no tooling, no generation, no "split out of" another PR folder.
 
 ## Field rules
 

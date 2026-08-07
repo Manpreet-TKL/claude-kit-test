@@ -23,8 +23,18 @@ Beyond that one `touch`, take no other action: no docker commands, no `install.s
 
 Site: `https://openeyes.atlassian.net`, Jira ticket links: `https://openeyes.atlassian.net/browse/<KEY>`, Confluence: `https://openeyes.atlassian.net/wiki/spaces/OPD/...`
 
-The mcp-atlassian token is scoped to two Jira projects (`JIRA_PROJECTS_FILTER=TKLS,OE`) and one Confluence space (`OPD`):
+The mcp-atlassian token is scoped to three Jira projects (`JIRA_PROJECTS_FILTER=TKLS,OE,CR`) and one Confluence space (`OPD`):
 
 - **OE - OpenEyes Development** (Jira, software project). The development project for OpenEyes itself: an open-source ophthalmology EMR (PHP/Yii 1.1, with a Laravel re-platform underway). Product features, bugs, and engineering work live here.
 - **TKLS - ToukanLabs Services** (Jira, service-desk project). The customer support / DevOps desk: client-raised support tickets, incidents, and service requests for OpenEyes deployments. This is the project the `devopstickets` triage skill works against.
 - **OPD - OpenEyes product documentation** (Confluence space, key `OPD`). Developer and product docs: release notes, the release timeline & supported-version policy, the developer checklist, the XAPI framework, the Laravel re-platform overview, testing (PHPUnit), and per-event admin guides (e.g. Biometry). Search it with `mcp__atlassian__confluence_search` when a ticket needs a documented answer or known fix.
+
+## What each project key means
+
+Three key prefixes come up in conversation; only two are reachable through this token.
+
+- **`TKLS-`** - support / service-desk tickets. A customer raised a problem with a running deployment. Reachable.
+- **`OE-`** - development tickets for OpenEyes. **An `OE-` ticket is always raised before development starts**, which is why branches are named after it (`fix/OE-XXXXX`, `feature/OE-XXXXX`) and why every commit subject carries the `[OE-XXXXX] - ` prefix. Reachable.
+- **`CR-`** - change requests. A customer has asked for a change; it may or may not be paid for yet, so development may not have been initialised at all - a CR can sit with no `OE-` ticket and no branch behind it. In the filter since 2026-08-07; if a CR query still comes back empty, the filter is only a mask - the account also needs browse permission on the project, so say that rather than reporting "not found" as though the ticket doesn't exist.
+
+A CR is the commercial ask, the `OE-` ticket is the development work raised to satisfy it, and a `TKLS-` ticket is a support issue that may or may not spawn either.

@@ -1025,8 +1025,8 @@ applyAtlassian() {
             echo ""
             [ -n "${_in}" ] && jira_token="${_in}"
             [ -n "${jira_token}" ] || { echo "  JIRA_API_TOKEN cannot be empty" >&2; return 1; }
-            read -r -p "  JIRA_PROJECTS_FILTER [${jira_filter:-TKLS,OE}]: " _in
-            jira_filter="${_in:-${jira_filter:-TKLS,OE}}"
+            read -r -p "  JIRA_PROJECTS_FILTER [${jira_filter:-TKLS,OE,CR}]: " _in
+            jira_filter="${_in:-${jira_filter:-TKLS,OE,CR}}"
         fi
     fi
 

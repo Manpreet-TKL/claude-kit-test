@@ -101,7 +101,7 @@ https://id.atlassian.com/manage-profile/security/api-tokens.
 JIRA_URL=https://toukanlabs.atlassian.net
 JIRA_USERNAME=you@toukanlabs.com
 JIRA_API_TOKEN=your-token-here
-JIRA_PROJECTS_FILTER=TKLS,OE
+JIRA_PROJECTS_FILTER=TKLS,OE,CR
 ```
 
 It is listed in `.gitignore` and never committed. It is also never touched by
