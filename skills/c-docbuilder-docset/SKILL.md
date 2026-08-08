@@ -8,8 +8,9 @@ disable-model-invocation: false
 
 When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself - it just loads knowledge; act only on instructions given in the conversation.
 
-A **docset** is one folder OeDocBuilder turns into a styled `.docx` + PDF. Emit exactly
-this shape; the module's validator rejects anything else.
+A **docset** is one folder OeDocBuilder turns into a styled `.docx` (PDF only on
+request: the web "+ PDF" checkbox or `--pdf` on the CLI build). Emit exactly this
+shape; the module's validator rejects anything else.
 
 ```
 <doc_id>/
@@ -28,6 +29,7 @@ this shape; the module's validator rejects anything else.
   "title": "...", "subtitle": "(optional)",
   "version": "1.0", "date": "YYYY-MM-DD",
   "classification": "Internal",
+  "family": "(optional)",
   "toc": true, "numbering": true,
   "authors":  [ { "name": "...", "role": "Author" } ],
   "revisions": [ { "version": "1.0", "date": "YYYY-MM-DD", "author": "...", "summary": "..." } ],
@@ -37,7 +39,9 @@ this shape; the module's validator rejects anything else.
 
 Rules: `schema_version` must be `1`; `doc_id` slug `^[a-z0-9][a-z0-9-]{1,63}$` == folder
 name; `version` `^\d+(\.\d+){0,2}$` (a string); `date` `YYYY-MM-DD`; `authors` and
-`revisions` non-empty; every `.md` on disk listed in `sections`, unique and ascending.
+`revisions` non-empty; every `.md` on disk listed in `sections`, unique and ascending;
+`family` optional but a non-empty string when present (the collection the document
+belongs to - the Build tab groups by it; absent = "Unassigned").
 The cover, document-control and contents pages are **generated from the manifest** - do
 not author them.
 
