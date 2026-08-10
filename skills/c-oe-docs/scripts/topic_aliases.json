@@ -1,0 +1,18 @@
+{
+  "vfa": ["visual fields", "humphrey", "hfa"],
+  "hvf": ["visual fields", "humphrey", "hfa"],
+  "humphrey": ["hfa", "visual fields"],
+  "hfa": ["visual fields", "humphrey"],
+  "iol": ["intraocular lens", "lens types", "biometry"],
+  "biometer": ["biometry", "iolmaster"],
+  "iolmaster": ["biometry", "iol master"],
+  "letter": ["correspondence"],
+  "letters": ["correspondence"],
+  "meds": ["medication"],
+  "drugs": ["medication drug"],
+  "prescription": ["medication"],
+  "va": ["visual acuity"],
+  "iop": ["intraocular pressure"],
+  "dicom": ["file watcher", "import"],
+  "injection": ["intravitreal"]
+}

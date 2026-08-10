@@ -18,7 +18,26 @@ records, **resolve it to a doc page and answer from that page** - don't read app
 answer from memory first. The corpus was verified against code + live app + DB, so it is
 the cheapest correct source.
 
-## Primary mechanism - `scripts/resolve.py`
+## Feature/topic questions - `scripts/topic.py` (use this first)
+
+For "which manuals cover X", "how do I create an X for a patient", or "how did X data
+get into OpenEyes", run the topic mapper first - one call returns the full manual set
+grouped by facet (Create/record, Configure, Data in/integration, Reports, ...):
+
+    python3 scripts/topic.py biometry
+    python3 scripts/topic.py 'visual fields' --all
+    python3 scripts/topic.py IOLMaster --json
+
+It queries a cached graph of the corpus (pages + `related:`/`oe:link`/prereq edges + a
+full-text term index; cache under `~/.cache/oe-docs-topic/`, rebuilt transparently when
+docs change), so it finds pages front-matter search cannot - `biometry` surfaces
+`devops/iolmaster/iolmaster-import`, the DICOM ingestion manual. When a query is
+ambiguous the header lists the other matching features ("also matched") - relay those
+as the disambiguation question instead of guessing which one the user meant. Then Read
+only the listed pages you need. `scripts/topic_aliases.json` holds query-side synonyms
+(VFA, IOL, Humphrey, ...) - extend it when a user's term misses.
+
+## Single-page lookup - `scripts/resolve.py`
 
 Resolve a route/URI or a free-text topic to the matching page, then read it:
 
@@ -55,17 +74,19 @@ Then re-run the resolver; no other setup is needed (`resolve.py` is dependency-f
 
 ## Answering discipline
 
-1. Resolve -> open the top page (`--show`). If the match is weak (low score / wrong branch),
-   list a few candidates and pick by branch (`user-guides/configuring-openeyes/` for admin,
-   `user-guides/patients/adding-events/` for clinical, `user-guides/menu-bar/` for
-   worklists/registers/reports, `devops/` for SSO/integrations, ...).
+1. Feature/topic question -> `topic.py` first, then Read the listed pages that matter.
+   One specific route/URI or a single page -> `resolve.py` (`--show`). If a match is weak
+   (low score / wrong branch), list a few candidates and pick by branch
+   (`user-guides/configuring-openeyes/` for admin, `user-guides/patients/adding-events/`
+   for clinical, `user-guides/menu-bar/` for worklists/registers/reports, `devops/` for
+   SSO/integrations, ...).
 2. Answer from the page's prose. Quote on-screen labels exactly; cite the `doc_slug`.
 3. Note the page `status` if it matters: `reviewed` is verified; `draft`/`skeleton` is not
    yet confirmed (say so). If nothing matches, say the corpus has no page for it rather
    than inventing behaviour - then, only if needed, fall back to app source.
 4. This corpus documents **what the software does** - never derive clinical advice from it.
 
-## Other mechanisms (available; use the resolver first)
+## Other mechanisms (available; use the scripts above first)
 
 - **coverage + page-index joint index.** `data/coverage.json` (route -> doc_slug, status,
   source_ref) pairs with `c-oe-nav`'s `subs/page-index.md` (every screen's exact URL and

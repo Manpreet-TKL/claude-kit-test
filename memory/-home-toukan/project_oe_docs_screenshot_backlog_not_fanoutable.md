@@ -5,6 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 4b3560d9-aca1-4a90-b53d-e1db4636444c
+  modified: 2026-08-10T12:18:24.126Z
 ---
 
 The OeDocumentation Phase-6 screenshot backlog is **not** a parallel-fan-out job (a 20-Haiku-agent
@@ -13,20 +14,20 @@ and does direct-URI GET + optional `selector=` clip only - **no click navigation
 DB writes**. The click/journey driver `journey.mjs` that the plan's S4 step assumed is a scratchpad
 tool that gets **wiped** (like the scratchpad + chrome cache) and no longer exists.
 
-**Canonical backlog (2026-07-05, post deprecated re-org): the in-module page
-`docs/help/screenshot-backlog.md`** - 62 of 456 markers missing (394 captured, container/host
-in sync), each with its `needs=`/`nav=`/`selector=` regeneration recipe inlined.
-Not-installed event types moved to `docs/deprecated/` and their 31 impossible markers were
-removed from the manifest entirely. `~/oe-docs-shot-backlog.md` is a stale external duplicate.
+**Canonical backlog (refreshed 2026-08-10): the in-module page
+`docs/help/screenshot-backlog.md`** - 56 of 710 markers missing (654 captured, container/host
+in sync, page reconciles entry-for-entry with `yiic oedocs shots --section=all --missing=1`),
+each with its `needs=`/`nav=`/`selector=` regeneration recipe inlined.
+`~/oe-docs-shot-backlog.md` is a stale external duplicate.
 
-Why the residual can't be bulk-captured (buckets in that page): B=6 op-note shots 500'd by
-**BUG-042** (Element_OpNote view suppression); C=14 placeholder-uri shots
-(`/.../default/view/{event_id}`) where the module is installed but has **zero sample events
-DB-wide**; D=6 populated-module shots whose element-clip `selector=` isn't in the rendered view
-(per-shot manual framing); E=1 event-create (UI journey + DB write, serial only); F=32 no direct
-route (click-journeys / dynamic ids); G=3 real-id-still-errors (sso-login, admission-form,
-whiteboard). The old 105 count included special-module shots (moved out with their docs) and 4
-help/* syntax-example false positives; the old 93 included the 31 now-deleted deprecated markers.
+Why the residual can't be bulk-captured (buckets in that page): 13 auto = `review/` skeletons
+whose routes answer HTTP 500/400 even logged in (app-blocked, not capture-blocked); B=6 op-note
+element shots needing a procedure-specific note (Biometry never capturable, BUG-043); C=20
+no-sample-data (8 op-checklists blocked by the missing `secondary_diagnosis` table, 5 Visual
+Fields with no create path, 7 seedable-but-serial); D=1 selector absent in view; F=26 click-
+journey/gated routes; G=3 real-id-still-errors. The seedable ADMIN screens were cleared
+2026-08-10 by the Playwright seed suite in `~/oe-frontend-tests/tests/seed` (see
+[[project_oedocs_seed_suite]]) - 16 shots captured in one pass once the data existed.
 
 Cheap read-only wins are already banked - clean bare-uri shots are all captured. Copy captured
 shots to host with a selective `docker cp` OUT of the container's `docs/screenshots` (NOT
