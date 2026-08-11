@@ -1,5 +1,47 @@
-# OpenAI Codex agents via `codex mcp-server`
+# OpenAI Codex
 
+## Standalone Codex
+For the complete direct-use guide, see [Standalone Codex usage](codex-standalone.md).
+
+
+Standalone use does not require Claude Code or a host Codex installation:
+
+```bash
+cd ~/claude-kit
+./install-codex.sh
+./codex.sh
+```
+
+The installer requires Docker, builds or reuses `claude-kit-codex`, and creates
+only `~/.codex` and `~/.agents`. It links global instructions at
+`~/.codex/AGENTS.md` and every skill at the official personal root,
+`~/.agents/skills/<name>`. The `~/.agents/.claude-kit-skills` manifest makes
+re-runs idempotent. Pruning removes only recorded symlinks or links targeting
+this kit; real directories and foreign symlinks remain. A pre-existing real
+`AGENTS.md` is backed up to `AGENTS.md.bak`.
+
+Each run regenerates `skills/<name>/agents/openai.yaml` from `SKILL.md`
+frontmatter. It never creates or changes `~/.codex/config.toml`.
+
+When `~/.codex/auth.json` is absent, an interactive install starts this device login:
+
+```bash
+docker run --rm -it --network host --user "$(id -u):$(id -g)" -v "$HOME/.codex:/home/codex/.codex" claude-kit-codex login --device-auth
+```
+
+A non-interactive install prints the same exact login command.
+
+`./codex.sh [codex arguments]` passes all arguments through, including `exec`.
+It mounts Codex state read-write, personal skills and the kit read-only, and the
+current directory read-write at the same path. Inside `claude-kit`, the kit is
+mounted once read-write. SSH keys, Git credentials, host runtimes, and unrelated
+home directories are not mounted.
+
+The launcher uses Codex's native footer to show model and reasoning, current
+directory, five-hour limit, and weekly limit. This is a command-line override,
+so user-owned Codex configuration remains untouched.
+
+## Codex as a Claude Code MCP server
 This kit can wire Claude Code into **OpenAI Codex** so Claude can hand a coding task -
 or many in parallel - to autonomous Codex agents. Like the Atlassian and GitHub
 integrations, Codex runs **in a Docker container**: OpenAI ships no official CLI image,

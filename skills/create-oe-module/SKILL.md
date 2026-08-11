@@ -53,6 +53,17 @@ module:
   some containers, probe for it and degrade gracefully rather than fataling - say so in
   the README.)
 
+**Minimal toolset - build on what the web container already ships.** New features
+(especially special modules) must not pull in composer packages, npm installs or system
+tools when the OpenEyes web container already has something that does the job: Yii 1
+itself (caching, validation, CLI commands), APCu, TCPDF for PDFs, Puppeteer + bundled
+Chrome for rendering, the bundled JS libraries - check `c-oe-components` for the
+current inventory before reaching for anything external. A
+dependency is only justified when nothing in the container covers the need, and then it
+goes through the probe-and-degrade rule above rather than becoming an install
+prerequisite. The bar to clear: the module drops into a stock OpenEyes container and
+works, with no `composer install` step.
+
 ### `<Name>Module.php` - minimum class
 
 **Utility module** (no event types):

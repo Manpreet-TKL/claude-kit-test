@@ -2,10 +2,11 @@
 # Manpreet 20/07/2026
 # Download every ticket of a Jira filter (or raw JQL) to disk: keys.txt, full
 # issue JSON with all comments, and optionally the attachment binaries.
+# Re-runs with -r resume where they left off instead of starting from zero.
 # Credentials come from ~/.claude/mcp-env/.atlassian.env (classic API token) - the kit's
 # credential store, kept outside the repo so it can never be pushed.
 # Usage: ./jira_filter_download.sh -f 19720 -a
-#        ./jira_filter_download.sh -j 'project = TKLS AND status = "In Progress"' -o /home/toukan/tkls-corpus
+#        ./jira_filter_download.sh -j 'project = TKLS ORDER BY created ASC' -a -r -o /home/toukan/tkls-corpus-full
 
 abort() {
     echo >&2 '
@@ -25,6 +26,7 @@ jql=""        # Raw JQL to download
 filter_id=""  # Saved filter id (becomes jql=filter=<id>)
 out_folder="" # Output folder (default: ~/jira-corpus_<timestamp>)
 attachments=0 # Flag to also download attachment binaries
+resume=0      # Flag to skip already-downloaded issues and attachments
 
 while [[ $# -gt 0 ]]; do
     p="$1"
@@ -43,6 +45,9 @@ while [[ $# -gt 0 ]]; do
         ;;
     -a | --attachments)
         attachments=1
+        ;;
+    -r | --resume)
+        resume=1
         ;;
     *)
         echo "Invalid Parameter ... exiting" && exit 1
@@ -137,7 +142,7 @@ fetchIssue() {
 }
 
 fetchAttachments() {
-    local key="$1" att id name url
+    local key="$1" att id name url size file
     local issue_file="${out_folder}/issues/${key}.json"
     [ "$(jq '.fields.attachment | length' "${issue_file}")" == "0" ] && return 0
     mkdir -p "${out_folder}/attachments/${key}"
@@ -145,8 +150,15 @@ fetchAttachments() {
         id=$(echo "${att}" | jq -r '.id')
         name=$(echo "${att}" | jq -r '.filename')
         url=$(echo "${att}" | jq -r '.content')
+        size=$(echo "${att}" | jq -r '.size')
+        # Jira accepts any filename - strip path separators and leading dots
+        name="${name//\//_}"
+        name="${name#.}"
         # Prefix the attachment id - Jira allows duplicate filenames on one ticket
-        curl "${curl_opts[@]}" -L "${url}" -o "${out_folder}/attachments/${key}/${id}_${name}"
+        file="${out_folder}/attachments/${key}/${id}_${name}"
+        # A size mismatch means a partial download from an aborted run - re-fetch
+        [ -f "${file}" ] && [ "$(stat -c%s "${file}")" == "${size}" ] && continue
+        curl "${curl_opts[@]}" -L "${url}" -o "${file}"
     done
 }
 
@@ -157,8 +169,12 @@ fetchAttachments() {
 startSeconds=$(date +%s)
 mkdir -p "${out_folder}/issues"
 
-echo "Searching: ${jql}..."
-searchKeys
+if [ "${resume}" == "1" ] && [ -s "${out_folder}/keys.txt" ]; then
+    echo "Resuming with existing keys.txt..."
+else
+    echo "Searching: ${jql}..."
+    searchKeys
+fi
 issueCount=$(wc -l <"${out_folder}/keys.txt")
 echo -e "[Done] ${issueCount} issues\n"
 
@@ -166,8 +182,13 @@ echo "Downloading ${issueCount} issues to ${out_folder}/issues..."
 n=0
 while IFS= read -r key; do
     n=$((n + 1))
-    echo "Fetching ${key} (${n}/${issueCount})..."
-    fetchIssue "${key}"
+    # A resumed run keeps issues that already parse - truncated files re-fetch
+    if [ "${resume}" == "1" ] && jq -e '.key' "${out_folder}/issues/${key}.json" >/dev/null 2>&1; then
+        echo "Skipping ${key} (${n}/${issueCount}) - already downloaded..."
+    else
+        echo "Fetching ${key} (${n}/${issueCount})..."
+        fetchIssue "${key}"
+    fi
     [ "${attachments}" == "1" ] && fetchAttachments "${key}"
 done <"${out_folder}/keys.txt"
 echo -e "[Done]\n"

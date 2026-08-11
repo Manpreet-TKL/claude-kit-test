@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 1ced0e38-87c4-48ff-9d7d-7464777185b0
-  modified: 2026-07-20T15:50:43.611Z
+  modified: 2026-08-10T20:16:54.655Z
 ---
 
 Downloading 106 TKLS issues (~2.4 MB) via Claude subagents calling
@@ -23,7 +23,10 @@ reading the corpus using codex and Claude not doing much."
 **How to apply:** For any bulk Jira export, run
 `~/claude-kit/scripts/jira_filter_download.sh` (REST v3 enhanced search,
 `nextPageToken` paging, comment top-up, `-a` for attachment binaries via direct
-content URLs - no base64-in-context). The jiramcp MCP-only rule still governs
+content URLs - no base64-in-context). Since 2026-08-10 `-r/--resume` makes
+re-runs idempotent (reuses keys.txt, skips issues that parse and attachments
+whose on-disk size matches metadata) - at 10k-ticket scale always pass `-r` so
+the abort-on-error trap is recoverable by re-running the same command. The jiramcp MCP-only rule still governs
 interactive/triage access; the script is the sanctioned path for bulk corpus
 downloads. Claude's job is orchestration only - point codex (or subagents) at
 the on-disk corpus instead of piping ticket bodies through model context.

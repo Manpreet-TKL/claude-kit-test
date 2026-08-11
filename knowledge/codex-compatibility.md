@@ -16,14 +16,10 @@ portable recipe).
 
 ## Skills
 
-- Discovery roots: current docs say `~/.agents/skills`; `~/.codex/skills` is
-  the legacy root but still live - it is where Codex materialises its own
-  bundled `.system` skills. Same `SKILL.md` + frontmatter format as Claude.
-- The kit links skills into `~/.codex/skills/<name>` (manifest
-  `~/.codex/.claude-kit-skills`, pruned like the Claude one) because that is
-  the only root reachable through the containers' existing `~/.codex` mount.
-  Contingency if a Codex update drops the legacy root: also link into
-  `~/.agents/skills` and add a `~/.agents` mount to the registration.
+- Standalone Codex uses the official personal root, `~/.agents/skills`, with
+  manifest `~/.agents/.claude-kit-skills`.
+- The existing `install.sh -x` workflow keeps its MCP compatibility links in
+  `~/.codex/skills` and remains independent of standalone setup.
 - Symlinked skill directories are supported; a smoke test ("list your
   available skills") after rollout confirms in-container discovery.
 - Explicit invocation from a Codex prompt: `$skill-name` (e.g. `$c-oe-code`).

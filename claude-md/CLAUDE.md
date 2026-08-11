@@ -66,9 +66,9 @@ Bias toward caution over speed; use judgment on trivial tasks.
 
 ## Session context
 
-- You are running in Claude Code; `~/.claude/` is generated from `~/claude-kit`
-  (config, skills, and memory are symlinks back into the kit), and the kit is
-  freely readable.
+- You are running with `~/claude-kit` as the source of global instructions and
+  skills. Claude Code uses the generated `~/.claude/` tree; standalone Codex uses
+  `~/.codex/AGENTS.md` and `~/.agents/skills/`. Both link back into the kit.
 - On the first message of a session, assess which `c-*` context skills fit the
   work and load them before starting.
 - `~/claude-kit/knowledge/` holds learnings from previous projects - read a

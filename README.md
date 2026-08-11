@@ -1,7 +1,14 @@
 # claude-kit
 
-A single-script Claude Code setup. Run `./install.sh -q` to configure `~/.claude/` in one shot, idempotently (no flags at all prints the help and errors - nothing is assumed).
+A container-first agent kit. The existing Claude Code installer remains unchanged,
+and standalone Codex is the first independent consumer on the path toward a generic
+multi-agent kit.
 
+```bash
+./install.sh -q       # Claude Code setup
+./install-codex.sh    # standalone Codex setup
+./codex.sh            # run Codex in the current directory
+```
 ```
 ~/claude-kit/
 ├── install.sh              # the only entry point
@@ -52,7 +59,8 @@ A single-script Claude Code setup. Run `./install.sh -q` to configure `~/.claude
     ├── sandbox.md          # running without prompts in a container/VM
     ├── atlassian.md        # Jira + Confluence via Atlassian MCP - setup + teardown
     ├── github.md           # GitHub (read-only) via github-mcp-server - setup + teardown
-    ├── codex.md            # OpenAI Codex agents via codex mcp-server - setup + teardown
+    ├── codex.md            # Codex overview, standalone + MCP setup
+    ├── codex-standalone.md # standalone Codex usage and compatibility
     └── aws.md              # AWS (read-only) via aws-api-mcp-server - setup + limitations
 ```
 
