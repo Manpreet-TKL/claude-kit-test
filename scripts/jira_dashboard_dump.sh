@@ -104,7 +104,7 @@ dumpGadgetConfigs() {
 
 dumpReferencedFilters() {
     local filter_id
-    for filter_id in $(grep -oE 'filter-?[0-9]{4,}|"filterId": *"?[0-9]{4,}' "${configs_file}" | grep -oE '[0-9]{4,}' | sort -u); do
+    for filter_id in $(grep -oE 'filter-?[0-9]{4,}|"filterId": *"?[0-9]{4,}|"type": *"filter","id": *"?[0-9]{4,}' "${configs_file}" | grep -oE '[0-9]{4,}' | sort -u); do
         apiGet "/filter/${filter_id}" | jq -c 'select(.id != null) | {id, name, jql}'
     done
 }

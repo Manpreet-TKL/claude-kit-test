@@ -17,6 +17,11 @@
   anything in AWS - through an MCP server, a CLI, an SDK or a console-driving
   browser. Reads only, on every tier, in every session. If a task needs a write,
   say what you would run and stop; the human runs it. See `docs/aws.md`.
+- **Jira, Confluence and GitHub are read-only too.** Same footing as AWS: never
+  create, edit, transition, comment, label, link, merge or delete anything on
+  them - not through an MCP server, `gh`, a REST call or a browser. When a task
+  needs a write, output the exact command or the click-path instructions and
+  stop; the human executes them.
 - **Everything runs in a container.** Nothing this kit drives is installed on the
   host - no browser, no runtime, no CLI. If a task seems to need a host install, say
   so and stop rather than installing it.
@@ -55,6 +60,8 @@ Bias toward caution over speed; use judgment on trivial tasks.
 - Present choices or options as a numbered list; present any comparison as a table.
 - Runnable commands (chat, docs, script output) go on ONE line - up to 200 chars
   is fine; never backslash-wrapped across lines.
+- Suggest shell scripts as `bash /path/script.sh <args>`, never `./script.sh` or
+  the bare path - exec bits get lost (kit syncs, git) and `bash` works either way.
 - No trailing summary of what you just did - the diff speaks.
 - No new `.md` planning docs in a repo unless explicitly requested. When a complex
   writeup is genuinely warranted, write it as a `.md` under `/home/toukan/`, not in

@@ -98,7 +98,7 @@ https://id.atlassian.com/manage-profile/security/api-tokens.
 `~/.claude/mcp-env/.atlassian.env` is plain shell:
 
 ```bash
-JIRA_URL=https://toukanlabs.atlassian.net
+JIRA_URL=https://openeyes.atlassian.net
 JIRA_USERNAME=you@toukanlabs.com
 JIRA_API_TOKEN=your-token-here
 JIRA_PROJECTS_FILTER=TKLS,OE,CR
