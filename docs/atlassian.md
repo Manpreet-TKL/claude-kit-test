@@ -62,12 +62,17 @@ the file, and vice versa. Restart Claude Code to pick up the changes.
 
 ## Lazy start (the gate)
 
-The registration is wrapped in a **one-shot startup gate**: a new Claude Code session
+The registration is wrapped in a **startup gate**: a new Claude Code session
 does **not** start the atlassian container - the server shows `failed` in `/mcp` until
 you request it. To start it mid-session, run `touch ~/claude-kit/generated/mcp-on/atlassian`
 and reconnect the server in `/mcp`; the tools bind on the late connect. The flag is
-consumed on start, so every session begins gated - touch it just before launching
-Claude Code to have the server up from the start.
+consumed by the first spawn, so every session begins gated - touch it just before
+launching Claude Code to have the server up from the start.
+
+Consuming the flag writes `atlassian.win` and holds the gate open for a further 60
+seconds, because a single `/mcp` reconnect spawns the wrapper more than once and the
+later spawns would otherwise find the flag already eaten and fail the reconnect. The
+window ages out by itself, so the gate cannot be left open.
 
 ## Token rotation
 

@@ -395,6 +395,9 @@ shift_enter_file="${kit_root}/settings/shift-enter.json"
 # All machine-local generated config lives under one folder (gitignored wholesale),
 # so it can be backed up and restored across a `git reset --hard` + `git clean -fdx`.
 generated_dir="${kit_root}/generated"
+# Seconds an MCP startup gate stays open after its flag is consumed, so that the
+# several spawns one "/mcp -> reconnect" issues all get through (see mcpGate).
+mcp_gate_window=60
 # Credentials live OUTSIDE the kit. It is a git repo with a remote, so a secret in its
 # working tree is one `git add -f`, one .gitignore edit or one archive of the folder away
 # from being published - gitignore is not a security control. ~/.claude is machine-local
@@ -423,6 +426,11 @@ claude_md_file="${claude_dir}/CLAUDE.md"
 claude_md_bak="${claude_md_file}.bak"
 statusline_file="${claude_dir}/statusline.sh"
 statusline_bak="${statusline_file}.bak"
+
+# Skill plumbing shared with codex-install.sh (gate flip + snapshot, openai.yaml
+# generation, the symlink/prune linker). Reads the globals set above at call time.
+# shellcheck source=lib/skills.sh
+. "${kit_root}/lib/skills.sh"
 
 # -l/--logout: clear stored MCP credentials, then exit - deliberately standalone,
 # BEFORE any pre-flight prompt or install step, so the permission tiers can
@@ -941,18 +949,21 @@ writeSettings() {
     echo "  merged -> ${settings_file}"
 }
 
-# One-shot startup gate prepended to every MCP registration's command: unless
-# the server's flag file exists the command exits 1 - the server shows "failed"
-# in /mcp and NO container/process is spawned. The flag is consumed on start so
-# the NEXT session boots gated again. Stdio servers are never auto-retried, so
-# the gate runs exactly once per session; enabling mid-session is: touch the
-# flag, then /mcp -> <server> -> reconnect (tools bind on the late connect -
-# verified). Gated-off sessions exit before the "docker rm -f" reuse step, so
-# they never kill a container another session enabled.
+# Startup gate prepended to every MCP registration's command: unless the server
+# is armed the command exits 1 - the server shows "failed" in /mcp and NO
+# container/process is spawned. Arming is one-shot (touch the flag; the first
+# spawn consumes it) so the NEXT session boots gated again, but consuming the
+# flag also opens a short grace window, because "/mcp -> <server> -> reconnect"
+# spawns this command MORE THAN ONCE: the first spawn passed the gate and ate
+# the flag, a later spawn in the same reconnect then died at the gate and the
+# client reported CONNECTION_CLOSED - a reconnect could never succeed. During
+# the window every spawn passes; once it ages out the gate is shut again
+# whether or not anything connected, so the gate can never fail open.
 mcpGate() {
     local flag="${generated_dir}/mcp-on/${1}"
+    local win="${flag}.win"
     mkdir -p "${generated_dir}/mcp-on"
-    printf '%s' "if [ ! -f ${flag} ]; then echo \"${1} MCP gated off - to start it: touch ${flag}  then /mcp -> ${1} -> reconnect\" >&2; exit 1; fi; rm -f ${flag}; "
+    printf '%s' "if [ -f ${flag} ]; then rm -f ${flag}; : > ${win}; elif [ -z \"\$(find ${win} -newermt '-${mcp_gate_window} seconds' 2>/dev/null)\" ]; then echo \"${1} MCP gated off - to start it: touch ${flag}  then /mcp -> ${1} -> reconnect\" >&2; exit 1; fi; "
 }
 
 # Configure or remove the atlassian MCP server via the claude CLI at user scope
@@ -970,7 +981,7 @@ applyAtlassian() {
         else
             echo "  atlassian MCP server not registered at user scope - nothing to remove"
         fi
-        rm -f "${generated_dir}/mcp-on/atlassian"
+        rm -f "${generated_dir}/mcp-on/atlassian" "${generated_dir}/mcp-on/atlassian.win"
         echo "  credentials file ${atlassian_secrets} left in place - delete manually to clear tokens"
         return
     fi
@@ -1097,19 +1108,19 @@ applyAtlassian() {
     env_json="$(jq 'with_entries(select(.value != ""))' <<< "${env_json}")"
 
     # Run via "sh -c": the mcpGate prefix first (gated-off sessions exit here),
-    # then force-remove any container left by a prior session of the same fixed
-    # name, then exec our own. At most one mcp-atlassian container ever exists -
-    # a new enabled start kills the old one and takes over (newest wins), instead
-    # of a fresh random-named container piling up per session. One bare "-e VAR"
-    # per set env key (docker reads the value from its own env, which Claude Code
-    # populates from the "env" block - so tokens never appear on the command
-    # line), then the image.
+    # then exec our own container, named for the wrapper's PID so concurrent
+    # sessions cannot collide. It used to be a fixed name force-removed on start
+    # ("newest wins"), which meant a second session connecting killed the live
+    # server of the first; --rm is a daemon-side HostConfig flag, so a per-spawn
+    # name still leaves nothing behind. One bare "-e VAR" per set env key (docker
+    # reads the value from its own env, which Claude Code populates from the
+    # "env" block - so tokens never appear on the command line), then the image.
     local image="ghcr.io/sooperset/mcp-atlassian:latest"
     local cname="claude-mcp-atlassian"
     local gate run_cmd
     gate="$(mcpGate atlassian)"
     run_cmd="$(jq -rn --arg gate "${gate}" --argjson env "${env_json}" --arg img "${image}" --arg name "${cname}" \
-        '$gate + "docker rm -f \($name) >/dev/null 2>&1; exec docker run -i --rm --name \($name) " + ($env | keys | map("-e " + .) | join(" ")) + " " + $img')"
+        '$gate + "exec docker run -i --rm --name \($name)-$$ " + ($env | keys | map("-e " + .) | join(" ")) + " " + $img')"
 
     # Register at user scope via the claude CLI (writes ~/.claude.json so the
     # server auto-loads in every session/project). Remove any prior registration
@@ -1123,7 +1134,7 @@ applyAtlassian() {
     echo "  registered atlassian MCP (docker/${image##*/}) at user scope (~/.claude.json)"
     [ "${JIRA_MODE}" = "on" ]       && echo "  Jira projects filter: ${jira_filter}"
     [ "${CONFLUENCE_MODE}" = "on" ] && echo "  Confluence spaces filter: ${conf_filter:-none}"
-    echo "  gated + pre-armed: connects on your NEXT session start (or /mcp -> atlassian -> reconnect now); later sessions need touch ${generated_dir}/mcp-on/atlassian (flag is one-shot)"
+    echo "  gated + pre-armed: connects on your NEXT session start (or /mcp -> atlassian -> reconnect now); later sessions need touch ${generated_dir}/mcp-on/atlassian (one-shot flag, then open for ${mcp_gate_window}s)"
     echo "  restart Claude Code to pick up the new MCP server"
 }
 
@@ -1144,7 +1155,7 @@ applyGitHub() {
         else
             echo "  github MCP server not registered at user scope - nothing to remove"
         fi
-        rm -f "${generated_dir}/mcp-on/github"
+        rm -f "${generated_dir}/mcp-on/github" "${generated_dir}/mcp-on/github.win"
         echo "  credentials file ${github_secrets} left in place - delete manually to clear the token"
         return
     fi
@@ -1210,19 +1221,17 @@ applyGitHub() {
     env_json="$(jq 'with_entries(select(.value != ""))' <<< "${env_json}")"
 
     # Run via "sh -c": the mcpGate prefix first (gated-off sessions exit here),
-    # then force-remove any container left by a prior session of the same fixed
-    # name, then exec our own. At most one github MCP container ever exists - a
-    # new enabled start kills the old one and takes over (newest wins), instead
-    # of a fresh random-named container piling up per session. One bare "-e VAR"
-    # per set env key (docker reads the value from its own env, which Claude Code
-    # populates from the "env" block - so the token never appears on the command
-    # line), then the image.
+    # then exec our own container, named for the wrapper's PID so concurrent
+    # sessions cannot collide (see applyAtlassian for why the old fixed name was
+    # wrong). One bare "-e VAR" per set env key (docker reads the value from its
+    # own env, which Claude Code populates from the "env" block - so the token
+    # never appears on the command line), then the image.
     local image="ghcr.io/github/github-mcp-server"
     local cname="claude-mcp-github"
     local gate run_cmd
     gate="$(mcpGate github)"
     run_cmd="$(jq -rn --arg gate "${gate}" --argjson env "${env_json}" --arg img "${image}" --arg name "${cname}" \
-        '$gate + "docker rm -f \($name) >/dev/null 2>&1; exec docker run -i --rm --name \($name) " + ($env | keys | map("-e " + .) | join(" ")) + " " + $img')"
+        '$gate + "exec docker run -i --rm --name \($name)-$$ " + ($env | keys | map("-e " + .) | join(" ")) + " " + $img')"
 
     # Register at user scope (writes ~/.claude.json). Remove any prior registration
     # first so re-runs are idempotent - add-json errors if the name already exists.
@@ -1234,7 +1243,7 @@ applyGitHub() {
     touch "${generated_dir}/mcp-on/github"
     echo "  registered github MCP (docker/${image##*/}, read-only) at user scope (~/.claude.json)"
     echo "  GitHub toolsets: ${gh_toolsets:-server default}"
-    echo "  gated + pre-armed: connects on your NEXT session start (or /mcp -> github -> reconnect now); later sessions need touch ${generated_dir}/mcp-on/github (flag is one-shot)"
+    echo "  gated + pre-armed: connects on your NEXT session start (or /mcp -> github -> reconnect now); later sessions need touch ${generated_dir}/mcp-on/github (one-shot flag, then open for ${mcp_gate_window}s)"
     echo "  restart Claude Code to pick up the new MCP server"
 }
 
@@ -1256,7 +1265,7 @@ applyAws() {
         else
             echo "  aws MCP server not registered at user scope - nothing to remove"
         fi
-        rm -f "${generated_dir}/mcp-on/aws"
+        rm -f "${generated_dir}/mcp-on/aws" "${generated_dir}/mcp-on/aws.win"
         echo "  credentials file ${aws_secrets} left in place - delete manually to clear the key"
         return
     fi
@@ -1335,15 +1344,18 @@ applyAws() {
           AWS_API_MCP_TELEMETRY: "false",
           AWS_API_MCP_ALLOW_UNRESTRICTED_LOCAL_FILE_ACCESS: "no-access"}')"
 
-    # Same "sh -c" + gate + named-container reuse as github: at most one aws MCP
-    # container ever exists, and one bare "-e VAR" per key so the access key never
-    # appears on the command line.
+    # Same "sh -c" + gate + per-spawn container name as github, and one bare
+    # "-e VAR" per key so the access key never appears on the command line. The
+    # name carries the wrapper's PID because a fixed name shared by every session
+    # meant the second session to connect force-removed the first one's live
+    # container; --rm is a daemon-side HostConfig flag, so each spawn's container
+    # still cleans itself up when its stdio closes.
     local image="public.ecr.aws/awslabs-mcp/awslabs/aws-api-mcp-server:latest"
     local cname="claude-mcp-aws"
     local gate run_cmd
     gate="$(mcpGate aws)"
     run_cmd="$(jq -rn --arg gate "${gate}" --argjson env "${env_json}" --arg img "${image}" --arg name "${cname}" \
-        '$gate + "docker rm -f \($name) >/dev/null 2>&1; exec docker run -i --rm --name \($name) " + ($env | keys | map("-e " + .) | join(" ")) + " " + $img')"
+        '$gate + "exec docker run -i --rm --name \($name)-$$ " + ($env | keys | map("-e " + .) | join(" ")) + " " + $img')"
 
     local server_json
     server_json="$(jq -n --arg cmd "${run_cmd}" --argjson env "${env_json}" \
@@ -1356,7 +1368,7 @@ applyAws() {
     echo "  READ-ONLY IS A GUARD RAIL, NOT THE BOUNDARY - the IAM principal must be read-only,"
     echo "  and should explicitly Deny secretsmanager:GetSecretValue, ssm:GetParameter,"
     echo "  s3:GetObject and kms:Decrypt (managed ReadOnlyAccess allows all four). See docs/aws.md."
-    echo "  gated + pre-armed: connects on your NEXT session start (or /mcp -> aws -> reconnect now); later sessions need touch ${generated_dir}/mcp-on/aws (flag is one-shot)"
+    echo "  gated + pre-armed: connects on your NEXT session start (or /mcp -> aws -> reconnect now); later sessions need touch ${generated_dir}/mcp-on/aws (one-shot flag, then open for ${mcp_gate_window}s)"
     echo "  restart Claude Code to pick up the new MCP server"
 }
 
@@ -1385,7 +1397,7 @@ applyCodex() {
         else
             echo "  codex MCP server not registered at user scope - nothing to remove"
         fi
-        rm -f "${generated_dir}/mcp-on/codex"
+        rm -f "${generated_dir}/mcp-on/codex" "${generated_dir}/mcp-on/codex.win"
         # Drop the codex-compat links this kit created - only ever its own: the
         # AGENTS.md link is removed only when it points at the kit, and skill
         # links only via the manifest (the syncCodexSkills safety floors).
@@ -1480,18 +1492,24 @@ applyCodex() {
     fi
 
     # Load saved knobs (non-secret) so re-runs preserve prior choices.
-    local cx_model cx_effort cx_sandbox
+    local cx_model cx_effort cx_sandbox cx_approval
     if [ -f "${codex_secrets}" ]; then
         # shellcheck source=/dev/null
         . "${codex_secrets}"
         cx_model="${CODEX_MODEL:-}"
         cx_effort="${CODEX_REASONING_EFFORT:-}"
         cx_sandbox="${CODEX_SANDBOX:-}"
+        cx_approval="${CODEX_APPROVAL:-}"
     fi
     # Defaults: flagship model, xhigh reasoning, workspace-write (network off -> no push).
     cx_model="${cx_model:-gpt-5.6-sol}"
     cx_effort="${cx_effort:-xhigh}"
     cx_sandbox="${cx_sandbox:-workspace-write}"
+    # Read and written back only so this file stays the shared home for both entry
+    # points: approval_policy is codex-install.sh/codex.sh's knob for interactive
+    # runs, and MCP agents pin never below regardless. Truncating it here would
+    # silently reset the standalone runner's choice on every -x.
+    cx_approval="${cx_approval:-on-request}"
 
     local noninteractive=0
     [ "${ASSUME_YES}" = "1" ] || [ ! -t 0 ] && noninteractive=1
@@ -1527,6 +1545,7 @@ applyCodex() {
         echo "CODEX_MODEL=${cx_model}"
         echo "CODEX_REASONING_EFFORT=${cx_effort}"
         echo "CODEX_SANDBOX=${cx_sandbox}"
+        echo "CODEX_APPROVAL=${cx_approval}"
     } > "${codex_secrets}"
     chmod 600 "${codex_secrets}"
     echo "  saved -> ${codex_secrets}"
@@ -1557,8 +1576,9 @@ applyCodex() {
     gate="$(mcpGate codex)"
     if [ "${cx_runtime}" = "docker" ]; then
         # mcpGate prefix first (gated-off sessions exit here), then the same
-        # "--name + rm -f" reuse as github/atlassian: one codex MCP container,
-        # newest enabled start wins. $HOME/$PWD/$(id ...) are escaped so they expand
+        # per-spawn container name as github/atlassian, so two sessions running
+        # codex agents no longer evict each other. $HOME/$PWD/$(id ...)/$$ are
+        # escaped so they expand
         # when Claude Code launches the server - the container then runs as the
         # invoking user with ~/.codex (auth + AGENTS.md/skills links, into the
         # image HOME), the project dir (same path, as workdir) and the kit
@@ -1571,7 +1591,7 @@ applyCodex() {
             echo "  WARNING: kit at ${kit_root}, not ~/claude-kit - the baked kit mount assumes ~/claude-kit, so codex AGENTS.md/skill links may not resolve in-container" >&2
         fi
         run_cmd="$(jq -rn --arg gate "${gate}" --argjson a "${args_json}" --arg img "${image}" --arg name "${cname}" \
-            '$gate + "docker rm -f \($name) >/dev/null 2>&1; mkdir -p \"$HOME/.codex\"; kitm=\"\"; [ \"$PWD\" = \"$HOME/claude-kit\" ] || kitm=\"-v $HOME/claude-kit:$HOME/claude-kit:ro\"; exec docker run -i --rm --name \($name) --user \"$(id -u):$(id -g)\" -v \"$HOME/.codex:/home/codex/.codex\" -v \"$PWD:$PWD\" -w \"$PWD\" $kitm \($img) " + ($a | map(@sh) | join(" "))')"
+            '$gate + "mkdir -p \"$HOME/.codex\"; kitm=\"\"; [ \"$PWD\" = \"$HOME/claude-kit\" ] || kitm=\"-v $HOME/claude-kit:$HOME/claude-kit:ro\"; exec docker run -i --rm --name \($name)-$$ --user \"$(id -u):$(id -g)\" -v \"$HOME/.codex:/home/codex/.codex\" -v \"$PWD:$PWD\" -w \"$PWD\" $kitm \($img) " + ($a | map(@sh) | join(" "))')"
     else
         # Host fallback: mcpGate prefix first, then reap any leftover codex MCP
         # server process before exec'ing our own - the process-level analogue of
@@ -1600,7 +1620,7 @@ applyCodex() {
     else
         echo "  model=${cx_model}  effort=${cx_effort}  sandbox=${cx_sandbox}$([ "${cx_sandbox}" = "workspace-write" ] && echo ' (network off)')"
     fi
-    echo "  gated + pre-armed: connects on your NEXT session start (or /mcp -> codex -> reconnect now); later sessions need touch ${generated_dir}/mcp-on/codex (flag is one-shot)"
+    echo "  gated + pre-armed: connects on your NEXT session start (or /mcp -> codex -> reconnect now); later sessions need touch ${generated_dir}/mcp-on/codex (one-shot flag, then open for ${mcp_gate_window}s)"
     echo "  restart Claude Code to pick up the new MCP server"
 
     # Codex compat: the same global instructions + skills for codex agents.
@@ -1629,198 +1649,12 @@ writeCodexAgentsMd() {
 }
 
 # Mirror the kit's skills into ~/.codex/skills/<name> so Codex agents can invoke
-# them ($name). Structural clone of syncSkills: the same manifest + target prune
-# passes and the same safety floors (real dirs and foreign symlinks are never
-# touched). codex materialises its own bundled skills in ~/.codex/skills/.system -
-# a dotname the globs below never match. The registration's read-only kit mount
-# is what makes these links resolve inside the agent container.
+# them ($name). Same shared linker as syncSkills - codex materialises its own
+# bundled skills in ~/.codex/skills/.system, a dotname the globs never match.
+# The registration's read-only kit mount is what makes these links resolve
+# inside the agent container.
 syncCodexSkills() {
-    [ -d "${skills_src_dir}" ] || { echo "  no skills/ dir in kit - skipped"; return 0; }
-    mkdir -p "${codex_skills_dir}"
-
-    # 1a. Manifest pass - remove links for kit skills that have since been deleted.
-    if [ -f "${codex_skills_manifest}" ]; then
-        local prev mdst
-        while IFS= read -r prev; do
-            [ -n "${prev}" ] || continue
-            [ -d "${skills_src_dir}/${prev}" ] && continue   # still in the kit -> keep (re-linked below)
-            mdst="${codex_skills_dir}/${prev}"
-            if [ -L "${mdst}" ]; then
-                rm -f "${mdst}"
-                echo "  unlink-> ${mdst} (removed from kit)"
-            fi
-        done < "${codex_skills_manifest}"
-    fi
-
-    # 1b. Target pass - drop any symlink that points into this kit's skills/.
-    local dst raw
-    for dst in "${codex_skills_dir}"/*; do
-        [ -L "${dst}" ] || continue
-        raw="$(readlink "${dst}")"
-        case "${raw}" in
-            "${skills_src_dir}"/*)
-                rm -f "${dst}"
-                echo "  unlink-> ${dst}"
-                ;;
-        esac
-    done
-
-    # 2. (Re)create a symlink per kit skill, rewriting the manifest to that set.
-    local src name
-    : > "${codex_skills_manifest}"
-    for src in "${skills_src_dir}"/*/; do
-        [ -d "${src}" ] || continue
-        name="$(basename "${src}")"
-        dst="${codex_skills_dir}/${name}"
-        if [ -L "${dst}" ] || [ -e "${dst}" ]; then
-            echo "  skip  -> ${dst} (exists and not kit-managed - leaving alone)"
-            continue
-        fi
-        ln -s "${src%/}" "${dst}"
-        printf '%s\n' "${name}" >> "${codex_skills_manifest}"
-    done
-    echo "  linked $(wc -l < "${codex_skills_manifest}") skill(s) into ${codex_skills_dir} (manifest: ${codex_skills_manifest})"
-}
-
-# Generate skills/<name>/agents/openai.yaml in the KIT from each SKILL.md's
-# frontmatter, so Codex gets a display name + description per skill and - for
-# skills marked disable-model-invocation: true - allow_implicit_invocation:
-# false, its Codex analogue. Runs every install AFTER applySkillsInvocation so
-# the yaml reflects this run's final frontmatter state; a file is rewritten only
-# when its content changes. No prune pass - the yaml lives inside the skill dir
-# and dies with it.
-writeOpenAiSkillMeta() {
-    [ -d "${skills_src_dir}" ] || { echo "  no skills/ dir in kit - skipped"; return 0; }
-    local f dir name desc tmp written=0
-    for f in "${skills_src_dir}"/*/SKILL.md; do
-        [ -f "${f}" ] || continue
-        dir="$(dirname "${f}")"
-        name="$(basename "${dir}")"
-        # description: from the frontmatter only (line 2 up to the closing ---).
-        desc="$(sed -n "2,/^---\$/p" "${f}" | sed -n 's/^description: //p' | head -1)"
-        [ -n "${desc}" ] || desc="${name}"
-        # YAML double-quoted scalar: escape backslashes first, then quotes.
-        desc="${desc//\\/\\\\}"
-        desc="${desc//\"/\\\"}"
-        tmp="$(mktemp)"
-        {
-            echo "interface:"
-            echo "  display_name: \"${name}\""
-            echo "  short_description: \"${desc}\""
-            if sed -n "2,/^---\$/p" "${f}" | grep -q '^disable-model-invocation: true$'; then
-                echo "policy:"
-                echo "  allow_implicit_invocation: false"
-            fi
-        } > "${tmp}"
-        if [ -f "${dir}/agents/openai.yaml" ] && cmp -s "${tmp}" "${dir}/agents/openai.yaml"; then
-            rm -f "${tmp}"
-            continue
-        fi
-        mkdir -p "${dir}/agents"
-        mv "${tmp}" "${dir}/agents/openai.yaml"
-        chmod 644 "${dir}/agents/openai.yaml"
-        echo "  wrote -> ${dir#"${kit_root}"/}/agents/openai.yaml"
-        written=$((written+1))
-    done
-    if [ "${written}" -eq 0 ]; then
-        echo "  all agents/openai.yaml files already current - no change"
-    else
-        echo "  generated/updated ${written} agents/openai.yaml file(s)"
-    fi
-}
-
-# Read a skill's disable-model-invocation value, or "" if it carries no flag.
-# Restricted to the frontmatter block (line 2 up to the closing ---), so a
-# literal mention in a skill body is never seen.
-skillGateValue() {
-    sed -n "2,/^---\$/p" "$1" | sed -n 's/^disable-model-invocation: \(true\|false\)$/\1/p' | head -1
-}
-
-# Rewrite a skill's disable-model-invocation value in place, same frontmatter
-# restriction. The SKILL.md files are live symlink targets, so the change
-# reaches ~/.claude with no re-link - but skills bind at session start.
-setSkillGateValue() {
-    sed -i "2,/^---\$/ s/^disable-model-invocation: \(true\|false\)\$/disable-model-invocation: $2/" "$1"
-}
-
-# One "<skill> <auto|manual>" line per flagged skill, plus the always-auto count.
-reportSkillsInvocation() {
-    [ -d "${skills_src_dir}" ] || return 0
-    local f v auto=0 manual=0 always=0
-    for f in "${skills_src_dir}"/*/SKILL.md; do
-        [ -f "${f}" ] || continue
-        v="$(skillGateValue "${f}")"
-        case "${v}" in
-            true)  manual=$((manual+1)) ;;
-            false) auto=$((auto+1)) ;;
-            *)     always=$((always+1)) ;;
-        esac
-    done
-    echo "  ${auto} auto-invokable, ${manual} manual, ${always} always-auto (no flag)"
-}
-
-# -s/--skills-auto: flip the model-invocation gate across kit skills.
-#
-# 'on' snapshots each flagged skill's current value to generated/skills-auto.state
-# before setting everything to false, and 'off' puts those exact values back -
-# a blind false->true inversion would silently demote skills that were authored
-# auto-invokable rather than flipped there. Skills carrying no flag at all (the
-# deliberate auto-load set) are untouched in both directions. With no -s the
-# function only reports: the committed values are the authored intent.
-applySkillsInvocation() {
-    [ -d "${skills_src_dir}" ] || { echo "  no skills/ dir in kit - skipped"; return 0; }
-
-    if [ -z "${SKILLS_AUTO}" ]; then
-        echo "  left as committed (pass -s on|off to change)"
-        reportSkillsInvocation
-        return 0
-    fi
-
-    local f name v changed=0
-
-    if [ "${SKILLS_AUTO}" = "on" ]; then
-        : > "${skills_auto_state}"
-        for f in "${skills_src_dir}"/*/SKILL.md; do
-            [ -f "${f}" ] || continue
-            v="$(skillGateValue "${f}")"
-            [ -n "${v}" ] || continue
-            name="$(basename "$(dirname "${f}")")"
-            printf '%s\t%s\n' "${name}" "${v}" >> "${skills_auto_state}"
-            [ "${v}" = "false" ] && continue
-            setSkillGateValue "${f}" false
-            echo "  true->false  ${f#"${kit_root}"/}"
-            changed=$((changed+1))
-        done
-        echo "  snapshot written to ${skills_auto_state#"${kit_root}"/}"
-    elif [ -f "${skills_auto_state}" ]; then
-        while IFS=$'\t' read -r name v; do
-            f="${skills_src_dir}/${name}/SKILL.md"
-            [ -f "${f}" ] || { echo "  skipped ${name} - no longer in the kit"; continue; }
-            [ "$(skillGateValue "${f}")" = "${v}" ] && continue
-            setSkillGateValue "${f}" "${v}"
-            echo "  restored ${v}  ${f#"${kit_root}"/}"
-            changed=$((changed+1))
-        done < "${skills_auto_state}"
-        rm -f "${skills_auto_state}"
-        echo "  snapshot consumed and cleared"
-    else
-        echo "  no snapshot to restore - setting every flagged skill to manual"
-        for f in "${skills_src_dir}"/*/SKILL.md; do
-            [ -f "${f}" ] || continue
-            [ "$(skillGateValue "${f}")" = "false" ] || continue
-            setSkillGateValue "${f}" true
-            echo "  false->true  ${f#"${kit_root}"/}"
-            changed=$((changed+1))
-        done
-    fi
-
-    if [ "${changed}" -eq 0 ]; then
-        echo "  nothing to change"
-    else
-        echo "  ${changed} skill(s) rewritten"
-        echo "  restart Claude Code to pick up the change (skills bind at session start)"
-    fi
-    reportSkillsInvocation
+    linkKitSkills "${codex_skills_dir}" "${codex_skills_manifest}"
 }
 
 # Adopt every real ~/.claude/projects/<slug>/memory dir into the kit
@@ -1876,71 +1710,11 @@ syncMemory() {
     done
 }
 
-# Rebuild ~/.claude/skills/<name> symlinks from scratch on every run, and keep an
-# explicit record (${skills_manifest}) of which skills install.sh created - so a
-# skill deleted from the kit has its link removed from ~/.claude on the next run.
-#
-# Pruning is two-pronged, and BOTH passes only ever remove symlinks - a real
-# directory you dropped in by hand, or a foreign symlink you made yourself, is
-# never touched, so skills added directly (outside claude-kit) always survive:
-#   1a. Manifest pass - any skill recorded as kit-installed that is no longer in
-#       the kit gets its link removed, even if the kit has since moved and the
-#       link now dangles to a stale path (which the target pass can't match).
-#   1b. Target pass   - also drop any symlink still pointing into this kit's
-#       skills/ dir: catches links from installs predating the manifest, and
-#       skills renamed within the kit.
-# Step 2 then (re)creates a fresh symlink for every skill currently in the kit and
-# rewrites the manifest to that exact set (the source of truth for 1a next run).
+# Link the kit's skills into ~/.claude/skills/<name>. Prune passes, manifest
+# bookkeeping and the real-dir / foreign-symlink safety floors all live in
+# lib/skills.sh, shared with codex-install.sh.
 syncSkills() {
-    [ -d "${skills_src_dir}" ] || { echo "  no skills/ dir in kit - skipped"; return 0; }
-    mkdir -p "${claude_skills_dir}"
-
-    # 1a. Manifest pass - remove links for kit skills that have since been deleted.
-    if [ -f "${skills_manifest}" ]; then
-        local prev mdst
-        while IFS= read -r prev; do
-            [ -n "${prev}" ] || continue
-            [ -d "${skills_src_dir}/${prev}" ] && continue   # still in the kit -> keep (re-linked below)
-            mdst="${claude_skills_dir}/${prev}"
-            if [ -L "${mdst}" ]; then
-                rm -f "${mdst}"
-                echo "  unlink-> ${mdst} (removed from kit)"
-            fi
-        done < "${skills_manifest}"
-    fi
-
-    # 1b. Target pass - drop any symlink that points into this kit's skills/.
-    local dst raw
-    for dst in "${claude_skills_dir}"/*; do
-        [ -L "${dst}" ] || continue
-        raw="$(readlink "${dst}")"
-        case "${raw}" in
-            "${skills_src_dir}"/*)
-                rm -f "${dst}"
-                echo "  unlink-> ${dst}"
-                ;;
-        esac
-    done
-
-    # 2. (Re)create a symlink for every skill currently in the kit, recording the
-    #    ones we manage into a freshly-rewritten manifest.
-    local src name
-    : > "${skills_manifest}"
-    for src in "${skills_src_dir}"/*/; do
-        [ -d "${src}" ] || continue
-        name="$(basename "${src}")"
-        dst="${claude_skills_dir}/${name}"
-        # A leftover here is a real dir or a foreign symlink (not ours - 1a/1b
-        # removed every kit-managed link) - leave it, and don't claim it in the
-        # manifest, so a hand-added skill is never pruned on a later run.
-        if [ -L "${dst}" ] || [ -e "${dst}" ]; then
-            echo "  skip  -> ${dst} (exists and not kit-managed - leaving alone)"
-            continue
-        fi
-        ln -s "${src%/}" "${dst}"
-        echo "  link  -> ${dst}"
-        printf '%s\n' "${name}" >> "${skills_manifest}"
-    done
+    linkKitSkills "${claude_skills_dir}" "${skills_manifest}"
 }
 
 # Symlink ~/.claude/CLAUDE.md -> the kit's claude-md/CLAUDE.md, so the live global
@@ -1996,7 +1770,7 @@ screenHint() {
     fi
     [ "${have_screen}" = "1" ] || echo "  GNU screen 5 not found on PATH (or an older version shadows it)"
     [ "${have_alias}" = "1" ] || echo "  claude-in-screen alias block missing from ~/.bash_aliases"
-    echo "  to set both up, run: ${kit_root}/scripts/screen5_install.sh"
+    echo "  to set both up, run: bash ${kit_root}/scripts/screen5_install.sh"
 }
 
 # Verification block - the 6 checks from the brief, plus conditional codex checks:

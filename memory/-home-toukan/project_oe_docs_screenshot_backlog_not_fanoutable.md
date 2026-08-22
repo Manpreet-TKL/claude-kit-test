@@ -18,7 +18,9 @@ tool that gets **wiped** (like the scratchpad + chrome cache) and no longer exis
 `docs/help/screenshot-backlog.md`** - 56 of 710 markers missing (654 captured, container/host
 in sync, page reconciles entry-for-entry with `yiic oedocs shots --section=all --missing=1`),
 each with its `needs=`/`nav=`/`selector=` regeneration recipe inlined.
-`~/oe-docs-shot-backlog.md` is a stale external duplicate.
+The Jul-2026 `~/oe-docs-shot-backlog.md` duplicate has been deleted; the
+separate hardcoded-id marker inventory now lives at kit
+`knowledge/oe-docs-shot-id-inventory.md`.
 
 Why the residual can't be bulk-captured (buckets in that page): 13 auto = `review/` skeletons
 whose routes answer HTTP 500/400 even logged in (app-blocked, not capture-blocked); B=6 op-note
@@ -27,9 +29,9 @@ no-sample-data (8 op-checklists blocked by the missing `secondary_diagnosis` tab
 Fields with no create path, 7 seedable-but-serial); D=1 selector absent in view; F=26 click-
 journey/gated routes; G=3 real-id-still-errors. The seedable ADMIN screens were cleared
 2026-08-10 by the Playwright seed suite in `~/oe-frontend-tests/tests/seed` (see
-[[project_oedocs_seed_suite]]) - 16 shots captured in one pass once the data existed.
+[[project-oe-frontend-tests-repo]]) - 16 shots captured in one pass once the data existed.
 
 Cheap read-only wins are already banked - clean bare-uri shots are all captured. Copy captured
 shots to host with a selective `docker cp` OUT of the container's `docs/screenshots` (NOT
 `copyin.sh out`); the user pushes the whole module from the host.
-See [[project_oe_eventimage_docman_render_testing]] and [[project_oe_document_pdf_probe_recipe]].
+See [[reference_oe_render_testing_gotchas]] and [[oe-document-pdf-probe-recipe]].

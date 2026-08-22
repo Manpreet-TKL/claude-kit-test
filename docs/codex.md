@@ -8,7 +8,7 @@ Standalone use does not require Claude Code or a host Codex installation:
 
 ```bash
 cd ~/claude-kit
-./install-codex.sh
+./codex-install.sh
 ./codex.sh
 ```
 
@@ -142,13 +142,19 @@ prompts. Restart Claude Code to pick up the server, then run `/codexmcp` to veri
 
 ## Lazy start (the gate)
 
-The registration is wrapped in a **one-shot startup gate**: a new Claude Code session
+The registration is wrapped in a **startup gate**: a new Claude Code session
 does **not** start the codex container - the server shows `failed` in `/mcp` until you
 request it. To start it mid-session, run `touch ~/claude-kit/generated/mcp-on/codex`
 and reconnect the server in `/mcp`; the `mcp__codex` tools bind on the late connect.
-The flag is consumed on start, so every session begins gated - touch it just before
-launching Claude Code to have codex up from the start. Gated-off sessions exit before
-the container-reuse step, so they never kill a codex container another session enabled.
+The flag is consumed by the first spawn, so every session begins gated - touch it just
+before launching Claude Code to have codex up from the start.
+
+Consuming the flag writes `codex.win` and holds the gate open for a further 60 seconds,
+because a single `/mcp` reconnect spawns the wrapper more than once and the later spawns
+would otherwise find the flag already eaten and fail the reconnect. The window ages out
+by itself, so the gate cannot be left open. Each spawn gets its own container name
+(`claude-mcp-codex-$$`), so two sessions running codex agents no longer evict each
+other's container.
 
 `install.sh` **pre-arms** the flag for every server it (re-)registers, so right after
 an `-x` run codex connects on the next session start - or immediately via `/mcp` ->

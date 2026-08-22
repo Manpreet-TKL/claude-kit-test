@@ -26,4 +26,4 @@ stream files out with `docker exec <c> cat /tmp/x > host`; and a Node script pla
 `/tmp` cannot `require('puppeteer')` because module resolution walks up from the
 script's own directory - put it under the app root instead.
 
-Related: [[project-oeimagebuilder-build-gotchas]], [[project-monkey-environment]].
+Related: [[oeimagebuilder-build-gotchas]], [[monkey-environment]].

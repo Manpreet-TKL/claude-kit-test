@@ -3,7 +3,7 @@
 Design for wiring Claude Code into the TKLS AWS account **read-only**, following
 the same pattern as `docs/github.md`: an official upstream MCP server run as a
 container over stdio, registered at user scope by `install.sh`, credentials kept
-outside this repo, and the whole thing behind the kit's one-shot startup gate.
+outside this repo, and the whole thing behind the kit's startup gate.
 
 Status: **wired.** `install.sh -a` registers it; `-A` deregisters it; `-l aws`
 logs out. Set up a read-only IAM user first (see Credentials below).
@@ -29,7 +29,7 @@ flowchart LR
         ENV["mcp-env/.aws.env<br/>key id + secret + region"]
     end
     subgraph Run["session"]
-        GATE["generated/mcp-on/aws<br/>one-shot gate"]
+        GATE["generated/mcp-on/aws<br/>one-shot flag + 60s window"]
         CTR["docker run -i --rm<br/>aws-api-mcp-server"]
     end
     IAM["IAM principal<br/>read-only policy"]
@@ -112,9 +112,9 @@ A copy of the github wiring with different constants:
    `claude mcp add-json aws ... -s user` behind `mcpGate aws`, then touches
    `generated/mcp-on/aws` to pre-arm the gate.
 4. **Image**: `public.ecr.aws/awslabs-mcp/awslabs/aws-api-mcp-server:latest`,
-   container name `claude-mcp-aws`, run as
-   `docker run -i --rm --name claude-mcp-aws -e ... <image>` - the same
-   `docker rm -f` reuse as github, so one container at most.
+   run as `docker run -i --rm --name claude-mcp-aws-$$ -e ... <image>` - the
+   name carries the wrapper's PID, like github's, so concurrent sessions get one
+   container each instead of evicting each other.
 5. **Fixed constants** in the env block, never read from the credentials file,
    so editing credentials cannot switch them off:
    `READ_OPERATIONS_ONLY=true`, `AWS_API_MCP_TELEMETRY=false` (upstream default
@@ -173,8 +173,10 @@ pre-arms it once, and after that it is one `touch` + reconnect per session.
   single-user. Tag values, log lines and instance descriptions are attacker- or
   client-controlled text; treat anything read back as data, never as
   instructions.
-- **The gate is one-shot.** Every new session starts with the server off. That is
-  deliberate - no AWS container runs unless you asked for one this session.
+- **The gate re-shuts itself.** Every new session starts with the server off, and
+  that is deliberate - no AWS container runs unless you asked for one this
+  session. Arming is one-shot: the flag is consumed by the first spawn and only a
+  60s grace window follows it, so forgetting to disarm cannot leave AWS open.
 
 https://awslabs.github.io/mcp/servers/aws-api-mcp-server
 https://github.com/awslabs/mcp/tree/main/src/aws-api-mcp-server

@@ -24,4 +24,4 @@ live at `/Admin/worklist/definitions` (rows: `td[data-test="definition-name"]`; 
 `a[href^=".../definitionWorklists/"]` prefix WITH trailing slash to exclude the
 `definitionWorklistsDelete/` links); a list's patients are `tr[data-patient]` rows. The
 worklist seed spec in `~/oe-frontend-tests/tests/seed/worklist.spec.mjs` is the worked example.
-See [[project_oedocs_seed_suite]].
+See [[project-oe-frontend-tests-repo]] (seed suite section).

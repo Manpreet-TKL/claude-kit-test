@@ -12,7 +12,9 @@
     "mcp__github",
     "mcp__aws",
     "Bash(~/claude-kit/install.sh -l *)",
-    "Bash(bash ~/claude-kit/install.sh -l *)"
+    "Bash(bash ~/claude-kit/install.sh -l *)",
+    "Bash(~/claude-kit/codex-install.sh -l)",
+    "Bash(bash ~/claude-kit/codex-install.sh -l)"
   ],
   "ask": [
     "Edit",

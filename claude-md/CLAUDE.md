@@ -82,5 +82,8 @@ Bias toward caution over speed; use judgment on trivial tasks.
   file when its topic comes up.
 - `~/claude-kit/handoff/` holds handoff documents - never read from it unless
   explicitly asked.
+- `~/claude-kit/todo/` holds queued tasks (`TODO.md`) and the plans behind
+  them - read it when asked what is queued or told to pick something up; never
+  start a queued item unprompted.
 - When you learn something durable about a repo or technology in regular use,
   offer to fold it into the matching context skill; update only on approval.

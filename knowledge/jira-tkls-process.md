@@ -3,7 +3,8 @@
 How tickets move between clients, support, devops and development on
 openeyes.atlassian.net, and the 2026-08-11 decisions on splitting work types.
 Boards: jira-devops-dashboard.md (11651) and jira-support-dashboard.md
-(11653). The change plan lives at ~/tkls-jira-estate-plan.md.
+(11653). The consolidated pending-change list is todo/jira-estate-plan.md; the
+original 5-phase plan lives at ~/claude-kit/todo/jira-estate-full-plan.md.
 
 ## The flow (Manpreet, 2026-08-11)
 

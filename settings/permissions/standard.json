@@ -17,7 +17,9 @@
     "mcp__aws",
     "mcp__codex",
     "Bash(~/claude-kit/install.sh -l *)",
-    "Bash(bash ~/claude-kit/install.sh -l *)"
+    "Bash(bash ~/claude-kit/install.sh -l *)",
+    "Bash(~/claude-kit/codex-install.sh -l)",
+    "Bash(bash ~/claude-kit/codex-install.sh -l)"
   ],
   "ask": [
     "Bash"
