@@ -1,0 +1,16 @@
+[permissions.standard]
+description = "Project editing with sensitive paths and command network denied."
+extends = ":workspace"
+
+[permissions.standard.filesystem]
+"~/.ssh/**" = "deny"
+
+[permissions.standard.filesystem.":workspace_roots"]
+"**/.env" = "deny"
+"**/.env.*" = "deny"
+
+[permissions.standard.network]
+enabled = false
+
+[permissions.standard.network.unix_sockets]
+"/var/run/docker.sock" = "deny"

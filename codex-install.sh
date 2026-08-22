@@ -1,13 +1,6 @@
 #!/bin/bash -l
-# Manpreet 10/08/2026
-# claude-kit installer for standalone, containerised Codex - the Codex-side twin
-# of install.sh. Builds the claude-kit-codex image, symlinks ~/.codex/AGENTS.md
-# and ~/.agents/skills/* back into this kit, generates each skill's Codex
-# metadata, and saves the non-secret agent defaults to generated/.codex.env
-# (shared with `install.sh -x`). Idempotent: safe to re-run.
-#
-# Flag-for-flag with install.sh where the feature exists on both sides - see -h
-# for what maps and what is deliberately Claude-Code-only.
+# Manpreet 22/08/2026
+# Configure an existing host Codex with claude-kit parity and native controls.
 
 abort() {
     echo >&2 '
@@ -23,106 +16,66 @@ abort() {
 trap 'abort' 0
 set -e
 
-# Defaults (overridable via env or flag) ------------------------------------
-ASSUME_YES=0                                    # -y: take saved/default answers non-interactively
-DO_VERIFY=1                                     # -n: skip the verification checks
-DO_UPDATE=1                                     # -U: don't rebuild the image when it already exists
-DO_RESET=0                                      # -r: archive ~/.codex bloat, then install
-DO_FRESH=0                                      # -F: back up auth+history, wipe ~/.codex + ~/.agents, reinstall
-SKILLS_AUTO=""                                  # -s on|off: flip disable-model-invocation across kit skills; "" = leave as authored
-DO_LOGOUT=0                                     # -l: clear the stored ChatGPT session and exit (standalone action)
-QUICK=0                                         # -q: non-interactive defaults run (implies -y)
+ASSUME_YES=0
+DO_VERIFY=1
+DO_UPDATE=1
+DO_RESET=0
+DO_FRESH=0
+QUICK=0
+PERMISSION_TIER=""
+SESSION_MODE=""
+SKILLS_AUTO=""
+PRUNE_BEFORE=""
+LOGOUT_TARGET=""
+JIRA_MODE=""
+CONFLUENCE_MODE=""
+ATLASSIAN_REMOVE=0
+GITHUB_MODE=""
+GITHUB_REMOVE=0
+AWS_MODE=""
+AWS_REMOVE=0
+WALKER_SETUP=0
+CODEX_FLAG=""
 
-# Usage ---------------------------------------------------------------------
 usage() {
     cat <<'USAGE'
-Usage: codex-install.sh [-q] [-s <on|off>] [-r] [-F] [-n] [-U] [-y] [-l]
+Usage: codex-install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
+                        [-m <default|plan|acceptEdits|auto|dontAsk|bypassPermissions>]
+                        [-s <on|off>] [-d <days|YYYY-MM-DD>]
+                        [-r] [-F] [-n] [-U] [-y] [-j] [-c] [-J] [-g | -G]
+                        [-x | -X] [-a | -A] [-w] [-l <codex|github|atlassian|aws|all>]
 
-  Standalone Codex twin of install.sh. Every option has a single-letter (-x) and
-  a long (--word) form, and short flags bundle: -yU == -y -U (a value-taking flag
-  like -s must be last in the bundle).
-  Run with no flags at all and this prints the help and exits with an error -
-  pass -q for the no-questions run with defaults.
+Standalone host Codex twin of install.sh. Short flags bundle; value-taking flags
+must be last. Run with no flags to see this help, or use -q for saved/defaults.
 
-  -q, --quick         Quick run: non-interactive, saved answers or built-in
-                      defaults for every prompt (implies -y). Otherwise
-                      identical to a plain install run.
-  -s, --skills-auto   on|off. Set the model-invocation gate on every kit skill
-                      in place - the SAME switch, snapshot file and semantics as
-                      install.sh -s, because both agents read the same
-                      skills/<name>/SKILL.md frontmatter:
-                      on   snapshots each skill's current value to
-                           generated/skills-auto.state (append-only, so a repeat
-                           -s on never overwrites the pre-flip values), then
-                           rewrites 'disable-model-invocation: true' -> 'false'.
-                      off  restores every skill to its snapshotted value and
-                           clears the snapshot. With no snapshot it sets all
-                           flagged skills to 'true' (everything manual).
-                      Skills that never carried the flag are untouched in both
-                      directions. Omitting -s changes nothing and only reports
-                      the current tally. Restart Codex to pick up a change.
-  -r, --reset         Archive Codex's auto-generated state (cache, log,
-                      shell_snapshots, tmp, thread-writer-locks, plugins, the
-                      *.sqlite stores and models_cache.json) into
-                      ~/.claude-backups/<timestamp>-codex/, then run the
-                      install. auth.json, config.toml, history.jsonl and
-                      sessions/ are preserved in place.
-  -F, --fresh         NUKE AND PAVE. Back up auth.json, config.toml,
-                      history.jsonl and sessions/ to
-                      ~/.claude-backups/<timestamp>-codex-fresh/, DELETE
-                      ~/.codex and ~/.agents, then reinstall and restore those
-                      four so you keep your sessions and stay signed in.
-                      Everything else regenerates clean. Interactive runs ask
-                      you to type 'fresh' to confirm; -y skips that prompt.
-                      Supersedes --reset.
-  -l, --logout        Delete ~/.codex/auth.json (the stored ChatGPT session) and
-                      EXIT - a standalone action, nothing else runs, exactly like
-                      install.sh -l codex. Sign back in and Codex works again;
-                      revoke server-side at chatgpt.com under authorized apps.
-  -y, --yes           Non-interactive; take the saved values in
-                      generated/.codex.env (or the built-in defaults) instead of
-                      prompting, and skip the --fresh confirmation.
-  -n, --no-verify     Skip the verification checks after writing.
-  -U, --no-update     Don't rebuild the claude-kit-codex image when it already
-                      exists. By default every run rebuilds it with
-                      --pull --no-cache so the containerised Codex CLI is
-                      refreshed to the latest - the analogue of install.sh's
-                      `claude update`. A missing image is always built.
-  -h, --help          This message.
-
-Agent defaults (prompted, or read with -y):
-  Saved non-secretly to generated/.codex.env and SHARED with `install.sh -x`, so
-  the standalone runner and the MCP agents run the same model. There is no secret
-  here - Codex authenticates with your ChatGPT login, stored in ~/.codex.
-
-  CODEX_MODEL             flagship model                    (default gpt-5.6-sol)
-  CODEX_REASONING_EFFORT  minimal|low|medium|high|xhigh     (default xhigh)
-  CODEX_SANDBOX           read-only|workspace-write|danger-full-access
-                                                            (default workspace-write)
-  CODEX_APPROVAL          untrusted|on-failure|on-request|never
-                                                            (default on-request)
-
-  CODEX_SANDBOX / CODEX_APPROVAL are the Codex analogue of install.sh's -p (rule
-  set) and -m (session start mode). NOTE: codex.sh runs Codex inside Docker,
-  where codex's own bwrap sandbox cannot start - the CONTAINER is the sandbox, so
-  the inner mode is pinned to danger-full-access at launch and CODEX_SANDBOX only
-  takes effect on a host run. Writes stay confined to the mounted workspace and
-  the container carries no git credentials, so a push fails auth.
-
-Claude-Code-only (deliberately not ported):
-  Permission tiers, settings.json, the status line, shift-enter, autocompact env
-  vars, conversation pruning + cleanupPeriodDays, and project-memory adoption are
-  all Claude Code concepts with no Codex counterpart. MCP server registration
-  (-j/-c/-g/-a/-x) is not ported either: install.sh registers those through the
-  `claude` CLI into ~/.claude.json, whereas Codex declares them in config.toml
-  [mcp_servers] - a separate mechanism, not a flag translation.
+  -q, --quick              Non-interactive defaults; yolo unless -p is given.
+  -p, --permissions        Codex permission tier: ultra-safe|standard|trusted|yolo.
+  -m, --mode               Session mode: default|plan|acceptEdits|auto|dontAsk|bypassPermissions.
+  -s, --skills-auto        on|off; shared skill implicit-invocation switch.
+  -d, --prune-sessions     Archive Codex sessions older than days or YYYY-MM-DD.
+  -r, --reset              Archive regenerable state; preserve auth, sessions and memories.
+  -F, --fresh              Back up, recreate and restore auth, config, sessions and memories.
+  -j, --with-jira          Register the containerized Atlassian MCP using saved credentials.
+  -c, --with-confluence    Register the same MCP with saved Confluence credentials.
+  -J, --without-atlassian  Remove the Codex Atlassian MCP registration.
+  -g, --with-github        Register the read-only containerized GitHub MCP.
+  -G, --without-github     Remove the Codex GitHub MCP registration.
+  -a, --with-aws           Register the read-only containerized AWS MCP.
+  -A, --without-aws        Remove the Codex AWS MCP registration.
+  -x, --with-codex         Accepted no-op: this installer already configures Codex.
+  -X, --without-codex      Accepted no-op: standalone Codex wiring remains installed.
+  -w, --setup-walker       Build and register the dual-driver Codex Chrome walker.
+  -l, --logout             Clear codex|github|atlassian|aws|all credentials and exit.
+  -n, --no-verify          Skip post-install checks.
+  -U, --no-update          Skip codex update.
+  -y, --yes                Use saved/default answers and skip destructive confirmation.
+  -h, --help               Show this help.
 USAGE
 }
 
-# Argument parsing ---------------------------------------------------------
-requireValue() {   # $1=flag $2=its value (may be absent) - abort with a message instead of a bare set -e death
+requireValue() {
     if [ $# -lt 2 ] || [ -z "${2}" ]; then
-        echo "codex-install.sh: ${1} requires a value - see -h for accepted forms" >&2
+        echo "codex-install.sh: ${1} requires a value" >&2
         trap : 0
         exit 1
     fi
@@ -130,9 +83,6 @@ requireValue() {   # $1=flag $2=its value (may be absent) - abort with a message
 
 if [ $# -eq 0 ]; then
     usage >&2
-    echo >&2
-    echo "codex-install.sh: no flags given - nothing assumed. Use -q to run non-interactively" >&2
-    echo "with defaults, or pick options from the list above." >&2
     trap : 0
     exit 1
 fi
@@ -141,404 +91,349 @@ while [[ $# -gt 0 ]]; do
     p="$1"
     case $p in
     -[!-]?*)
-        # Bundled short flags: explode -yU into -y -U. A value-taking flag (-s)
-        # must be last in the bundle, per getopt convention.
         rest="${p#-}"
         exploded=()
-        for ((i = 0; i < ${#rest}; i++)); do
-            exploded+=("-${rest:i:1}")
-        done
+        for ((i = 0; i < ${#rest}; i++)); do exploded+=("-${rest:i:1}"); done
         set -- "${exploded[@]}" "${@:2}"
         continue
         ;;
-    -q | --quick)       QUICK=1 ;;
-    -y | --yes)         ASSUME_YES=1 ;;
-    -n | --no-verify)   DO_VERIFY=0 ;;
-    -U | --no-update)   DO_UPDATE=0 ;;
-    -r | --reset)       DO_RESET=1 ;;
-    -F | --fresh)       DO_FRESH=1 ;;
-    -l | --logout)      DO_LOGOUT=1 ;;
-    -s | --skills-auto)
-        requireValue "$@"
-        SKILLS_AUTO="${2}"
-        shift
-        ;;
-    -h | --help)
-        usage
-        trap : 0
-        exit 0
-        ;;
-    *)
-        echo "Invalid Parameter '${p}' ... exiting" >&2
-        trap : 0
-        exit 1
-        ;;
+    -q | --quick) QUICK=1 ;;
+    -p | --permissions) requireValue "$@"; PERMISSION_TIER="$2"; shift ;;
+    -m | --mode) requireValue "$@"; SESSION_MODE="$2"; shift ;;
+    -s | --skills-auto) requireValue "$@"; SKILLS_AUTO="$2"; shift ;;
+    -d | --prune-sessions) requireValue "$@"; PRUNE_BEFORE="$2"; shift ;;
+    -r | --reset) DO_RESET=1 ;;
+    -F | --fresh) DO_FRESH=1 ;;
+    -n | --no-verify) DO_VERIFY=0 ;;
+    -U | --no-update) DO_UPDATE=0 ;;
+    -y | --yes) ASSUME_YES=1 ;;
+    -j | --with-jira) JIRA_MODE="on" ;;
+    -c | --with-confluence) CONFLUENCE_MODE="on" ;;
+    -J | --without-atlassian) ATLASSIAN_REMOVE=1 ;;
+    -g | --with-github) GITHUB_MODE="on" ;;
+    -G | --without-github) GITHUB_REMOVE=1 ;;
+    -x | --with-codex) CODEX_FLAG="on" ;;
+    -X | --without-codex) CODEX_FLAG="off" ;;
+    -a | --with-aws) AWS_MODE="on" ;;
+    -A | --without-aws) AWS_REMOVE=1 ;;
+    -w | --setup-walker) WALKER_SETUP=1 ;;
+    -l | --logout) requireValue "$@"; LOGOUT_TARGET="$2"; shift ;;
+    -h | --help) usage; trap : 0; exit 0 ;;
+    *) echo "Invalid Parameter '${p}' ... exiting" >&2; trap : 0; exit 1 ;;
     esac
     shift
 done
 
-[ "${QUICK}" = "1" ] && ASSUME_YES=1
+[ "${QUICK}" == "1" ] && ASSUME_YES=1
+[ "${QUICK}" == "1" ] && [ -z "${PERMISSION_TIER}" ] && PERMISSION_TIER="yolo"
 
-# Portable paths -----------------------------------------------------------
 kit_root="$(dirname "$(realpath "$0")")"
 generated_dir="${kit_root}/generated"
 skills_src_dir="${kit_root}/skills"
-skills_auto_state="${generated_dir}/skills-auto.state"      # shared with install.sh -s
-codex_secrets="${generated_dir}/.codex.env"                 # model/sandbox knobs only, no secret
-claude_md_src="${kit_root}/claude-md/CLAUDE.md"
+skills_auto_state="${generated_dir}/skills-auto.state"
+codex_env="${generated_dir}/.codex.env"
 codex_home="${HOME}/.codex"
-codex_agents_md="${codex_home}/AGENTS.md"
 codex_auth="${codex_home}/auth.json"
+codex_agents_md="${codex_home}/AGENTS.md"
+codex_profile="${codex_home}/claude-kit.config.toml"
+codex_rules="${codex_home}/rules/claude-kit.rules"
 agents_home="${HOME}/.agents"
 agents_skills_dir="${agents_home}/skills"
 agents_manifest="${agents_home}/.claude-kit-skills"
+claude_md_src="${kit_root}/claude-md/CLAUDE.md"
 backup_root="${HOME}/.claude-backups"
-image="claude-kit-codex"
-codex_docker_dir="${kit_root}/docker/codex"
+mcp_env_dir="${HOME}/.claude/mcp-env"
+atlassian_secrets="${mcp_env_dir}/.atlassian.env"
+github_secrets="${mcp_env_dir}/.github.env"
+aws_secrets="${mcp_env_dir}/.aws.env"
 
-# Skill plumbing shared with install.sh (gate flip + snapshot, openai.yaml
-# generation, the symlink/prune linker). Reads the globals set above at call time.
-# shellcheck source=lib/skills.sh
 . "${kit_root}/lib/skills.sh"
 
-# -l/--logout: clear the stored ChatGPT session, then exit - deliberately
-# standalone, before any other step, so it can only ever log out.
-if [ "${DO_LOGOUT}" = "1" ]; then
-    if [ -f "${codex_auth}" ]; then
-        rm -f "${codex_auth}"
-        echo "Removed ${codex_auth} - Codex is signed out."
-    else
-        echo "No ${codex_auth} - Codex was not signed in."
-    fi
-    echo "The claude-kit-codex image and skill links are untouched; sign back in with:"
-    echo "  bash ${kit_root}/codex-install.sh -q"
-    echo "Revoke server-side at https://chatgpt.com/#settings/ConnectedApps if you also want the grant gone."
-    trap : 0
-    exit 0
-fi
-
-# Pre-flight ---------------------------------------------------------------
-echo ""
-echo "Starting pre-flight checks ..."
+echo -e "\nStarting Pre-flight checks ..."
 echo "-------------------------------"
-
-case "${SKILLS_AUTO}" in
-    ''|on|off) ;;
-    *) echo "Invalid --skills-auto '${SKILLS_AUTO}' - must be on|off" >&2; exit 1 ;;
-esac
-
-command -v docker >/dev/null 2>&1 || {
-    echo "Docker is required - standalone Codex runs containerised. Install Docker, then re-run." >&2
-    exit 1
-}
-echo "Docker: $(docker --version 2>/dev/null | head -1) [OK]"
-
-[ -f "${claude_md_src}" ] || { echo "Missing kit source: ${claude_md_src}" >&2; exit 1; }
-[ -d "${skills_src_dir}" ] || { echo "Missing kit source: ${skills_src_dir}" >&2; exit 1; }
-mkdir -p "${generated_dir}" "${codex_home}" "${agents_skills_dir}"
-chmod 700 "${generated_dir}"
+command -v codex >/dev/null 2>&1 || { echo "Host Codex is required; claude-kit will not install it ... exiting" >&2; exit 1; }
+[ -f "${claude_md_src}" ] || { echo "Missing ${claude_md_src} ... exiting" >&2; exit 1; }
+case "${PERMISSION_TIER:-standard}" in ultra-safe|standard|trusted|yolo) ;; *) echo "Invalid permissions tier ... exiting" >&2; exit 1 ;; esac
+case "${SESSION_MODE:-auto}" in default|plan|acceptEdits|auto|dontAsk|bypassPermissions) ;; *) echo "Invalid session mode ... exiting" >&2; exit 1 ;; esac
+case "${SKILLS_AUTO}" in ''|on|off) ;; *) echo "Invalid skills-auto value ... exiting" >&2; exit 1 ;; esac
+case "${LOGOUT_TARGET}" in ''|codex|github|atlassian|aws|all) ;; *) echo "Invalid logout target ... exiting" >&2; exit 1 ;; esac
+mkdir -p "${generated_dir}" "${codex_home}/rules" "${agents_skills_dir}" "${backup_root}" "${mcp_env_dir}"
+chmod 700 "${codex_home}" "${agents_home}" "${mcp_env_dir}"
+echo "$(codex --version) [OK]"
 echo "Checks complete ..."
 echo "-------------------------------"
 
-##################################################
-################# FUNCTIONS ######################
-##################################################
+logoutTarget() {
+    local target="$1"
+    case "${target}" in
+        codex) codex logout >/dev/null 2>&1 || true ;;
+        github) rm -f "${github_secrets}"; codex mcp remove github >/dev/null 2>&1 || true ;;
+        atlassian) rm -f "${atlassian_secrets}"; codex mcp remove atlassian >/dev/null 2>&1 || true ;;
+        aws) rm -f "${aws_secrets}"; codex mcp remove aws >/dev/null 2>&1 || true ;;
+        all) logoutTarget github; logoutTarget atlassian; logoutTarget aws; codex logout >/dev/null 2>&1 || true ;;
+    esac
+}
 
-# -r/--reset: move Codex's regenerable state out to a timestamped archive, keeping
-# the things you would actually miss (auth, config, prompt history, sessions).
+backupMemories() {
+    local archive="$1" file name
+    mkdir -p "${archive}/memory"
+    [ -d "${codex_home}/memories" ] && cp -a "${codex_home}/memories" "${archive}/memory/"
+    for file in "${codex_home}"/memories_*.sqlite; do
+        [ -f "${file}" ] || continue
+        name="$(basename "${file}")"
+        if command -v sqlite3 >/dev/null 2>&1; then
+            sqlite3 "${file}" ".backup '${archive}/memory/${name}'"
+        else
+            cp -a "${file}" "${archive}/memory/${name}"
+            [ -f "${file}-wal" ] && cp -a "${file}-wal" "${archive}/memory/${name}-wal"
+            [ -f "${file}-shm" ] && cp -a "${file}-shm" "${archive}/memory/${name}-shm"
+        fi
+    done
+}
+
+restoreMemories() {
+    local archive="$1" item
+    [ -d "${archive}/memory" ] || return 0
+    [ -d "${archive}/memory/memories" ] && cp -a "${archive}/memory/memories" "${codex_home}/"
+    for item in "${archive}/memory"/memories_*.sqlite*; do
+        [ -f "${item}" ] && cp -a "${item}" "${codex_home}/"
+    done
+}
+
 resetBloat() {
     local stamp archive item moved=0
     stamp="$(date +%Y%m%d-%H%M%S)"
     archive="${backup_root}/${stamp}-codex"
     mkdir -p "${archive}"
-    for item in cache log shell_snapshots tmp thread-writer-locks plugins rules \
-                models_cache.json logs_2.sqlite state_5.sqlite queue_1.sqlite \
-                thread_history_1.sqlite goals_1.sqlite memories_1.sqlite; do
-        if [ -e "${codex_home}/${item}" ]; then
-            mv "${codex_home}/${item}" "${archive}/"
-            echo "  archived -> ${archive}/${item}"
-            moved=$((moved+1))
-        fi
+    for item in cache log shell_snapshots tmp thread-writer-locks plugins models_cache.json; do
+        [ -e "${codex_home}/${item}" ] || continue
+        mv "${codex_home}/${item}" "${archive}/"
+        moved=$((moved+1))
     done
-    if [ "${moved}" -eq 0 ]; then
-        rmdir "${archive}" 2>/dev/null || true
-        echo "  nothing to archive - ~/.codex is already clean"
-    else
-        echo "  ${moved} item(s) archived to ${archive}"
-        echo "  auth.json, config.toml, history.jsonl and sessions/ were left in place"
-    fi
+    [ "${moved}" -eq 0 ] && rmdir "${archive}" 2>/dev/null || true
+    echo "  memories, auth, config, history and sessions were preserved"
 }
 
-# -F/--fresh: nuke ~/.codex and ~/.agents, keeping auth + config + history +
-# sessions across the wipe. Everything else regenerates on the way back up.
 freshInstall() {
-    local stamp archive item restored=0
+    local stamp archive item
     stamp="$(date +%Y%m%d-%H%M%S)"
     archive="${backup_root}/${stamp}-codex-fresh"
-
     if [ "${ASSUME_YES}" != "1" ]; then
-        echo "  This DELETES ${codex_home} and ${agents_home}."
-        echo "  auth.json, config.toml, history.jsonl and sessions/ are archived first and restored after."
-        read -r -p "  Type 'fresh' to confirm: " _in
-        [ "${_in}" = "fresh" ] || { echo "  not confirmed - aborting the --fresh run" >&2; exit 1; }
+        read -r -p "Type 'fresh' to back up and recreate ~/.codex and ~/.agents: " answer
+        [ "${answer}" == "fresh" ] || { echo "Not confirmed ... exiting" >&2; exit 1; }
     fi
-
     mkdir -p "${archive}"
     for item in auth.json config.toml history.jsonl sessions; do
-        [ -e "${codex_home}/${item}" ] || continue
-        cp -a "${codex_home}/${item}" "${archive}/"
-        echo "  backed up -> ${archive}/${item}"
+        [ -e "${codex_home}/${item}" ] && cp -a "${codex_home}/${item}" "${archive}/"
     done
-
+    backupMemories "${archive}"
     rm -rf "${codex_home}" "${agents_home}"
-    mkdir -p "${codex_home}" "${agents_skills_dir}"
-    echo "  wiped ${codex_home} and ${agents_home}"
-
+    mkdir -p "${codex_home}/rules" "${agents_skills_dir}"
     for item in auth.json config.toml history.jsonl sessions; do
-        [ -e "${archive}/${item}" ] || continue
-        cp -a "${archive}/${item}" "${codex_home}/"
-        restored=$((restored+1))
+        [ -e "${archive}/${item}" ] && cp -a "${archive}/${item}" "${codex_home}/"
     done
-    echo "  restored ${restored} item(s); full pre-wipe copy kept at ${archive}"
+    restoreMemories "${archive}"
+    echo "  restored state; backup retained at ${archive}"
 }
 
-# Build (or rebuild) the containerised Codex CLI. A missing image is always built;
-# an existing one is refreshed with --pull --no-cache unless -U says otherwise,
-# which is what actually pulls a newer @openai/codex (the npm layer is cached).
-buildImage() {
-    if ! docker image inspect "${image}" >/dev/null 2>&1; then
-        echo "  image ${image} absent - building..."
-        docker build -t "${image}" "${codex_docker_dir}"
-        echo "  built -> ${image}"
-        return 0
-    fi
-    if [ "${DO_UPDATE}" != "1" ]; then
-        echo "  image ${image} present, --no-update given - skipping rebuild"
-        return 0
-    fi
-    echo "  refreshing ${image} (--pull --no-cache)..."
-    if docker build --pull --no-cache -t "${image}" "${codex_docker_dir}"; then
-        echo "  rebuilt -> ${image} (latest @openai/codex)"
-    else
-        echo "  WARNING: rebuild failed (offline?) - keeping the existing ${image}" >&2
-    fi
-}
-
-# Prompt for (or read) the non-secret agent defaults and save them to
-# generated/.codex.env. Same file and same keys install.sh -x uses, so the two
-# entry points cannot drift onto different models.
 writeCodexEnv() {
-    local cx_model cx_effort cx_sandbox cx_approval
-    if [ -f "${codex_secrets}" ]; then
-        # shellcheck source=/dev/null
-        . "${codex_secrets}"
-        cx_model="${CODEX_MODEL:-}"
-        cx_effort="${CODEX_REASONING_EFFORT:-}"
-        cx_sandbox="${CODEX_SANDBOX:-}"
-        cx_approval="${CODEX_APPROVAL:-}"
+    local model effort tier mode
+    [ -f "${codex_env}" ] && . "${codex_env}"
+    model="${CODEX_MODEL:-gpt-5.6-sol}"
+    effort="${CODEX_REASONING_EFFORT:-xhigh}"
+    tier="${PERMISSION_TIER:-${CODEX_PERMISSION_TIER:-standard}}"
+    mode="${SESSION_MODE:-${CODEX_MODE:-auto}}"
+    if [ "${ASSUME_YES}" != "1" ] && [ -t 0 ]; then
+        read -r -p "CODEX_MODEL [${model}]: " answer; model="${answer:-${model}}"
+        read -r -p "CODEX_REASONING_EFFORT [${effort}]: " answer; effort="${answer:-${effort}}"
     fi
-    cx_model="${cx_model:-gpt-5.6-sol}"
-    cx_effort="${cx_effort:-xhigh}"
-    cx_sandbox="${cx_sandbox:-workspace-write}"
-    cx_approval="${cx_approval:-on-request}"
-
-    local noninteractive=0
-    if [ "${ASSUME_YES}" = "1" ] || [ ! -t 0 ]; then
-        noninteractive=1
-    fi
-
-    if [ "${noninteractive}" = "1" ]; then
-        echo "  model=${cx_model} effort=${cx_effort} sandbox=${cx_sandbox} approval=${cx_approval} (from ${codex_secrets#"${kit_root}"/} / defaults)"
-    else
-        echo ""
-        echo "  Codex agent defaults (non-secret; saved to generated/.codex.env)"
-        read -r -p "  CODEX_MODEL [${cx_model}]: " _in
-        cx_model="${_in:-${cx_model}}"
-        read -r -p "  CODEX_REASONING_EFFORT (minimal|low|medium|high|xhigh) [${cx_effort}]: " _in
-        cx_effort="${_in:-${cx_effort}}"
-        read -r -p "  CODEX_SANDBOX (read-only|workspace-write|danger-full-access) [${cx_sandbox}]: " _in
-        cx_sandbox="${_in:-${cx_sandbox}}"
-        read -r -p "  CODEX_APPROVAL (untrusted|on-failure|on-request|never) [${cx_approval}]: " _in
-        cx_approval="${_in:-${cx_approval}}"
-    fi
-
     {
-        echo "CODEX_MODEL=${cx_model}"
-        echo "CODEX_REASONING_EFFORT=${cx_effort}"
-        echo "CODEX_SANDBOX=${cx_sandbox}"
-        echo "CODEX_APPROVAL=${cx_approval}"
-    } > "${codex_secrets}"
-    chmod 600 "${codex_secrets}"
-    echo "  saved -> ${codex_secrets#"${kit_root}"/}"
+        echo "CODEX_MODEL=${model}"
+        echo "CODEX_REASONING_EFFORT=${effort}"
+        echo "CODEX_PERMISSION_TIER=${tier}"
+        echo "CODEX_MODE=${mode}"
+    } > "${codex_env}"
+    chmod 600 "${codex_env}"
+    PERMISSION_TIER="${tier}"
+    SESSION_MODE="${mode}"
 }
 
-# Symlink ~/.codex/AGENTS.md -> the kit's claude-md/CLAUDE.md, so Codex reads the
-# same global instructions as Claude (AGENTS.md is codex's CLAUDE.md analogue).
-# A correct link is left untouched; a real file is backed up once to *.bak.
+writeProfile() {
+    local file
+    {
+        echo 'default_permissions = "standard"'
+        echo 'approval_policy = "on-request"'
+        echo 'approvals_reviewer = "auto_review"'
+        echo 'project_doc_max_bytes = 65536'
+        echo 'model_auto_compact_token_limit = 200000'
+        echo ''
+        echo '[features]'
+        echo 'memories = true'
+        echo 'prevent_idle_sleep = true'
+        echo ''
+        echo '[memories]'
+        echo 'generate_memories = true'
+        echo 'use_memories = true'
+        echo 'disable_on_external_context = true'
+        echo ''
+        echo '[tui]'
+        echo 'status_line = ["model-with-reasoning", "current-dir", "model", "run-state", "permissions", "approval-mode", "context-remaining", "five-hour-limit", "weekly-limit", "codex-version", "context-window-size", "total-output-tokens", "task-progress"]'
+        echo 'status_line_use_colors = true'
+        for file in "${kit_root}"/settings/codex/permissions/*.toml; do echo ''; sed -n '1,$p' "${file}"; done
+    } > "${codex_profile}"
+    cp "${kit_root}/settings/codex/rules/${PERMISSION_TIER}.rules" "${codex_rules}"
+}
+
 writeAgentsMd() {
-    if [ -L "${codex_agents_md}" ] && [ "$(readlink "${codex_agents_md}")" = "${claude_md_src}" ]; then
-        echo "  ~/.codex/AGENTS.md already linked - no change"
-        return 0
-    fi
-    if [ -e "${codex_agents_md}" ] && [ ! -L "${codex_agents_md}" ]; then
-        cp -p "${codex_agents_md}" "${codex_agents_md}.bak"
-        echo "  backed up -> ${codex_agents_md}.bak"
-    fi
+    if [ -e "${codex_agents_md}" ] && [ ! -L "${codex_agents_md}" ]; then cp -p "${codex_agents_md}" "${codex_agents_md}.bak"; fi
     ln -sfn "${claude_md_src}" "${codex_agents_md}"
-    echo "  linked    -> ${codex_agents_md} -> ${claude_md_src}"
 }
 
-# One-time ChatGPT sign-in, through the container so nothing lands on the host.
-codexLogin() {
-    if [ -f "${codex_auth}" ]; then
-        echo "  already signed in (${codex_auth})"
+registerMcp() {
+    local name="$1" wrapper="$2"
+    command -v docker >/dev/null 2>&1 || { echo "Docker is required for ${name} MCP" >&2; return 1; }
+    codex mcp remove "${name}" >/dev/null 2>&1 || true
+    codex mcp add "${name}" -- bash "${wrapper}" >/dev/null
+    echo "  registered ${name} MCP"
+}
+
+promptValue() {
+    local label="$1" default="$2" secret="${3:-0}" answer
+    if [ "${secret}" == "1" ]; then
+        read -r -s -p "${label}: " answer
+        echo ""
+    else
+        read -r -p "${label} [${default}]: " answer
+    fi
+    printf '%s' "${answer:-${default}}"
+}
+
+configureMcpSecrets() {
+    local jira_url="" jira_user="" jira_token="" jira_filter="" confluence_url="" confluence_user="" confluence_token="" confluence_filter=""
+    local github_token="" github_toolsets="" aws_key="" aws_secret="" aws_region=""
+    [ "${ASSUME_YES}" == "1" ] && return 0
+    if [ "${JIRA_MODE}" == "on" ] || [ "${CONFLUENCE_MODE}" == "on" ]; then
+        [ -f "${atlassian_secrets}" ] && . "${atlassian_secrets}"
+        jira_url="${JIRA_URL:-}"; jira_user="${JIRA_USERNAME:-}"; jira_token="${JIRA_API_TOKEN:-}"; jira_filter="${JIRA_PROJECTS_FILTER:-}"
+        confluence_url="${CONFLUENCE_URL:-${jira_url}}"; confluence_user="${CONFLUENCE_USERNAME:-${jira_user}}"; confluence_token="${CONFLUENCE_API_TOKEN:-}"; confluence_filter="${CONFLUENCE_SPACES_FILTER:-}"
+        if [ "${JIRA_MODE}" == "on" ]; then
+            jira_url="$(promptValue JIRA_URL "${jira_url}")"; jira_user="$(promptValue JIRA_USERNAME "${jira_user}")"; jira_token="$(promptValue JIRA_API_TOKEN "${jira_token}" 1)"; jira_filter="$(promptValue JIRA_PROJECTS_FILTER "${jira_filter}")"
+        fi
+        if [ "${CONFLUENCE_MODE}" == "on" ]; then
+            confluence_url="$(promptValue CONFLUENCE_URL "${confluence_url:-${jira_url}}")"; confluence_user="$(promptValue CONFLUENCE_USERNAME "${confluence_user:-${jira_user}}")"; confluence_token="$(promptValue CONFLUENCE_API_TOKEN "${confluence_token:-${jira_token}}" 1)"; confluence_filter="$(promptValue CONFLUENCE_SPACES_FILTER "${confluence_filter}")"
+        fi
+        printf 'JIRA_URL=%q\nJIRA_USERNAME=%q\nJIRA_API_TOKEN=%q\nJIRA_PROJECTS_FILTER=%q\nCONFLUENCE_URL=%q\nCONFLUENCE_USERNAME=%q\nCONFLUENCE_API_TOKEN=%q\nCONFLUENCE_SPACES_FILTER=%q\n' "${jira_url}" "${jira_user}" "${jira_token}" "${jira_filter}" "${confluence_url}" "${confluence_user}" "${confluence_token}" "${confluence_filter}" > "${atlassian_secrets}"
+        chmod 600 "${atlassian_secrets}"
+    fi
+    if [ "${GITHUB_MODE}" == "on" ]; then
+        [ -f "${github_secrets}" ] && . "${github_secrets}"
+        github_token="$(promptValue GITHUB_PERSONAL_ACCESS_TOKEN "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" 1)"; github_toolsets="$(promptValue GITHUB_TOOLSETS "${GITHUB_TOOLSETS:-}")"
+        printf 'GITHUB_PERSONAL_ACCESS_TOKEN=%q\nGITHUB_TOOLSETS=%q\n' "${github_token}" "${github_toolsets}" > "${github_secrets}"
+        chmod 600 "${github_secrets}"
+    fi
+    if [ "${AWS_MODE}" == "on" ]; then
+        [ -f "${aws_secrets}" ] && . "${aws_secrets}"
+        aws_key="$(promptValue AWS_ACCESS_KEY_ID "${AWS_ACCESS_KEY_ID:-}")"; aws_secret="$(promptValue AWS_SECRET_ACCESS_KEY "${AWS_SECRET_ACCESS_KEY:-}" 1)"; aws_region="$(promptValue AWS_REGION "${AWS_REGION:-eu-west-2}")"
+        printf 'AWS_ACCESS_KEY_ID=%q\nAWS_SECRET_ACCESS_KEY=%q\nAWS_REGION=%q\n' "${aws_key}" "${aws_secret}" "${aws_region}" > "${aws_secrets}"
+        chmod 600 "${aws_secrets}"
+    fi
+}
+
+applyMcps() {
+    [ "${ATLASSIAN_REMOVE}" == "1" ] && codex mcp remove atlassian >/dev/null 2>&1 || true
+    [ "${GITHUB_REMOVE}" == "1" ] && codex mcp remove github >/dev/null 2>&1 || true
+    [ "${AWS_REMOVE}" == "1" ] && codex mcp remove aws >/dev/null 2>&1 || true
+    if [ "${JIRA_MODE}" == "on" ] || [ "${CONFLUENCE_MODE}" == "on" ]; then
+        [ -f "${atlassian_secrets}" ] || { echo "Create ${atlassian_secrets} with the requested Jira/Confluence values first" >&2; return 1; }
+        registerMcp atlassian "${kit_root}/scripts/codex-mcp-atlassian.sh"
+    fi
+    if [ "${GITHUB_MODE}" == "on" ]; then
+        [ -f "${github_secrets}" ] || { echo "Create ${github_secrets} from settings/.github.env.example first" >&2; return 1; }
+        registerMcp github "${kit_root}/scripts/codex-mcp-github.sh"
+    fi
+    if [ "${AWS_MODE}" == "on" ]; then
+        [ -f "${aws_secrets}" ] || { echo "Create ${aws_secrets} from settings/.aws.env.example first" >&2; return 1; }
+        registerMcp aws "${kit_root}/scripts/codex-mcp-aws.sh"
+    fi
+}
+
+pruneSessions() {
+    local cutoff file id count=0
+    [ -n "${PRUNE_BEFORE}" ] || return 0
+    case "${PRUNE_BEFORE}" in
+        *[!0-9]*) cutoff="${PRUNE_BEFORE}" ;;
+        *) cutoff="${PRUNE_BEFORE} days ago" ;;
+    esac
+    date -d "${cutoff}" >/dev/null 2>&1 || { echo "Invalid prune cutoff '${PRUNE_BEFORE}'" >&2; return 1; }
+    while IFS= read -r file; do
+        id="$(basename "${file}" | rg -o '[0-9a-f]{8}-[0-9a-f-]{27,}' | tail -1)"
+        [ -n "${id}" ] || continue
+        codex archive "${id}" >/dev/null 2>&1 || continue
+        count=$((count+1))
+    done < <(find "${codex_home}/sessions" -type f -name '*.jsonl' ! -newermt "${cutoff}" 2>/dev/null)
+    echo "  archived ${count} Codex session(s)"
+}
+
+updateCodex() {
+    local codex_path package_dir
+    codex_path="$(readlink -f "$(command -v codex)")"
+    package_dir="$(dirname "$(dirname "$(dirname "${codex_path}")")")"
+    if [ -w "${package_dir}" ]; then
+        codex update
         return 0
     fi
-    local login_cmd
-    login_cmd="docker run --rm -it --network host --user \"\$(id -u):\$(id -g)\" -v \"\$HOME/.codex:/home/codex/.codex\" ${image} login --device-auth"
-    if [ -t 0 ] && [ -t 1 ] && [ "${QUICK}" != "1" ]; then
-        docker run --rm -it --network host --user "$(id -u):$(id -g)" -v "${codex_home}:/home/codex/.codex" "${image}" login --device-auth
-    else
-        echo "  not signed in and no interactive tty - run this yourself:" >&2
-        echo "  ${login_cmd}" >&2
-    fi
+    command -v npm >/dev/null 2>&1 || { echo "npm is required to update the root-owned Codex installation" >&2; return 1; }
+    echo "  Codex is installed under root-owned ${package_dir}; updating with sudo..."
+    sudo npm install -g @openai/codex
 }
 
 verifyAll() {
     local failed=0
-    echo ""
-    echo "Verification checks"
-    echo "-------------------------------"
-
-    if docker image inspect "${image}" >/dev/null 2>&1; then
-        echo "[PASS] (1) ${image} image present"
-    else
-        echo "[FAIL] (1) ${image} image missing"; failed=1
-    fi
-
-    if [ -L "${codex_agents_md}" ] && [ "$(readlink "${codex_agents_md}")" = "${claude_md_src}" ]; then
-        echo "[PASS] (2) ~/.codex/AGENTS.md linked to the kit"
-    else
-        echo "[FAIL] (2) ~/.codex/AGENTS.md not linked to ${claude_md_src}"; failed=1
-    fi
-
-    local linked kit_count
-    linked="$(find "${agents_skills_dir}" -maxdepth 1 -type l 2>/dev/null | wc -l)"
-    kit_count="$(find "${skills_src_dir}" -maxdepth 1 -mindepth 1 -type d | wc -l)"
-    if [ -s "${agents_manifest}" ] && [ "${linked}" -ge 1 ]; then
-        echo "[PASS] (3) ${linked}/${kit_count} kit skill(s) linked into ${agents_skills_dir}"
-    else
-        echo "[FAIL] (3) no kit skills linked into ${agents_skills_dir}"; failed=1
-    fi
-
-    local missing_yaml=0 d
-    for d in "${skills_src_dir}"/*/; do
-        [ -f "${d}SKILL.md" ] || continue
-        [ -f "${d}agents/openai.yaml" ] || missing_yaml=$((missing_yaml+1))
-    done
-    if [ "${missing_yaml}" -eq 0 ]; then
-        echo "[PASS] (4) every skill has agents/openai.yaml"
-    else
-        echo "[FAIL] (4) ${missing_yaml} skill(s) missing agents/openai.yaml"; failed=1
-    fi
-
-    if [ -f "${codex_secrets}" ] && grep -q '^CODEX_MODEL=' "${codex_secrets}"; then
-        echo "[PASS] (5) agent defaults saved ($(grep '^CODEX_MODEL=' "${codex_secrets}" | cut -d= -f2), $(grep '^CODEX_REASONING_EFFORT=' "${codex_secrets}" | cut -d= -f2))"
-    else
-        echo "[FAIL] (5) ${codex_secrets} missing or incomplete"; failed=1
-    fi
-
-    if [ -f "${codex_auth}" ]; then
-        echo "[PASS] (6) signed in (${codex_auth})"
-    else
-        echo "[INFO] (6) not signed in yet - run the login command printed above"
-    fi
-
-    if grep -qs "^CODEX_APPROVAL=" "${codex_secrets}"; then
-        echo "[PASS] (7) approval policy recorded ($(grep '^CODEX_APPROVAL=' "${codex_secrets}" | cut -d= -f2))"
-    else
-        echo "[FAIL] (7) CODEX_APPROVAL missing from ${codex_secrets}"; failed=1
-    fi
-
-    echo "-------------------------------"
-    if [ "${failed}" -eq 0 ]; then
-        echo "All scriptable checks passed."
-    else
-        echo "One or more checks failed - see above." >&2
-        return 1
-    fi
+    codex --strict-config --profile claude-kit --version >/dev/null 2>&1 || { echo "[FAIL] strict config"; failed=1; }
+    [ -L "${codex_agents_md}" ] && [ "$(readlink "${codex_agents_md}")" == "${claude_md_src}" ] || { echo "[FAIL] AGENTS.md link"; failed=1; }
+    [ -s "${agents_manifest}" ] || { echo "[FAIL] skills manifest"; failed=1; }
+    [ -s "${codex_rules}" ] || { echo "[FAIL] active rules"; failed=1; }
+    codex execpolicy check --rules "${codex_rules}" -- git push origin main 2>/dev/null | grep -q forbidden || { echo "[FAIL] git push rule"; failed=1; }
+    grep -qsF "alias codex='/usr/local/bin/screen bash ${kit_root}/codex.sh'" "${HOME}/.bash_aliases" || echo "[INFO] run: bash ${kit_root}/scripts/screen5_install.sh"
+    command -v bwrap >/dev/null 2>&1 && codex sandbox -- /usr/bin/true >/dev/null 2>&1 || echo "[INFO] run: bash ${kit_root}/scripts/codex_bwrap_install.sh"
+    [ "${failed}" -eq 0 ] || return 1
+    echo "All Codex checks passed."
 }
 
-printSummary() {
-    # shellcheck source=/dev/null
-    [ -f "${codex_secrets}" ] && . "${codex_secrets}"
-    echo ""
-    echo "Summary"
-    echo "-------------------------------"
-    echo "  image       : ${image}  (built from ${codex_docker_dir})"
-    echo "  model       : ${CODEX_MODEL:-?} at ${CODEX_REASONING_EFFORT:-?} reasoning"
-    echo "  sandbox     : ${CODEX_SANDBOX:-?} on a host run; the container itself under codex.sh"
-    echo "  approval    : ${CODEX_APPROVAL:-?}  (approval_policy)"
-    echo "  guidelines  : ${codex_agents_md}  (symlinked from ${claude_md_src})"
-    echo "  skills      : ${agents_skills_dir}/  (symlinked from ${skills_src_dir})"
-    echo "  generated   : ${generated_dir}/  (machine-local config, no secrets; gitignored)"
-    echo "  auth        : ${codex_auth}  (ChatGPT session, outside the kit)"
-    echo "-------------------------------"
-    echo "  run it: bash ${kit_root}/codex.sh"
-}
+if [ -n "${LOGOUT_TARGET}" ]; then logoutTarget "${LOGOUT_TARGET}"; trap : 0; exit 0; fi
+[ "${DO_FRESH}" == "1" ] && freshInstall
+[ "${DO_FRESH}" != "1" ] && [ "${DO_RESET}" == "1" ] && resetBloat
 
-##################################################
-################# EXECUTION ######################
-##################################################
-
-echo ""
-if [ "${DO_FRESH}" = "1" ]; then
-    echo "Nuke and pave (--fresh)..."
-    freshInstall
-    echo -e "[Done]\n"
-elif [ "${DO_RESET}" = "1" ]; then
-    echo "Resetting ~/.codex (archiving bloat, preserving auth/config/history/sessions)..."
-    resetBloat
-    echo -e "[Done]\n"
+if [ "${DO_UPDATE}" == "1" ]; then
+    echo "Updating Codex..."
+    updateCodex
 fi
 
-echo "Building the containerised Codex CLI..."
-buildImage
-echo -e "[Done]\n"
-
-echo "Saving Codex agent defaults..."
 writeCodexEnv
-echo -e "[Done]\n"
-
-echo "Linking ~/.codex/AGENTS.md to the kit..."
+writeProfile
 writeAgentsMd
-echo -e "[Done]\n"
-
-echo "Checking skill auto-invocation state${SKILLS_AUTO:+ (-s ${SKILLS_AUTO})}..."
 applySkillsInvocation
-echo -e "[Done]\n"
-
-echo "Generating codex skill metadata (agents/openai.yaml)..."
 writeOpenAiSkillMeta
-echo -e "[Done]\n"
-
-echo "Linking skills into ${agents_skills_dir}/..."
 linkKitSkills "${agents_skills_dir}" "${agents_manifest}"
-echo -e "[Done]\n"
+configureMcpSecrets
+applyMcps
+pruneSessions
 
-echo "Checking the ChatGPT sign-in..."
-codexLogin
-echo -e "[Done]\n"
-
-printSummary
-
-if [ "${DO_VERIFY}" = "1" ]; then
-    verifyAll
+if [ "${WALKER_SETUP}" == "1" ]; then
+    bash "${kit_root}/docker/codex-chrome-agent/setup-walker.sh" $([ "${ASSUME_YES}" == "1" ] && printf %s -y)
 fi
+
+[ -n "${CODEX_FLAG}" ] && echo "  -x/-X accepted: standalone Codex is already active; no registration changed"
+
+echo "Codex profile: ${codex_profile}"
+echo "Permission tier: ${PERMISSION_TIER}; mode: ${SESSION_MODE}"
+echo "Run: bash ${kit_root}/codex.sh"
+[ "${DO_VERIFY}" == "1" ] && verifyAll
 
 trap : 0
 echo >&2 ""
-echo >&2 "**************************************************"
-echo >&2 "*************** INSTALL COMPLETE *****************"
-echo >&2 "**************************************************"
-exit 0
+echo "**************************************************"
+echo "**************************************************"
+echo "****************CODEX SET UP**********************"
+echo "**************************************************"
+echo "**************************************************"

@@ -1,0 +1,24 @@
+services:
+  codex-chrome-agent:
+    build:
+      context: ..
+      dockerfile: codex-chrome-agent/Dockerfile
+    image: claude-kit-codex-chrome-agent
+    container_name: codex-chrome
+    user: "${UID:-1000}:${GID:-1000}"
+    environment:
+      OE_URL: "${OE_URL:-http://web}"
+      OE_USERNAME: "${OE_USERNAME:-admin}"
+      OE_PASSWORD: "${OE_PASSWORD:-admin}"
+      OE_INSTITUTION_ID: "${OE_INSTITUTION_ID:-1}"
+      OE_SITE_ID: "${OE_SITE_ID:-1}"
+    ports:
+      - "127.0.0.1:${CODEX_NOVNC_PORT:-6081}:6080"
+    volumes:
+      - ${CODEX_CHROME_STATE_DIR:-${HOME}/.claude/codex-chrome-agent}:/home/agent/chrome-profile
+      - ./artifacts:/home/agent/artifacts
+    networks: [oe_net]
+    restart: unless-stopped
+
+networks:
+  oe_net: { external: true, name: "${OE_NETWORK}" }

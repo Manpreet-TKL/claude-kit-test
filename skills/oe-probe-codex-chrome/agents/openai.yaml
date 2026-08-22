@@ -1,0 +1,3 @@
+interface:
+  display_name: "oe-probe-codex-chrome"
+  short_description: "Drive OpenEyes in the isolated Codex Chrome sidecar through Chrome DevTools or Playwright MCP"

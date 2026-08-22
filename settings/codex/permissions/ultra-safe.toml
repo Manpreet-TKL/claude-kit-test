@@ -1,0 +1,14 @@
+[permissions.ultra-safe]
+description = "Read-only inspection with sensitive paths denied."
+extends = ":read-only"
+
+[permissions.ultra-safe.filesystem]
+"~/.ssh/**" = "deny"
+"**/.env" = "deny"
+"**/.env.*" = "deny"
+
+[permissions.ultra-safe.network]
+enabled = false
+
+[permissions.ultra-safe.network.unix_sockets]
+"/var/run/docker.sock" = "deny"

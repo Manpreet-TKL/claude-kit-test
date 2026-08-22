@@ -1,0 +1,9 @@
+[permissions.yolo]
+description = "Unrestricted host access; hard command prohibitions still apply."
+extends = ":danger-full-access"
+
+[permissions.yolo.network]
+enabled = true
+
+[permissions.yolo.network.unix_sockets]
+"/var/run/docker.sock" = "allow"

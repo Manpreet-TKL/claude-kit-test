@@ -2,7 +2,8 @@
 # Manpreet 12/07/2026
 # Build and install GNU screen 5.0.1 from source on Ubuntu 24.04 into /usr/local
 # (alongside the apt 4.9.x), add truecolor/TUI defaults to ~/.screenrc and keep
-# a claude alias in ~/.bash_aliases that runs Claude Code inside the new screen.
+# claude and codex aliases in ~/.bash_aliases that run both CLIs inside the new
+# screen. Codex goes through the kit's host launcher and bubblewrap sandbox.
 # Re-running is safe: an already-current build is skipped and the ~/.screenrc
 # and ~/.bash_aliases managed blocks are re-applied - run it again after
 # oe-deploy's host-setup.sh, which overwrites both files.
@@ -59,14 +60,18 @@ echo "-------------------------------"
 ##################################################
 
 version="5.0.1"
+kit_root="$(dirname "$(dirname "$(realpath "$0")")")"
 tarball="screen-${version}.tar.gz"
 url="https://ftp.gnu.org/gnu/screen/${tarball}"
 expected_md5="fb5e5dfc9353225c2d6929777344b1a6"
 prefix="/usr/local"
 screenrc="${HOME}/.screenrc"
 bash_aliases="${HOME}/.bash_aliases"
+bashrc="${HOME}/.bashrc"
 marker_start="# >>> screen5_install.sh managed block >>>"
 marker_end="# <<< screen5_install.sh managed block <<<"
+source_marker_start="# >>> screen5_install.sh aliases source >>>"
+source_marker_end="# <<< screen5_install.sh aliases source <<<"
 # the older screen_install.sh wrote these system-wide artifacts
 legacy_marker_start="# >>> screen_install.sh managed block >>>"
 legacy_marker_end="# <<< screen_install.sh managed block <<<"
@@ -163,21 +168,41 @@ restoreTermcapinfo() {
 # "Appends and updates": delete any previous block, then append the current
 # one. host-setup.sh overwrites ~/.bash_aliases wholesale - re-run this script
 # afterwards to put the block back.
-installClaudeAlias() {
+installAgentAliases() {
     touch "${bash_aliases}"
     sed -i "/^${marker_start}$/,/^${marker_end}$/d" "${bash_aliases}"
     [ -s "${bash_aliases}" ] && [ -n "$(tail -c1 "${bash_aliases}")" ] && echo "" >> "${bash_aliases}"
     cat >> "${bash_aliases}" <<HERE
 ${marker_start}
-# run claude inside screen 5 for truecolor - skip when already inside a screen
+# run the agent CLIs inside screen 5 - skip when already inside a screen
 if [ -z "\${STY}" ]; then
     alias claude='${prefix}/bin/screen claude'
+    alias codex='${prefix}/bin/screen bash ${kit_root}/codex.sh'
 fi
 ${marker_end}
 HERE
 }
 
-removeClaudeAlias() {
+ensureAliasesLoaded() {
+    touch "${bashrc}"
+    sed -i "/^${source_marker_start}$/,/^${source_marker_end}$/d" "${bashrc}"
+    if grep -qE '^[[:space:]]*(source|\.)[[:space:]]+(["'\'']?\$HOME/|["'\'']?~/)?\.bash_aliases(["'\'']?)[[:space:]]*$' "${bashrc}"; then
+        echo "Keeping existing ${bash_aliases} loader in ${bashrc}"
+        return 0
+    fi
+    [ -s "${bashrc}" ] && [ -n "$(tail -c1 "${bashrc}")" ] && echo "" >> "${bashrc}"
+    cat >> "${bashrc}" <<HERE
+${source_marker_start}
+[ -f "\${HOME}/.bash_aliases" ] && . "\${HOME}/.bash_aliases"
+${source_marker_end}
+HERE
+}
+
+removeAliasesLoader() {
+    [ -f "${bashrc}" ] && sed -i "/^${source_marker_start}$/,/^${source_marker_end}$/d" "${bashrc}"
+}
+
+removeAgentAliases() {
     if [ ! -f "${bash_aliases}" ]; then
         echo "No ${bash_aliases} found - nothing to remove"
         return 0
@@ -225,8 +250,9 @@ if [ "${uninstall}" == "1" ]; then
     cleanLegacyInstall
     echo -e "[Done]\n"
 
-    echo "Removing the claude alias block from ${bash_aliases}..."
-    removeClaudeAlias
+    echo "Removing the agent alias block from ${bash_aliases}..."
+    removeAgentAliases
+    removeAliasesLoader
     echo -e "[Done]\n"
 
     echo "Removing screen ${version} from ${prefix}..."
@@ -262,8 +288,9 @@ else
     disableTermcapinfo
     echo -e "[Done]\n"
 
-    echo "Updating the claude alias block in ${bash_aliases}..."
-    installClaudeAlias
+    echo "Updating the agent alias block in ${bash_aliases}..."
+    installAgentAliases
+    ensureAliasesLoaded
     echo -e "[Done]\n"
 fi
 
@@ -283,7 +310,7 @@ if [ "${uninstall}" == "1" ]; then
     [ -f "${screenrc}" ] && grep -qF "managed block" "${screenrc}" && echo "Managed block still present ... exiting" && exit 1
     echo "[OK]"
 
-    echo "Checking the claude alias is gone..."
+    echo "Checking the agent alias block is gone..."
     [ -f "${bash_aliases}" ] && grep -qF "${marker_start}" "${bash_aliases}" && echo "Managed block still present in ${bash_aliases} ... exiting" && exit 1
     [ -f "${legacy_alias_file}" ] && echo "${legacy_alias_file} is still present ... exiting" && exit 1
     [ -f "${bash_bashrc}" ] && grep -qF "${legacy_marker_start}" "${bash_bashrc}" && echo "Legacy block still present in ${bash_bashrc} ... exiting" && exit 1
@@ -302,8 +329,11 @@ else
     grep -qE '^[[:space:]]*termcapinfo[[:space:]]+xterm\*[[:space:]]+ti@:te@' "${screenrc}" && echo "An active 'termcapinfo xterm* ti@:te@' is still present ... exiting" && exit 1
     echo "[OK]"
 
-    echo "Checking the claude alias block in ${bash_aliases}..."
+    echo "Checking the agent alias block in ${bash_aliases}..."
     [ -z "$(grep -F "${marker_start}" "${bash_aliases}")" ] && echo "Managed block missing from ${bash_aliases} ... exiting" && exit 1
+    grep -qF "alias claude='${prefix}/bin/screen claude'" "${bash_aliases}" || { echo "Claude alias missing from ${bash_aliases} ... exiting"; exit 1; }
+    grep -qF "alias codex='${prefix}/bin/screen bash ${kit_root}/codex.sh'" "${bash_aliases}" || { echo "Codex alias missing from ${bash_aliases} ... exiting"; exit 1; }
+    bash -ic 'type claude >/dev/null 2>&1 && type codex >/dev/null 2>&1' 2>/dev/null || { echo "Agent aliases are not loaded by a new interactive shell ... exiting"; exit 1; }
     echo "[OK]"
 
     echo "Checking the older screen_install.sh artifacts are gone..."
@@ -311,7 +341,7 @@ else
     [ -f "${bash_bashrc}" ] && grep -qF "${legacy_marker_start}" "${bash_bashrc}" && echo "Legacy block still present in ${bash_bashrc} ... exiting" && exit 1
     echo "[OK]"
 
-    echo "The claude alias reaches new shells automatically - current shells: source ${bash_aliases}"
+    echo "The claude and codex aliases reach new shells automatically - current shells: source ${bash_aliases}"
     echo "oe-deploy's host-setup.sh overwrites ${bash_aliases} and ${screenrc} - re-run this script after it"
     path_screen="$(command -v screen || true)"
     echo "'screen' resolves to: ${path_screen}"

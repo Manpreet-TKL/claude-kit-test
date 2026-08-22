@@ -6,6 +6,8 @@ disable-model-invocation: false
 
 # Compact memories
 
+Codex native memory is separate from the versioned project-memory workflow below. Its raw working data stays machine-local under `~/.codex/memories/` and `~/.codex/memories_*.sqlite*`; never copy those files into this repository. The standalone installer's reset and fresh paths preserve that state. If asked to promote a durable Codex learning, review it and write only the generalized, non-secret result into the appropriate context skill after approval.
+
 When loaded as context with no task, reply only `Context loaded.`
 
 Compact Claude's auto-memory in `~/claude-kit/memory/<project-slug>/` (the

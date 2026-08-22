@@ -6,14 +6,14 @@ multi-agent kit.
 
 ```bash
 bash install.sh -q          # Claude Code setup
-bash codex-install.sh -q    # standalone Codex setup
-bash codex.sh               # run containerised Codex in the current directory
+bash codex-install.sh -q    # standalone host Codex setup
+bash codex.sh               # run sandboxed host Codex in the current directory
 ```
 ```
 ~/claude-kit/
 ├── install.sh              # Claude Code entry point
 ├── codex-install.sh        # standalone Codex entry point - same flags wherever the feature exists on both
-├── codex.sh                # run containerised Codex in the current directory
+├── codex.sh                # run host Codex with the kit profile
 ├── windows-install.ps1     # Windows/PowerShell installer - project-local .claude, copies instead of symlinks (section 21)
 ├── README.md               # this file
 ├── lib/
@@ -30,11 +30,13 @@ bash codex.sh               # run containerised Codex in the current directory
 ├── claude-md/
 │   └── CLAUDE.md           # global instructions; symlinked into ~/.claude/CLAUDE.md (edits are live)
 ├── scripts/                # host helpers, run by hand
-│   ├── screen5_install.sh  #   GNU screen 5 from source + the claude-in-screen alias (managed blocks)
+│   ├── screen5_install.sh  #   GNU screen 5 + managed Claude/Codex screen aliases
+│   ├── codex_bwrap_install.sh # Ubuntu bubblewrap + restrictive AppArmor profile
 │   ├── jira_filter_download.sh  # bulk ticket export straight over REST (no model tokens)
 │   └── jira_dashboard_dump.sh   # dump a Jira dashboard's gadget config
 ├── docker/
 │   ├── codex/              #   Dockerfile for the locally-built claude-kit-codex image
+│   ├── codex-chrome-agent/ #   separate Chrome DevTools + Playwright sidecar for Codex
 │   └── oe-chrome-agent/    #   the OE walker sidecar - Chrome + a paired Claude Code CLI under Xvfb
 ├── settings/
 │   ├── permissions/
@@ -455,37 +457,24 @@ authorized apps).
 
 ### 19. Standalone Codex (`codex-install.sh` + `codex.sh`)
 
-Section 14 puts Codex *under* Claude as an MCP server. This is the other direction:
-Codex driving the kit on its own, with **Docker as the only host prerequisite** - no
-Node, no `codex` binary, nothing installed on the host.
+Section 14 puts Codex under the primary CLI as an MCP server. This is the other direction:
+Codex driving the kit on its own. It uses an existing host Codex under bubblewrap;
+Docker is used only for MCP services and the browser walker.
 
 ```bash
-bash codex-install.sh -q                 # build the image, link everything, verify
+bash scripts/codex_bwrap_install.sh      # once per blank Ubuntu host
+bash codex-install.sh -q                 # write profile, links and rules, then verify
 bash codex.sh                            # interactive session in the current directory
 bash codex.sh exec "review the changes"  # normal Codex arguments pass straight through
 ```
 
-It is the twin of `install.sh` and shares its flags wherever the feature exists on
-both sides - `-q`, `-y`, `-n`, `-U`, `-r`, `-F`, `-l`, `-h`, and the **same `-s on|off`
-switch reading the same `generated/skills-auto.state` snapshot**, because both agents
-read the same `SKILL.md` frontmatter. A run with no flags at all prints the help and
-exits with an error, exactly like `install.sh`. The plumbing behind `-s`, the
-`openai.yaml` generation and the symlink/prune pass lives once in `lib/skills.sh`,
-sourced by both installers, so the two cannot drift.
-
-What it wires: the `claude-kit-codex` image (rebuilt each run to refresh the CLI - the
-analogue of `claude update`; `-U` reuses an existing one), `~/.codex/AGENTS.md` ->
-`claude-md/CLAUDE.md`, every skill into `~/.agents/skills`, and the agent defaults into
-`generated/.codex.env` (`CODEX_MODEL`, `CODEX_REASONING_EFFORT`, `CODEX_SANDBOX`,
-`CODEX_APPROVAL`) - shared with `install.sh -x` so the runner and the MCP agents can't
-end up on different models. `codex.sh` applies them at launch as `-c` overrides and
-never edits `~/.codex/config.toml`.
-
-Deliberately **not** ported, because they have no Codex counterpart: permission tiers,
-`settings.json`, the status line, shift-enter, autocompact env vars, conversation
-pruning and memory adoption. MCP registration isn't either - Codex declares servers in
-`config.toml` `[mcp_servers]`, not via the `claude` CLI. Usage, the full flag table and
-the container mount list: **[docs/codex-standalone.md](docs/codex-standalone.md)**.
+It accepts the full installer flag set and implements each capability through Codex's
+own profile, permission, rule, MCP, memory, archive, skill, and TUI mechanisms. It links
+`~/.codex/AGENTS.md` to the kit instructions and every skill into `~/.agents/skills`.
+The launcher also applies the VS Code keyboard workaround without changing any other
+CLI environment. Usage, the feature table, permission translation, memory preservation,
+Docker limits, browser walker, and verification are in
+**[docs/codex-standalone.md](docs/codex-standalone.md)**.
 
 ### 20. OpenEyes Chrome walker (`--setup-walker`)
 

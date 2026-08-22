@@ -1,0 +1,5 @@
+prefix_rule(pattern = ["git", "push"], decision = "forbidden", justification = "The human pushes.")
+prefix_rule(pattern = ["git", "commit"], decision = "forbidden", justification = "The human commits.")
+prefix_rule(pattern = ["aws"], decision = "forbidden", justification = "AWS access is read-only through the MCP server.")
+prefix_rule(pattern = ["rm", "-rf", "/"], decision = "forbidden", justification = "Never recursively remove a broad system path.")
+prefix_rule(pattern = ["rm", "-rf", "/home/toukan"], decision = "forbidden", justification = "Never recursively remove the home directory.")
