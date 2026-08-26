@@ -277,6 +277,8 @@ writeProfile() {
         echo 'disable_on_external_context = true'
         echo ''
         echo '[tui]'
+        echo 'alternate_screen = "never"'
+        echo 'raw_output_mode = true'
         echo 'status_line = ["model-with-reasoning", "current-dir", "model", "run-state", "permissions", "approval-mode", "context-remaining", "five-hour-limit", "weekly-limit", "codex-version", "context-window-size", "total-output-tokens", "task-progress"]'
         echo 'status_line_use_colors = true'
         for file in "${kit_root}"/settings/codex/permissions/*.toml; do echo ''; sed -n '1,$p' "${file}"; done
@@ -393,6 +395,8 @@ verifyAll() {
     [ -L "${codex_agents_md}" ] && [ "$(readlink "${codex_agents_md}")" == "${claude_md_src}" ] || { echo "[FAIL] AGENTS.md link"; failed=1; }
     [ -s "${agents_manifest}" ] || { echo "[FAIL] skills manifest"; failed=1; }
     [ -s "${codex_rules}" ] || { echo "[FAIL] active rules"; failed=1; }
+    grep -qF 'alternate_screen = "never"' "${codex_profile}" || { echo "[FAIL] terminal scrollback"; failed=1; }
+    grep -qF 'raw_output_mode = true' "${codex_profile}" || { echo "[FAIL] raw output mode"; failed=1; }
     codex execpolicy check --rules "${codex_rules}" -- git push origin main 2>/dev/null | grep -q forbidden || { echo "[FAIL] git push rule"; failed=1; }
     grep -qsF "alias codex='/usr/local/bin/screen bash ${kit_root}/codex.sh'" "${HOME}/.bash_aliases" || echo "[INFO] run: bash ${kit_root}/scripts/screen5_install.sh"
     command -v bwrap >/dev/null 2>&1 && codex sandbox -- /usr/bin/true >/dev/null 2>&1 || echo "[INFO] run: bash ${kit_root}/scripts/codex_bwrap_install.sh"

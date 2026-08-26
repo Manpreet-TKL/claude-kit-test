@@ -57,6 +57,9 @@ token declared as `- **Token:**` in `docs/help/demo-data-recipes.md` or
   Add Team form broken without the team-role permission (BUG-530).
 - Worklist seeding respects one-unbooked-list-per-day - [[reference_oe_unbooked_worklist_first_event_claims]].
 
-Bugs found while seeding go to `/home/toukan/openeyes_unverified_bugs.md` + `known_issues:`
-stamps on the pages. Backlog state: [[project_oe_docs_screenshot_backlog_not_fanoutable]].
+Bugs found while seeding go to
+`~/claude-kit/knowledge/oe-documentation-bug-ledger.md` + `known_issues:` stamps
+on the pages. Search the local historical archive before allocating BUG-533 or
+later, so an older defect is not recorded twice. Backlog state:
+[[project_oe_docs_screenshot_backlog_not_fanoutable]].
 Related: [[project_oe_playwright_enduser_harness]].

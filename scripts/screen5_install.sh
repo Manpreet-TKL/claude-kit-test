@@ -149,6 +149,8 @@ configureScreenrc() {
     # breaks ~/.bashrc colour-prompt detection that matches *-256color
     addSetting "term" "term screen-256color"
     addSetting "defscrollback" "defscrollback 10000"
+    # Page Up enters screen's history without sending prompt-history input.
+    addSetting "bindkey[[:space:]]+-k[[:space:]]+kP" "bindkey -k kP copy"
 }
 
 # oe-deploy's ~/.screenrc ships an active "termcapinfo xterm* ti@:te@" which
@@ -327,6 +329,7 @@ else
     echo "Checking ${screenrc} has the managed block and no active termcapinfo..."
     [ -z "$(grep -F "${marker_start}" "${screenrc}")" ] && echo "Managed block missing ... exiting" && exit 1
     grep -qE '^[[:space:]]*termcapinfo[[:space:]]+xterm\*[[:space:]]+ti@:te@' "${screenrc}" && echo "An active 'termcapinfo xterm* ti@:te@' is still present ... exiting" && exit 1
+    grep -qE '^[[:space:]]*bindkey[[:space:]]+-k[[:space:]]+kP[[:space:]]+copy([[:space:]]|$)' "${screenrc}" || { echo "Page Up scrollback binding missing ... exiting"; exit 1; }
     echo "[OK]"
 
     echo "Checking the agent alias block in ${bash_aliases}..."

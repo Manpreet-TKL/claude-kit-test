@@ -127,17 +127,20 @@ Everything below serves these two constraints.
   group (VA/refraction, IOP/drops, anterior/posterior segment, diagnoses/risks,
   injections, letters); the exam *shell* just composes registered elements.
 
-### 4.3 Frontend — old skin first on the new stack, new theme shortly after (RESOLVED - §26 Q2)
+### 4.3 Frontend - familiar old skin while porting, close visual parity after functional coverage (REVISED - §26 Q2, §26.5)
 - **Vue 3 + Inertia.js from day one** (§26 Q2, revised 2026-08-20; supersedes the v0.6
   "Blade byte-identical first" recommendation in §20 decision 1). The rewrite never
   builds a Blade page layer: every page is a Vue page rendered through Inertia with
   server-side routing/auth, reusing the existing Vue 3.5 + Vite 7 investment. Rationale:
   building a Blade layer only to replace it post-cutover is throwaway work; parity is
   provable on rendered output instead.
-- **Pixel-identical OLD skin at go-live:** the Vue components reuse the legacy CSS and
-  markup structure, so a rendered page looks identical to v26. Consequence for the
-  parity oracle: §7.2 (a) compares **rendered pages (visual/DOM snapshots)**, not
-  byte-identical server HTML - the server no longer emits comparable HTML.
+- **Function first during the module fan-out:** the first few pages establish a very
+  familiar old skin by reusing the legacy CSS and markup structure. After that,
+  functional coverage, persistence, validation, APIs, deterministic tests, and
+  accounting gates take priority over per-page pixel tuning. Close visual parity with
+  v26 remains the end-state acceptance goal and is measured by the quarantined visual
+  suite after broad functional coverage. The parity oracle in §7.2 (a) compares
+  rendered pages (visual/DOM snapshots), not byte-identical server HTML.
 - **New theme switchable shortly after go-live:** express *all* colour/spacing/
   typography as **CSS custom properties (design tokens)**, initialised to the current
   OpenEyes values so a quarantined visual-regression suite passes pixel-for-pixel.
@@ -560,6 +563,24 @@ the hard-cached `oe_config` run (§4.6; the §5.10 menu-cache row).
 Cross-references: §4.3, §4.8, §5.1, §5.7, §5.8.0 #13 (export jobs follow its replica-only read
 rule), §17 recipe 5.4, §20 decisions 1/13/14, §26, §27 seeds (admin page pattern, `DataPatchCommand`
 replacement, `genericAdmin()` deletes, URL namespaces), §11 rows 10/12/19e/19f.
+
+### 4.10 Complete data API and deterministic data generation
+
+Every recordable capability has a versioned API contract. This includes every
+Examination event and element, every other clinical event type, and every admin
+configuration family. The UI calls the same application Actions as the API, so UI and
+API validation cannot drift. Admin families support authenticated import and export;
+clinical resources support create, read, update, soft-delete, and fixture generation
+where the corresponding UI supports the operation.
+
+Test-only data generation is exposed through an explicitly non-production TestHelper
+API backed by the same factories and Actions. It is deterministic: callers provide a
+seed and clock, generated identifiers are returned, and no generator reads wall-clock
+time or uncontrolled randomness. OpenAPI is generated from the route/resource
+registries. The feature register fails its completeness check if a data-bearing feature
+has no API operation, no deterministic generator, or no contract test. Bulk import and
+export are asynchronous only at the transport boundary; validation and accepted-row
+semantics remain identical to the synchronous application Action.
 
 ---
 
@@ -1475,12 +1496,22 @@ but its BSpec didn't**.
   shard) rather than more workers on one DB.
 - **Visual parity:** only the quarantined suite asserts pixels (baseline = the sitemap
   crawler's screenshots). Design tokens make a later reskin a one-commit re-baseline;
-  all other suites survive because they assert behaviour/semantics.
+  all other suites survive because they assert behaviour/semantics. During broad
+  functional porting, pixel work is limited to the familiar shared shell and a small
+  representative first-page set. Page-specific pixel tuning resumes as a deliberate
+  end-state visual-parity pass after the functional, API, and accounting gates are
+  broadly green.
+- **Determinism is mandatory:** browser tests use fixed clocks, seeded factories or the
+  deterministic TestHelper API, stable selectors, explicit readiness signals, and
+  isolated data. Retries may diagnose infrastructure but never turn a failed assertion
+  green. Timeouts, network races, shared mutable fixtures, order dependence, and
+  probabilistic assertions are defects that block the test from entering the suite.
 
 ### 7.5 Code-file accounting & deprecation (req 4)
 **Machine-maintained FileLedger** — one row per old tracked file (all 14,125 at v26.0.9; `git ls-files | wc -l`, Appendix D):
 `old_path | sha1 | kind | status{ported|replaced-by|obsolete|deferred|not-started} |
-new_path(s) | bspec_id(s) | test_id(s) | coverage% | signoff_id`. Generates
+legacy_symbols | new_path(s) | equivalent_symbols | bspec_id(s) | oedoc_slug(s) |
+test_id(s) | coverage% | signoff_id`. Generates
 `DEPRECATED.md` + a dashboard. Old files removed only at G6, with a tombstone kept.
 **CI honesty checks:** fail if any old file lacks a ledger row; if a module is released
 while any file is `not-started`; if a file is `obsolete` without a sign-off; every
@@ -1498,19 +1529,19 @@ runbook; (3) the **executable runbook** the harness runs — so documented test 
 executed Playwright steps. A CI **doc-drift gate** regenerates docs when a BSpec
 changes. Docs cannot drift from behaviour.
 
-**Legacy documentation baseline (2026-08-19, what req 6 starts from):** the legacy app
-has no in-app help - the brand flyout renders an optional off-site "training
-documentation" link and a support URL, and inline tooltips (`data-tooltip` in 198 PHP
-view/widget files) are per-field hints with no content store; 17 of 44 modules have a README (two of
-them substantive), there are 19 ADRs and 6 topic docs under `docs/`, no CONTRIBUTING,
-SECURITY, CHANGELOG or UPGRADE file, and no document at all on worklists, the settings
-hierarchy, the event/element save lifecycle, RBAC, patient merge/identifiers or
-correspondence; the ERD is one OmniGraffle file and the data dictionary is an xlsx
-loaded into MySQL table/column COMMENTs by `yiic importdatadictionarycomments`. The rewrite's
-docs-as-code therefore carries, per module, (4) a "How it worked in OpenEyes v26 / how
-it works now / why" page generated from the §27 entries and `#[LegacyRef]` attributes
-that touch the module, plus (5) the user guide and the manual test script (req 6); the
-data-dictionary-in-schema habit is kept (COMMENT on every table and column, §27).
+**Documentation baseline (revised 2026-08-24):** the OeDocumentation module is the
+primary user-facing source. Its app-mirroring corpus contains about 700 pages under
+`docs/**`; page front matter records URI, admin URI, source reference, and review
+status, while `data/coverage.json` maps discovered routes to document slugs. The
+existing brand link, inline tooltips, module READMEs, ADRs, ERD, and the xlsx data
+dictionary remain secondary evidence. Before a legacy function is implemented, its
+feature row records the OeDocumentation topic/route lookup, matching slug and status,
+or an explicit `not-documented` result. Missing documentation is queued and does not
+block the functional port. The rewrite ports the documentation module and corpus into
+the Laravel application, preserving route-to-help resolution while generating the new
+help pages, test runbooks, and old/new/why pages from BSpecs and divergence records.
+The data-dictionary-in-schema habit is kept with a recorded purpose and source evidence
+for every table and column.
 
 ### 7.7 TDD discipline enforced in CI
 - Red-green evidence captured (a PR adding implementation without a preceding failing
@@ -1576,6 +1607,28 @@ start from them.
   (sharp edge #25).
 - **Execution harness.** The tracker, walks and feature register that drive this machinery are
   specified in the v0.6 plan - §20.
+
+### 7.10 Continuous accounting registers
+
+The following machine-readable registers are updated as part of each unit. Recording
+is part of implementation, not a retrospective documentation phase, but a missing
+OeDocumentation page is queued rather than allowed to block the port.
+
+| Register | Required fields | Generated answer |
+|---|---|---|
+| FileLedger | legacy path and sha, symbols, disposition, equivalent new paths and symbols, tests, sign-off | every old code file accounted for; percentage complete by file, LOC, module, and risk-weight |
+| FeatureDocumentationLedger | feature id, legacy symbols/routes, OeDocumentation query, slug, review status or `not-documented`, Laravel help slug | which copied functions were already documented and which documentation remains |
+| LegacyBugRegister | stable bug id, observed behaviour, reproducer, affected versions, risk, parity class, tests, disposition | known old defects, including bugs intentionally quarantined for parity |
+| LearningRegister | stable learning id, evidence, scope, decision or reusable rule, linked files/features | durable implementation lessons that later ports reuse |
+| DataDictionary | legacy and new schema/table/column, purpose, ownership, lifecycle, units, keys, expected cardinality, hot reads, source evidence | why every data object exists and how it maps |
+| ApiCoverageRegister | feature id, REST operations, import/export operations, generator/factory, OpenAPI operation ids, contract tests | all clinical and admin data can be generated, imported, exported, and verified where applicable |
+| PageRegister | route name and URI template, feature id, navigation parent, RBAC, parameters, page component, BSpec, Playwright ids, help slug | a complete generated sitemap and deterministic test inventory |
+
+CI validates referential integrity across the registers. A ported FileLedger row must
+resolve to a feature, test, documentation check, data mapping where applicable, and
+any divergence or bug record. The dashboard reports raw file percentage and weighted
+functional percentage separately, so copied assets cannot make clinical completion
+look better than it is.
 
 ---
 
@@ -1884,6 +1937,19 @@ requirement with no section is a plan defect, not a gap to be filled later.
 | 19g patient data linked so it can be pruned patient by patient | §5.4 patient closure + §5.5 (CI lint: every patient-linked table reaches `patient` through FKs); §6 known-unknowns (47/36/12 linkage, 439-table closure, cross-patient rows); §23 |
 | 19h data never grows infinitely; always a plan to offload | §5.5; §5.8.0 #11; §23 retention class per table + `oe_archive` |
 | 20 divergences from legacy well documented; old OpenEyes well referenced (how it used to work, how it works now) | §27 divergence register + `#[LegacyRef]` + legacy reference corpus; §7.2, §7.5, §7.6 cross-refs; §25 (weekly parity review); §26 (register tooling decision) |
+| 2026-08-24.1 function first, visual parity later | §4.3 staged frontend priority; §7.4 quarantined end-state visual suite; §26.5 directive 1 |
+| 2026-08-24.2 every old code file mapped and measurable | §7.5 FileLedger; §7.10 continuous registers; §26.5 directive 2 |
+| 2026-08-24.3 check each copied function in OeDocumentation | §7.6 documentation baseline; §7.10 FeatureDocumentationLedger; §26.5 directive 3 |
+| 2026-08-24.4 record old bugs and lessons | §7.10 LegacyBugRegister and LearningRegister; §10 parity classification; §26.5 directive 4 |
+| 2026-08-24.5 equivalent Laravel documentation module | §7.6 route-linked help corpus and drift gate; §26.5 directive 5 |
+| 2026-08-24.6 API and deterministic generation for all data | §4.9 admin import/export; §4.10 complete data API; §7.10 ApiCoverageRegister; §26.5 directive 6 |
+| 2026-08-24.7 document every divergence and reason | §27; §7.10 cross-register gate; §26.5 directive 7 |
+| 2026-08-24.8 justify design choices | §17 cookbook, ADRs, construction record, and §27; §26.5 directive 8 |
+| 2026-08-24.9 stateless lightweight web container | D9/D10; §4.5 and §4.7; §26.5 directive 9 |
+| 2026-08-24.10 performance and no remote group-wise maximum | §5.8 single-row/current-pointer rules; §5.10; §7.7 query plans; §26.5 directive 10 |
+| 2026-08-24.11 TDD plus deterministic clinical Playwright | §7.1, §7.4 determinism rule, §7.7; §26.5 directive 11 |
+| 2026-08-24.12 preserve working and table purpose evidence | §5.9 data dictionary; §7.10 DataDictionary and LearningRegister; §26.5 directive 12 |
+| 2026-08-24.13 generated whole-app sitemap | §7.3 and §7.10 PageRegister; §14 existing sitemap seed; §26.5 directive 13 |
 
 ---
 
@@ -1917,6 +1983,14 @@ slice lands on a proven path. §18's milestones carry the same marker.
   is attempted.
 - **Phase 3 — Clinical modules, ascending risk;** `OphCiExamination`/`OphInBiometry`/
   `OphDrPrescription` **last** under CSO gating and calc-vector proof.
+  Execution checkpoint 2026-08-25: the functional-first Examination sequence has
+  reached Laser Management after Refraction, Near Visual Acuity, Clinic Procedures, Pupils, Driving Advice, Red Flags, Colour Vision, Optometrist Comments, Conclusion, Advice Given, Glaucoma Risk, Glaucoma Current Plan, Glaucoma Overall Plan, Observations, Birth History, CVI Status, History Risk, Investigation, Diagnosis, Pain, Botox Management, and Triage, including Next Steps, Clinical Outcome, Post-Op Complications,
+  Facial Injections, Injection Management, linked OCT, DR, IOP History, Drug Administration, History
+  Medications, Medication Management, and preceding elements recorded in the active
+  handoff. Exact coverage, tests, APIs, pages, documentation checks, bugs, lessons,
+  data-dictionary entries, and divergences remain generated from the application
+  registers rather than duplicated here. Exact visual parity remains a later explicit
+  pass after functional coverage.
 - **Phase 4 — Integrations parity** (xAPI/PAS/HL7/DICOM/SSO - full catalogue in Appendix B;
   PASAPI/xAPI auth = HTTP Basic + `OprnApi` is the frozen contract, §21) behind unchanged contracts;
   months-long **shadow/differential run** against production read traffic.
@@ -4394,14 +4468,15 @@ only writable path is throwaway tmpfs; (5) none or at most one database query on
 serving; (6) non-root, no known-vulnerable components (both failures of the current image). Lands
 in §2 D2/D10, §4.7, §12 Phase 0, §22.
 
-**Q2. Frontend - Vue 3 + Inertia from day one, rendering a pixel-identical old skin (REVISED
-2026-08-20).** Every page is built once with Vue + Inertia but renders a pixel-identical copy of
-today's look by reusing the legacy CSS and markup structure; a modern skin ships as a second
-switchable theme shortly after go-live. Supersedes both the earlier plain "Inertia from day one"
-answer and this plan's original Blade-byte-identical recommendation. Why: the frontend must be
-precisely the same as current OpenEyes on day one - much of the UI carries clinical sign-off, and
-identical screens make that sign-off and user retraining trivial; building once in Vue avoids a
-throwaway Blade layer, and the theme switch delivers the modern look without a second migration.
+**Q2. Frontend - Vue 3 + Inertia from day one, with staged old-skin parity (REVISED
+2026-08-24).** Every page is built once with Vue + Inertia and reuses the legacy CSS and markup
+structure. The first representative pages establish a familiar old skin, then functional coverage
+takes priority during the broad module port. Close old-app visual parity remains the end-state goal
+and is completed as a later, quarantined visual pass. A modern skin may then ship as a second
+switchable theme. Supersedes both the original Blade-byte-identical recommendation and the
+2026-08-20 requirement for per-page pixel identity during initial porting. Why: building once in
+Vue avoids a throwaway layer, familiar early screens reduce retraining, and delaying detailed
+pixel tuning prevents visual work from slowing functional, API, test, and accounting completeness.
 Requirements captured 2026-08-20: (1) old look first, new look switchable shortly after go-live;
 (2) end state a very consistent, modern, easy-to-support setup with a clear written set of UI rules
 (today the UI lives in a separate module with inconsistent class names); (3) every UI component
@@ -4682,6 +4757,1430 @@ these rows.
 
 Each row closes with a recorded number or name; a closure that changes a decision above is an ADR
 (§25), never a silent edit.
+
+### 26.5 Directives recorded 2026-08-24
+
+These directives are standing acceptance criteria and supersede any earlier wording
+that makes per-page pixel identity the immediate priority.
+
+1. Function first. Keep the first representative pages very familiar, then prioritize
+   complete functional ports. Close old-app visual parity remains the end goal and is a
+   later explicit pass.
+2. Record every legacy code file in the FileLedger with its Laravel destination or
+   equivalent, disposition, evidence, and tests. Report raw and weighted completion
+   percentages.
+3. For every copied function, resolve its topic, route, or source reference against
+   OeDocumentation and record the page slug and review status, or `not-documented`.
+   Missing pages are queued without stopping the port.
+4. Keep linked LegacyBugRegister and LearningRegister entries as discoveries are made.
+5. Port the OeDocumentation module and its route-linked help coverage into the new app,
+   then keep it synchronized with BSpecs, routes, and executable runbooks.
+6. Give every clinical and admin data-bearing feature a versioned API, deterministic
+   fixture generator, and contract tests. Every admin family supports import and
+   export; every Examination type and element can be generated through the API.
+7. Record every intentional divergence with the legacy behavior, new behavior, reason,
+   data mapping, risk, and test evidence.
+8. Justify architectural and schema choices in the construction record, ADRs, cookbook,
+   or divergence register. Undocumented design decisions are incomplete work.
+9. Keep the web image lightweight and the web container stateless: read-only root,
+   tmpfs scratch, external durable storage, external session/cache/queue state, and
+   immutable built assets.
+10. Treat performance as a schema and query contract. Avoid remote group-wise maximum,
+    correlated latest-row scans, functions on indexed predicates, and other known slow
+    shapes; use same-row keys, maintained pointers/projections, and verified plans.
+11. Develop with tests and require both backend proof and deterministic clinical
+    Playwright proof. Flaky, retry-dependent, time-dependent, or order-dependent tests
+    are forbidden.
+12. Preserve working evidence. Record each discovered table and column purpose, data
+    ownership, lifecycle, keys, cardinality, units, hot reads, and legacy source so it
+    can generate the later data dictionary.
+13. Register routes, pages, parameters, navigation, RBAC, components, help, and tests in
+    one PageRegister so the complete application sitemap and page-test inventory are
+    generated and continuously updated.
+
+Execution note 2026-08-25: the Glaucoma Overall Plan slice completed direct and
+whole-event APIs, administration import and export, indexed patient and IOP target
+projections, semantic correspondence output, deterministic backend and browser proof,
+clean-room migration verification, and exact source-file accounting. A repository
+audit also found 162 schema-qualified `oe_*.` references in tests, primarily
+`oe_history`. New tests resolve configured schema names; the existing references are
+tracked cross-cutting isolation debt and must be removed without interrupting the
+functional module sequence. The complete isolated suite passed 983 tests and 11,942
+assertions in 194.54 seconds.
+
+Execution note 2026-08-25: the Glaucoma Current Plan slice completed the exact four
+portable administration vocabularies, immutable clinical wording snapshots, bilateral
+validation, deterministic same-event and prior-event IOP references, Overall Plan
+target comparison, explicit date-safe prior-plan copy with provenance, direct and
+whole-event APIs, indexed patient projection, correspondence text, history-backed soft
+deletion, clean-room migration proof, and exact 35-file source accounting. Its real
+browser journey covered clinical create, validation, save, prior copy, source
+immutability, patient and event APIs, all four administration import/export surfaces,
+delete fallback, and cleanup without browser errors. Exact layout, unsaved cross-element
+updates, shared search and correspondence registration remain recorded later work so
+functional coverage continues first. The complete isolated suite passed 988 tests and
+12,112 assertions in 206.24 seconds.
+
+Execution note 2026-08-25: the Glaucoma Risk slice replaced the enum-only target with
+the exact three mutable legacy definitions, portable stable codes, immutable clinical
+snapshots, required visit-level selection, retired-definition editing, explicit
+date-safe prior-event copy with provenance, an indexed patient-latest projection,
+semantic correspondence text, and direct plus whole-event APIs. Selecting or copying a
+risk now applies the matching Follow-up row to Clinical Outcome through an explicit
+local event contract, while general template administration remains deferred. The
+authenticated administration and import/export APIs, clean-room migration proof, and
+real browser journey cover the full functional slice. The browser run also proved
+source immutability, delete fallback, and absence of browser errors. The exact 25-file
+inventory has 17 fully covered and four deferred files at 88.6 percent mean coverage.
+The complete isolated suite passed 994 tests and 12,244 assertions in 209.16 seconds.
+Shared search, shortcode registration, OpenAPI operation ids, in-app help publication,
+exact modal behavior, and exact visual parity remain recorded work so functional
+coverage continues first.
+
+Execution note 2026-08-25: the Advice Given slice completed optional comments,
+category-grouped institution-scoped Advice leaflet selection, immutable resource
+snapshots, protected PDF resources, in-use resource locks, dedicated portable phrase
+groups and phrases, configurable selection mode and delimiters, declarative
+administration, and natural-key import/export APIs. Direct and whole-event semantic
+APIs, a covering-index patient-latest read, safe plain correspondence text, complete
+history, soft deletion, reactivation, and audit behavior are functional. A clean-room
+seven-schema build ran all 134 migrations, proved exact contract rollback and reapply,
+loaded complete configuration and tiny profiles, passed schema verification, and
+passed 34 focused and shared tests with 589 assertions. The real browser journey
+proved phrase and leaflet administration, clinical selection and save, semantic event
+and patient APIs, delete fallback, cleanup, and no browser errors. The exact 93-file
+inventory has 56 fully covered and 21 deferred files at 79.8 percent mean coverage.
+The complete isolated suite passed 997 tests and 12,305 assertions in 215.12 seconds.
+Request-scoped subspecialty category filtering, exact v2 serialization, `[adg]` HTML,
+QR and attachment delivery, shared Consent consumers, OpenAPI operation ids, in-app
+help publication, exact popup geometry, and exact visual parity remain recorded work
+so functional coverage continues first.
+
+Execution note 2026-08-25: the Conclusion slice now matches the documented retired
+lifecycle: it is absent from Manage Elements but an existing row displays and edits
+normally. Required free text, exact twenty-four source phrases, multiselect behavior,
+delimiters, installation and subspecialty scope, dedicated portable phrase
+administration, import/export APIs, semantic event create/read/update/delete, indexed
+patient-latest output, correspondence text, complete history, soft deletion and audit
+behavior are functional. A clean-room seven-schema build ran all 135 migrations,
+proved exact contract rollback and reapply, loaded complete configuration and tiny
+profiles, passed schema verification, and passed 23 focused and shared tests with 516
+assertions. The real browser journey proved retirement, existing-row editing, phrase
+selection, clinical save, semantic event and patient APIs, administration round trips,
+delete fallback, cleanup and no browser errors. The exact 34-file inventory has 30
+fully covered and four partial files at 99.0 percent mean coverage. The complete
+isolated suite passed 1,002 tests and 12,391 assertions in 220.52 seconds. Shared
+correspondence registration, OpenAPI operation ids, in-app help publication, exact
+popup geometry, shared history placement and exact visual parity remain recorded work
+so functional coverage continues first.
+
+Execution note 2026-08-25: the Optometrist Comments slice now matches the documented
+retired read-only clinical lifecycle and preserves the exact nullable readiness state
+and raw nullable comment. Authenticated semantic event APIs support lossless import,
+export, correction, soft deletion and reactivation with optimistic concurrency,
+complete history and audit events. A patient-latest API uses a covering current-row
+index and no remote join or group-wise maximum. A one-layer compatibility display
+decodes legacy HTML entities while Vue escapes the result as text. A clean-room
+seven-schema build ran all 136 migrations, proved exact contract rollback and reapply,
+loaded complete configuration and tiny profiles, passed schema verification, and
+passed 13 focused and shared tests with 428 assertions. The real browser journey
+proved retirement, clinical immutability, tri-state display, entity compatibility,
+semantic import/export, exact empty-string preservation, indexed patient fallback,
+cleanup and no browser errors. The exact 54-file element, portal, report, finance and
+administration inventory has nine fully covered and 38 deferred files at 23.1 percent
+mean coverage. The complete isolated suite passed 1,005 tests and 12,434 assertions
+in 215.67 seconds. Full portal transport, complete Examination creation, submission
+log repair, alert delivery, the Optom Invoice Manager, Invoice Status administration,
+the Ready for second eye report, OpenAPI operation ids, in-app help publication,
+shared history placement and exact visual parity remain recorded work so functional
+coverage continues first.
+
+Execution note 2026-08-25: the Colour Vision slice completed the exact eleven ordered
+methods, 121 method-scoped values and seven shared correction types, bilateral repeated
+readings, one-method-per-eye enforcement, immutable clinical snapshots, hidden note
+preservation, direct and whole-event semantic APIs, declarative administration import
+and export, complete history, soft deletion, reactivation and an indexed patient-latest
+read with no remote join or group-wise maximum. The Ishihara /21 ordering defect and
+inactive-choice reuse were corrected and recorded. A clean-room seven-schema build ran
+all 137 migrations from empty, proved exact contract rollback and reapply, loaded the
+complete configuration and tiny profiles, passed schema verification, and passed 17
+focused and shared tests with 457 assertions. That proof exposed and corrected a new
+test's literal `oe_history` reference before the full isolated suite passed 1,011 tests
+and 12,489 assertions in 222.05 seconds. The real browser journey proved the source
+`None given` state, bilateral editor, dependent values, correction snapshots, clinical
+save, semantic event and patient APIs, three administration import/export surfaces,
+delete round trip, cleanup and no browser errors. The exact 50-file inventory has 45
+fully covered, four partial and one deferred file at 97.0 percent mean coverage.
+Strabismus workflow preselection, shared history placement, OpenAPI operation ids,
+in-app help publication and exact visual parity remain recorded work so functional
+coverage continues first.
+
+Execution note 2026-08-25: the Red Flags slice completed the explicit `No red flags`
+state and institution-scoped multi-select findings with stable option codes, immutable
+clinical snapshots, deterministic ordering, retirement, direct and whole-event
+semantic APIs, declarative administration import and export, complete history, soft
+deletion, reactivation and an indexed patient-latest read with no remote join or
+group-wise maximum. A bounded transactional replacement fixed the source-shaped
+sequence collision found during browser testing. The Vue editor now reads the checkbox
+event directly so clearing selected flags is independent of model-update ordering, and
+whole-event validation accepts the actual nested request shape. A clean-room
+seven-schema build ran all 138 migrations from empty, proved exact contract rollback
+and reapply, loaded complete configuration and tiny profiles, passed schema
+verification, and passed 18 focused and shared tests with 452 assertions. The complete
+isolated suite passed 1,015 tests and 12,544 assertions in 217.23 seconds. The real
+browser journey proved multi-select editing, the mutually exclusive empty state,
+semantic event import and export, indexed patient lookup, administration import and
+export, deletion, cleanup and no browser errors. The exact 24-file inventory has ten
+fully covered, three partial and eleven deferred files at 51.0 percent mean coverage.
+Legacy bugs BUG-LEGACY-236 through BUG-LEGACY-243, learnings LRN-277 through LRN-284,
+divergence records DIV-185, DIV-186 and DIV-315, five table-purpose entries, five API
+groups, three documentation groups and six sitemap entries are recorded. Pathway and
+worklist consumers, OpenAPI operation ids, in-app help publication, shared history
+placement and exact visual parity remain recorded work so functional coverage
+continues first.
+
+Execution note 2026-08-25: the Driving Advice slice completed the exact six driving
+statuses, two standards and five status-to-standard assignments, date-safe current
+driving-status resolution, deterministic Visual Acuity guidance with BEO precedence,
+the documented 0.30 logMAR threshold, immutable clinical snapshots, direct and
+whole-event semantic APIs, declarative administration import and export, real bounded
+patient history, complete history twins, soft deletion, reactivation and an indexed
+patient-latest read. The hot path uses bounded same-patient and same-eye lookups without
+a remote join or group-wise maximum. A clean-room seven-schema build ran all 139
+migrations from empty, proved exact contract rollback and reapply, loaded complete
+configuration and tiny profiles, passed schema verification, and passed 18 focused and
+shared tests with 473 assertions. That proof exposed and corrected a test-only literal
+`oe_history` reference. The complete isolated suite passed 1,019 tests and 12,613
+assertions in 220.47 seconds. The real browser journey proved current status rendering,
+guidance, default and edited advice, real history, semantic event import and export,
+indexed patient lookup, administration import and export, delete and reactivation,
+cleanup and no browser errors. The exact 49-file inventory has 27 fully covered,
+nineteen partial and three deferred files at 86.3 percent mean coverage. Legacy bugs
+BUG-LEGACY-244 through BUG-LEGACY-256, learnings LRN-285 through LRN-297, divergence
+records DIV-187, DIV-188, DIV-189, DIV-240 and DIV-316, five table-purpose entries, six
+API groups, four documentation groups and seven sitemap entries are recorded. Live
+unsaved cross-element alerts, general index and worklist consumers, correspondence,
+OpenAPI operation ids, in-app help publication and exact visual parity remain recorded
+work so functional coverage continues first.
+
+Execution note 2026-08-25: the Pupils slice completed explicit bilateral attendance
+states, ordinary present-only findings and non-removable tri-state required findings.
+The exact nine-row catalogue, including inactive Normal, and institution, firm,
+subspecialty, gender and inclusive event-age required-set policy are preserved through
+two portable administration families. Required-set matching now applies the stored
+institution boundary and event-date age, while date-safe prior-Examination copy keeps
+explicit provenance. Clinical rows carry immutable snapshots, complete history, soft
+deletion and reactivation. Direct and whole-event semantic APIs and the patient-latest
+API use snapshotted patient and event chronology plus the covering
+`live_patient_id, recorded_at, event_id, id` index without a remote join or group-wise
+maximum. A clean-room seven-schema build ran all 140 migrations from empty, proved
+exact contract rollback and reapply, loaded complete configuration and tiny profiles,
+passed schema verification, and passed 19 focused and shared tests with 469
+assertions. The complete isolated suite passed 1,024 tests and 12,678 assertions in
+224.44 seconds. The real browser journey proved bilateral states, the multi-select
+adder, semantic event import and export, indexed patient lookup, copy-forward with
+provenance, administration import and export, deletion and reactivation, cleanup and
+no browser errors. The exact 62-file inventory has 55 fully covered, four partial and
+three deferred files at 94.8 percent mean coverage. Legacy bugs BUG-LEGACY-257 through
+BUG-LEGACY-266, learnings LRN-298 through LRN-307, divergence records DIV-190,
+DIV-191, DIV-192 and DIV-317, seven table-purpose entries, six API groups, five
+documentation groups and seven sitemap entries are recorded. Strabismus workflow
+preselection, dedicated print and correspondence output, general index search, shared
+history, OpenAPI operation ids, in-app help publication and exact visual parity remain
+recorded work so functional coverage continues first.
+
+Execution note 2026-08-25: the Clinic Procedures slice completed repeatable procedure
+recording, explicit no-procedure confirmation, all 62 active source definitions,
+context-scoped quick choices, unrestricted active search, and immutable terminology,
+context, modifier and performing-user snapshots. Strict previous-Examination history
+excludes future and soft-deleted events. Direct and whole-event semantic APIs,
+structured correspondence data, declarative assignment administration, and indexed
+patient latest and history reads are live without remote joins or group-wise maximums.
+The Clinic Procedure catalogue is explicitly excluded from the temporary Device Usage
+source-procedure bridge, and every included subspecialty now has a complete source-named
+service assignment so all-family export remains total. A clean-room seven-schema build
+ran all 141 migrations from empty, proved exact Clinic Procedures contract rollback and
+reapply, loaded complete configuration and tiny profiles, passed schema verification,
+and passed 24 focused and shared tests with 557 assertions. The complete isolated suite
+passed 1,028 tests and 12,793 assertions in 243.53 seconds. The browser journey proved
+clinical editing, strict previous history, terminology and context snapshots, direct
+and patient APIs, structured correspondence, administration import and export,
+delete and reactivation, and no browser errors. The exact 46-file inventory has 29
+fully covered, eleven partial and six deferred files at 78.0 percent mean coverage.
+Legacy bugs BUG-LEGACY-267 through BUG-LEGACY-275, learnings LRN-308 through LRN-322,
+divergence records DIV-065, DIV-193, DIV-194, DIV-195 and DIV-318, six table-purpose
+entries, six API groups, five documentation groups and eight sitemap entries are
+recorded. Shared document registration, PAS A08 output, event icon and general search
+consumers, the combined surgery and laser projection, the complete Procedure catalogue,
+OpenAPI operation ids, in-application help publication, print layout and exact visual
+parity remain recorded work so functional coverage continues first.
+
+Execution note 2026-08-25: the Near Visual Acuity slice completed simple and complex
+recording with the exact six active source scales and 281 values, six methods, four
+near-only sources, one occluder, explicit right, left and BEO states, visible behaviour
+assessed, notes and corrective head posture validation. Stable natural keys and
+immutable display snapshots protect old clinical meaning when configuration changes.
+Five declarative administration families, direct and whole-event semantic APIs,
+structured correspondence, and indexed patient latest and bounded history are live
+without reference joins or group-wise maximums. A clean-room seven-schema build ran all
+142 migrations from empty, proved exact Near Visual Acuity contract rollback and
+reapply, loaded complete configuration and tiny profiles, passed schema verification,
+and passed 23 focused and shared tests with 556 assertions. The complete isolated suite
+passed 1,030 tests and 12,903 assertions in 246.60 seconds. The browser journey proved
+simple and complex editing, bilateral and BEO laterality, source, occluder, head posture
+and behaviour state, semantic import and export, correspondence, indexed patient reads,
+all five administration imports and exports, delete and reactivation, cleanup and no
+browser errors. The exact 78-file inventory has 48 fully covered, 27 partial and three
+deferred files at 85.3 percent mean coverage. Legacy bugs BUG-LEGACY-276 through
+BUG-LEGACY-283, learnings LRN-323 through LRN-334, divergence records DIV-202, DIV-203,
+DIV-204 and DIV-319, eight table-purpose entries, nine API groups, four documentation
+groups and eleven sitemap entries are recorded. Exact workflow preselection and
+placement, shared history, Biometry, search and shortcode consumers, OpenAPI operation
+ids, in-application help, print layout and exact visual parity remain recorded work so
+functional coverage continues first.
+
+Execution note 2026-08-25: the Refraction slice completed bilateral repeatable readings,
+separate comments, exact configured and free-text type shape, priority readings,
+spherical equivalents, immutable type code, name and priority snapshots, and explicit
+date-safe copy with provenance. The four exact source types have unique database
+priorities and collision-safe portable administration. Semantic event create, read,
+replace, delete and reactivation, patient latest and bounded history, structured
+correspondence, and saved cross-source Correction Given, Refraction and Retinoscopy
+precedence are live. Patient chronology uses covering indexes and cross-source latest
+uses three indexed single-row reads with an in-memory tie comparison, avoiding the old
+correlated group-wise maximum and mutable configuration join. A clean-room seven-schema
+build ran all 143 migrations from empty, proved exact Refraction contract rollback and
+reapply, loaded complete configuration and tiny profiles, passed schema verification,
+and passed 40 focused and shared tests with 751 assertions. The complete isolated suite
+passed 1,036 tests and 12,993 assertions in 244.68 seconds. The browser journey proved
+Manage Elements activation, multiple bilateral readings, configured priority over
+Other, copy provenance, direct and patient APIs, correspondence, Correction Given tie
+precedence, administration import and export, delete and reactivation, cleanup and no
+browser errors. The exact 92-file inventory has 40 fully covered, 42 partial and ten
+deferred files at 77.0 percent mean coverage. Legacy bugs BUG-LEGACY-284 through
+BUG-LEGACY-292, learnings LRN-335 through LRN-347, divergence records DIV-205, DIV-206,
+DIV-207, DIV-208 and DIV-320, seven table-purpose entries, eight API groups, five
+documentation groups and eight sitemap entries are recorded. Workflow preselection,
+unsaved cross-editor broadcasts, Case Search, NOD, CXL, Refractive Outcome, Biometry,
+patient summary, worklist, the deprecated standalone event, public generation,
+historical ETL, OpenAPI operation ids, in-application help, print layout and exact visual
+parity remain recorded work so functional coverage continues first.
+
+Execution note 2026-08-25: the Laser Management slice completed bilateral treatment
+intent with the exact four statuses, five deferral reasons and thirteen laser types.
+Deferred, booked and performed plans enforce their distinct conditional shapes, while
+immutable lookup snapshots preserve the clinical meaning of older events. Explicit
+date-safe copy records provenance. Authenticated semantic event import and export,
+indexed patient latest and bounded history, structured correspondence and comments,
+three declarative administration families, full audit history, soft delete and
+reactivation are live. Saving a performed-today plan does not silently create a
+standalone Laser treatment event, matching the documented boundary.
+
+A clean-room seven-schema build ran all 144 migrations from empty, rolled back and
+reapplied only the expanded Laser Management contract, loaded complete configuration
+and tiny profiles, passed schema verification, and passed 33 focused and shared tests
+with 782 assertions. The focused implementation run passed 22 tests with 431
+assertions. The complete isolated suite passed 1,040 tests and 13,089 assertions in
+253.69 seconds without a retry. The browser journey proved global Examination save,
+all conditional plan shapes, date-safe copy with provenance, semantic import and
+export, indexed patient reads, correspondence, all three administration imports and
+exports, delete and reactivation, no standalone treatment side effect, cleanup and no
+browser errors.
+
+The exact 25-file inventory has eleven fully covered and fourteen partially covered
+files, no fully deferred files, and 88.8 percent mean coverage. Legacy bugs
+BUG-LEGACY-293 through BUG-LEGACY-299, learnings LRN-348 through LRN-358, divergence
+records DIV-209 through DIV-212 and DIV-321, seven table-purpose entries, eight API
+groups, five documentation groups and nine sitemap entries are recorded. Parent
+Clinical Management composition, the DR booking hint, procedure reminder, global
+search, the separate standalone Laser treatment event and its administration,
+historical ETL, OpenAPI operation ids, in-application help, print layout and exact
+visual parity remain recorded work so functional coverage continues first.
+
+Execution note 2026-08-25: the Retinoscopy slice completed bilateral power-cross
+measurement with the exact five source working distances, bounded angle and P1 and P2
+values, dilation and comments. Working-distance identity, label and metre value are
+immutable clinical snapshots. The refraction is derived from canonical inputs on the
+server for every write, so a client cannot persist a contradictory result or redundant
+EyeDraw JSON. Explicit date-safe copy records source-event provenance.
+
+Authenticated semantic event import and export, indexed patient latest and bounded
+history, exact correspondence text, saved cross-source Correction Given, Refraction
+and Retinoscopy precedence, portable working-distance administration, full audit
+history, soft delete and reactivation are live. Patient chronology uses one covering
+index, and cross-source latest uses one indexed row per source with an in-memory tie
+comparison rather than a group-wise maximum or mutable configuration join.
+
+A clean-room seven-schema build ran all 145 migrations from empty, rolled back and
+reapplied only the expanded Retinoscopy contract, loaded complete configuration and
+tiny profiles, passed schema verification, and passed 36 focused and shared tests with
+717 assertions. The focused cross-element run passed 25 tests with 366 assertions. The
+complete isolated suite passed 1,044 tests and 13,157 assertions in 250.95 seconds
+without a retry. The browser journey proved global Examination save, bilateral
+power-cross inputs, server-derived refraction, date-safe copy with provenance, semantic
+import and export, indexed patient reads, saved cross-source latest, correspondence,
+working-distance administration import and export, delete and reactivation, cleanup
+and no browser errors.
+
+The exact 24-file inventory has fifteen fully covered and nine partially covered files,
+no fully deferred files, and 91.7 percent mean coverage. Legacy bugs BUG-LEGACY-300
+through BUG-LEGACY-306, learnings LRN-359 through LRN-369, divergence records DIV-229
+through DIV-232 and DIV-322, five table-purpose entries, eight API groups, five
+documentation groups and eight sitemap entries are recorded. Unsaved cross-editor
+broadcasts, exact configurable workflow placement, shared history presentation,
+OpenAPI operation ids, in-application help, print layout and exact visual parity remain
+recorded work so functional coverage continues first.
+
+Execution note 2026-08-25: the Correction Given slice completed bilateral adjusted and
+validated as-found orders. Same-event Refraction and Retinoscopy values are verified by
+source code, side and exact refraction before use, then retained as immutable source
+code and label snapshots even if the source element is later removed. Explicit
+date-safe copy records source-event provenance and prevents later provenance changes.
+
+Authenticated semantic event import and export, indexed patient latest and bounded
+history, exact structured correspondence and letter text, saved cross-source clinical
+refraction precedence, full audit history, soft delete and reactivation are live.
+Patient chronology uses one covering index, and cross-source latest uses one indexed
+row per source with an in-memory tie comparison rather than a group-wise maximum or
+mutable lookup join. Leading and trailing transport whitespace is deliberately trimmed
+and recorded as DIV-324.
+
+A clean-room seven-schema build ran all 146 migrations from empty, rolled back and
+reapplied only the expanded Correction Given contract, loaded complete configuration
+and tiny profiles, passed schema verification, and passed 31 focused and shared tests
+with 642 assertions. The focused cross-element run passed 20 tests with 291 assertions.
+The complete isolated suite passed 1,048 tests and 13,199 assertions in 246.03 seconds
+without a retry. The browser journey proved global Examination save, bilateral found
+and adjusted orders, exact source snapshot retention after source deletion, date-safe
+copy with provenance, semantic import and export, indexed patient reads, saved
+cross-source latest, correspondence, delete and reactivation, cleanup and no browser
+errors.
+
+The exact 13-file inventory has seven fully covered and six partially covered files,
+no fully deferred files, and 90.8 percent mean coverage. Legacy bugs BUG-LEGACY-307
+through BUG-LEGACY-313, learnings LRN-370 through LRN-380, divergence records DIV-235,
+DIV-236, DIV-323 and DIV-324, four table-purpose entries, eight API groups, five
+documentation groups and seven sitemap entries are recorded. Unsaved cross-editor
+broadcasts, exact configurable workflow placement, shared patient summary and history,
+search consumers, historical ETL, OpenAPI operation ids, in-application help, print
+layout and exact visual parity remain recorded work so functional coverage continues
+first.
+
+Execution note 2026-08-25: the Adnexal slice completed exact bilateral free-text
+recording, scoped multiselect phrase groups, date-safe copy with immutable source-event
+provenance, and the legacy event-scope relaxation when either Lids posterior or Lids
+Surgical supplies the detailed finding. Removing the last supporting lid child is
+blocked while a blank live Adnexal parent depends on it.
+
+Authenticated semantic event import and export, indexed patient latest and bounded
+history, exact per-eye correspondence and legacy letter text, portable phrase-group and
+phrase administration, full clinical and configuration history, soft delete and
+reactivation are live. Patient chronology uses one covering index with no event or
+configuration join. Exact clinical text, including leading, trailing and embedded
+whitespace, survives request handling, persistence, copy and export.
+
+A clean-room seven-schema build ran all 147 migrations from empty, rolled back and
+reapplied only the expanded Adnexal contract, loaded complete configuration and tiny
+profiles, passed schema verification, and passed 36 focused and shared tests with 651
+assertions. The disposable-schema run exposed and corrected three history assertions
+that had previously been able to read coincidental retained rows. The complete isolated
+suite then passed 1,054 tests and 13,284 assertions in 248.37 seconds without a retry.
+The browser journey proved global Examination save, exact bilateral text, configured
+phrase delimiters, date-safe copy with provenance, semantic import and export, indexed
+patient reads, correspondence, both administration pages, delete and reactivation,
+cleanup and no browser errors.
+
+The exact 34-file inventory has sixteen fully covered and eighteen partially covered
+files, no fully deferred files, and 95.1 percent mean coverage. Legacy bugs
+BUG-LEGACY-314 through BUG-LEGACY-323, learnings LRN-381 through LRN-393, divergence
+records DIV-178, DIV-179 and DIV-325, five table-purpose entries, eight API groups, six
+documentation groups and ten sitemap entries are recorded. Historical ETL, global
+search, shared history presentation, OpenAPI operation ids, in-application help, print
+layout and exact visual parity remain recorded work so functional coverage continues
+first.
+
+Execution note 2026-08-25: the Bleb Assessment slice completed the exact bilateral
+Moorfields Bleb Grading System aggregate. Every included eye requires Central Area
+1-5, Maximal Area 1-5, Height 1-4 and Vascularity 1-5, with the original nineteen
+reference images and chained image-selection workflow. Removing an eye clears its
+four grades but retains its hidden comment, matching the effective legacy contract.
+
+Authenticated semantic event import and export, date-safe copy with immutable
+source-event provenance, indexed patient latest and bounded history, full clinical
+history, soft delete and reactivation are live. Patient chronology uses one covering
+index with no event or mutable lookup join. The fixed numeric vocabularies are exposed
+as portable API configuration but have no invented administration page because the
+legacy values were not administrable.
+
+A clean-room seven-schema build ran all 148 migrations from empty, rolled back and
+reapplied only the expanded Bleb Assessment contract, loaded complete configuration
+and tiny profiles, passed schema verification, and passed 20 focused and shared tests
+with 503 assertions. The focused slice passed 11 tests with 163 assertions. The
+complete isolated suite then passed 1,058 tests and 13,371 assertions in 252.24 seconds
+without a retry. The browser journey proved global Examination save, bare numeric
+grades, all nineteen original reference images, chained selection, hidden comment
+retention and recovery, date-safe copy with provenance, semantic import and export,
+indexed patient reads, delete and reactivation, cleanup and no browser errors.
+
+The exact 46-file inventory has thirty-eight fully covered and eight partially covered
+files, no fully deferred files, and 98.9 percent mean coverage. Legacy bugs
+BUG-LEGACY-324 through BUG-LEGACY-331, learnings LRN-394 through LRN-405, divergence
+records DIV-180 through DIV-182 and DIV-326, four table-purpose entries, six API
+groups, six documentation groups and six sitemap entries are recorded. Shared history
+presentation, remaining correspondence consumers, historical ETL, OpenAPI operation
+ids, in-application help, print layout and exact visual parity remain recorded work so
+functional coverage continues first.
+
+Execution note 2026-08-25: the Specular Microscopy slice completed the exact bilateral
+clinical aggregate. Konan and Topcon and the Good, Poor, Failed and Unknown scan
+qualities retain their original order and first-option defaults as stable fixed keys.
+Every included eye requires endothelial cell density 500-4000 and coefficient of
+variation 0-999.99. Positive fractional densities explicitly use the effective legacy
+integer rounding contract, while negative coefficients are quarantined under DIV-140.
+
+Authenticated semantic event import and export, date-safe copy with immutable
+source-event provenance, indexed patient latest and bounded history, full clinical
+history, soft delete and reactivation are live. Patient chronology uses one covering
+index with no event or mutable lookup join. No administration page was invented because
+the two source lists were fixed and not administrable.
+
+A clean-room seven-schema build ran all 149 migrations from empty, rolled back and
+reapplied only the expanded Specular Microscopy contract, loaded complete configuration
+and tiny profiles, passed schema verification, and passed 20 focused and shared tests
+with 482 assertions. The disposable-schema run exposed and corrected a history test
+that queried the hard-coded development schema instead of the configured isolated
+schema. The complete isolated suite then passed 1,063 tests and 13,442 assertions in
+260.09 seconds without a retry. The browser journey proved Manage Elements activation,
+exact fixed defaults, global Examination save, positive density rounding, excluded-eye
+clearing and Not recorded presentation, date-safe copy with provenance, semantic import
+and export, indexed patient reads, delete and reactivation, cleanup and no browser
+errors.
+
+The exact 16-file inventory has eleven fully covered and five partially covered files,
+no fully deferred files, and 94.7 percent mean coverage. Legacy bugs BUG-LEGACY-332
+through BUG-LEGACY-339, learnings LRN-406 through LRN-417, divergence records DIV-139
+through DIV-141 and DIV-327, four table-purpose entries, six API groups, six
+documentation groups and six sitemap entries are recorded. Historical ETL, global
+search, shared history presentation, OpenAPI operation ids, in-application help, print
+layout, accessibility acceptance and exact visual parity remain recorded work so
+functional coverage continues first.
+
+Execution note 2026-08-25: the Drops slice completed the retired-but-correctable
+bilateral clinical aggregate. The element remains unavailable in Manage Elements and
+for new-event addition, while populated historical events retain editing, date-safe
+copy and semantic generation, import and export. Current administration remains the
+separate Drug Administration workflow.
+
+The exact six source drugs are live as portable configuration with stable codes,
+legacy ids, names, ordering, active retirement, complete history and administration
+import and export. Each clinical treatment snapshots legacy id, stable code and name.
+Included eyes require one or more treatments, one through ten drops, exact HH:mm and
+one occurrence of each drug. Child sequence slots remain stable across replacement,
+reorder, removal and reactivation. Root and child history, optimistic concurrency,
+immutable copy provenance and delete/reactivation are complete.
+
+Patient latest, bounded history and copy use the covering `live_patient_id,
+recorded_at, event_id, id` index with bounded owned child reads and no event,
+configuration or group-wise-maximum join. A clean-room seven-schema build ran all 150
+migrations from empty, rolled back and reapplied only the expanded Drops contract,
+loaded complete configuration and tiny profiles, passed schema verification, and
+passed 32 focused and shared tests with 617 assertions. The complete isolated suite
+passed 1,070 tests and 13,564 assertions in 265.27 seconds without a retry. The browser
+journey proved retirement, existing-event correction, the six-row Manage Drops page,
+global Examination save, strict validation, date-safe copy with provenance, excluded
+eye clearing, semantic import and export, indexed patient reads, delete and
+reactivation, cleanup and no browser errors.
+
+The exact 28-file inventory has eighteen fully covered and ten partially covered
+files, no fully deferred files, and 95.7 percent mean coverage. Legacy bugs
+BUG-LEGACY-340 through BUG-LEGACY-347, learnings LRN-418 through LRN-430, divergence
+records DIV-172, DIV-173, DIV-328 and DIV-329, four table-purpose entries, seven API
+groups, seven documentation groups and eight sitemap entries are recorded. Historical
+ETL, global search, shared history presentation, OpenAPI operation ids, in-application
+help, exact print composition, accessibility acceptance and exact visual parity remain
+recorded work so functional coverage continues first.
+
+Execution note 2026-08-25: the KC/CXL-Specific Slit Lamp slice completed its fixed
+bilateral clinical aggregate. Allergic Conjunctivitis, Blepharitis and Dry Eye use the
+exact None, Controlled and Uncontrolled values, while Cornea uses Clear, Scarring and
+Other. Both eyes and their first values are selected by default. Every included eye
+requires all four findings, and excluding an eye clears its values and presents it as
+Not recorded.
+
+Authenticated semantic event import and export, indexed patient latest and bounded
+history, full clinical history, optimistic concurrency, soft delete and reactivation
+are live. The CXL dataset projection exposes the saved per-eye corneal labels. Patient
+chronology uses one covering index with no event or mutable lookup join and does not
+port the legacy report's group-wise-maximum query into the request path. No
+administration page was invented because both source lists were fixed.
+
+A clean-room seven-schema build ran all 151 migrations from empty, rolled back and
+reapplied only the expanded KC/CXL-Specific Slit Lamp contract, loaded complete
+configuration and tiny profiles, passed schema verification, and passed 20 focused
+and shared tests with 449 assertions. The focused slice passed 11 tests with 109
+assertions. The complete isolated suite then passed 1,074 tests and 13,601 assertions
+in 269.82 seconds without a retry. The browser journey proved Manage Elements
+activation, exact defaults, left-only Cornea presentation, global Examination save,
+excluded-eye clearing and Not recorded presentation, semantic event import and
+export, the CXL corneal projection, indexed patient reads, delete and reactivation,
+cleanup and no browser errors.
+
+The exact 15-file inventory has eleven fully covered and four partially covered files,
+no fully deferred files, and 88.7 percent mean coverage. Legacy bugs BUG-LEGACY-348
+through BUG-LEGACY-355, learnings LRN-431 through LRN-444, divergence records DIV-176,
+DIV-177, DIV-330 and DIV-331, four table-purpose entries, five API groups, five
+documentation groups and six sitemap entries are recorded. Historical ETL, global
+search, shared history presentation, the wider CXL report and operation-note
+consumers, OpenAPI operation ids, in-application help, print layout, accessibility
+acceptance and exact visual parity remain recorded work so functional coverage
+continues first.
+
+Execution note 2026-08-25: the Optic Disc slice completed its bilateral EyeDraw
+aggregate. Basic and Expert modes, the exact twelve C/D ratios, seven lenses, vertical
+diameter, automatic report and comments remain compatible with reviewed source data.
+Included eyes require one valid drawing and C/D ratio. A lens may be saved without a
+diameter, while a diameter requires a lens. Excluded eyes are cleared. Historical
+drawings with no tags record remain valid.
+
+Authenticated semantic event import and export, date-safe prior copy with immutable
+source-event provenance, indexed patient latest and bounded history, correspondence,
+nullable current-record PCR projection, complete history, optimistic concurrency,
+soft delete and reactivation are live. Both lookup lists are portable versioned
+configuration with stable codes, immutable clinical snapshots, generated admin pages
+and API and command import and export. Patient chronology uses one covering index with
+no event, mutable lookup or group-wise-maximum join.
+
+A clean-room seven-schema build ran all 152 migrations from empty, rolled back and
+reapplied only the expanded Optic Disc contract, loaded complete configuration and
+tiny profiles, passed schema verification, and passed 22 focused and shared tests with
+571 assertions. The focused slice passed 13 tests with 231 assertions. The complete
+isolated suite then passed 1,080 tests and 13,744 assertions in 258.22 seconds without
+a retry. The browser journey proved Manage Elements activation, exact lookup order,
+global Examination save, in-place EyeDraw prior copy, excluded-eye clearing and Not
+recorded presentation, semantic drawing import and export, current PCR projection,
+indexed patient reads, both generated configuration APIs, delete and reactivation,
+cleanup and no browser errors.
+
+The exact 30-file inventory has twenty-three fully covered and seven partially covered
+files, no fully deferred files, and 93.8 percent mean coverage. Legacy bugs
+BUG-LEGACY-356 through BUG-LEGACY-363, learnings LRN-445 through LRN-458, divergence
+records DIV-260 and DIV-332 through DIV-334, four table-purpose entries, six API
+groups, five documentation groups and ten sitemap entries are recorded. Historical
+ETL, global search, diagnosis and persistent patient doodle consumers, shared history,
+OpenAPI operation ids, in-application help, print layout, accessibility acceptance and
+exact visual parity remain recorded work so functional coverage continues first.
+
+Execution note 2026-08-25: the Macula slice completed its bilateral EyeDraw aggregate
+at effective Retina order 330. Included eyes require a valid drawing. Generated
+reports and comments remain independent, excluded eyes are cleared, historical
+PostPole-only drawings without tags remain valid, and the exact three-state ETDRS
+Labels, ETDRS Grid or off policy is portable through generated settings administration
+and import and export APIs.
+
+Authenticated semantic event import and export, date-safe prior copy with immutable
+source-event provenance, indexed patient latest and bounded history, same-canvas
+persistent patient doodle defaults, correspondence, letter text, findings, bounded
+non-mutating DR projection, embedded diagnosis suggestions, complete history,
+optimistic concurrency, soft delete and reactivation are live. Patient chronology uses
+one covering index with no event join or group-wise-maximum query. Geometry-dependent
+maculopathy and cross-element mutation remain explicitly unknown or disabled.
+
+A clean-room seven-schema build ran all 153 migrations from empty, rolled back and
+reapplied only the expanded Macula contract, loaded complete configuration and tiny
+profiles, passed schema verification, and passed 28 focused and shared tests with 528
+assertions. The complete isolated suite then passed 1,086 tests and 13,816 assertions
+in 259.36 seconds without a retry. The browser journey proved Manage Elements
+activation, ETDRS policy, persistent defaults, global Examination save, prior copy,
+excluded-eye clearing and Not recorded presentation, semantic drawing import and
+export, findings and DR projection, indexed patient reads, generated settings API,
+delete and reactivation, cleanup and no browser errors.
+
+The exact 47-file inventory has seventeen fully covered and thirty partially covered
+files, no fully deferred files, and 74.5 percent mean coverage. Legacy bugs
+BUG-LEGACY-001 and BUG-LEGACY-364 through BUG-LEGACY-369, learnings LRN-001 through
+LRN-003 and LRN-459 through LRN-474, divergence records DIV-261 and DIV-335 through
+DIV-337, four table-purpose entries, six API groups, six documentation groups and
+eight sitemap entries are recorded. Dynamic report rules, geometry-dependent grading,
+diagnosis reconciliation, generic shredding, cross-canvas conflict handling,
+historical ETL, OpenAPI operation ids, global search, shared history, in-application
+help, print layout, accessibility acceptance and exact visual parity remain recorded
+work so functional coverage continues first.
+
+Execution note 2026-08-25: the DR Grading slice completed its bilateral aggregate
+at effective Retina order 340. Gradeability transitions clear incompatible grades
+and scarring, R0 suppresses M1, responsible institution rules are enforced, retired
+configuration remains stable in saved snapshots, and excluded eyes are cleared and
+presented as Not recorded.
+
+Authenticated semantic event import and export, date-safe whole-record copy with
+immutable source-event provenance and per-eye previous dates, indexed patient latest
+and bounded history, correspondence and sided letter text projections, complete
+history, optimistic concurrency, soft delete and reactivation are live. All six
+configuration families have generated administration, stable natural-key APIs and
+command import and export. Patient chronology uses one covering root index with no
+event or episode join and no group-wise-maximum query.
+
+A clean-room seven-schema build ran all 154 migrations from empty, rolled back and
+reapplied only the expanded DR Grading contract, loaded complete configuration and
+tiny profiles, passed schema verification, and passed 29 focused and shared tests
+with 591 assertions. The focused slice passed 14 tests with 207 assertions. The
+complete isolated suite passed 1,091 tests and 13,903 assertions in 264.32 seconds
+without a retry. The browser journey proved Manage Elements activation, exact active
+vocabularies, global Examination save, copy provenance, gradeability clearing, R0 and
+M1 policy, excluded-eye behavior, semantic import and export, correspondence, indexed
+patient reads, generated administration APIs, delete and reactivation, cleanup and no
+browser errors.
+
+The exact 61-file inventory has thirty-six fully covered and twenty-five partially
+covered files, no fully deferred files, and 88.2 percent mean coverage. Legacy bugs
+BUG-LEGACY-002 through BUG-LEGACY-007 and BUG-LEGACY-370 through BUG-LEGACY-376,
+learnings LRN-004 through LRN-008 and LRN-475 through LRN-489, divergence records
+DIV-262, DIV-263 and DIV-338 through DIV-340, ten table-purpose entries, six API
+groups, twenty-eight function documentation checks and twelve sitemap entries are
+recorded. Diagnosis, expiry, ownership and cross-element automation, automatic
+Correspondence event creation, historical ETL, OpenAPI operation ids, global search,
+in-application help, print layout, accessibility acceptance and exact visual parity
+remain recorded work so functional coverage continues first.
+
+Execution note 2026-08-25: the Vitreous and Fundus slice completed its bilateral
+EyeDraw and six-group structured-picker aggregate at effective Retina order 350. All
+47 code-owned options, exact category cardinalities, explicit N/A defaults, the
+Vitreous ungraded report, and the exact 26-doodle Fundus canvas contract are enforced.
+Excluded eyes are cleared and presented as Not recorded, historical drawing imports
+remain readable, and retired option snapshots stay stable.
+
+Authenticated semantic event import and export, bounded date-safe whole-record copy
+with immutable source-event provenance, the six configured persistent laser doodles,
+indexed patient latest and bounded history, correspondence, sided letter text, legacy
+VIR HTML, findings and diagnosis suggestions, complete history, optimistic
+concurrency, soft delete and reactivation are live. The patient chronology uses one
+covering root index with no event or episode join and no group-wise-maximum query.
+
+A clean-room seven-schema build ran all 155 migrations from empty, rolled back and
+reapplied only the expanded Vitreous and Fundus contract, loaded complete
+configuration and tiny profiles, passed schema verification, and passed 29 focused
+and shared tests with 518 assertions. The focused slice passed 19 tests with 154
+assertions. The complete isolated suite passed 1,097 tests and 13,966 assertions in
+251.26 seconds without a retry. The browser journey proved Manage Elements
+activation, the exact picker, global Examination save, prior copy, laser persistence,
+excluded-eye behavior, semantic drawing import and export, correspondence, VIR,
+indexed patient reads, generated configuration API, delete and reactivation, cleanup
+and no browser errors.
+
+The exact 35-file inventory has twenty-one fully covered and fourteen partially
+covered files, no fully deferred files, and 90.0 percent mean coverage. Legacy bugs
+BUG-LEGACY-008 through BUG-LEGACY-012 and BUG-LEGACY-377 through BUG-LEGACY-382,
+learnings LRN-009 through LRN-013 and LRN-490 through LRN-508, divergence records
+DIV-264, DIV-265 and DIV-341 through DIV-343, six table-purpose entries, six API
+groups, twelve function documentation checks and six sitemap entries are recorded.
+Across the canonical 14,125-file source inventory, 2,196 unique files are now
+accounted for, or 15.55 percent. Weighting each accounted file by its recorded
+coverage and treating every unlisted file as zero gives 1,616.54 covered-file
+equivalents, or a conservative whole-codebase figure of 11.44 percent.
+
+Automatic Correspondence event creation, historical ETL, OpenAPI operation ids,
+global search, shared history presentation, in-application help, print layout,
+accessibility acceptance and exact visual parity remain recorded work. Functional
+porting continues first; the later UI pass must make this surface precisely match the
+original.
+
+Execution note 2026-08-25: Freehand Drawing is functionally complete at effective
+Examination order 355 as an optional repeatable drawing and comment aggregate. It
+preserves all eight byte-identical installation-wide templates, real canvas
+annotation, byte-exact protected images, zero-to-fifty ordered entries, multiple
+comments, immutable historical template code and name provenance, and a readable
+placeholder when a historical image object is missing.
+
+Authenticated semantic event import and export carries exact image bytes and
+provenance, while indexed patient latest and bounded history deliberately return
+metadata without object bytes or object-store fan-out. The patient chronology uses
+the covering `live_patient_id, recorded_at, event_id, id` root index with no event or
+episode join and no group-wise-maximum query. Generated template administration and
+API, optimistic concurrency, complete history, soft delete and reactivation are
+live.
+
+A clean-room seven-schema build ran all 156 migrations from empty, rolled back and
+reapplied only the expanded Freehand Drawing contract, loaded complete configuration
+and tiny profiles, passed schema verification, and passed 28 focused and shared
+tests with 553 assertions. The focused element and API slice passed 18 tests with
+189 assertions. The complete isolated suite passed 1,101 tests and 14,017 assertions
+in 259.40 seconds without a retry. The real browser journey proved the eight-template
+administration surface, real canvas annotation and Confirm and Save, portable image
+and provenance round trips with an identical SHA-256 digest, rendered target image
+and comment, indexed metadata-only patient reads, generated configuration API,
+delete and reactivation, cleanup and no browser errors.
+
+The exact 35-file inventory has thirty-three fully covered files, one partially
+covered file and one deferred file, with 94.6 percent mean coverage. Legacy bugs
+BUG-LEGACY-013 through BUG-LEGACY-020 and BUG-LEGACY-383 through BUG-LEGACY-385,
+learnings LRN-014 through LRN-019 and LRN-509 through LRN-516, divergence records
+DIV-266, DIV-267 and DIV-344, seven table-purpose entries, five API groups, seventeen
+function documentation checks and eleven sitemap entries are recorded. Across the
+canonical 14,125-file source inventory, 2,196 unique files remain accounted for, or
+15.55 percent. Weighting each accounted file by its recorded coverage and treating
+every unlisted file as zero gives 1,616.54 covered-file equivalents, or a
+conservative whole-codebase figure of 11.44 percent.
+
+Historical object-store consolidation, global clinical search, OpenAPI operation
+ids, in-application help, role-specific policy, print layout, accessibility
+acceptance and exact visual parity remain recorded work. Functional porting
+continues first; the later UI pass must make this surface precisely match the
+original.
+
+Execution note 2026-08-25: OCT Manual and its linked OCT assessment aggregate are
+functionally complete at effective Examination order 395. Manual OCT supports exact
+bilateral central retinal thickness values and comments. Linked assessments retain
+their device, source, status, eye entries and companion-event relationship. Both
+surfaces have authenticated semantic event import and export, soft deletion,
+reactivation and indexed patient latest and bounded-history reads.
+
+Patient OCT chronology uses covering live-patient indexes without event or episode
+joins and without a group-wise maximum. Latest central retinal thickness is selected
+independently per eye across both sources, so more than one hundred newer unilateral
+assessments cannot suppress an older valid opposite-eye value. Three legacy OCT
+settings are now portable through the shared generated settings administration and
+configuration APIs. Stable semantic codes are used instead of database identifiers.
+
+A clean-room seven-schema build ran all 157 migrations from empty, rolled back and
+reapplied only the expanded OCT contract, loaded complete configuration and tiny
+profiles, passed schema verification, and passed 41 focused and shared tests with
+709 assertions. The focused OCT slice passed 32 tests with 369 assertions. The
+complete isolated suite passed 1,107 tests and 14,097 assertions in 254.80 seconds
+without a retry. The real target browser journey created manual and linked OCT
+events, saved through Confirm and Save, checked the companion event, semantic
+exports, indexed latest and history, per-eye cross-generation fallback and portable
+settings, then soft deleted all generated events with no browser errors. It produced
+no screenshots or other browser artefacts.
+
+The exact 122-file inventory has forty-five fully covered files and seventy-two
+files with numeric partial coverage. Forty-nine rows have deferred status, which
+overlaps the numeric partial set, and mean coverage is 56.5 percent. Legacy bugs,
+including BUG-LEGACY-386 for the original per-eye latest-value suppression, lessons,
+divergences DIV-269, DIV-289, DIV-290 and DIV-345, fifteen table-purpose entries,
+eight API groups, thirty-three function documentation checks and seventeen sitemap
+entries are recorded. Automatic correspondence, historical ETL, OpenAPI operation
+ids, in-application help and exact visual parity remain explicit work. Functional
+porting continues first; the later UI pass must make this surface precisely match the
+original.
+
+The original Snail environment is shared with documentation work. All continuation
+work treats it as read-only: no generated clinical events, configuration changes,
+cleanup, disruptive database work or other state changes are permitted there.
+Browser proof targets the Laravel environment. Captures stay sparse and targeted,
+existing images are reused, DOM and API assertions are preferred, and redundant
+large image artefacts are not accumulated.
+
+Execution note 2026-08-25: Nine Positions is functionally complete at effective
+Examination order 399. It persists repeatable readings with twelve alignment gazes,
+six movement gazes per eye, correction and head-posture states, Wong supine and Hess
+flags, bilateral DVD, comments and bilateral EyeDraw payloads. Its four vocabularies
+and five installation settings are portable. Explicit date-safe copy-forward keeps
+retired lookup snapshots.
+
+Authenticated semantic event import and export, soft deletion, reactivation, and
+indexed patient latest and bounded-history reads are live. A fresh isolated
+seven-schema build ran all 159 migrations from empty, rolled back and reapplied only
+migrations 257 and 258, loaded complete configuration and tiny profiles, passed
+schema verification, and passed 31 focused and shared tests with 614 assertions. All
+disposable schemas, grants and containers were removed. The complete isolated suite
+passed 1,112 tests and 14,162 assertions in 255.46 seconds without a retry. Pint
+passed across 1,296 PHP files.
+
+The real Laravel browser journey saved alignment, movement and DVD findings through
+Confirm and Save, verified the semantic response, restored its initial state and
+reported no browser errors. It created no screenshots. The exact 52-file inventory
+has forty-three fully covered files, eight files with numeric partial coverage and
+one deferred file, with 96.3 percent mean coverage. Twelve table-purpose entries,
+five API groups, nineteen function documentation checks, eleven sitemap entries,
+eight legacy bugs and fifteen lessons are recorded, including BUG-LEGACY-387,
+BUG-LEGACY-388, LRN-526 through LRN-533, DIV-270 and DIV-271.
+
+Execution note 2026-08-25: Responsible for Care is functionally complete at
+Examination order 425. It preserves the six-column clinical ownership contract,
+copy-forward, date reconfirmation, fail-safe status transitions, immutable labels,
+soft deletion, reactivation and the current patient-area projection. The exact
+comma-separated `disable_responsible_for_care_validation` installation setting is
+portable through the shared settings contract.
+
+Authenticated semantic event import and export, patient latest and bounded-history
+reads, a bounded indexed worklist API and audited worklist status generation are
+live. Stable area, institution, consultant and status identifiers cross the API.
+The root table has explicit event uniqueness and a covering live-patient chronology
+index, while the worklist reads the local current projection without a correlated
+latest-row query or group-wise maximum.
+
+A fresh isolated seven-schema build ran all 160 migrations from empty, rolled back
+and reapplied migration 259, loaded complete configuration and tiny profiles,
+passed schema verification, and passed 30 focused and shared tests with 667
+assertions. The complete isolated suite passed 1,117 tests and 14,235 assertions in
+258.73 seconds without a retry. Pint passed across 1,301 PHP files, and the
+production Vite build completed with only the recorded asset-resolution and chunk
+size warnings.
+
+The real Laravel browser journey created a clinical ownership event and a later
+management event, proved the semantic event, patient chronology, worklist JSON and
+three administration surfaces, then deleted all generated events. It reported no
+browser errors and created no screenshots. The exact 57-file inventory has
+thirty-four fully covered files, thirteen files with numeric partial coverage and
+ten deferred files, with 80.1 percent mean coverage. Sixteen documentation checks,
+six API groups, twelve sitemap entries, twelve table-purpose entries, nine legacy
+bugs and fifteen lessons are recorded, including BUG-LEGACY-389, LRN-535 through
+LRN-541, DIV-272 and DIV-273.
+
+Shared role policy, blank selected-patient worklist rows, patient summary and
+history widgets, the DR consumer, application search, historical bulk import,
+formal OpenAPI publication, target help and exact visual matching remain explicit
+work. Functional porting continues first; the later UI pass must make this surface
+precisely match the original.
+
+Execution note 2026-08-25: Clinical Management is functionally complete at
+Examination order 430. It preserves independent per-eye current and long-term plans,
+phrase insertion, unilateral to bilateral conversion, validation, copy-forward,
+immutable modifier identity snapshots, soft deletion and reactivation. Its phrase
+configuration families and installation setting are portable.
+
+Authenticated semantic event import and export, patient latest and bounded-history
+reads, deletion fallback and reactivation are live. Stable laterality codes and the
+immutable modifier identity cross the API. The patient chronology reads the
+existing denormalized covering index without a join, correlated latest-row query or
+group-wise maximum.
+
+A fresh isolated seven-schema build ran all 160 migrations from empty, rolled back
+and reapplied migrations 207 and 208, loaded complete configuration and tiny
+profiles, passed schema verification, and passed 31 focused and shared tests with
+854 assertions. The complete isolated suite passed 1,120 tests and 14,275 assertions
+in 256.18 seconds without a retry. Pint passed across the complete PHP source set,
+and the production Vite build processed 718 modules with only the recorded SVG
+resolution and chunk size warnings.
+
+The real Laravel browser journey proved clinical plan editing, phrase insertion,
+unilateral to bilateral conversion, whole-event save, semantic event and patient
+APIs, deletion fallback, reactivation, patient summary and three administration
+surfaces, then removed its temporary event. It reported no browser errors and
+created no screenshots. The exact 55-file inventory has twenty-eight fully covered
+files, twenty-four files with numeric partial coverage and five deferred files,
+with 87.5 percent mean coverage. Seventeen documentation checks, six API groups,
+thirteen sitemap entries, seven table-purpose entries, six legacy bugs and twelve
+lessons are recorded, including BUG-LEGACY-390 through BUG-LEGACY-392, LRN-542
+through LRN-546, DIV-274 and DIV-275. LRN-546 records the clean-room fix for a test
+that had hard-coded the history schema name.
+
+Shared role policy, retired archive import, downstream search and reporting
+consumers, historical bulk migration, formal OpenAPI publication, target help,
+print layout, accessibility acceptance and exact visual matching remain explicit
+work. Functional porting continues first; the later UI pass must make this surface
+precisely match the original.
+
+Execution note 2026-08-26: Cataract Surgical Management is functionally complete at
+effective Examination order 440. It preserves independent per-eye plans, surgical
+order exclusivity, primary reasons, prognosis, correction discussion, refractive
+targets including 0.00 D, immutable configuration snapshots, date-safe
+copy-forward, soft deletion and reactivation. Its eye-order and surgery-reason
+families remain portable through generated configuration APIs and the existing
+reasons administration screen.
+
+Authenticated semantic event import and export, patient latest and bounded-history
+reads, independent latest per-eye targets, source-event links and non-destructive
+two-year Biometry eligibility are live. The root stores patient and clinical time
+and uses a covering live-patient chronology index. Per-eye reads use bounded local
+indexes without event joins, correlated latest-row queries or a group-wise maximum.
+
+A fresh isolated seven-schema build ran all 161 migrations from empty, rolled back
+and reapplied migrations 079, 209 and 260, loaded complete configuration and tiny
+profiles, passed schema verification, and passed 26 focused and shared tests with
+704 assertions. The complete isolated suite passed 1,125 tests and 14,328
+assertions in 260.05 seconds without a retry. Focused Pint and the production Vite
+build passed, with only the recorded SVG resolution and chunk size warnings.
+
+The real Laravel browser journey created a temporary Examination event, proved eye
+order exclusivity, reasons, prognosis, Emmetropia display, semantic event and
+patient APIs, independent per-eye latest targets, deletion fallback, reactivation
+and the reasons administration API, then removed its temporary event. It reported
+no browser errors and created no screenshots. The exact 54-file inventory has
+twenty-four fully covered files, twenty-four files with numeric partial coverage
+and eleven deferred files, with 69.0 percent mean coverage. Twenty-one
+documentation checks, five API groups, ten sitemap entries, nine table-purpose
+entries, ten legacy bugs and fourteen lessons are recorded, including
+BUG-LEGACY-393 through BUG-LEGACY-397, LRN-547 through LRN-554, DIV-216 and
+DIV-276.
+
+Retired archive import, correspondence rendering, Biometry warning UI, NOD and
+operation reports, shared search, historical bulk migration, formal OpenAPI
+publication, target help, print layout, accessibility acceptance and exact visual
+matching remain explicit work. Functional porting continues first; the later UI
+pass must make this surface precisely match the original.
+
+Execution note 2026-08-26: PCR Risk is functionally complete at effective
+Examination order 445. It preserves unilateral and bilateral event snapshots,
+explicit unknown answers, mirrored patient-wide answers, immutable doctor-grade
+snapshots, reusable patient-eye state, server-authoritative calculation, soft
+deletion, fallback and reactivation.
+
+Authenticated semantic event import, export, update and delete, patient latest and
+bounded-history reads, and reusable current-value reads are live. Event-time
+demographics, saved non-refuted diagnoses, saved History Risks and independently
+bounded latest-per-eye Optic Disc findings supply defaults without future or
+opposite-eye leakage. The event root materializes patient and clinical time and uses
+a generated live-patient covering chronology index.
+
+A fresh isolated seven-schema build ran all 162 migrations from empty, rolled back
+and reapplied migrations 086, 210 and 261, loaded complete configuration and tiny
+profiles, passed schema verification, and passed 26 focused and shared tests with
+717 assertions. The complete isolated suite passed 1,130 tests and 14,382 assertions
+in 264.88 seconds without a retry. Focused Pint and the production Vite build passed,
+with only the recorded SVG resolution and chunk size warnings.
+
+The real Laravel browser journey proved diagnosed-diabetes locking, mirrored patient
+answers, unknown and not-calculable behavior, server-calculated persistence,
+semantic event lifecycle, patient history and reusable current values, restored its
+initial current state, removed its temporary event, reported no browser errors and
+created no screenshots. No Snail access was used. The exact 69-file inventory has
+twenty-one fully covered files, twenty files with numeric partial coverage and
+twenty-eight deferred files, with 52.0 percent mean coverage. Twenty-three
+documentation checks, five API groups, eight sitemap entries, nine table-purpose
+entries, fifteen legacy bugs and seventeen lessons are recorded, including
+BUG-LEGACY-398 through BUG-LEGACY-401, LRN-555 through LRN-562, DIV-238 and DIV-278.
+
+Anterior Segment and Biometry prefills, live unsaved broadcasts, Operation Note,
+PCR and NOD reports, analytics, dashboard, shared search, historical bulk migration,
+formal OpenAPI publication, target help, print layout, accessibility acceptance and
+exact visual matching remain explicit work. Functional porting continues first;
+the later UI pass must make this surface precisely match the original.
+
+Execution note 2026-08-26: Medication Management is functionally complete at
+effective Examination order 445. Complete versioned reviews, event-time merging of
+independently bounded History and Management roots, typed provenance, stable
+configuration snapshots, audit history, soft deletion, fallback and reactivation
+are live. Authenticated semantic event CRUD, import, export and generation, patient
+latest and bounded history, reusable current medication reads, five configuration
+administration surfaces and bounded medication search are implemented.
+
+A fresh isolated seven-schema build ran all 162 migrations from empty, rolled back
+and reapplied migration 262, loaded complete configuration and tiny profiles, passed
+schema verification, and passed 32 focused and shared tests with 888 assertions. The
+complete isolated suite passed 1,135 tests and 14,435 assertions in 269.50 seconds
+without a retry. Focused Pint and the production Vite build passed, with only the
+recorded SVG resolution and chunk-size warnings.
+
+The real Laravel browser journey proved recording, semantic event and patient APIs,
+the deferred prescribing boundary and five administration surfaces, removed its
+temporary event, reported no browser errors and created no screenshots. No Snail
+access was used. The exact 160-file inventory has ten fully covered files,
+ninety-three files with numeric partial coverage and fifty-seven deferred files,
+with 42.5 percent mean coverage. Twenty-six documentation checks, six API groups,
+thirteen sitemap entries, ten table-purpose entries, nine legacy bugs and nineteen
+lessons are recorded, including BUG-LEGACY-402 through BUG-LEGACY-404, LRN-563
+through LRN-570, DIV-279 and DIV-280.
+
+Prescription and signing, allergy coupling, tapers, dispense, medication sets, full
+catalog ingestion, reports, worklists, correspondence, historical bulk migration,
+formal OpenAPI publication, target help, print layout, accessibility acceptance and
+exact visual matching remain explicit work. Functional porting continues first; the
+later UI pass must make this surface precisely match the original.
+
+Execution note 2026-08-26: History Medications is functionally complete at effective
+Examination order 25. Complete eye and systemic reviews, event-date confirmation and
+stop validation, independently bounded History and Medication Management source
+roots, deterministic lineage reconciliation, typed provenance, immutable stable-code
+snapshots, retained retired vocabulary, copied-row stopping, audit history, soft
+deletion and identity-safe reactivation are live. Authenticated semantic event CRUD,
+import, export and generation, indexed patient latest and bounded history, shared
+current medication reads, five configuration administration surfaces and bounded
+medication search are implemented.
+
+A fresh isolated seven-schema build ran all 162 migrations from empty, rolled back
+and reapplied migrations 086, 210 and 262, loaded complete configuration and tiny
+profiles, passed schema verification, and passed 37 focused and shared tests with
+934 assertions. The complete isolated suite passed 1,140 tests and 14,481 assertions
+in 266.81 seconds without a retry. Focused Pint and the production Vite build passed,
+with only the recorded SVG resolution and chunk-size warnings.
+
+The real Laravel browser journey proved a complete first review, semantic event and
+patient APIs, second-review carry-forward and locking, stopping, typed History source
+provenance and shared current medication state. It removed both temporary events in
+reverse order, restored the patient to its exact initial empty state, reported no
+browser errors and created no screenshots. No Snail access was used. The exact
+151-file inventory has three fully covered files, ninety-five files with numeric
+partial coverage and fifty-three deferred files, with 42.5 percent mean coverage.
+Twenty-four documentation checks, six API groups, thirteen sitemap entries, eight
+table-purpose entries, six legacy bugs and fifteen lessons are recorded, including
+BUG-LEGACY-405 and BUG-LEGACY-406, LRN-571 through LRN-578, DIV-281 and DIV-282.
+
+Prescription source ownership, context common lists, free-text medicines, risk and
+exact allergy automation, patient summary and report consumers, historical bulk
+migration, formal OpenAPI publication, target help, print layout, accessibility
+acceptance and exact visual matching remain explicit work. Functional porting
+continues first; the later UI pass must make this surface precisely match the
+original.
+
+Execution note 2026-08-26: Drug Administration now has a functionally complete
+custom-order semantic core at effective Examination order 56. Stable medication,
+route and laterality snapshots, order provenance, allergy warnings, pending,
+administered and cancelled state, immutable administration facts, retained clinical
+history, audit history, soft deletion and identity-safe reactivation are live.
+Authenticated semantic event read, update, delete, import, export and generation,
+indexed patient latest and bounded administered-history reads, bounded medication
+search, shared configuration APIs, direct element save and whole-event save are
+implemented. Unsigned PGD and PSD preset payloads are rejected until their owning
+signed workflow is ported.
+
+A fresh isolated seven-schema build ran all 162 migrations from empty, loaded
+complete configuration and tiny profiles, passed schema verification, and passed 31
+focused and shared tests with 611 assertions. A pre-existing test assumption that
+hard-coded the shared history schema was corrected so the clean-room test resolves
+the configured isolated schema. The complete isolated suite passed 1,144 tests and
+14,531 assertions in 275.21 seconds without a retry. Focused Pint and the production
+Vite build passed, with only the recorded SVG resolution and chunk-size warnings.
+
+The real Laravel browser journey created a temporary Examination event, saved a
+custom order, proved administered-row locking, remaining-row cancellation and four
+semantic API surfaces, reported no browser errors and created no screenshots. The
+exact proof rows were retired after the journey and patient 20 was verified at zero
+live Drug Administration roots and children. No Snail access was used. The exact
+165-file inventory has three fully covered files, forty-seven files with numeric
+partial coverage and 115 deferred files, with 22.1 percent mean coverage. Twenty-four
+documentation checks, six API groups, nine sitemap entries, eight table-purpose
+entries, seven legacy bugs and fourteen lessons are recorded, including
+BUG-LEGACY-407 through BUG-LEGACY-409, LRN-579 through LRN-587, DIV-283 and DIV-284.
+
+PGD and PSD presets, signatures, roles, teams, worklists, pathways, appointments,
+the standalone event, reports, print, historical bulk interchange, formal OpenAPI
+publication, target help, accessibility acceptance and exact visual matching remain
+explicit work. Functional porting continues first; the later UI pass must make this
+surface precisely match the original.
+
+Execution note 2026-08-26: IOP History now has a functionally complete semantic
+core at effective Examination order 50. Current IOP has stable-code event read,
+update, delete, import, export and generation. History IOP has append-oriented
+stable-code read, create, delete, import, export and generation and returns every
+generated Examination event id. Indexed patient latest and bounded timed-history
+reads are live. Root chronology is materialized locally, and each reading carries
+an immutable instrument code and name. History marker deletion preserves every
+generated event and pressure fact.
+
+The schema migration backfilled four readings whose instrument configuration had
+already disappeared with deterministic legacy codes and names. Its initial failed
+DDL was inspected, only the exact unrecorded partial columns were reversed, and the
+migration then passed explicit rollback and reapply. The complete tiny fixture now
+contains root chronology and immutable instrument snapshots. A Phasing test that
+hard-coded the shared history schema was corrected to use the configured schema.
+
+A fresh isolated seven-schema build ran all 164 migrations from empty without
+`migrate:fresh`, rolled back and reapplied migration 263, loaded complete
+configuration and tiny profiles, passed schema verification, and passed 67 focused
+and shared tests with 1,077 assertions. All disposable schemas, grants and
+containers were removed. The focused IOP set passed 29 tests and 283 assertions.
+The complete isolated suite passed 1,150 tests and 14,587 assertions in 265.95
+seconds without a retry. Pint passed 16 changed PHP files and the production Vite
+build passed with only the recorded SVG resolution and chunk-size warnings.
+
+The real Laravel browser journey created three temporary Examination events,
+proved UI History IOP append, semantic current IOP, patient latest and history,
+semantic History IOP append, retained facts after marker deletion, and the
+instrument admin surface. It reported no browser errors and created no screenshots.
+All three temporary events were deleted, and patient 20 was verified at zero live
+IOP roots, readings and History IOP markers. No Snail access was used. The exact
+204-file inventory has sixteen fully covered files, 143 files with numeric partial
+coverage and forty-five deferred files, with 51.8 percent mean coverage. Twenty-four
+documentation checks, six API groups, twelve sitemap entries, nine table-purpose
+entries, seven legacy bugs and seventeen lessons are recorded, including
+BUG-LEGACY-410 through BUG-LEGACY-412, LRN-588 through LRN-599, DIV-285 and DIV-286.
+
+Institution-scoped instrument settings, episode and OEScape charts, correspondence,
+Case Search, Analytics, NOD, post-injection IOP, operation reports, historical bulk
+interchange, formal OpenAPI publication, target help, accessibility acceptance and
+exact visual matching remain explicit work. Functional porting continues first;
+the later UI pass must make this surface precisely match the original.
+
+Execution note 2026-08-26: DR Retinopathy and DR Maculopathy now have a
+functionally complete semantic core at their effective Examination positions. Both
+elements retain their familiar bilateral grouped workflow, immutable feature code,
+grade and name snapshots, bounded Retinopathy entries and MA counts, exact-one
+Maculopathy entries, server-derived overall grades, complete audit history, soft
+deletion and identity-safe reactivation. Neither element invents copy-forward or a
+downstream consumer that the reviewed source and documentation do not define.
+
+Authenticated stable-code event read, update, delete, import, export and generation
+are live for both elements. Indexed patient latest and bounded history reads use
+locally materialized patient and clinical time without a group-wise maximum or
+remote-table aggregate. The existing twenty-three-row feature family remains
+portable through declarative administration and natural-key API and command import
+and export. Four unused shared feature queries in the legacy DR Grading form are not
+reproduced.
+
+A fresh isolated seven-schema build ran all 165 migrations from empty without
+`migrate:fresh`, rolled back and reapplied migration 264, loaded complete
+configuration and tiny profiles, passed schema verification, and passed 47 focused
+and shared tests with 774 assertions. Its first run found a test that hard-coded the
+shared history schema; the test now resolves the configured isolated schema and the
+complete clean-room run passes. All disposable schemas, grants and containers were
+removed. The focused DR set passed 15 tests and 183 assertions. The complete suite
+passed 1,155 tests and 14,662 assertions in 267.10 seconds without a retry. Pint
+passed ten changed PHP files and the production Vite build passed with only the
+recorded SVG resolution and chunk-size warnings.
+
+The real Laravel browser journey created one temporary Examination event, saved and
+reopened both elements, proved stable-code semantic import and export, indexed
+patient latest and history, delete and reactivation, and the twenty-three-row admin
+surface. It reported no browser errors and created no screenshots. The temporary
+event was deleted, and patient 20 was verified at zero live DR feature roots and
+children. No Snail access was used. The exact 37-file source inventory has
+twenty-eight fully covered files, nine files with numeric partial coverage and no
+deferred files, with 96.2 percent mean coverage. Thirteen documentation checks, six
+API groups, thirteen sitemap entries, eight table-purpose entries, seven legacy bugs
+and fifteen lessons are recorded, including BUG-LEGACY-078 through BUG-LEGACY-082,
+BUG-LEGACY-413 and BUG-LEGACY-414, LRN-093 through LRN-098, LRN-600 through LRN-608,
+DIV-287, DIV-288 and DIV-346.
+
+Formal OpenAPI publication, target help, bulk historical migration, accessibility
+acceptance and exact adder and visual matching remain explicit work. Functional
+porting continues first; the later UI pass must make these surfaces precisely match
+the original.
+
+Facial Injections now has a functionally complete semantic core at effective
+Examination order 48. It preserves session, injector, supervisor, anaesthetic,
+batch and point snapshots, special-site method and EMG rules, server-derived units,
+expiry warnings, copy-forward boundaries, complete history, soft deletion and
+identity-safe reactivation. Authenticated stable-code event read, update, delete,
+import, export and generation are live alongside indexed patient latest and bounded
+history reads. The existing summary endpoint now uses the same covering chronology
+index. Configuration remains portable through declarative administration and the
+natural-key API and command surfaces.
+
+A fresh isolated seven-schema build ran all 165 migrations from empty without
+`migrate:fresh`, rolled back and reapplied migration 265, loaded complete
+configuration and tiny profiles, passed schema verification, and passed 35 focused
+and shared tests with 588 assertions. All disposable schemas, grants and containers
+were removed. The focused Facial Injections set passed 16 tests and 203 assertions.
+The complete suite passed 1,160 tests and 14,720 assertions in 266.30 seconds. Pint
+passed ten changed PHP files and the production Vite build passed with only the
+recorded SVG resolution and chunk-size warnings. The deterministic browser journey
+proved the UI, all semantic surfaces and administration, cleaned up its event,
+reported no browser errors and created no screenshots. Snail was not accessed.
+
+The exact source inventory contains 78 reviewed files. Sixty-seven are fully
+covered, six are deferred and the remainder have numeric partial coverage, with
+87.8 percent mean coverage. Nine documentation checks, six API groups, ten sitemap
+entries, eleven table-purpose entries, six legacy bugs and fourteen lessons are
+recorded, including LRN-609 through LRN-616 and DIV-347. Exact SVG presentation,
+print, settings, formal OpenAPI publication, target help, accessibility acceptance
+and exact visual matching remain explicit work. Functional porting continues first;
+the later UI pass must make this surface precisely match the original.
+
+Injection Management now has a functionally complete semantic core. Bilateral
+treatment and no-treatment decisions, indexed numbering, immutable diagnosis,
+configuration and user snapshots, active series, planned injection rows, complete
+history, soft deletion and identity-safe reactivation are functional. Authenticated
+stable-code event generation, import, export and deletion are live alongside
+indexed patient current, latest and bounded history APIs. The twelve configuration
+families remain portable through declarative administration and natural-key API and
+command surfaces.
+
+A fresh isolated seven-schema build ran all 166 migrations from empty without
+`migrate:fresh`, rolled back and reapplied migration 266, loaded complete
+configuration and tiny profiles, passed schema verification, and passed 36 focused
+and shared tests with 598 assertions. All disposable schemas, grants and containers
+were removed. The focused set passed 17 tests and 213 assertions. The complete
+suite passed 1,166 tests and 14,775 assertions in 267.72 seconds. An existing PCR
+Risk test that reused an obsolete optimistic-concurrency token after deletion was
+made deterministic and passed twice in isolation before the full run. Pint and the
+production Vite build passed, with only the recorded SVG resolution and chunk-size
+warnings. The real browser journey proved the clinical UI, semantic surfaces,
+indexed reads, deletion and reactivation, and the eighty-nine-row administration
+surface, then cleaned up its temporary event. It reported no browser errors and
+created no screenshots. Snail was not accessed.
+
+The exact source inventory contains 138 reviewed files. Seventy-nine are fully
+covered, thirty-four are deferred and the remainder have numeric partial coverage,
+with 68.7 percent mean coverage. Twelve documentation checks, seven API groups,
+nineteen sitemap entries, fourteen table-purpose entries, seven legacy bugs and
+sixteen lessons are recorded, including BUG-LEGACY-415 through BUG-LEGACY-417,
+LRN-617 through LRN-624 and DIV-348. Ongoing actions, booking and prescription side
+effects, consent, roles, print and popup parity, downstream Intravitreal Injection
+consumers, bulk historical migration, formal OpenAPI, target help and exact visual
+matching remain explicit work. Functional porting continues first; the later UI
+pass must make this surface precisely match the original.
+
+Intravitreal Injection now has a functionally complete semantic core. It preserves
+the fixed event workflow, bilateral booked, unbooked, not-today and defer actions,
+exact plan-item transitions, complete performed-treatment snapshots, conditional
+anaesthetic, anterior-segment, post-injection and complication safety rules,
+complete history, soft deletion and identity-safe reactivation. Unbooked injections
+record exact prior-series provenance so deletion restores the affected plan only
+when no later active plan makes reversal unsafe.
+
+Authenticated stable-code event generation, import, export and deletion are live
+alongside indexed patient latest and bounded history APIs. Patient chronology uses
+a generated live patient key and local covering index, with no group-wise maximum
+or remote-table aggregate. The eight dedicated configuration families expose 31
+portable rows through declarative administration and natural-key API and command
+surfaces, while shared drug, regime, follow-up, diagnosis, IOP, site and user
+vocabularies retain their existing owning interfaces.
+
+A fresh isolated seven-schema build ran all 168 migrations from empty without
+`migrate:fresh`, rolled back and reapplied migrations 267 and 268, loaded the tiny
+profile, passed schema verification, and passed 29 focused and shared tests with
+547 assertions. All disposable schemas, grants and containers were removed. The
+focused set passed 10 tests and 165 assertions twice. The complete suite passed
+1,176 tests and 14,951 assertions in 270.05 seconds. Pint passed all 15 affected
+PHP files and the production Vite build passed with only the recorded SVG
+resolution and chunk-size warnings. The deterministic browser journey proved the
+clinical UI, conditional fields, multiline comments, semantic round trip, indexed
+reads, deletion and reactivation, and all 31 administration rows, then restored the
+patient's exact original latest-injection and plan state. It reported no browser
+errors and created no screenshots. Snail was not accessed.
+
+The exact source inventory contains 199 reviewed files. Twenty-two are fully
+covered, 40 are deferred and 137 have numeric partial coverage, with 63.9 percent
+mean coverage. Twenty-two documentation checks, eight API groups, 17 sitemap
+entries, ten table-purpose entries, four legacy bugs and eleven lessons are
+recorded, including BUG-LEGACY-418 through BUG-LEGACY-421, LRN-625 through LRN-635,
+DIV-349 and DIV-350. Checklist, prescription, warnings, worklist, report, print and
+image surfaces, bulk historical migration, formal OpenAPI, target help and exact
+visual matching remain explicit work. Functional porting continues first; the
+later UI pass must make this surface precisely match the original.
+
+The next functional boundary is the Intravitreal Injection checklist and safety
+warning workflow. Reuse the generic checklist contracts where their semantics are
+equivalent, retain the module-specific ordering and snapshots, and continue to use
+local OeDocumentation, text-only deterministic browser evidence and no Snail
+access.
+
+The Intravitreal Injection patient-day checklist boundary is now functional. Each
+Intravitreal Injection event on the same patient day resolves through one shared
+Checklist event, while the generic checklist tables, item snapshots, ordering and
+history remain the source of truth. Authenticated read, update and delete APIs use
+optimistic version checks. Creation and removal are restricted to same-day events,
+and the final checklist removal archives the complete Checklist event cascade. The
+event editor autosaves checklist changes independently so its data is not captured
+by the Intravitreal Injection batch form. DIV-351 records why the Laravel adapter
+does not copy the legacy hidden marker element.
+
+A fresh isolated seven-schema build ran all 168 migrations from empty, rolled back
+and reapplied migrations 267 and 268, loaded tiny data, passed schema verification,
+and passed 31 focused and shared tests with 595 assertions. All disposable
+resources were removed. The focused Intravitreal Injection and Checklist set
+passed 20 tests and 257 assertions. The complete suite passed 1,178 tests and
+14,993 assertions in 267.82 seconds. Pint passed the five affected PHP files and
+the production Vite build passed 721 modules with only the recorded warnings. The
+deterministic browser journey proved checklist creation, autosave, editing,
+separate Intravitreal Injection batch save and deletion, then restored the exact
+original patient-day state. It reported no browser errors and created no
+screenshots. Snail was not accessed.
+
+The 199-file inventory is now 22 fully covered, 36 deferred and 141 partially
+covered, with 65.7 percent mean coverage. Twenty-two documentation checks, nine API
+groups, 20 sitemap entries, eleven table-purpose entries, four legacy bugs and
+fourteen lessons are recorded, including LRN-636 through LRN-638 and DIV-351. The
+next functional boundary is the Intravitreal Injection safety-warning workflow.
+Prescription, worklist, report, print and image surfaces, bulk historical
+migration, formal OpenAPI, target help and exact visual matching remain explicit
+work.
+
+The Intravitreal Injection safety-warning boundary is now functional. One
+server-owned evaluator covers preparation allergies, same-day duplicate and
+additional injections, Therapy Application validity in Hidden, Optional and
+Mandatory modes, treatment-number interval rules, phakic rules and expired batches.
+The warning preview API and final clinical save run the same evaluation. Required
+acknowledgements and mandatory override text are enforced at the server boundary,
+then the exact ordered warnings and acknowledgements are stored as immutable
+per-eye snapshots. Expired batches retain the legacy warn-and-proceed behavior.
+
+Warning configuration is portable through two additional declarative admin families
+and their import and export APIs. Flat natural-key rule rows replace the legacy
+rule, diagnosis and range join graph. Same-day reads use a half-open event-date
+range instead of applying `DATE` to the indexed column. Therapy Application now
+snapshots patient, application date, drug identity and validity days so warning
+reads do not depend on mutable lookup or remote event joins. DIV-352 records these
+performance, portability and audit-proof decisions.
+
+A fresh isolated seven-schema build ran all 169 migrations from empty without
+`migrate:fresh`, rolled back and reapplied migrations 267, 268 and 269, loaded tiny
+data, passed schema verification, and passed 35 focused and shared tests with 642
+assertions. All disposable resources were removed. Pint passed the affected PHP
+files and the production Vite build passed 721 modules with only the recorded
+warnings. The complete suite passed 1,182 tests and 15,042 assertions in 278.01
+seconds on its first run.
+
+The deterministic browser journey proved reactive warnings, required
+acknowledgement, expired-batch save, the existing clinical lifecycle and all 35
+administration rows. Cleanup restored the exact original patient state. It reported
+no browser errors and created no screenshots. Snail was not accessed and remains
+documentation-only and read-only.
+
+The exact 199-file inventory is now 22 fully covered, 19 deferred and 158 partially
+covered, with 74.5 percent mean coverage. Twenty-seven OeDocumentation checks, ten
+API groups, 23 sitemap entries, fifteen table-purpose entries, seven legacy bugs and
+22 lessons are recorded. New records are BUG-LEGACY-422 through BUG-LEGACY-424,
+LRN-639 through LRN-646 and DIV-352. The next functional boundary is prescription,
+followed by worklist, report, print and image surfaces. Bulk historical migration,
+formal OpenAPI, target help and exact visual matching remain explicit work.
+
+The Intravitreal Injection prescription boundary is now functional. Prescription
+source does not exist in the frozen v26.0.9 module denominator, so the implementation
+is pinned separately to 16 reviewed `origin/develop` source files at commit
+`5b3eac9c2ea5352d2596b1fddfe8ce1bc0668523`. Their paths, SHA-256 values, symbols,
+target equivalents, documentation checks and tests are recorded in the supplemental
+upstream-delta ledger. This leaves the exact v26.0.9 199-file coverage denominator
+unchanged. DIV-353 records the forward-delta accounting boundary and BUG-LEGACY-425
+records the observed drift between current source placement and the prescription
+guide.
+
+A medication-linked Injection Management treatment series now creates one immutable
+prescription fact containing medication, route, dose, interval, count, patient, eye
+and source-event snapshots. Disabled mode hides it, Optional mode permits treatment
+only after a durable unsigned acknowledgement, and Mandatory mode blocks treatment
+until the prescription is signed. Signing is event-scoped, version checked and PIN
+failure rate limited. An existing user needs a separate portable prescriber
+capability, while the account owner sets or clears a one-way PIN hash only after
+confirming the account password. No reusable signing credential is returned by the
+clinical API, administration API, audit record or portable configuration export.
+DIV-354 and DIV-355 record the immutable-fact and credential-custody decisions.
+
+Authenticated event-scoped signing and current-user PIN APIs are live. Injection
+Management export includes the nested prescription, and Injection Prescribers is a
+non-addable declarative administration family for capability assignment. The
+`unsigned_live` generated key and covering index prepare the worklist without a
+group-wise maximum or remote-table join.
+
+A fresh isolated seven-schema build ran all 169 migrations from empty without
+`migrate:fresh`, rolled back and reapplied migrations 267 through 270, loaded tiny
+data, passed schema verification, and passed 68 focused and shared tests with 991
+assertions. All disposable resources were removed. The final focused regression set
+passed 60 tests and 857 assertions. Pint passed the affected PHP files and the Vite
+build passed 721 modules with only the recorded warnings. The first full-suite run
+exposed five deterministic assumptions about an already configured scoped setting.
+Tests now set their effective user scope transactionally and size the settings page
+from exported rows. The complete rerun passed 1,191 tests and 15,124 assertions in
+293.82 seconds without a retry.
+
+The deterministic browser journey created one temporary Examination event, generated
+and signed a sequence prescription through the visible Injection Management form,
+proved the semantic export contained no credential material, and opened Injection
+Prescribers administration. Cleanup deleted the event and restored the treatment
+drug, prescribing mode, PIN and capability. It reported no browser errors and
+created no screenshots. Snail was not accessed and remains documentation-only and
+read-only.
+
+The exact 199-file inventory remains 22 fully covered, 19 deferred and 158 partially
+covered, with 74.5 percent mean coverage. The supplemental ledger accounts for 16
+pinned upstream-delta sources. Thirty-four documentation checks, eleven API groups,
+28 sitemap entries, nineteen table-purpose entries, eight legacy bugs and 30 lessons
+are recorded. New records are BUG-LEGACY-425, LRN-647 through LRN-654 and DIV-353
+through DIV-355. The next functional boundary is the injection prescription worklist
+and bulk signing workflow, followed by report, print and image surfaces. Bulk
+historical migration, formal OpenAPI, target help and exact visual matching remain
+explicit work.
+
+The AI-friendly recommendation is recorded at
+`/home/toukan/openeyes-laravel-ai-friendly-recommendation.md`. Do not wrap
+authenticated clinical or administration pages in generic bot-driven HTML to
+Markdown conversion. After functional porting, generate native Markdown and
+`/llms.txt` from the documentation, page and API inventories, publish OpenAPI and
+JSON Schema as the primary machine interface, and consider protected Markdown or a
+read-only audited MCP facade only when a concrete authorized use case exists. Pint
+continues per slice; Rector is a separate incremental dry-run workstream; branded
+error pages belong in the later UI-parity pass.
 
 ---
 

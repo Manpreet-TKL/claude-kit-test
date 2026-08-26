@@ -1,7 +1,9 @@
 # OeDocumentation campaign - lessons, skill paths, ledger
 
-Working notes for the 2026-08-05 completeness/readability campaign. Bugs go to
-`~/openeyes_unverified_bugs.md` (BUG-127+); this file holds everything else.
+Working notes for the 2026-08-05 completeness/readability campaign. New bugs go
+to `knowledge/oe-documentation-bug-ledger.md` (next id BUG-534); this file holds
+everything else. BUG-001 through BUG-532 remain in the local historical archive
+at `~/openeyes_unverified_bugs.md` and must not be copied into the kit wholesale.
 
 ## Lessons learnt
 
