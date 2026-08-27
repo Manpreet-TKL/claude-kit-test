@@ -165,4 +165,4 @@ Gotchas and adjacent commands:
   defaults are themselves sample-DB ids. They are **Cypress-scoped** (`protected/seeders/README.md`:
   built to stand a scenario up for end-to-end testing), not a documented setup path, so a
   seeder is a fine shortcut while *discovering* a bug but never appears in a ticket's steps;
-  see `c-oe-repro/subs/env-setup.md`, which writes the equivalent admin-UI clicks instead.
+  see `a-oe-repro/subs/env-setup.md`, which writes the equivalent admin-UI clicks instead.

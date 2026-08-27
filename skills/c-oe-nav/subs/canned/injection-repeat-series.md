@@ -51,7 +51,7 @@ Three selector facts that cost the walk several attempts, all load-bearing:
   returns the unrelated patient event list, and `#js-add-select-search-elements` does not
   exist on this version.
 
-Finding a second patient for an R2 variation replay (see `c-oe-repro/subs/discovery.md`):
+Finding a second patient for an R2 variation replay (see `a-oe-repro/subs/discovery.md`):
 
 ```
 docker exec <stack>-db-1 bash -c 'mariadb -uroot -p$(cat $MYSQL_ROOT_PASSWORD_FILE) -N openeyes -e "SELECT ep.patient_id, ep.id, ep.firm_id, COUNT(*) c FROM event ev JOIN episode ep ON ep.id=ev.episode_id JOIN event_type et ON et.id=ev.event_type_id WHERE et.class_name=\"OphTrIntravitrealinjection\" AND ev.deleted=0 GROUP BY ep.id HAVING c>=3 ORDER BY c DESC LIMIT 5"'
@@ -107,7 +107,7 @@ pre-fill; the core finding (no date-input control for Start) held on both runs. 
 Interval specifically on the next walk of this journey.
 
 **Rung 1 confirmation (2026-07-25, snail 1.1.33-dev).** Replayed twice on the spine above,
-with the log bracket from `c-oe-repro/subs/logs.md` around it.
+with the log bracket from `a-oe-repro/subs/logs.md` around it.
 
 - **Predicate:** `ul[data-id="left-start-options"]` reads exactly
   `Today / Urgent / In 1 Week / In 2 Weeks / In 3 Weeks / In 4 Weeks / In 6 Weeks /

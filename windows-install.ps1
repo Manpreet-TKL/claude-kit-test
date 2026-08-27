@@ -520,6 +520,13 @@ try {
             Where-Object { $srcRel -notcontains $_ })
     }
 
+    function Test-ClaudeSkillEnabled {
+        param([System.IO.DirectoryInfo]$Dir)
+        $claudeMeta = Join-Path $Dir.FullName 'agents\claude.yaml'
+        if (-not (Test-Path $claudeMeta)) { return $true }
+        return -not (Select-String -Path $claudeMeta -Pattern '^enabled:\s*false\s*$' -Quiet)
+    }
+
     function Sync-Skills {
         if (-not (Test-Path $skillsSrcDir)) {
             Write-Host '  no skills\ dir in kit - skipped'
@@ -531,7 +538,10 @@ try {
         if (Test-Path $skillsManifest) {
             $prevNames = @(Get-Content $skillsManifest | Where-Object { $_ -ne '' })
         }
-        $currentNames = @((Get-ChildItem -Path $skillsSrcDir -Directory).Name)
+        $currentNames = @(Get-ChildItem -Path $skillsSrcDir -Directory |
+            Where-Object { Test-ClaudeSkillEnabled -Dir $_ } |
+            Sort-Object -Property Name |
+            ForEach-Object { $_.Name })
 
         foreach ($prev in $prevNames) {
             if ($currentNames -contains $prev) { continue }

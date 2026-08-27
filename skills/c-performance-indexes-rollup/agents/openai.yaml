@@ -1,0 +1,3 @@
+interface:
+  display_name: "c-performance-indexes-rollup"
+  short_description: "OE performance_indexes_rollup migration structure and conventions"

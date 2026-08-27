@@ -30,4 +30,4 @@ Procedure (Bash, in order; upload + Save are authorized writes on sample boxes o
 5. Count after + evidence: `docker exec <web> sh -c 'ls -1 /tmp/oe_pdf* 2>/dev/null | wc -l; ls -la /tmp/oe_pdf* 2>/dev/null | head'`
 6. Clean up the test PDF only (`docker exec <web> rm -f /tmp/twopage.pdf`); leave the leaked stubs - they are the evidence.
 
-Expected: unpatched +1 zero-byte `oe_pdfXXXXXX` stub per page (2-page PDF -> +2); patched -> count unchanged. The shipped Steps to Reproduce this verifies are the worked example in `c-oe-repro`'s SKILL.md.
+Expected: unpatched +1 zero-byte `oe_pdfXXXXXX` stub per page (2-page PDF -> +2); patched -> count unchanged. The shipped Steps to Reproduce this verifies are the worked example in `a-oe-repro`'s SKILL.md.

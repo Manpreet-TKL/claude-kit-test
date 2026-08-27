@@ -1035,4 +1035,90 @@ Use this shape:
   and automated route inventories can expose internal exception pages.
 - **Status**: CONFIRMED on the current develop deployment on 2026-08-26.
 
-The next available id is BUG-571.
+## BUG-571: Documentation PDF fails when no patient footer data exists (CONFIRMED)
+
+- **Area**: OeDocumentation single-page PDF generation.
+- **Route**: `/OeDocumentation/default/generatePdf?slug={documentation-page}`.
+- **Repro**:
+  1. Sign in and open any reader-facing documentation page.
+  2. Select **PDF** beside the page title.
+  3. Observe the response instead of a downloaded PDF.
+- **Expected**: OpenEyes generates and downloads a PDF containing the selected
+  documentation page without a patient footer.
+- **Actual**: The request fails with `Undefined array key -1` in
+  `DocumentRenderServicePuppeteer::formatFooter()`. The documentation generator
+  requests one document but supplies no patient, barcode or document-reference
+  values, so the shared formatter tries to copy the last item from an empty
+  array.
+- **Evidence**: Reproduced from the visible **PDF** action on the Basic information
+  documentation page in the current application on 2026-08-26. The debug bar was
+  not used.
+- **Severity**: Medium. Every documentation PDF action is unusable and exposes an
+  internal warning page.
+- **Status**: CONFIRMED on the current develop deployment on 2026-08-26.
+
+## BUG-572: Documentation PDF uses a browser-only host inside Chromium (CONFIRMED)
+
+- **Area**: OeDocumentation single-page PDF generation.
+- **Route**: `/OeDocumentation/default/generatePdf?slug={documentation-page}`.
+- **Repro**:
+  1. Sign in through a browser-facing host and mapped port, such as
+     `http://localhost:81`.
+  2. Open the IOL Master Import Log Viewer documentation page.
+  3. Select **PDF** beside the page title.
+- **Expected**: The renderer loads the print page through its configured internal
+  OpenEyes base URL and returns the selected page as a PDF.
+- **Actual**: The module builds an absolute print URL from the browser request. The
+  local Chromium process then tries to load `http://localhost:81/...` and fails with
+  `net::ERR_CONNECTION_REFUSED` because the mapped browser port is not available in
+  that process's network context.
+- **Evidence**: Reproduced from the visible PDF action on 2026-08-27. The same exact
+  request was then repeated through `Host: localhost:81` after the module passed a
+  relative print route to the shared renderer. It returned status 200,
+  `application/pdf`, 443,058 bytes and a `%PDF-` header. The debug bar was not used.
+- **Severity**: Medium. PDF works only for browser origins the renderer can reach,
+  so normal mapped-port access can leave the feature unusable.
+- **Status**: CONFIRMED on the current develop deployment on 2026-08-27; fixed and
+  live-checked in the local OeDocumentation worktree.
+
+## BUG-573: Documentation Edit Save button is shorter than Cancel (CONFIRMED)
+
+- **Area**: OeDocumentation Markdown editor.
+- **Route**: `/OeDocumentation/default/edit?slug={documentation-page}`.
+- **Repro**:
+  1. Sign in with the installation-level `admin` role.
+  2. Open a documentation page and select **Edit**.
+  3. Scroll to the Save and Cancel actions beneath the Markdown panes.
+- **Expected**: Save and Cancel use matching action-button geometry.
+- **Actual**: The native Save button is 24 pixels high while the styled Cancel link
+  is 33.8 pixels high.
+- **Evidence**: Confirmed on the IOL Master Import Log Viewer editor on 2026-08-27.
+  After the local CSS correction, both controls rendered at exactly 80 by 34.39
+  pixels in the live page. The debug bar was not used.
+- **Severity**: Low. The actions work, but the mismatch makes the editor look
+  unfinished and weakens the visual relationship between the two choices.
+- **Status**: CONFIRMED on the current develop deployment on 2026-08-27; fixed and
+  live-checked in the local OeDocumentation worktree.
+
+## BUG-574: Resolved route triage is presented as unfinished reader work (CONFIRMED)
+
+- **Area**: OeDocumentation navigation, landing page, search and status.
+- **Route**: `/OeDocumentation/default/index` and the shared documentation sidebar.
+- **Repro**:
+  1. Sign in and open the documentation landing page.
+  2. Inspect the landing cards, sidebar roots and search-area filters.
+  3. Open **Needs Review** and compare its records with their recorded verdicts.
+- **Expected**: Internal route-discovery decisions remain auditable without being
+  offered as an unfinished reader manual.
+- **Actual**: **Needs Review** appears in ordinary reader navigation even though all
+  19 retained records already have a decision: 7 MERGE and 12 EXCLUDE.
+- **Evidence**: Every record under `docs/review/` was audited on 2026-08-27 and none
+  lacked a verdict. After the local correction, the live landing page, sidebar and
+  search filters omitted the branch, while Documentation status reported all 19
+  decisions and zero undecided records. The debug bar was not used.
+- **Severity**: Low. No data is at risk, but readers are directed into internal
+  inventory records and the module appears less complete than it is.
+- **Status**: CONFIRMED on the current develop deployment on 2026-08-27; fixed and
+  live-checked in the local OeDocumentation worktree.
+
+The next available id is BUG-575.

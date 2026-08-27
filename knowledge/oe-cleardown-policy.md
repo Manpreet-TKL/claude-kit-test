@@ -601,7 +601,7 @@ had them. For any table a hint pushes toward `S` or `R`, read the
 ## 19. Baseline established 2026-07 (snapshot for delta work)
 
 Artifacts (`<version>.schema.tsv`, `.migrations.txt`, `.fkedges.tsv`,
-`.views.txt`, `.report.txt`, `.scenarios.txt`) live in `~/cleardown/artifacts`;
+`.views.txt`, `.report.txt`, `.scenarios.txt`) live in `~/cleardown/campaign/artifacts`;
 they make the next version's delta a short job instead of a re-derivation.
 
 | | v10 (`release/10.0.x`) | v11 (`release/11.0.x`) | v26.0 (`release/26.0.x`) | v26.1 (`develop`) |
@@ -709,7 +709,7 @@ accusations against the `S` list; parsing statement-by-statement and recording
 real ones and reclassified the rest - `authassignment` among them, which section 19
 had already explained as user-scoped. Strip SQL comments first, or a commented-out
 `DELETE` is read as upstream policy. The parser is
-`~/cleardown-audit/scripts/sweep-oe-cleardown.pl`.
+`~/cleardown/audit/scripts/sweep-oe-cleardown.pl`.
 
 ## 21. A missing migration insert is not evidence of anything
 

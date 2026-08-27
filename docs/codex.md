@@ -14,14 +14,15 @@ cd ~/claude-kit
 
 The installer requires Docker, builds or reuses `claude-kit-codex`, and creates
 only `~/.codex` and `~/.agents`. It links global instructions at
-`~/.codex/AGENTS.md` and every skill at the official personal root,
+`~/.codex/AGENTS.md` and every Codex-enabled skill at the official personal root,
 `~/.agents/skills/<name>`. The `~/.agents/.claude-kit-skills` manifest makes
 re-runs idempotent. Pruning removes only recorded symlinks or links targeting
 this kit; real directories and foreign symlinks remain. A pre-existing real
 `AGENTS.md` is backed up to `AGENTS.md.bak`.
 
-Each run regenerates `skills/<name>/agents/openai.yaml` from `SKILL.md`
-frontmatter. It never creates or changes `~/.codex/config.toml`.
+The presence of `skills/<name>/agents/openai.yaml` opts a skill into Codex. Each
+run updates existing metadata from `SKILL.md` frontmatter but does not create a
+missing file. It never creates or changes `~/.codex/config.toml`.
 
 When `~/.codex/auth.json` is absent, an interactive install starts this device login:
 
@@ -213,9 +214,9 @@ prompt the first time.
 ## Codex compatibility (AGENTS.md + skills)
 
 `-x` also makes the kit legible to Codex itself: `~/.codex/AGENTS.md` is symlinked to
-`claude-md/CLAUDE.md` (Codex's global-instructions file), every kit skill is symlinked
-into `~/.codex/skills/` (manifest-pruned exactly like the Claude ones), and each kit
-skill carries a generated `agents/openai.yaml` (display name, description, and
+`claude-md/CLAUDE.md` (Codex's global-instructions file), each skill carrying
+`agents/openai.yaml` is symlinked into `~/.codex/skills/` (manifest-pruned exactly
+like the Claude ones), and that metadata carries generated display name, description, and
 `allow_implicit_invocation: false` mirroring `disable-model-invocation: true`). Codex
 agents invoke a skill explicitly with `$skill-name`. The read-only kit mount is what
 lets those symlinks resolve inside the container. Full recipe and rationale:

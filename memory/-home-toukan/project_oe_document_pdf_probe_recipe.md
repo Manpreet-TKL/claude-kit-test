@@ -1,6 +1,6 @@
 ---
 name: oe-document-pdf-probe-recipe
-description: OE Document+PDF repro loadout - /c-oe-repro is the sole entry; the paste-ready walk is canned in c-oe-nav subs/canned/document-pdf.md (hand to a Haiku subagent verbatim); grep patched/unpatched in-container before walking
+description: OE Document+PDF repro loadout - /a-oe-repro is the sole entry; the paste-ready walk is canned in c-oe-nav subs/canned/document-pdf.md (hand to a Haiku subagent verbatim); grep patched/unpatched in-container before walking
 metadata:
   type: project
 ---
@@ -8,7 +8,7 @@ metadata:
 Driving a Document-event PDF upload + page-preview generation (form selectors, gs test-PDF
 one-liner, `getImageInfo` trigger, `/tmp/oe_pdf*` leak check) needs zero discovery:
 
-- `/c-oe-repro` is the single entry point (`c-oe-repro-kit` was removed 2026-07-03 at
+- `/a-oe-repro` is the single entry point (`c-oe-repro-kit` was removed 2026-07-03 at
   Manpreet's request; both skills live in `~/claude-kit/skills/`). Companion `c-*` context
   skills (c-oe-nav, c-dblogin, c-oe-code) are loaded by Reading their SKILL.md directly.
 - The exact paste-ready procedure (both OE_ACTIONS lists, gs one-liner, patched-check grep),

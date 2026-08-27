@@ -122,7 +122,7 @@ to `OEShared` / `OELaravel` code, otherwise legacy Yii.
 
 ## Testing
 
-Writing or running PHPUnit tests? Load the `oe-unit-tests` skill for the run commands, patterns and gotchas.
+Writing or running PHPUnit tests? Load the `c-oe-unit-tests` skill for the run commands, patterns and gotchas.
 
 68. PHPUnit 11: attributes not annotations (`#[CoversClass]`, `#[Group]`); data providers must be `static`. -> [testing](subs/testing.md#phpunit-attributes)
 69. Run via `oeunittests` (`--laravel` / `--shared` / `--group`); CI runs PHPUnit on every PR. -> [testing](subs/testing.md#running-tests)
@@ -144,5 +144,5 @@ Writing or running PHPUnit tests? Load the `oe-unit-tests` skill for the run com
 
 ---
 
-Related skills: `oe-unit-tests` (PHPUnit practice), `create-oe-module`, `c-oe-ui`, `c-bash-style`, `c-yiic-command-style`, `c-note-style`.
+Related skills: `c-oe-unit-tests` (PHPUnit practice), `create-oe-module`, `c-oe-ui`, `c-bash-style`, `c-yiic-command-style`, `c-note-style`.
 Extra subs: `subs/validators.md` (OE validator catalogue), `subs/disruptive-ops.md` (literal-`yes` confirms, secrets, demo caveats).

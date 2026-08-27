@@ -1654,7 +1654,7 @@ writeCodexAgentsMd() {
 # The registration's read-only kit mount is what makes these links resolve
 # inside the agent container.
 syncCodexSkills() {
-    linkKitSkills "${codex_skills_dir}" "${codex_skills_manifest}"
+    linkKitSkills "${codex_skills_dir}" "${codex_skills_manifest}" codex
 }
 
 # Adopt every real ~/.claude/projects/<slug>/memory dir into the kit
@@ -1714,7 +1714,7 @@ syncMemory() {
 # bookkeeping and the real-dir / foreign-symlink safety floors all live in
 # lib/skills.sh, shared with codex-install.sh.
 syncSkills() {
-    linkKitSkills "${claude_skills_dir}" "${skills_manifest}"
+    linkKitSkills "${claude_skills_dir}" "${skills_manifest}" claude
 }
 
 # Symlink ~/.claude/CLAUDE.md -> the kit's claude-md/CLAUDE.md, so the live global
@@ -1982,7 +1982,7 @@ echo "Checking skill auto-invocation state${SKILLS_AUTO:+ (-s ${SKILLS_AUTO})}..
 applySkillsInvocation
 echo -e "[Done]\n"
 
-echo "Generating codex skill metadata (agents/openai.yaml)..."
+echo "Updating Codex skill metadata (existing agents/openai.yaml files)..."
 writeOpenAiSkillMeta
 echo -e "[Done]\n"
 

@@ -44,12 +44,12 @@ Under the hood: `printf '%s' "<prompt>" | docker exec -i claude-chrome claude -p
 
 ## Discovery walks
 
-The main paying use is bug discovery for **`c-oe-repro`**, and it comes with one rule, stated there as the whole cost story:
+The main paying use is bug discovery for **`a-oe-repro`**, and it comes with one rule, stated there as the whole cost story:
 
 > **Chrome discovers the path. Puppeteer proves it. Confirmation replays never run in Chrome.**
 
 So a discovery session here is scoped to exactly one job - **find the click path and narrate it**, quoting each control's on-screen label and marking which choices are free. It is not the place to re-run a known repro, verify a fix, or sweep pages. The moment the path is found, distil it into `c-oe-nav/subs/canned/<journey>.md`; every later run of that journey then costs a Haiku subagent instead of an agentic browser session. A Chrome walk that was never canned has been paid for twice.
 
-Before spending a session, check the three gates in `c-oe-repro/subs/discovery.md`: is the journey already canned, does the screen have a row in `c-oe-nav/subs/page-index.md`, and do the form tables already carry the labels. All three miss -> this skill. Any one hits -> rung 1.
+Before spending a session, check the three gates in `a-oe-repro/subs/discovery.md`: is the journey already canned, does the screen have a row in `c-oe-nav/subs/page-index.md`, and do the form tables already carry the labels. All three miss -> this skill. Any one hits -> rung 1.
 
 Repro brief template and prompt-style notes ("Do this now with tool calls, do not answer from memory" to force a live walk) are in `docs/chrome-agent.md`'s "Driving unattended" section.

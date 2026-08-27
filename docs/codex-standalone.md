@@ -33,7 +33,7 @@ The normal run updates Codex. If the global npm installation is root-owned, the 
 | Kit feature | Codex mechanism | Compatibility |
 |---|---|---|
 | Global instructions | `~/.codex/AGENTS.md` links to `claude-md/CLAUDE.md`. | Complete |
-| Skills | Every kit skill links into `~/.agents/skills`; generated `agents/openai.yaml` supplies Codex UI metadata. | Complete; skills are auto-discovered and implicit loading follows each skill's `disable-model-invocation` setting. `$skill-name` always loads explicitly. |
+| Skills | Each skill carrying `agents/openai.yaml` links into `~/.agents/skills`; the file also supplies Codex UI metadata. | Complete; Codex availability is explicit, links are created in name order, implicit loading follows each skill's `disable-model-invocation` setting, and `$skill-name` always loads explicitly. |
 | Four permission tiers | Exported TOML profiles in `settings/codex/permissions/` plus Starlark command rules in `settings/codex/rules/`. | Close translation; Codex evaluates permissions and command prefixes differently, so refine these source files as needed. |
 | Session modes | Launcher maps the existing mode names onto Codex approval policy, reviewer, read-only permissions, or the explicit bypass flag. | Complete within Codex's available controls. |
 | Status line | Native `[tui].status_line` configuration in `~/.codex/claude-kit.config.toml`. | Complete; it uses the requested field list and colors. |

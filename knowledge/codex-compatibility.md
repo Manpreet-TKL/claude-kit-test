@@ -23,7 +23,8 @@ portable recipe).
 - Symlinked skill directories are supported; a smoke test ("list your
   available skills") after rollout confirms in-container discovery.
 - Explicit invocation from a Codex prompt: `$skill-name` (e.g. `$c-oe-code`).
-- Per-skill Codex metadata lives in `agents/openai.yaml` beside `SKILL.md`:
+- Per-skill Codex metadata lives in `agents/openai.yaml` beside `SKILL.md`. Its
+  presence opts the skill into Codex; an absent file leaves the skill unlinked:
 
   ```yaml
   interface:
@@ -34,9 +35,9 @@ portable recipe).
   ```
 
   `allow_implicit_invocation: false` is the analog of Claude's
-  `disable-model-invocation: true`; install.sh generates these from each
-  skill's frontmatter on every run (after any `-s` flip, so they never bake a
-  stale state).
+  `disable-model-invocation: true`; install.sh updates existing metadata from
+  each skill's frontmatter after any `-s` flip, so it never bakes a stale state
+  or silently opts a Claude-only skill into Codex.
 
 ## Container reachability
 

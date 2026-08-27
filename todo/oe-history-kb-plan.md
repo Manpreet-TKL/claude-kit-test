@@ -318,7 +318,7 @@ into the privileged local service, never into training, never into an image laye
 ### 2c. DBA intelligence layer [Sol: read-only advisory, calibrated]
 Corpus side (in core): `growth_profile` (event/audit/`*_version`/blob families),
 `perf_issue` (per version-range: symptom/cause/fix/evidence) seeded from
-`~/Bolton_prod_slow_analysis.md`, `~/claude-kit/knowledge/mariadb-buffer-pool-audit.md`, the cgroup-memory
+`~/client-investigations/bolton/Bolton_prod_slow_analysis.md`, `~/claude-kit/knowledge/mariadb-buffer-pool-audit.md`, the cgroup-memory
 runbook, the `performance_indexes_rollup` migration, and perf-flagged tickets/commits.
 
 Live side - per-site `site-<id>.db`, least-privilege account, query budgets + timeouts,

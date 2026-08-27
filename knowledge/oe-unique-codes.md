@@ -653,4 +653,4 @@ pool incapable of holding a duplicate (and can stop for a human decision while d
 the third repairs what the first two arrive too late for and can only hand out codes the
 pool already holds. Upgrade impact, pre-upgrade audit and test plan for that release, from
 v10.0.32 upwards: `/home/toukan/oe-v10-0-35-unique-codes-upgrade-impact.md`, with the index
-and lock-baseline analysis in `/home/toukan/newmedica-index-change-analysis.md`.
+and lock-baseline analysis in `/home/toukan/client-investigations/newmedica/newmedica-index-change-analysis.md`.

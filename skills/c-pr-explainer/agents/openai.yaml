@@ -1,3 +1,0 @@
-interface:
-  display_name: "c-pr-explainer"
-  short_description: "Turn a finished PR folder into a plain-language explainer .md for non-programmers"

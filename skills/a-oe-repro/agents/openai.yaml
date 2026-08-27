@@ -1,0 +1,3 @@
+interface:
+  display_name: "a-oe-repro"
+  short_description: "OpenEyes bug repro - discover and document a deterministic click-path"

@@ -5,18 +5,18 @@ metadata:
   type: project
 ---
 
-Merged 2026-08-19 from the battery and seed-run memories (same campaign, ~/cleardown).
+Merged 2026-08-19 from the battery and seed-run memories (same campaign, ~/cleardown/campaign).
 
 **Seed run 2026-07-28:** pptest dump migrated to v26.1.0-pre2 (75s, 125 migrations),
 `cleardown --keepConfig=1 --clearUsers=1` with the 130 interim leanings, verify PASSED,
 admin/admin login OK. Seed at `~/pptest-seed-v26-1-template-config.sql` (201M);
 categorised pre/post diff had ZERO violations (S/R/M/G untouched; only P/Q/E/V, I surgery
-and 6 user-pruned C tables changed). Artifacts in `~/cleardown/artifacts/`; side DB
+and 6 user-pruned C tables changed). Artifacts in `~/cleardown/campaign/artifacts/`; side DB
 `pptest` dropped (source dump kept).
 
-**Battery 2026-08-02:** `~/cleardown/battery-pptest.sh -s` PASSED all six runs (a, b, c,
+**Battery 2026-08-02:** `~/cleardown/campaign/battery-pptest.sh -s` PASSED all six runs (a, b, c,
 default, d, e) - verify green, logins OK, idempotency 0 fail, pairwise confinement exact;
-report `~/cleardown/artifacts/pptest.battery.txt`. Fixes it forced: generic self-FK-safe
+report `~/cleardown/campaign/artifacts/pptest.battery.txt`. Fixes it forced: generic self-FK-safe
 subtree prune (`pruneResidue`), kept users' login bindings at dropped institutions die
 with them (scenario c crash), `country` promoted R->S (NOT NULL `address.country_id`).
 
@@ -40,6 +40,6 @@ patient_identifier_type_display_order rowRule (patient search dead on d/e templa
 **Gotchas:** `oe-checkout.sh` hard-aborts when ANY module checkout in the container is
 dirty - `git stash push` inside the module unblocks it without reset --hard (the old
 sample-module compat stash is gone; the fix is upstream in sample develop 060436f, patch
-copy at `~/snail-sample-module-stash-cleardown-compat.patch`). `yiic cleardown report`
+copy at `~/cleardown/snail-sample-module-stash-cleardown-compat.patch`). `yiic cleardown report`
 takes NO profile flags (classification is profile-independent); flags belong to
 index/verify only. Related: [[oe-deploy-conventions]].

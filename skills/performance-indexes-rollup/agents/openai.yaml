@@ -1,3 +1,0 @@
-interface:
-  display_name: "performance-indexes-rollup"
-  short_description: "Author the OE performance_indexes_rollup migration"

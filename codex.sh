@@ -15,6 +15,10 @@ fi
 permission="${CODEX_PERMISSION_TIER:-standard}"
 approval="on-request"
 reviewer="user"
+if [ "${TERM_PROGRAM:-}" = "vscode" ]; then
+    export CODEX_TUI_DISABLE_KEYBOARD_ENHANCEMENT=1
+fi
+
 case "${CODEX_MODE:-auto}" in
     default) approval="untrusted" ;;
     plan) permission=":read-only" ;;
@@ -26,10 +30,6 @@ case "${CODEX_MODE:-auto}" in
         ;;
     *) echo "Unknown CODEX_MODE '${CODEX_MODE}'" >&2; exit 1 ;;
 esac
-
-if [ "${TERM_PROGRAM:-}" = "vscode" ]; then
-    export CODEX_TUI_DISABLE_KEYBOARD_ENHANCEMENT=1
-fi
 
 exec "${codex_bin}" --profile claude-kit \
     -c "model=\"${CODEX_MODEL:-gpt-5.6-sol}\"" \

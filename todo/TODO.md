@@ -2,7 +2,7 @@
 
 One task per line, newest at the bottom - see README.md for the format.
 
-- [ ] 2026-08-10 - Run the TKLS full-corpus analysis once the download into ~/tkls-corpus-full is verified (plan: tkls-corpus-analysis-plan.md) [pending, execute on request]
+- [ ] 2026-08-10 - Run the TKLS full-corpus analysis once the download into ~/jira-corpus/full is verified (plan: tkls-corpus-analysis-plan.md) [pending, execute on request]
 - [ ] 2026-08-11 - TKLS Jira estate: 21 pending dashboard/filter/project changes, human-applied in the Jira UI; afterwards re-dump both boards and diff (plan: jira-estate-plan.md, full plan: jira-estate-full-plan.md) [none applied yet]
 - [ ] 2026-08-19 - OpenEyes -> Laravel rewrite (plan: openeyes-laravel-rewrite-plan.md, master plan: openeyes-laravel-rewrite-master-plan.md) [plan in development, draft v0.6 of 2026-08-16; master plan v2 2026-08-19 (enriched, reconciled with v0.6, §20-§27 + Appendices A-D)]
 - [ ] 2026-08-19 - OpenEyes end-user Playwright harness: stand the UI-only harness up (plan: oe-playwright-harness-plan.md) [dormant - approved 2026-06-25, blocked on stack + target env]

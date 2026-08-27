@@ -47,7 +47,7 @@ satellite>. Target <branch - e.g. release/26.0.x>. Back-port? list both.
 > on-screen label (quoted) and where it sits. Client-agnostic (actor by role, data by
 > *kind*, never creds/seed/sample-DB); no container names, paths or CLI in either block.
 > Start at login if a session is needed; end on an observable check. Rules, worked example
-> and special cases live in the **`c-oe-repro`** skill - run it if the steps aren't already
+> and special cases live in the **`a-oe-repro`** skill - run it if the steps aren't already
 > in this conversation.
 > 1. Log in.
 
@@ -132,11 +132,11 @@ Paste each block into the matching section of the live OE PR template.
 
 Section shape by type: the Steps/Current/Expected triad fits Bug and Regression; drop it for feature/planning types. Skip lighter sections when the change is self-evident; never pad; if a fault can't be reduced to clean steps (intermittent, data-dependent), say what you can - don't fabricate.
 
-## Steps to Reproduce - owned by `c-oe-repro`
+## Steps to Reproduce - owned by `a-oe-repro`
 
-The rules, the worked example, and the special cases (performance/refactor tickets with no repro, client-data-dependent faults, intermittent alerts) now live in the **`c-oe-repro`** skill. If the Steps to Reproduce aren't already in this conversation, run `c-oe-repro` to produce them before assembling the folder, then paste its blockquote into the `## Steps to Reproduce` block. Essentials it enforces: frontend-only, followable blind by someone who has never used the page, client-agnostic (no creds/seed/hospital numbers), plain language (no code), ends on an observable check. Drop the section entirely for types with no user-observable behaviour (performance/internal refactor).
+The rules, the worked example, and the special cases (performance/refactor tickets with no repro, client-data-dependent faults, intermittent alerts) now live in the **`a-oe-repro`** skill. If the Steps to Reproduce aren't already in this conversation, run `a-oe-repro` to produce them before assembling the folder, then paste its blockquote into the `## Steps to Reproduce` block. Essentials it enforces: frontend-only, followable blind by someone who has never used the page, client-agnostic (no creds/seed/hospital numbers), plain language (no code), ends on an observable check. Drop the section entirely for types with no user-observable behaviour (performance/internal refactor).
 
-`c-oe-repro` returns **up to two blockquotes** - an optional `**Environment setup**` block, then the steps themselves - because a developer configures their sample database once to match the reporter's instance and only then follows the repro. Paste both into this section, setup first. **A missing setup block is normal, not an omission**: most faults need no configuration a stock sample database lacks, and the output is then exactly the single blockquote this template has always taken.
+`a-oe-repro` returns **up to two blockquotes** - an optional `**Environment setup**` block, then the steps themselves - because a developer configures their sample database once to match the reporter's instance and only then follows the repro. Paste both into this section, setup first. **A missing setup block is normal, not an omission**: most faults need no configuration a stock sample database lacks, and the output is then exactly the single blockquote this template has always taken.
 
 It also returns a plain-text **Evidence** list (version, R1/R2 replay results, the terminal predicate, the support identifier, and a path to a log bundle). That is for you, not a paste target - nothing from it goes into the ticket description. Log slices and screenshots are ticket *attachments*; the parts a reviewer needs in prose go in *Notes for Reviewers*.
 

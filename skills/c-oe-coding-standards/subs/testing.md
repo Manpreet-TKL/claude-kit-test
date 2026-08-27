@@ -3,7 +3,7 @@
 PHPUnit (v11) for code-level tests, Cypress for genuine browser interactivity. Prefer fast backend
 tests; reserve Cypress for JS/UI that can't be exercised from the backend. CI runs PHPUnit on every PR.
 
-**Writing or running PHPUnit tests? Load the `oe-unit-tests` skill** - it holds the run commands,
+**Writing or running PHPUnit tests? Load the `c-oe-unit-tests` skill** - it holds the run commands,
 factory/idiom patterns and environment gotchas that used to live in this file; this file keeps only
 the standards.
 
@@ -17,7 +17,7 @@ groups (`oeunittests --list-groups`).
 
 Run through the `oeunittests` helper so the right bootstrap is applied per layer (see `docs/testing`):
 `oeunittests --group=<group>` / `--shared oe-shared/tests` / `--laravel oe-laravel/tests`. Direct
-`phpunit` invocation, paths and container caveats: `oe-unit-tests` skill.
+`phpunit` invocation, paths and container caveats: `c-oe-unit-tests` skill.
 
 ## Base classes
 
@@ -33,7 +33,7 @@ A `sample-data` test must leave the DB untouched. Use **exactly one** isolation 
 `OEDbTestCase`: `WithTransactions` (**preferred** - each test in a rolled-back transaction; unusable
 if the code under test opens its own transactions or makes real server requests) or
 `ResetsCreatedModels` (declare every created model, child before parent). Trait mechanics and
-examples: `oe-unit-tests` skill.
+examples: `c-oe-unit-tests` skill.
 
 ## Test scenarios
 
@@ -44,13 +44,13 @@ paths, edge cases, and different user roles or states where the behaviour varies
 
 Use the Laravel-style model factories, not hand-rolled setup: `withoutParents()` to suppress
 parents, `unique()` faker for constrained fields, `withDefaultRelations()` (not `configure()`),
-`firstOrCreate` for lookups, `Event::factory()->forEventType*`. Recipes: `oe-unit-tests` skill.
+`firstOrCreate` for lookups, `Event::factory()->forEventType*`. Recipes: `c-oe-unit-tests` skill.
 
 ## Application requests
 
 Feature-test the full Yii request lifecycle without Cypress via the `MakesApplicationRequests`
 trait (on an `OEDbTestCase`, usually with `WithTransactions`): query-string GET params,
-`actingAs($user, $institution)`, wrapper assertions. Mechanics: `oe-unit-tests` skill.
+`actingAs($user, $institution)`, wrapper assertions. Mechanics: `c-oe-unit-tests` skill.
 
 ## Process isolation
 

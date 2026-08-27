@@ -121,5 +121,5 @@ scans do not know how to skip them.
 
 - ~/oe-deploy/docs/mariadb-query-profiling.md - digests, ANALYZE, slow log
 - ~/oe-deploy/docs/mariadb-innodb-status.md - hit rate, LRU, free buffers
-- ~/Bolton_prod_slow_analysis.md - the request_routine analysis in full
-- ~/Bolton_docker_cgroup_memory_analysis.md - host-level memory accounting
+- ~/client-investigations/bolton/Bolton_prod_slow_analysis.md - the request_routine analysis in full
+- ~/client-investigations/bolton/Bolton_docker_cgroup_memory_analysis.md - host-level memory accounting

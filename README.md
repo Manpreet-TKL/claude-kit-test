@@ -24,6 +24,9 @@ bash codex.sh               # run sandboxed host Codex in the current directory
 │   ├── TODO.md             #   the queue - one task per line, removed when done
 │   └── <slug>-plan.md      #   plans being developed / awaiting execution
 ├── knowledge/              # learnings from finished work; read on demand when a topic comes up
+├── oe_bugs/                # OpenEyes bugs found off-ticket (doc campaigns, code sweeps), by version
+│   ├── verified/           #   reproduced in a browser against a stated commit/tag
+│   └── unverified/         #   code-level findings or reports not yet reproduced
 ├── handoff/                # handoff docs written by the c-handoff skill (contents gitignored; never read unless asked)
 ├── memory/
 │   └── <project-slug>/     # adopted from ~/.claude/projects/<slug>/memory and symlinked back (versioned backup)
@@ -60,23 +63,24 @@ bash codex.sh               # run sandboxed host Codex in the current directory
 │                           #   ~/.claude/mcp-env/.github.env      (install.sh -g)
 │                           #   ~/.claude/mcp-env/.aws.env         (install.sh -a)
 │                           #   ~/.claude/oe-chrome-agent/         (install.sh -w, walker logins)
-├── skills/                 # 49 dirs, each symlinked into ~/.claude/skills/<name> (and into the Codex homes)
-│   │                       #   context skills are prefixed c-; every skill states disable-model-invocation
+├── skills/                 # 50 dirs, linked by agent eligibility in deterministic name order
+│   │                       #   user-authored actions use a-; user-authored context uses c-
 │   │                       #   explicitly, and the kit currently ships all of them auto-invokable
 │   ├── c-frontend-design/  #   auto-load ┐ no disable-model-invocation at all -
 │   ├── c-oe-helm/          #   auto-load │ the model pulls these in itself when
 │   ├── c-oe-ui/            #   auto-load │ the task matches, and install.sh -s
-│   ├── c-oe-docs/          #   auto-load │ never touches them
+│   ├── a-oe-docs/          #   auto-load │ never touches them
 │   ├── c-ascii/            #   auto-load ┘ (non-ASCII convert-or-keep pitfalls)
 │   ├── c-oe-code/ c-oe-db-schema/ c-oe-coding-standards/ c-oe-components/           # OpenEyes
 │   ├── c-oe-deploy/ c-oeimagebuilder/ c-pasapi/ c-mirth/ c-mcchannels/ c-oe-interop/  # OpenEyes
-│   ├── c-mirth-estate/ c-oe-nav/ c-oe-repro/                    # OpenEyes estate + UI walking
+│   ├── c-mirth-estate/ c-oe-nav/ a-oe-repro/                    # OpenEyes estate + UI walking
 │   ├── c-oe-iolmaster-import/ c-oe-payload-processor/           # OpenEyes file processors
 │   ├── c-bash-style/ c-yiic-command-style/ c-note-style/        # house style
 │   ├── c-claude-kit/ c-dblogin/ c-docbuilder-docset/ c-notes-app/   # kit/repo context
-│   ├── c-clarify/ c-grill-me/ c-handoff/ c-pr-explainer/        # c-named but action skills
-│   ├── create-pr/ create-oe-pr/ create-oe-module/ new-feature/ performance-indexes-rollup/  # workflow
-│   ├── teach/ release-radar/ compact-memories/ oe-unit-tests/   # workflow
+│   ├── a-clarify/ a-pr-explainer/                               # user-authored actions
+│   ├── c-performance-indexes-rollup/ c-oe-unit-tests/            # context-only references
+│   ├── create-pr/ create-oe-pr/ create-oe-module/ new-feature/   # imported or legacy workflows
+│   ├── teach/ release-radar/ compact-memories/ c-grill-me/ c-handoff/  # imported or legacy names
 │   ├── oe-probe-chrome/ oe-probe-playwright/                    # OE UI probes (walker / Playwright)
 │   ├── jiramcp/ githubmcp/ awsmcp/ codexmcp/ devopstickets/     # MCP preflight - no "Context loaded" ack
 │   └── codex-grill/ codex-swarm/                                # built on codexmcp; confirm cost before spawning
@@ -98,9 +102,9 @@ The installer writes / merges:
 - `~/.claude/settings.json` - status line, autocompact env vars, permissions block, shift-enter binding.
 - `~/.claude/statusline.sh` - the status line renderer (**symlinked** to `settings/statusline.sh`).
 - `~/.claude/CLAUDE.md` - **symlinked** to `claude-md/CLAUDE.md` in this kit (never-commit/push rules + condensed Karpathy guidelines); editing the kit file is live.
-- `~/.claude/skills/<name>` - symlinked to `skills/<name>` in this kit.
+- `~/.claude/skills/<name>` - symlinked to each Claude-enabled skill in this kit.
 - `~/.claude/.claude-kit-skills` - manifest of the skill links it created, used to prune the ones for skills since removed from the kit.
-- With `-x`, also `~/.codex/AGENTS.md` and `~/.codex/skills/<name>` (Codex compat), plus `skills/<name>/agents/openai.yaml` **inside the kit** - regenerated from each `SKILL.md`'s frontmatter on every run, so don't hand-edit them.
+- With `-x`, also `~/.codex/AGENTS.md` and each Codex-enabled `~/.codex/skills/<name>` compat link. An existing `skills/<name>/agents/openai.yaml` opts a skill into Codex and has its generated fields refreshed from `SKILL.md`; the installer never creates a missing one.
 
 **No secret ever lives inside this repo.** Tokens, cookies, keys and saved sessions go under `~/.claude/` - `~/.claude/mcp-env/` for the Atlassian, GitHub and AWS credentials, `~/.claude/oe-chrome-agent/` for the Chrome walker's two saved logins. This kit is a git repo with a remote, so anything in its working tree is one `git add -f`, one `.gitignore` edit or one archive away from being published; `.gitignore` is a convenience, not a security control. What the installer *does* keep in the gitignored `generated/` folder is machine-local **non-secret** config (Codex model knobs, the walker's network/URL, the MCP startup-gate flags) - see [Backing up generated config](#backing-up-generated-config). MCP server registrations themselves are written by the `claude` CLI to `~/.claude.json` (not `settings.json`), and those *do* embed the token, which is why `~/.claude.json` is also outside the kit.
 
@@ -194,11 +198,13 @@ Because it's a symlink, editing `claude-md/CLAUDE.md` rolls out immediately - no
 
 ### 7. Skills
 
-`install.sh` symlinks each directory under `skills/` into `~/.claude/skills/<name>`. Edit a skill in this kit and the change is live without re-installing.
+`install.sh` symlinks each Claude-enabled directory under `skills/` into `~/.claude/skills/<name>`. Edit a linked skill in this kit and the change is live without re-installing.
+
+**Naming and agent availability.** A user-authored action or workflow is named `a-<topic>`; a user-authored context-only skill is named `c-<topic>`. Imported and built-in skills keep their upstream names. `agents/openai.yaml` opts a skill into Codex. Claude is enabled by default; `agents/claude.yaml` with `enabled: false` makes a skill Codex-only. A Claude-only skill therefore omits `agents/openai.yaml`. Installers recreate links and manifests in C-locale name order, which gives both agents the same deterministic alphabetical source order; an agent UI can still apply its own sorting.
 
 **How a skill gets its context in front of Claude - two modes:**
 
-- **Auto-load (no `disable-model-invocation`).** Claude reads every skill's `name` + `description` at startup and decides *on its own* to pull the whole `SKILL.md` into context the moment a task matches the description. You don't name these - they load when relevant. Today: **`c-ascii`, `c-frontend-design`, `c-oe-docs`, `c-oe-helm`, `c-oe-ui`**. For these the **`description:` is the trigger**, so it's written to fire on the right task.
+- **Auto-load (no `disable-model-invocation`).** Claude reads every skill's `name` + `description` at startup and decides *on its own* to pull the whole `SKILL.md` into context the moment a task matches the description. You don't name these - they load when relevant. Today: **`c-ascii`, `c-frontend-design`, `a-oe-docs`, `c-oe-helm`, `c-oe-ui`**. For these the **`description:` is the trigger**, so it's written to fire on the right task.
 - **Auto-invokable (`disable-model-invocation: false`).** Same behaviour, but flipped by `install.sh -s`. **This is the kit's current committed state for every other skill.**
 - **Manual (`disable-model-invocation: true`).** Claude will *never* auto-load these; the body only enters context when you (or a plan) invoke the skill **by name** (`/c-oe-code`, `/jiramcp`, ...). Nothing in the kit sits here today, but it's one `-s off` away.
 
@@ -214,7 +220,7 @@ So invoking a skill just to prime context returns a one-word ack instead of a 2,
 
 Each repo-specific skill follows the **stable mental model in `SKILL.md`, volatile detail in `subs/*.md`** convention. See **[docs/skills.md](docs/skills.md)**.
 
-**Symlink lifecycle.** `install.sh` records exactly which skills it symlinked in `~/.claude/.claude-kit-skills`. On every run it (1) re-links all current kit skills, and (2) **prunes** any `~/.claude/skills/<name>` *symlink* that this kit created but that has since been removed from `skills/` - so deleting a skill from the kit and re-running cleans it out of `~/.claude`. Two safety floors: a destination that is a **real directory** (your hand-added skill) is skipped with a warning and never touched, and a **symlink pointing somewhere other than this kit** (added by hand or another tool) is left alone. Only kit-created symlinks are ever removed.
+**Symlink lifecycle.** `install.sh` records exactly which skills it symlinked in `~/.claude/.claude-kit-skills`. On every run it (1) re-links current eligible kit skills in name order, and (2) **prunes** any managed `~/.claude/skills/<name>` symlink for a removed or Claude-disabled skill. Codex uses the same process for skills without `agents/openai.yaml`. Two safety floors: a destination that is a **real directory** (your hand-added skill) is skipped with a warning and never touched, and a **symlink pointing somewhere other than this kit** (added by hand or another tool) is left alone. Only kit-created symlinks are ever removed.
 
 ### 8. Reset to first-install state (`--reset`)
 
@@ -359,11 +365,11 @@ tells agents never to commit (the human commits). `mcp__codex` is allowed on
 write action. Full setup, model/sandbox tuning, and teardown:
 **[docs/codex.md](docs/codex.md)**.
 
-`-x` also wires **Codex compat** so the same instructions and skills reach Codex:
-`~/.codex/AGENTS.md` and `~/.codex/skills/<name>` are symlinked back into this kit
-(manifest `~/.codex/.claude-kit-skills`; `-X` unwires them), and each skill's
-`agents/openai.yaml` is regenerated from its frontmatter - display name, description,
-and `allow_implicit_invocation: false` mirroring `disable-model-invocation: true`.
+`-x` also wires **Codex compat** so the same instructions and Codex-enabled skills reach Codex:
+`~/.codex/AGENTS.md` and eligible `~/.codex/skills/<name>` entries are symlinked back into this kit
+(manifest `~/.codex/.claude-kit-skills`; `-X` unwires them). An existing
+`agents/openai.yaml` is the Codex opt-in and its generated fields are refreshed from
+frontmatter, including `allow_implicit_invocation: false` mirroring `disable-model-invocation: true`.
 See also [section 19](#19-standalone-codex---codex-installsh--codexsh).
 
 Neither flag = `mcpServers.codex` is left exactly as-is on re-runs.
@@ -393,7 +399,7 @@ skill on auto and turn `-s off` into a permanent no-op. A skill added to the kit
 the first `-s on` is appended at its own current value.
 
 Only an *existing* flag line inside the frontmatter is touched - the deliberate
-always-auto skills (`c-ascii`, `c-frontend-design`, `c-oe-docs`, `c-oe-helm`, `c-oe-ui`) carry no
+always-auto skills (`c-ascii`, `c-frontend-design`, `a-oe-docs`, `c-oe-helm`, `c-oe-ui`) carry no
 flag and are ignored in both directions. The change is a plain git diff in `skills/` -
 revert with git if ever needed.
 
@@ -470,7 +476,8 @@ bash codex.sh exec "review the changes"  # normal Codex arguments pass straight 
 
 It accepts the full installer flag set and implements each capability through Codex's
 own profile, permission, rule, MCP, memory, archive, skill, and TUI mechanisms. It links
-`~/.codex/AGENTS.md` to the kit instructions and every skill into `~/.agents/skills`.
+`~/.codex/AGENTS.md` to the kit instructions and each skill carrying
+`agents/openai.yaml` into `~/.agents/skills`.
 The launcher also applies the VS Code keyboard workaround without changing any other
 CLI environment. Usage, the feature table, permission translation, memory preservation,
 Docker limits, browser walker, and verification are in

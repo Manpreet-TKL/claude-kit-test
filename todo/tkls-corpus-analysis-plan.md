@@ -1,7 +1,7 @@
 # TKLS full-corpus analysis plan (pending - execute on request)
 
 Written 2026-08-10, while the full-project download (9,940 tickets, all
-attachments) was running into `~/tkls-corpus-full/` (screen `tkls-corpus`).
+attachments) was running into `~/jira-corpus/full/` (screen `tkls-corpus`).
 Pipeline lessons and corpus layout live in `jira-corpus-triage.md`; this file is
 the concrete analysis brief. Goals: SQL notes, doc-gap detection from
 training-style asks, major bugs, error logs + fixes, KB-article candidates,
@@ -15,7 +15,7 @@ tickets carry SQL, Sonnet 5 subagents can note them all cheaply; the 105-ticket
 open-DevOps sample hit 13% on `select..from`, so the real count may be far
 higher, which is exactly why counting precedes analysing.
 
-Grounding measured on `~/tkls-corpus-rest/` (July sample): ADF-flattened text is
+Grounding measured on `~/jira-corpus/pilot-rest-duplicate/` (July sample): ADF-flattened text is
 ~14% of raw JSON (~2-4k tokens/ticket); flattened sizes run min 0.4 KB / p25
 1.7 KB / median 3.6 KB / p75 6.8 KB, so a fat tail of near-one-sentence tickets
 exists; `.fields.issuelinks` targets carry dev-project keys (`OE-...` and other
@@ -27,11 +27,11 @@ are unusable as detectors.
 
 ## Phase A - verify the download (bash only)
 
-Against `~/tkls-corpus-full/`: keys.txt count vs `ls issues/ | wc -l`; every
+Against `~/jira-corpus/full/`: keys.txt count vs `ls issues/ | wc -l`; every
 file passes `jq -e '.key'`; `.fields.comment.total == (.fields.comment.comments|length)`
 everywhere; attachment metadata `[.id,.size]` reconciles with on-disk files.
 Any failure: re-run the downloader with `-r` (resumes) until clean:
-`bash ~/claude-kit/scripts/jira_filter_download.sh -j 'project = TKLS ORDER BY created ASC' -a -r -o /home/toukan/tkls-corpus-full`
+`bash ~/claude-kit/scripts/jira_filter_download.sh -j 'project = TKLS ORDER BY created ASC' -a -r -o /home/toukan/jira-corpus/full`
 
 ## Phase B - derived text + index (zero tokens)
 
@@ -141,7 +141,7 @@ All read `text/KEY.txt` from disk, never via MCP:
   and names the linked dev ticket. 300 tickets x ~3.5k in + ~400 out is roughly
   1M Sonnet tokens; at 1,000+ run a Haiku keep/drop triage first.
 - **training**: Sonnet batches asks into a topic table; check topics against the
-  docs (`c-oe-docs`) for gaps.
+  docs (`a-oe-docs`) for gaps.
 - **majorbug / rca / kbfix**: Sonnet per-ticket notes, later merged into KB
   drafts (`c-note-style` format) - restricted to the oebug-nodev side of the
   split; devfixed tickets get no notes (GitHub already documents the code fix).

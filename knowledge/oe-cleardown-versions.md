@@ -441,7 +441,7 @@ migration behind it is drift wearing the expected label.
   the volume: host edits are visible in the container immediately and `docker cp`
   is needed in neither direction.
 - **`php` is not on the host** - lint through the container:
-  `docker exec -i <web> php -l < ~/cleardown/CleardownCommand.php`.
+  `docker exec -i <web> php -l < ~/cleardown/campaign/CleardownCommand.php`.
 - **`docker exec -i` inside a `while read` loop eats the loop's input.** The `-i`
   says "attach stdin", and the loop's stdin is the list being read, so the first
   call swallows the remainder and the loop ends after one iteration. A per-table

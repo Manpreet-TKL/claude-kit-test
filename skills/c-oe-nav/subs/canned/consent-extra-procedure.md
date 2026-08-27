@@ -107,7 +107,7 @@ risks' content** (confirmed 2026-07-25, 1.1.33-dev; register entry BUG-037).
 - **No server signature, by construction** - the wipe is pure client-side JS and never
   reaches PHP. `application.log` carried only unrelated "Failed to set unsafe attribute"
   mass-assignment warnings from rendering the consent form, and no new exception log
-  appeared. Exactly the silent-fault case `c-oe-repro/subs/logs.md` warns about: the
+  appeared. Exactly the silent-fault case `a-oe-repro/subs/logs.md` warns about: the
   bracket was never going to fire and the JS predicate is the entire oracle.
 - **Not confirmed (still):** the register's claim that the underlying `<textarea>.value` survives
   and that Save is then rejected with "Benefits and risks ... cannot be blank". Neither

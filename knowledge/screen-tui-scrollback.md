@@ -37,15 +37,74 @@ The Codex profile also contains:
 ```toml
 [tui]
 alternate_screen = "never"
-raw_output_mode = true
+raw_output_mode = false
+terminal_title = []
 ```
 
-These native settings make transcript output suitable for Screen history and
-selection. They are scoped to Codex; the shared Page Up binding supplies the same
-Screen history access for the other managed agent alias.
+`alternate_screen = "never"` leaves completed output in Screen history.
+`raw_output_mode = false` uses Codex's default rich renderer. This is terminal
+Markdown styling, not a browser preview: headings and code are styled and code
+fences are hidden, but heading and list markers can remain visible.
+`terminal_title = []` disables the animated title writes that GNU Screen can
+mishandle while Codex is working.
+
+Ctrl-t opens Codex's transcript view for easier in-app reading. Page Up remains
+the full Screen-history fallback. These settings are scoped to Codex; the shared
+Page Up binding supplies Screen history access for the other managed agent alias.
 
 Do not use the wheel for Screen history. If wheel input has already populated an
 otherwise empty prompt, Ctrl-u clears that unsent prompt line.
+
+## Codex prompt corruption while working
+
+A Codex-only failure can put transient text such as `toukan toukan` into the
+prompt while a turn is running. It stops when the display stops changing.
+Screen hardcopies do not show extra prompt input, so it is display corruption,
+not agent output or stored composer text.
+
+The first suspected cause was Codex's terminal keyboard-enhancement protocol.
+The launcher now exports the compatibility setting before selecting the session
+mode:
+
+```bash
+if [ "${TERM_PROGRAM:-}" = "vscode" ]; then
+    export CODEX_TUI_DISABLE_KEYBOARD_ENHANCEMENT=1
+fi
+```
+
+Two fresh processes inherited this setting and still reproduced the corruption.
+It remains a useful VS Code keyboard compatibility guard, but it is not the fix
+for the working-only redraw problem.
+
+OpenAI Codex issue 29598 reports the matching GNU Screen behavior. While a turn
+is active, Codex's default terminal title contains an animated spinner and the
+project name. Each frame emits a BEL-terminated terminal-title sequence. GNU
+Screen can expose those updates as repeated beeps, visual activity, or disruptive
+title updates. The project component also explains why the repeated visible word
+can be the home directory name.
+
+Disable the title surface in the Codex profile:
+
+```toml
+[tui]
+terminal_title = []
+```
+
+The official sample configuration defines an empty list as the way to clear the
+title. This removes the activity-driven title writes without disabling normal
+TUI status output.
+
+An already-running Codex keeps its startup TUI settings. Do not send keys to it
+or restart it during another task. Let it finish, then start a fresh Codex with
+the managed alias. To switch an existing session from raw output to rich output,
+enter `/raw off` yourself; this does not apply the title fix.
+
+To verify the VS Code keyboard guard on a new process, find its native Codex PID
+and run:
+
+```bash
+tr '\0' '\n' </proc/<codex-pid>/environ | rg '^CODEX_TUI_DISABLE_KEYBOARD_ENHANCEMENT=1$'
+```
 
 ## Recovery and diagnosis
 
@@ -82,14 +141,19 @@ bash /home/toukan/claude-kit/scripts/screen5_install.sh
 
 ## Verification
 
-1. Start either managed agent alias in a fresh VS Code terminal.
-2. Produce more than one page of output.
-3. Press Page Up and confirm Screen reports copy mode.
-4. Press Page Up again and confirm the viewport moves without changing the prompt.
-5. Press Escape and confirm normal input resumes.
+1. Start the managed Codex alias in a fresh VS Code terminal.
+2. Request headings, a list, and a code block; confirm they use rich terminal
+   styling and that code fences are hidden.
+3. Run a turn long enough to show the working state; confirm no project-name text
+   appears in the prompt.
+4. Press Ctrl-t and confirm the transcript view opens and scrolls.
+5. Exit that view, press Page Up twice, and confirm Screen history moves without
+   changing the prompt. Press Escape to leave copy mode.
 
 Sources:
 
 - https://www.gnu.org/software/screen/manual/html_node/Scrollback.html
 - https://www.gnu.org/software/screen/manual/html_node/Copy.html
 - https://developers.openai.com/codex/config-reference
+- https://github.com/openai/codex/issues/16189
+- https://github.com/openai/codex/issues/29598

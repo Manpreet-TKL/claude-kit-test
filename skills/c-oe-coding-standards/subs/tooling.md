@@ -4,6 +4,8 @@ Three codespaces (`yii`, `laravel`, `shared`) x three tools (phpcs, phpstan, rec
 config suffixed `.yii` / `.laravel` / `.shared`. Run the config for the layer you touched. Drive
 everything through composer scripts - list them with `composer run-script --list`.
 
+For PR job ownership, changed-file selection, and local reproduction, read [PR CI](pr-ci.md).
+
 ## phpcs
 
 Base style is PSR-12 (`phpcs.xml`). Check/auto-fix changed files before committing; target files after `--`.

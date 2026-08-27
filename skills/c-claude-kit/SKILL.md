@@ -8,7 +8,7 @@ disable-model-invocation: false
 
 When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself - it just loads knowledge; act only on instructions given in the conversation.
 
-`~/claude-kit` is Manpreet's git-tracked, single-script setup for Claude Code - the **source of truth**; `~/.claude/` is generated from it. **As much as possible the kit links rather than copies** - `CLAUDE.md`, `statusline.sh`, and every skill live in `~/.claude/` as symlinks back into the kit, so editing a kit file is live with no re-install; only `settings.json` (jq-merged) needs an `install.sh` re-run. `install.sh` configures `~/.claude/` idempotently: re-runnable, backs up `settings.json`/`CLAUDE.md` to `.bak` only when content changes, rebuilds skill symlinks every run. It also **manages the CLI itself** - installs Claude Code if `~/.claude` is absent, otherwise runs `claude update` (skip with `--no-update`/`-U`). Auth, `history.jsonl`, and `projects/` are never touched, except by `--fresh`, which backs them up and restores them across a full wipe.
+`~/claude-kit` is Manpreet's git-tracked, single-script setup for Claude Code - the **source of truth**; `~/.claude/` is generated from it. **As much as possible the kit links rather than copies** - `CLAUDE.md`, `statusline.sh`, and each Claude-enabled skill live in `~/.claude/` as symlinks back into the kit, so editing a kit file is live with no re-install; only `settings.json` (jq-merged) needs an `install.sh` re-run. `install.sh` configures `~/.claude/` idempotently: re-runnable, backs up `settings.json`/`CLAUDE.md` to `.bak` only when content changes, rebuilds skill symlinks every run. It also **manages the CLI itself** - installs Claude Code if `~/.claude` is absent, otherwise runs `claude update` (skip with `--no-update`/`-U`). Auth, `history.jsonl`, and `projects/` are never touched, except by `--fresh`, which backs them up and restores them across a full wipe.
 
 ## Layout
 
@@ -16,7 +16,7 @@ When loaded as context with no task, reply only `Context loaded.` This skill is 
 - `claude-md/CLAUDE.md` - symlinked into `~/.claude/CLAUDE.md` (editing it is live).
 - `settings/permissions/<tier>.json` - the four permission tiers (deny -> ask -> allow).
 - `settings/{shift-enter,mcp-atlassian}.json` - jq-merged settings fragments.
-- `skills/<name>/` - each symlinked into `~/.claude/skills/<name>`.
+- `skills/<name>/` - symlinked into the enabled agents' skill roots.
 - `memory/<project-slug>/` - Claude's auto-memory, adopted from `~/.claude/projects/<slug>/memory/` and symlinked back (git-tracked = versioned backup; edits live). Maintained with the `compact-memories` skill (verify, merge, archive, rewrite MEMORY.md).
 - `scripts/` - host helpers; notably `screen5_install.sh` (GNU screen 5 from source + the claude-in-screen alias, via managed blocks in `~/.screenrc`/`~/.bash_aliases`). install.sh's `screenHint` probes both and points at it when a piece is missing.
 - `knowledge/` - learnings from previous projects, read on demand when a topic comes up; fed by `compact-memories` archiving resolved work.
@@ -39,7 +39,7 @@ The kit has a git remote, so **`.gitignore` is not a security control** - a giti
 - `CLAUDE.md` - global rules (never commit/push; condensed coding guidelines); symlinked from the kit.
 - `skills/*` - symlinks back to this kit, so editing a skill here is live - no re-install.
 - `.claude-kit-skills` - manifest of skill names this script symlinked, used to prune links for skills later removed from the kit.
-- With `-x`, also outside `~/.claude`: the `~/.codex` compat links above, plus - in the kit itself - `skills/<name>/agents/openai.yaml`, generated **every run** from each SKILL.md's frontmatter after any `-s` flip (Codex display name/description; `allow_implicit_invocation: false` mirrors `disable-model-invocation: true`). Re-run install.sh to regenerate; don't hand-edit them.
+- With `-x`, also outside `~/.claude`: the `~/.codex` compat links above. In the kit, an existing `skills/<name>/agents/openai.yaml` opts that skill into Codex and is updated from `SKILL.md` frontmatter after any `-s` flip (Codex display name/description; `allow_implicit_invocation: false` mirrors `disable-model-invocation: true`). A missing file stays missing. An optional `agents/claude.yaml` containing `enabled: false` opts a skill out of Claude. Re-run install.sh to refresh links and metadata; don't hand-edit generated `openai.yaml` fields.
 
 To change config: `settings.json` is jq-merged, so edit the kit file and re-run `install.sh` to roll it out. `CLAUDE.md`, `statusline.sh`, and skills are live symlinks - just edit the kit file, no re-run needed.
 
@@ -47,7 +47,7 @@ To change config: `settings.json` is jq-merged, so edit the kit file and re-run 
 
 Three states, set by `disable-model-invocation` in the frontmatter:
 
-- **Always-auto** (no flag at all): `c-ascii`, `c-frontend-design`, `c-oe-docs`, `c-oe-helm`, `c-oe-ui`. Deliberately unflippable - `install.sh -s` never touches a skill with no flag.
+- **Always-auto** (no flag at all): `c-ascii`, `c-frontend-design`, `a-oe-docs`, `c-oe-helm`, `c-oe-ui`. Deliberately unflippable - `install.sh -s` never touches a skill with no flag.
 - **Auto-invokable** (`false`): Claude reads `name`+`description` at startup and pulls the body in *itself* when a task matches. The `description:` is the trigger. This is the kit's current committed state for every other skill.
 - **Manual** (`true`): never auto-loaded; enters context only when invoked by name (`/c-oe-code`).
 
@@ -55,15 +55,16 @@ The committed value per skill is the intent, so a plain `install.sh` run leaves 
 
 Conventions for kit skills - apply these to every new skill:
 
-- **`c-` prefix for context skills** - a context-loading (read-only knowledge) skill is named `c-<topic>`; action / workflow / preflight skills (`create-pr`, `create-oe-module`, `new-feature`, the MCP-preflight set) stay unprefixed. User-chosen exceptions: `c-handoff` and `c-grill-me` are action skills that keep the `c-` name.
+- **Prefix user-authored skills by role** - use `a-<topic>` for an action or workflow and `c-<topic>` for context-only knowledge. Imported and built-in skills keep their upstream names. Do not guess provenance or rename an existing skill unless the user has classified it.
+- **Declare agent availability** - `agents/openai.yaml` opts a skill into Codex. Claude is enabled by default; add `agents/claude.yaml` with `enabled: false` for a Codex-only skill. Therefore a Claude-only skill has no `agents/openai.yaml`, while a skill for both agents has it and does not opt out of Claude.
 - **Always carry the flag** - a new skill sets `disable-model-invocation` explicitly, `false` to match the kit's current all-auto state or `true` to keep it name-only. Omitting it is not a shortcut for either: it opts the skill out of `-s` entirely, which is reserved for the five always-auto exceptions above.
 - **One-line `description:`** - <= ~78 chars so it's fully readable when searching skills in Claude.
-- **"Context loaded" ack + context-only contract** - a context-only (`c-*`) skill's body starts with *"When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself - it just loads knowledge; act only on instructions given in the conversation."* - the ack stops a summary dump, the contract stops unprompted action. Action skills (`create-*`, `new-feature`, `performance-indexes-rollup`) keep only the ack sentence - invoked with a task, they do act. `devopstickets` is a full action skill (a triage workflow); the four MCP skills (`codexmcp`, `githubmcp`, `awsmcp`, `jiramcp`) are context-plus-one-action - they load how their MCP works and, if the `mcp__<name>__*` tools are absent, touch the startup-gate flag (`~/claude-kit/generated/mcp-on/<name>`) and advise the user to reconnect the server in /mcp; beyond that touch they run nothing. Built on codexmcp's preflight: `codex-grill` (adversarial plan review on `gpt-5.6-sol` at `xhigh`) and `codex-swarm` (split a task into 40+ `luna`/`terra` agents) - both confirm the billable cost before spawning. `c-handoff` writes a handoff doc into `handoff/`; `c-grill-me` runs a one-question-at-a-time requirements interview; `compact-memories` maintains `memory/` (verify, merge, archive to `knowledge/`, rewrite MEMORY.md).
+- **"Context loaded" ack + context-only contract** - a context-only (`c-*`) skill's body starts with *"When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself - it just loads knowledge; act only on instructions given in the conversation."* - the ack stops a summary dump, the contract stops unprompted action. Action skills (`a-*` and imported or legacy workflows such as `create-*` and `new-feature`) keep only the ack sentence - invoked with a task, they do act. `devopstickets` is a full action skill (a triage workflow); the four MCP skills (`codexmcp`, `githubmcp`, `awsmcp`, `jiramcp`) are context-plus-one-action - they load how their MCP works and, if the `mcp__<name>__*` tools are absent, touch the startup-gate flag (`~/claude-kit/generated/mcp-on/<name>`) and advise the user to reconnect the server in /mcp; beyond that touch they run nothing. Built on codexmcp's preflight: `codex-grill` (adversarial plan review on `gpt-5.6-sol` at `xhigh`) and `codex-swarm` (split a task into 40+ `luna`/`terra` agents) - both confirm the billable cost before spawning. `c-handoff` writes a handoff doc into `handoff/`; `c-grill-me` runs a one-question-at-a-time requirements interview; `compact-memories` maintains `memory/` (verify, merge, archive to `knowledge/`, rewrite MEMORY.md).
 - **Keep it lean** - aim < ~2,000 tokens (~ 8 KB) per `SKILL.md` so loading is cheap; push anything not always needed into `subs/*.md` and let the model open it on demand. `create-oe-module` and `c-oe-coding-standards` intentionally exceed this (reference-dense).
 
 ## Symlink pruning
 
-`install.sh` records each skill it links in `~/.claude/.claude-kit-skills`. Every run: re-links current kit skills, then **removes** any `~/.claude/skills/<name>` *symlink* it had created but that is no longer in `skills/`. Safety floors - a **real directory** (your own skill) is skipped with a warning; a **symlink pointing outside this kit** is left alone. Only kit-created symlinks are ever removed.
+`install.sh` records each skill it links in `~/.claude/.claude-kit-skills`. Every run: re-links current eligible skills in C-locale name order, then **removes** any managed `~/.claude/skills/<name>` *symlink* for a skill that was removed or opted out of Claude. Codex manifests use the same ordering and pruning. Safety floors - a **real directory** (your own skill) is skipped with a warning; a **symlink pointing outside this kit** is left alone. Only kit-created symlinks are ever removed. The link and manifest order is deterministic, but an agent UI may apply its own display order.
 
 ## --reset vs --fresh
 

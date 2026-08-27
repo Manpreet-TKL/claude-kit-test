@@ -14,7 +14,7 @@ changes, and testing.
 - All new code ships **automated tests** as part of the implementation - add a test whenever it is
   possible; "behaviour-preserving" or "pure refactor" changes still get tests when the touched code
   is testable. If the right coverage level is unclear, open the PR as a draft tagged for testing
-  review. Patterns and run mechanics: `oe-unit-tests` skill.
+  review. Patterns and run mechanics: `c-oe-unit-tests` skill.
 
 ## UI and compatibility
 
