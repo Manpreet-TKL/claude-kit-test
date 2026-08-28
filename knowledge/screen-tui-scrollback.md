@@ -20,6 +20,20 @@ Keep `altscreen on` and keep `termcapinfo xterm* ti@:te@` disabled. Re-enabling
 that termcap override exposes outer-terminal scrollback, but full-screen redraws
 then smear into it.
 
+Increasing VS Code's `terminal.integrated.scrollback` does not increase the
+history available inside Screen. That setting controls only the outer VS Code
+terminal buffer; Screen keeps its own per-window history and presents a
+cursor-addressed display to the outer terminal.
+
+Screen's `mousetrack` setting is not a wheel-scrollback solution. It watches
+mouse clicks so a split display region can be selected. Screen history still has
+to be entered through copy mode.
+
+There is no reliable Screen setting that combines native VS Code wheel
+scrolling, clean full-screen TUI redraws, and Screen detach/reattach resilience.
+The alternate-buffer termcap override trades clean redraws for outer scrollback;
+it does not make the two history buffers cooperate.
+
 ## Managed fix
 
 The shared Screen configuration contains:
@@ -54,6 +68,20 @@ Page Up binding supplies Screen history access for the other managed agent alias
 
 Do not use the wheel for Screen history. If wheel input has already populated an
 otherwise empty prompt, Ctrl-u clears that unsent prompt line.
+
+## Native VS Code scrolling alternative
+
+Run Codex directly in the VS Code terminal, outside Screen, when native wheel
+scrolling is more important than Screen session resilience. In that layout,
+increase `terminal.integrated.scrollback` if more outer-terminal history is
+needed.
+
+VS Code persistent terminal sessions are useful but are not equivalent to a
+detached Screen session. Process reconnection preserves a terminal across a
+window reload. Process revival after a full VS Code restart restores terminal
+contents and relaunches the process, rather than preserving the exact live
+process. A direct launcher can therefore complement the managed Screen launcher,
+but should not replace it when a long-running session must survive disconnects.
 
 ## Codex prompt corruption while working
 
@@ -154,6 +182,9 @@ Sources:
 
 - https://www.gnu.org/software/screen/manual/html_node/Scrollback.html
 - https://www.gnu.org/software/screen/manual/html_node/Copy.html
+- https://www.gnu.org/software/screen/manual/html_node/Mousetrack.html
+- https://code.visualstudio.com/docs/terminal/basics
+- https://code.visualstudio.com/docs/terminal/advanced
 - https://developers.openai.com/codex/config-reference
 - https://github.com/openai/codex/issues/16189
 - https://github.com/openai/codex/issues/29598

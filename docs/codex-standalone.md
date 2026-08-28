@@ -1,10 +1,10 @@
 # Standalone Codex
 
-The kit configures an existing host Codex. Codex itself runs on the host inside its bubblewrap sandbox; MCP services and the browser walker remain containerized.
+The kit installs Codex when it is missing, then configures it. Codex itself runs on the host inside its bubblewrap sandbox; MCP services and the browser walker remain containerized.
 
 ## Install
 
-Install Codex separately, then run:
+Run:
 
 ```bash
 bash /home/toukan/claude-kit/scripts/codex_bwrap_install.sh
@@ -26,7 +26,7 @@ GNU screen 5 reconnects to an existing session after SSH or terminal loss. Run `
 
 `codex-install.sh` accepts the same feature flags as `install.sh`: `-q`, `-p`, `-m`, `-s`, `-d`, `-r`, `-F`, `-n`, `-U`, `-y`, `-j`, `-c`, `-J`, `-g`, `-G`, `-x`, `-X`, `-a`, `-A`, `-w`, and `-l <target>`. Run `bash /home/toukan/claude-kit/codex-install.sh -h` for exact values. The `-x` and `-X` flags are accepted no-ops because this entry point already is the standalone Codex setup.
 
-The normal run updates Codex. If the global npm installation is root-owned, the installer uses `sudo npm install -g @openai/codex`; otherwise it uses `codex update`. Pass `-U` to leave the installed version unchanged.
+If Codex is missing, the installer uses OpenAI's standalone installer. A normal re-run updates Codex. If an existing global npm installation is root-owned, the installer uses `sudo npm install -g @openai/codex`; otherwise it uses `codex update`. Pass `-U` to leave an existing version unchanged; it does not suppress a required first install.
 
 ## Feature mapping
 
@@ -38,15 +38,15 @@ The normal run updates Codex. If the global npm installation is root-owned, the 
 | Session modes | Launcher maps the existing mode names onto Codex approval policy, reviewer, read-only permissions, or the explicit bypass flag. | Complete within Codex's available controls. |
 | Status line | Native `[tui].status_line` configuration in `~/.codex/claude-kit.config.toml`. | Complete; it uses the requested field list and colors. |
 | Shift-enter and terminal input | Native Codex TUI. In VS Code, the launcher sets `CODEX_TUI_DISABLE_KEYBOARD_ENHANCEMENT=1` only for the child Codex process. | Complete workaround; Ctrl+J remains the newline fallback. See OpenAI issue #16189. |
-| Screen resilience | Managed `codex` alias starts `codex.sh` inside GNU screen 5. | Complete |
+| Screen resilience | Managed aliases start each CLI inside GNU screen 5 and remain available without nesting from shells already inside screen. | Complete and idempotent |
 | Auto-compaction | `model_auto_compact_token_limit` in the Codex profile. | Native equivalent |
 | Session pruning | `-d` locates old rollout files and calls `codex archive`. | Complete |
 | Reset and fresh install | `-r` archives regenerable data; `-F` backs up and restores auth, history, sessions, and memory state. | Complete |
 | Memory | Native Codex memories are enabled. Raw memory remains in `~/.codex/memories/` and `~/.codex/memories_*.sqlite*`. | Preserved by reset/fresh; deliberately never copied into the git repository. |
-| Jira and Confluence | Read-only container MCP registered with `codex mcp add`. Secrets stay in `~/.claude/mcp-env/`. | Complete after machine-local credentials exist. |
-| GitHub | Read-only container MCP registered with `codex mcp add`. | Complete after machine-local credentials exist. |
-| AWS | Read-only container MCP registered with `codex mcp add`. Direct `aws` commands are forbidden by Codex rules. | Complete after machine-local credentials exist. |
-| Browser walker | Separate `codex-chrome` sidecar with Chrome DevTools MCP and Playwright MCP. | Complete setup path; build and live walk require Docker, the target network, and image downloads. |
+| Jira and Confluence | Read-only container MCP registered with `codex mcp add`. Secrets stay in `~/.claude/mcp-env/`. | Complete after machine-local credentials exist; natively disabled until armed for a new session. |
+| GitHub | Read-only container MCP registered with `codex mcp add`. | Complete after machine-local credentials exist; natively disabled until armed for a new session. |
+| AWS | Read-only container MCP registered with `codex mcp add`. Direct `aws` commands are forbidden by Codex rules. | Complete after machine-local credentials exist; natively disabled until armed for a new session. |
+| Browser walker | Separate `codex-chrome` sidecar with Chrome DevTools MCP and Playwright MCP. | Complete setup path and natively disabled MCPs; build and live walk require Docker, the target network, and image downloads. |
 | Logout | `-l codex|github|atlassian|aws|all` removes the selected local credential and MCP registration. | Complete |
 
 ## Permissions
@@ -64,7 +64,13 @@ settings/codex/rules/trusted.rules
 settings/codex/rules/yolo.rules
 ```
 
-The installer combines the permission TOML files into `~/.codex/claude-kit.config.toml` and copies the selected rule file to `~/.codex/rules/claude-kit.rules`. The launcher maps the kit's `yolo` tier directly to Codex's `:danger-full-access` built-in because custom profiles cannot extend that built-in. The hard floor forbids `git push`, `git commit`, and direct AWS CLI calls. The `yolo` tier permits Docker access; narrower tiers deny the Docker socket.
+The installer generates `~/.codex/claude-kit.config.toml` from its native base settings and the permission TOML fragments, then links `~/.codex/rules/claude-kit.rules` to the selected rule file. The global instructions, skills, and selected static rules are symlinked back to the kit. The launcher maps the selected model, effort, mode, and permission tier at session start. It also maps the kit's `yolo` tier directly to Codex's `:danger-full-access` built-in because custom profiles cannot extend that built-in, so `codex.sh` remains required. The hard floor forbids `git push`, `git commit`, and direct AWS CLI calls. The `yolo` tier permits Docker access; narrower tiers deny the Docker socket.
+
+## MCP startup gates
+
+Registered MCP servers are stored with `enabled = false`, so a normal Codex startup skips them without producing failed-handshake warnings. Arm one with `touch /home/toukan/claude-kit/generated/mcp-on/<server>`, then start a new Codex session. The launcher enables it for that session only. The first wrapper spawn consumes the flag and opens a 60-second startup grace window for repeated connection attempts.
+
+Codex cannot enable a natively disabled MCP inside an existing TUI session. Exit the current session before arming it, or arm it from another shell and then restart Codex. The supported server names are `atlassian`, `github`, `aws`, `chrome-devtools`, and `playwright`. The `enabled` setting is documented in the [official MCP configuration reference](https://learn.chatgpt.com/docs/extend/mcp?surface=cli#other-configuration-options).
 
 ## Docker access and host files
 
@@ -74,7 +80,7 @@ If Codex itself is run inside a container, it sees only explicitly mounted host 
 
 ## Browser walker
 
-Run `bash /home/toukan/claude-kit/codex-install.sh -w`. The setup saves the non-secret target network and URL in `generated/.codex-chrome-agent.env`, keeps the Chrome profile outside the repository at `~/.claude/codex-chrome-agent`, starts the sidecar, and registers `chrome-devtools` and `playwright` MCP servers. View it at `http://localhost:6081`.
+Run `bash /home/toukan/claude-kit/codex-install.sh -w`. The setup saves the non-secret target network and URL in `generated/.codex-chrome-agent.env`, keeps the Chrome profile outside the repository at `~/.claude/codex-chrome-agent`, starts the sidecar, and registers the natively disabled `chrome-devtools` and `playwright` MCP servers. View it at `http://localhost:6081`.
 
 ## VS Code verification
 

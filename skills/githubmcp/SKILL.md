@@ -13,7 +13,7 @@ The server is registered **read-only** (`GITHUB_READ_ONLY=1`): it exposes only r
 ## Check - tools present, or touch the gate
 
 1. **Tools present?** If the `mcp__github__*` tools are in your toolset, print a one-line `GitHub OK` and the project context below, then proceed to whatever the user asked for.
-2. **Tools absent?** Run `touch ~/claude-kit/generated/mcp-on/github` - the **only** shell command this skill runs - then reply with exactly this one line and nothing else (no explanation of the gate, no advice dump) and stop: `github MCP ungated - reconnect: /mcp -> github -> reconnect`. Once the user has reconnected, continue with the task.
+2. **Tools absent?** Run `touch ~/claude-kit/generated/mcp-on/github` - the **only** shell command this skill runs - then stop. In standalone Codex, reply with exactly `github MCP armed - restart Codex to load it`. In a client that supports reconnecting a gated server, reply with exactly `github MCP ungated - reconnect: /mcp -> github -> reconnect`. Once the user has restarted or reconnected, continue with the task.
 
 Beyond that one `touch`, take no other action: no docker commands, no `install.sh` runs, and never a fallback to `curl` or the REST API - when a call fails, stop and relay the matching advice below; the user runs the fix.
 

@@ -2,14 +2,14 @@
 # Manpreet 12/07/2026
 # Build and install GNU screen 5.0.1 from source on Ubuntu 24.04 into /usr/local
 # (alongside the apt 4.9.x), add truecolor/TUI defaults to ~/.screenrc and keep
-# claude and codex aliases in ~/.bash_aliases that run both CLIs inside the new
-# screen. Codex goes through the kit's host launcher and bubblewrap sandbox.
+# claude and codex aliases in ~/.bash_aliases. New sessions run both CLIs inside
+# screen; nested shells keep aliases without starting another screen.
 # Re-running is safe: an already-current build is skipped and the ~/.screenrc
 # and ~/.bash_aliases managed blocks are re-applied - run it again after
 # oe-deploy's host-setup.sh, which overwrites both files.
 # Replaces the older screen_install.sh and cleans up its /etc artifacts.
 # No Ubuntu release ships screen 5.x for noble (libc6 too old), hence the build.
-# Usage: ./screen5_install.sh [-u | --uninstall]
+# Usage: bash screen5_install.sh [-u | --uninstall]
 # Run as your normal user, not root - sudo is called only where needed.
 
 abort() {
@@ -176,10 +176,13 @@ installAgentAliases() {
     [ -s "${bash_aliases}" ] && [ -n "$(tail -c1 "${bash_aliases}")" ] && echo "" >> "${bash_aliases}"
     cat >> "${bash_aliases}" <<HERE
 ${marker_start}
-# run the agent CLIs inside screen 5 - skip when already inside a screen
+# run the agent CLIs inside screen 5, without nesting screen sessions
 if [ -z "\${STY}" ]; then
     alias claude='${prefix}/bin/screen claude'
     alias codex='${prefix}/bin/screen bash ${kit_root}/codex.sh'
+else
+    alias claude='command claude'
+    alias codex='bash ${kit_root}/codex.sh'
 fi
 ${marker_end}
 HERE
@@ -333,10 +336,14 @@ else
     echo "[OK]"
 
     echo "Checking the agent alias block in ${bash_aliases}..."
-    [ -z "$(grep -F "${marker_start}" "${bash_aliases}")" ] && echo "Managed block missing from ${bash_aliases} ... exiting" && exit 1
+    [ "$(grep -cFx "${marker_start}" "${bash_aliases}")" -ne 1 ] && echo "Expected one managed block in ${bash_aliases} ... exiting" && exit 1
+    [ "$(grep -cFx "${marker_end}" "${bash_aliases}")" -ne 1 ] && echo "Managed block is incomplete in ${bash_aliases} ... exiting" && exit 1
     grep -qF "alias claude='${prefix}/bin/screen claude'" "${bash_aliases}" || { echo "Claude alias missing from ${bash_aliases} ... exiting"; exit 1; }
     grep -qF "alias codex='${prefix}/bin/screen bash ${kit_root}/codex.sh'" "${bash_aliases}" || { echo "Codex alias missing from ${bash_aliases} ... exiting"; exit 1; }
-    bash -ic 'type claude >/dev/null 2>&1 && type codex >/dev/null 2>&1' 2>/dev/null || { echo "Agent aliases are not loaded by a new interactive shell ... exiting"; exit 1; }
+    grep -qF "alias claude='command claude'" "${bash_aliases}" || { echo "Nested Claude alias missing from ${bash_aliases} ... exiting"; exit 1; }
+    grep -qF "alias codex='bash ${kit_root}/codex.sh'" "${bash_aliases}" || { echo "Nested Codex alias missing from ${bash_aliases} ... exiting"; exit 1; }
+    env -u STY bash -ic 'alias claude >/dev/null 2>&1 && alias codex >/dev/null 2>&1' 2>/dev/null || { echo "Agent aliases are not loaded outside screen ... exiting"; exit 1; }
+    STY=screen5-post-check bash -ic 'alias claude >/dev/null 2>&1 && alias codex >/dev/null 2>&1' 2>/dev/null || { echo "Agent aliases are not loaded inside screen ... exiting"; exit 1; }
     echo "[OK]"
 
     echo "Checking the older screen_install.sh artifacts are gone..."

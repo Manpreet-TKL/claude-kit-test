@@ -1,6 +1,6 @@
 #!/bin/bash -l
 # Manpreet 22/08/2026
-# Configure an existing host Codex with claude-kit parity and native controls.
+# Install and configure host Codex with claude-kit parity and native controls.
 
 abort() {
     echo >&2 '
@@ -36,6 +36,7 @@ AWS_MODE=""
 AWS_REMOVE=0
 WALKER_SETUP=0
 CODEX_FLAG=""
+CODEX_WAS_INSTALLED=0
 
 usage() {
     cat <<'USAGE'
@@ -79,6 +80,30 @@ requireValue() {
         trap : 0
         exit 1
     fi
+}
+
+installCodex() {
+    local install_dir installer
+    command -v curl >/dev/null 2>&1 || { echo "curl is required to install Codex" >&2; return 1; }
+    echo "Downloading the official Codex installer..."
+    install_dir="$(mktemp -d)"
+    installer="${install_dir}/install.sh"
+    if ! curl -fsSL https://chatgpt.com/codex/install.sh -o "${installer}"; then
+        rm -f "${installer}"
+        rmdir "${install_dir}"
+        return 1
+    fi
+    if ! sh "${installer}"; then
+        rm -f "${installer}"
+        rmdir "${install_dir}"
+        return 1
+    fi
+    rm -f "${installer}"
+    rmdir "${install_dir}"
+    export PATH="${HOME}/.local/bin:${PATH}"
+    hash -r
+    command -v codex >/dev/null 2>&1 || { echo "Codex was installed but is not on PATH" >&2; return 1; }
+    CODEX_WAS_INSTALLED=1
 }
 
 if [ $# -eq 0 ]; then
@@ -148,10 +173,14 @@ github_secrets="${mcp_env_dir}/.github.env"
 aws_secrets="${mcp_env_dir}/.aws.env"
 
 . "${kit_root}/lib/skills.sh"
+. "${kit_root}/scripts/codex-mcp-gate.sh"
 
 echo -e "\nStarting Pre-flight checks ..."
 echo "-------------------------------"
-command -v codex >/dev/null 2>&1 || { echo "Host Codex is required; claude-kit will not install it ... exiting" >&2; exit 1; }
+if ! command -v codex >/dev/null 2>&1; then
+    echo "Codex was not found - installing it with the official standalone installer..."
+    installCodex
+fi
 [ -f "${claude_md_src}" ] || { echo "Missing ${claude_md_src} ... exiting" >&2; exit 1; }
 case "${PERMISSION_TIER:-standard}" in ultra-safe|standard|trusted|yolo) ;; *) echo "Invalid permissions tier ... exiting" >&2; exit 1 ;; esac
 case "${SESSION_MODE:-auto}" in default|plan|acceptEdits|auto|dontAsk|bypassPermissions) ;; *) echo "Invalid session mode ... exiting" >&2; exit 1 ;; esac
@@ -163,13 +192,18 @@ echo "$(codex --version) [OK]"
 echo "Checks complete ..."
 echo "-------------------------------"
 
+clearMcpGate() {
+    local name="${1}"
+    rm -f "${generated_dir}/mcp-on/${name}" "${generated_dir}/mcp-on/${name}.win"
+}
+
 logoutTarget() {
     local target="$1"
     case "${target}" in
         codex) codex logout >/dev/null 2>&1 || true ;;
-        github) rm -f "${github_secrets}"; codex mcp remove github >/dev/null 2>&1 || true ;;
-        atlassian) rm -f "${atlassian_secrets}"; codex mcp remove atlassian >/dev/null 2>&1 || true ;;
-        aws) rm -f "${aws_secrets}"; codex mcp remove aws >/dev/null 2>&1 || true ;;
+        github) rm -f "${github_secrets}"; clearMcpGate github; codex mcp remove github >/dev/null 2>&1 || true ;;
+        atlassian) rm -f "${atlassian_secrets}"; clearMcpGate atlassian; codex mcp remove atlassian >/dev/null 2>&1 || true ;;
+        aws) rm -f "${aws_secrets}"; clearMcpGate aws; codex mcp remove aws >/dev/null 2>&1 || true ;;
         all) logoutTarget github; logoutTarget atlassian; logoutTarget aws; codex logout >/dev/null 2>&1 || true ;;
     esac
 }
@@ -284,7 +318,7 @@ writeProfile() {
         echo 'status_line_use_colors = true'
         for file in "${kit_root}"/settings/codex/permissions/*.toml; do echo ''; sed -n '1,$p' "${file}"; done
     } > "${codex_profile}"
-    cp "${kit_root}/settings/codex/rules/${PERMISSION_TIER}.rules" "${codex_rules}"
+    ln -sfn "${kit_root}/settings/codex/rules/${PERMISSION_TIER}.rules" "${codex_rules}"
 }
 
 writeAgentsMd() {
@@ -297,7 +331,18 @@ registerMcp() {
     command -v docker >/dev/null 2>&1 || { echo "Docker is required for ${name} MCP" >&2; return 1; }
     codex mcp remove "${name}" >/dev/null 2>&1 || true
     codex mcp add "${name}" -- bash "${wrapper}" >/dev/null
-    echo "  registered ${name} MCP"
+    setCodexMcpEnabled "${name}" false
+    clearMcpGate "${name}"
+    echo "  registered ${name} MCP disabled by default"
+}
+
+disableRegisteredMcps() {
+    local name
+    for name in atlassian github aws chrome-devtools playwright; do
+        if codexMcpConfigured "${name}"; then
+            setCodexMcpEnabled "${name}" false
+        fi
+    done
 }
 
 promptValue() {
@@ -344,8 +389,11 @@ configureMcpSecrets() {
 
 applyMcps() {
     [ "${ATLASSIAN_REMOVE}" == "1" ] && codex mcp remove atlassian >/dev/null 2>&1 || true
+    [ "${ATLASSIAN_REMOVE}" == "1" ] && clearMcpGate atlassian
     [ "${GITHUB_REMOVE}" == "1" ] && codex mcp remove github >/dev/null 2>&1 || true
+    [ "${GITHUB_REMOVE}" == "1" ] && clearMcpGate github
     [ "${AWS_REMOVE}" == "1" ] && codex mcp remove aws >/dev/null 2>&1 || true
+    [ "${AWS_REMOVE}" == "1" ] && clearMcpGate aws
     if [ "${JIRA_MODE}" == "on" ] || [ "${CONFLUENCE_MODE}" == "on" ]; then
         [ -f "${atlassian_secrets}" ] || { echo "Create ${atlassian_secrets} with the requested Jira/Confluence values first" >&2; return 1; }
         registerMcp atlassian "${kit_root}/scripts/codex-mcp-atlassian.sh"
@@ -391,14 +439,20 @@ updateCodex() {
 }
 
 verifyAll() {
-    local failed=0
+    local failed=0 name
     codex --strict-config --profile claude-kit --version >/dev/null 2>&1 || { echo "[FAIL] strict config"; failed=1; }
     [ -L "${codex_agents_md}" ] && [ "$(readlink "${codex_agents_md}")" == "${claude_md_src}" ] || { echo "[FAIL] AGENTS.md link"; failed=1; }
     [ -s "${agents_manifest}" ] || { echo "[FAIL] skills manifest"; failed=1; }
-    [ -s "${codex_rules}" ] || { echo "[FAIL] active rules"; failed=1; }
+    [ -L "${codex_rules}" ] && [ "$(readlink "${codex_rules}")" == "${kit_root}/settings/codex/rules/${PERMISSION_TIER}.rules" ] || { echo "[FAIL] active rules link"; failed=1; }
     grep -qF 'alternate_screen = "never"' "${codex_profile}" || { echo "[FAIL] terminal scrollback"; failed=1; }
     grep -qF 'raw_output_mode = false' "${codex_profile}" || { echo "[FAIL] rich output mode"; failed=1; }
     grep -qF 'terminal_title = []' "${codex_profile}" || { echo "[FAIL] terminal title disabled"; failed=1; }
+    for name in atlassian github aws chrome-devtools playwright; do
+        if codexMcpConfigured "${name}" && ! codex mcp get "${name}" --json 2>/dev/null | grep -Eq '"enabled":[[:space:]]*false'; then
+            echo "[FAIL] ${name} MCP starts enabled"
+            failed=1
+        fi
+    done
     codex execpolicy check --rules "${codex_rules}" -- git push origin main 2>/dev/null | grep -q forbidden || { echo "[FAIL] git push rule"; failed=1; }
     grep -qsF "alias codex='/usr/local/bin/screen bash ${kit_root}/codex.sh'" "${HOME}/.bash_aliases" || echo "[INFO] run: bash ${kit_root}/scripts/screen5_install.sh"
     command -v bwrap >/dev/null 2>&1 && codex sandbox -- /usr/bin/true >/dev/null 2>&1 || echo "[INFO] run: bash ${kit_root}/scripts/codex_bwrap_install.sh"
@@ -410,7 +464,7 @@ if [ -n "${LOGOUT_TARGET}" ]; then logoutTarget "${LOGOUT_TARGET}"; trap : 0; ex
 [ "${DO_FRESH}" == "1" ] && freshInstall
 [ "${DO_FRESH}" != "1" ] && [ "${DO_RESET}" == "1" ] && resetBloat
 
-if [ "${DO_UPDATE}" == "1" ]; then
+if [ "${DO_UPDATE}" == "1" ] && [ "${CODEX_WAS_INSTALLED}" != "1" ]; then
     echo "Updating Codex..."
     updateCodex
 fi
@@ -428,6 +482,7 @@ pruneSessions
 if [ "${WALKER_SETUP}" == "1" ]; then
     bash "${kit_root}/docker/codex-chrome-agent/setup-walker.sh" $([ "${ASSUME_YES}" == "1" ] && printf %s -y)
 fi
+disableRegisteredMcps
 
 [ -n "${CODEX_FLAG}" ] && echo "  -x/-X accepted: standalone Codex is already active; no registration changed"
 

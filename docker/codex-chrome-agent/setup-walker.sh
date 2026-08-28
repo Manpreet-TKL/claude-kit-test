@@ -19,6 +19,7 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 kit_root="$(dirname "$(dirname "${script_dir}")")"
 config_file="${kit_root}/generated/.codex-chrome-agent.env"
 state_dir="${CODEX_CHROME_STATE_DIR:-${HOME}/.claude/codex-chrome-agent}"
+. "${kit_root}/scripts/codex-mcp-gate.sh"
 
 command -v docker >/dev/null 2>&1 || { echo "docker not found" >&2; exit 1; }
 command -v codex >/dev/null 2>&1 || { echo "codex not found" >&2; exit 1; }
@@ -45,6 +46,11 @@ docker compose -f "${script_dir}/docker-compose.yml" up -d --build
 codex mcp remove chrome-devtools >/dev/null 2>&1 || true
 codex mcp remove playwright >/dev/null 2>&1 || true
 codex mcp add chrome-devtools -- bash "${script_dir}/mcp-chrome-devtools.sh" >/dev/null
+setCodexMcpEnabled chrome-devtools false
 codex mcp add playwright -- bash "${script_dir}/mcp-playwright.sh" >/dev/null
+setCodexMcpEnabled playwright false
+rm -f "${kit_root}/generated/mcp-on/chrome-devtools" "${kit_root}/generated/mcp-on/chrome-devtools.win"
+rm -f "${kit_root}/generated/mcp-on/playwright" "${kit_root}/generated/mcp-on/playwright.win"
 
-echo "Codex Chrome walker is ready. noVNC: http://localhost:6081"
+echo "Codex Chrome walker is ready. MCPs are disabled by default. noVNC: http://localhost:6081"
+echo "Arm them before a new Codex session: touch ${kit_root}/generated/mcp-on/chrome-devtools ${kit_root}/generated/mcp-on/playwright"

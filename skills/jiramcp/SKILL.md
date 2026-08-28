@@ -11,7 +11,7 @@ Load how the kit's Atlassian MCP works, make its tools available (enabling the s
 ## Check - tools present, or touch the gate
 
 1. **Tools present?** If the `mcp__atlassian__*` tools are in your toolset, print a one-line `Jira OK  Confluence OK` and the project context below, then hand back / proceed to whatever the user asked for.
-2. **Tools absent?** Run `touch ~/claude-kit/generated/mcp-on/atlassian` - the **only** shell command this skill runs - then reply with exactly this one line and nothing else (no explanation of the gate, no advice dump) and stop: `atlassian MCP ungated - reconnect: /mcp -> atlassian -> reconnect`. Once the user has reconnected, continue with the task.
+2. **Tools absent?** Run `touch ~/claude-kit/generated/mcp-on/atlassian` - the **only** shell command this skill runs - then stop. In standalone Codex, reply with exactly `atlassian MCP armed - restart Codex to load it`. In a client that supports reconnecting a gated server, reply with exactly `atlassian MCP ungated - reconnect: /mcp -> atlassian -> reconnect`. Once the user has restarted or reconnected, continue with the task.
 
 Beyond that one `touch`, take no other action: no docker commands, no `install.sh` runs, and never a fallback to the REST API - when a call fails, stop and relay the matching advice below; the user runs the fix.
 
