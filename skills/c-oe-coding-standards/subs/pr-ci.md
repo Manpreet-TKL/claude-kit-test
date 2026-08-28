@@ -137,11 +137,28 @@ no `DISPLAY`, Cypress can fail before discovering any project test with `Missing
 $DISPLAY`. When `xvfb-run` is available, run the same component command under it and record the
 initial failure as a local runner setup issue rather than a branch test failure.
 
+The same classification applies when the dispatcher aborts Chromium before spec discovery with
+`SIGABRT` or exit 137, provided the identical repository Cypress command then passes under Xvfb.
+Record both results. A process-level abort before any spec name is not evidence that a project test
+is flaky or that the branch is broken.
+
 Treat `PHPUNIT-FIXTURES` as terminal for focused sample-data testing in the same database. The
 fixture suite can replace data and module state, so a later focused sample test can fail for reasons
 that did not exist before the suite. Run focused branch tests before the full fixture suite. If more
 focused tests are required afterwards, rebuild only the verified disposable sample database volume
 and wait for the stack to become healthy before collecting new evidence.
+
+Randomized `OEDbTestCase` output prints a suggested seed for every failure in those classes; the
+presence of a seed does not prove that the failure is random. Preserve the class, method, concise
+error, and seed, refresh the disposable sample database, then rerun the affected class or method in
+isolation. Classify it as order-sensitive only when that clean rerun passes. If it still fails, keep
+it as a reproducible baseline or branch failure according to the touched-file and base comparison.
+
+The sample reset helper can complete its database import and then exit nonzero while a temporary
+production manager tries to start the frontend and reports `vite: not found`. Verify whether the
+import completed before retrying it. When it did, return to the normal Web-Dev service and run the
+repository migration script there; do not repeat an expensive import solely because the later
+asset-start step failed.
 
 Run focused Yii PHPUnit tests from `/var/www/openeyes/protected/tests`, where `phpunit.xml` lives.
 Module test directories do not contain that configuration, so using them as the working directory

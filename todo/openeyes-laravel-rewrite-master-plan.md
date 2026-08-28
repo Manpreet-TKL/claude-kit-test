@@ -6182,6 +6182,87 @@ read-only audited MCP facade only when a concrete authorized use case exists. Pi
 continues per slice; Rector is a separate incremental dry-run workstream; branded
 error pages belong in the later UI-parity pass.
 
+Execution checkpoint 2026-08-28: OphCiPhasing is functionally complete against its
+exact 39-file v26.0.9 inventory. It provides the familiar ordered per-eye clinical
+series, complete lifecycle and history, source-idempotent semantic generation,
+patient latest and bounded history, structured peak, interval and fluctuation
+summary, definition API, immutable instrument snapshots, built-in help and one
+covering chronology index with no remote join or group-wise maximum. Exact visual
+matching remains in the later consolidated UI-parity phase.
+
+The isolated seven-schema migration and rollback proof passed 46 focused and shared
+tests with 1,992 assertions. Pint, the 750-module production build, two consecutive
+text-only browser runs and the complete 1,365-test, 19,279-assertion regression all
+passed. The exact module ledger has 27 fully covered files, no whole-file deferrals
+and 97.9 percent mean coverage, with 76 documentation checks, five API groups, five
+table records, ten lessons, nine legacy bugs and 14 page/API rows. Global unique
+accounting is 3,089 of 14,125 files, or 21.87 percent; maximum-coverage weighting is
+2,399.02 equivalent files, or 16.98 percent.
+
+OphCoChecklist is functionally complete against its exact 71-file v26.0.9
+inventory. The standalone event reopens one same-day patient record, allows an
+empty event to be cancelled safely, and shares the same patient-day aggregate with
+Examination, Intravitreal Injection and Operation Note callers. Category and title
+filtering, scope and requirement resolution, immutable definition snapshots,
+optimistic concurrency, complete history, portable administration and built-in
+help are functional. Authenticated semantic APIs cover definitions, dated
+generation and reconciliation, event lifecycle, patient latest and bounded
+history. The chronology read uses one local covering index without a remote join or
+group-wise maximum. DIV-411 keeps explicit Add Event familiar while making page
+GETs read-only, and DIV-412 records the snapshot and semantic API design.
+
+The isolated seven-schema build ran all 209 migration files and the tiny seed from
+empty, rolled the Checklist migration back and reapplied it, passed schema
+verification and passed 85 focused and shared tests with 2,655 assertions. The
+focused Checklist set passed 13 tests with 129 assertions. Pint, the 750-module
+production build, three text-only browser runs and the complete 1,371-test,
+19,364-assertion regression passed. The browser proof created no screenshots and
+verified cleanup. The exact ledger has 56 fully covered files, no whole-file
+deferrals and 98.4 percent mean coverage, with 228 documentation checks, five API
+groups, eight table records, ten lessons, eight legacy bugs and 19 page/API rows.
+Global unique accounting is 3,160 of 14,125 files, or 22.37 percent;
+maximum-coverage weighting is 2,468.87 equivalent files, or 17.48 percent.
+
+OphTrLaser is functionally complete against its exact 115-file v26.0.9 inventory.
+It records site, device, operator, one or both eyes, procedures, unit-specific
+measurements, lenses, complications, comments and optional lazily loaded drawings.
+Safe drawing import and carry-forward, the shared patient-day checklist, optimistic
+concurrency, immutable configuration snapshots, post-operative procedure
+projections, semantic generation and reconciliation, event CRUD, definition,
+patient latest and bounded history, operation summaries, five portable
+administration families and route-linked built-in help are functional. DIV-413
+through DIV-415 record the composite snapshot aggregate, read-safe imports and
+checklists, and strict duplicate/history behavior. Exact image and print output,
+profile defaults, the broader historical configuration catalogue and pixel-perfect
+visual matching remain assigned to their later phases.
+
+The isolated seven-schema build ran all 210 migration files and the tiny seed from
+empty, rolled the Laser migration back and reapplied it, passed schema verification
+and passed 45 focused and shared tests with 2,066 assertions. Pint, the 751-module
+production build and the final text-only browser proof passed. The browser changed
+an imported mW procedure to mJ through the clinical UI, proved conditional field
+clearing and lazy EyeDraw input markers, exercised print, semantic APIs, lifecycle,
+help and all five administration families, cleaned its fixture, reported no browser
+errors and created no screenshots. The complete canonical-schema regression passed
+1,380 tests with 19,598 assertions. A full run on renamed disposable schemas found
+the already recorded repository-wide test debt where legacy tests query literal
+`oe_history` or `oe_audit`; those harness-only failures did not recur on the
+canonical schemas and are not counted as Laser failures.
+
+The exact ledger has 70 fully covered files, no whole-file deferrals and 97.0
+percent mean coverage, with 318 documentation checks, ten API groups, ten table
+records, twelve lessons, ten legacy bugs and 25 page/API rows. Global unique
+accounting is 3,270 of 14,125 files, or 23.15 percent; maximum-coverage weighting is
+2,577.77 equivalent files, or 18.25 percent.
+
+The next ordinary clinical slice is OphTrOperationbooking. Reuse the operation
+checklist, post-operative procedure, diagnosis, patient, event and shared config
+contracts, then close the booking lifecycle and the deferred checklist booking
+linkage. Keep functional behavior ahead of exact visual parity and do not port a
+special module. A dev-image follow-up must relocate Pest result-cache state away
+from read-only image-built `vendor/`; the production web image must not become
+writable for test tooling.
+
 ---
 
 ## 27. Divergence register - how OpenEyes worked, how it works now, and why
