@@ -93,7 +93,7 @@ installCodex() {
         rmdir "${install_dir}"
         return 1
     fi
-    if ! sh "${installer}"; then
+    if ! CODEX_NON_INTERACTIVE=1 sh "${installer}"; then
         rm -f "${installer}"
         rmdir "${install_dir}"
         return 1
