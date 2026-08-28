@@ -15,6 +15,9 @@ fi
 permission="${CODEX_PERMISSION_TIER:-standard}"
 approval="on-request"
 reviewer="user"
+if [ "${permission}" = "yolo" ]; then
+    permission=":danger-full-access"
+fi
 if [ "${TERM_PROGRAM:-}" = "vscode" ]; then
     export CODEX_TUI_DISABLE_KEYBOARD_ENHANCEMENT=1
 fi

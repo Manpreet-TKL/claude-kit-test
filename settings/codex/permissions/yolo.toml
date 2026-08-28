@@ -1,9 +1,2 @@
-[permissions.yolo]
-description = "Unrestricted host access; hard command prohibitions still apply."
-extends = ":danger-full-access"
-
-[permissions.yolo.network]
-enabled = true
-
-[permissions.yolo.network.unix_sockets]
-"/var/run/docker.sock" = "allow"
+# The launcher maps the kit's yolo tier directly to :danger-full-access.
+# Codex permits selecting that built-in, but custom profiles cannot extend it.

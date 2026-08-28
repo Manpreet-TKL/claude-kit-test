@@ -34,7 +34,7 @@ The normal run updates Codex. If the global npm installation is root-owned, the 
 |---|---|---|
 | Global instructions | `~/.codex/AGENTS.md` links to `claude-md/CLAUDE.md`. | Complete |
 | Skills | Each skill carrying `agents/openai.yaml` links into `~/.agents/skills`; the file also supplies Codex UI metadata. | Complete; Codex availability is explicit, links are created in name order, implicit loading follows each skill's `disable-model-invocation` setting, and `$skill-name` always loads explicitly. |
-| Four permission tiers | Exported TOML profiles in `settings/codex/permissions/` plus Starlark command rules in `settings/codex/rules/`. | Close translation; Codex evaluates permissions and command prefixes differently, so refine these source files as needed. |
+| Four permission tiers | Exported TOML profiles in `settings/codex/permissions/` plus Starlark command rules in `settings/codex/rules/`; `yolo` selects Codex's `:danger-full-access` built-in directly. | Close translation; Codex evaluates permissions and command prefixes differently, so refine these source files as needed. |
 | Session modes | Launcher maps the existing mode names onto Codex approval policy, reviewer, read-only permissions, or the explicit bypass flag. | Complete within Codex's available controls. |
 | Status line | Native `[tui].status_line` configuration in `~/.codex/claude-kit.config.toml`. | Complete; it uses the requested field list and colors. |
 | Shift-enter and terminal input | Native Codex TUI. In VS Code, the launcher sets `CODEX_TUI_DISABLE_KEYBOARD_ENHANCEMENT=1` only for the child Codex process. | Complete workaround; Ctrl+J remains the newline fallback. See OpenAI issue #16189. |
@@ -64,7 +64,7 @@ settings/codex/rules/trusted.rules
 settings/codex/rules/yolo.rules
 ```
 
-The installer combines the permission TOML files into `~/.codex/claude-kit.config.toml` and copies the selected rule file to `~/.codex/rules/claude-kit.rules`. The hard floor forbids `git push`, `git commit`, and direct AWS CLI calls. The `yolo` tier permits Docker access; narrower tiers deny the Docker socket.
+The installer combines the permission TOML files into `~/.codex/claude-kit.config.toml` and copies the selected rule file to `~/.codex/rules/claude-kit.rules`. The launcher maps the kit's `yolo` tier directly to Codex's `:danger-full-access` built-in because custom profiles cannot extend that built-in. The hard floor forbids `git push`, `git commit`, and direct AWS CLI calls. The `yolo` tier permits Docker access; narrower tiers deny the Docker socket.
 
 ## Docker access and host files
 
