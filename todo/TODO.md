@@ -12,3 +12,4 @@ One task per line, newest at the bottom - see README.md for the format.
 - [ ] 2026-08-19 - Helm chart reorganisation (plan: helm-reorg-plan.md) [dormant - written against ~/charts, which no longer exists; helm-pr-reorg-plan already pushed]
 - [ ] 2026-08-19 - OpenEyes "understand anything" knowledge-graph build (plan: openeyes-understand-anything-plan.md) [dormant - overlaps oe-map, decide which survives]
 - [ ] 2026-08-19 - AWS MCP migration to the managed AWS MCP Server (plan: aws-mcp-migration-plan.md) [parked - --read-only removes call_aws; prereq IAM deny not applied; staying on aws-api-mcp-server]
+- [ ] 2026-08-29 - OpenEyes IOLMasterImport and PayloadProcessor ingestion regression harness (plan: oe-ingestion-regression-harness-plan.md) [implementation staged; CR corpus complete; OE download and post-processing running in screen; live profile verification pending]

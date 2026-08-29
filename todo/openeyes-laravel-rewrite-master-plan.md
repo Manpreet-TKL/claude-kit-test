@@ -687,7 +687,7 @@ decoupling (12):
 - **First-class patient-merge lineage** (today's `PatientMerge` loses provenance): add
   `merged_into_patient_id` + `merge_status` (PHP enum `MergeStatus` {active, merged, superseded} stored as `TINYINT UNSIGNED` + CHECK, §5.8.0 #15), stamp
   `origin_patient_id` on reassigned episodes/events, keep the losing patient as a
-  **tombstone** (not hard-deleted, so `oe_audit` FKs stay valid), and record a
+  **tombstone** (not hard-deleted, so audit identity snapshots remain resolvable), and record a
   reversible `patient_merge_event`.
 
 ### 5.5 Archival & unbounded-growth control (1f, 13a, 13b)
@@ -4457,16 +4457,22 @@ measured numbers and named owners, not design choices.
 
 ### 26.1 The 35 decisions, each with its why
 
-**Q1. Deployment target - Kubernetes AND compose, one container-configurable image** (verbatim:
-"Both kubernetes and compose, it should be container configurable to be a single server or part of
-multiple web backends"). Why: clients range from a single VM to clustered estates; one image that
-scales by configuration avoids maintaining two builds and keeps compose as the simple on-ramp. Hard
-requirements on the web container, captured 2026-08-20: (1) lightweight image - today's is measured
-in gigabytes; (2) fast startup - permission fixing is a manager-container job, never the web
-container's; (3) ONE log stream - today logs scatter across several locations; (4) stateless - the
-only writable path is throwaway tmpfs; (5) none or at most one database query on startup before
-serving; (6) non-root, no known-vulnerable components (both failures of the current image). Lands
-in §2 D2/D10, §4.7, §12 Phase 0, §22.
+**Q1. Deployment target - Kubernetes AND compose, one versioned build graph with role-specific
+images (REVISED 2026-08-29)** (original wording: "Both kubernetes and compose, it should be
+container configurable to be a single server or part of multiple web backends"). Clients range
+from a single VM to clustered estates, so compose remains the simple on-ramp and the same release
+must scale horizontally under Kubernetes. A single BuildKit graph produces production web,
+manager, queue and development targets from the same application, dependency, asset and runtime
+layers. Web and queue are byte-equivalent at the application layer; manager adds only its bounded
+maintenance scripts; development adds tools and tests. This supersedes the literal one-image
+interpretation because role-specific targets keep the web image serving-only, allow independent
+security and resource limits, and avoid adding manager or development tools to every pod without
+creating independent builds or release identities. Hard requirements on the web container,
+captured 2026-08-20: (1) lightweight image - today's is measured in gigabytes; (2) fast startup -
+permission fixing is a manager-container job, never the web container's; (3) one discoverable log
+stream; (4) stateless - the root is read-only and writes are limited to explicit tmpfs or external
+volumes; (5) none or at most one database query on startup before serving; (6) non-root, with no
+known-vulnerable components. Lands in section 2 D2/D10, 4.7, 12 Phase 0 and 22.
 
 **Q2. Frontend - Vue 3 + Inertia from day one, with staged old-skin parity (REVISED
 2026-08-24).** Every page is built once with Vue + Inertia and reuses the legacy CSS and markup
@@ -4604,10 +4610,17 @@ areas on their own cheaper cadence (enabled by Q6). Why: a backup is only real o
 split cadence keeps cost proportionate to the data's value. Numbers re-based on measured drills
 (§26.4). Lands in §23.
 
-**Q19. Runtime - FrankenPHP built onto Ubuntu 24.04, running non-root.** Why: the app stays loaded
-in memory between requests, a large part of the extremely-fast and lightweight-container goals;
-building onto Ubuntu 24.04 keeps the brief's base-image standard rather than switching OS family to
-the stock Debian image. Lands in §2 D2, §9.1.
+**Q19. Runtime - FrankenPHP in a pinned distilled Alpine runtime, running non-root (REVISED
+2026-08-29).** The app stays loaded in memory between requests, which supports the latency and
+small-container goals. The implementation copies only the required FrankenPHP binary, PHP runtime,
+extensions and shared libraries into a pinned Alpine base instead of inheriting the complete
+builder image. The security-refreshed verified production web image is 221,586,320 bytes,
+compared with the
+296,967,711-byte legacy verification image and a rejected 342,547,081-byte direct official-image
+candidate. This measured result supersedes the earlier Ubuntu 24.04 choice. Alpine and musl remain
+subject to representative clinical, render, extension, load and vulnerability gates; a return to
+Ubuntu is permitted only when recorded evidence shows an incompatibility or material performance
+regression. Lands in section 2 D2, 9.1 and 26.7.
 
 **Q20. Config export/import - per-family CSVs stitched into ONE Excel workbook; the CSVs double as
 seeds (REVISED 2026-08-20).** Every config family exports as a CSV; the CSVs are stitched into one
@@ -4773,8 +4786,9 @@ that makes per-page pixel identity the immediate priority.
    OeDocumentation and record the page slug and review status, or `not-documented`.
    Missing pages are queued without stopping the port.
 4. Keep linked LegacyBugRegister and LearningRegister entries as discoveries are made.
-5. Port the OeDocumentation module and its route-linked help coverage into the new app,
-   then keep it synchronized with BSpecs, routes, and executable runbooks.
+5. Build an equivalent route-linked documentation capability into the new app, but do
+   not port the OeDocumentation special module. Keep the built-in documentation
+   synchronized with BSpecs, routes, and executable runbooks.
 6. Give every clinical and admin data-bearing feature a versioned API, deterministic
    fixture generator, and contract tests. Every admin family supports import and
    export; every Examination type and element can be generated through the API.
@@ -4797,6 +4811,309 @@ that makes per-page pixel identity the immediate priority.
 13. Register routes, pages, parameters, navigation, RBAC, components, help, and tests in
     one PageRegister so the complete application sitemap and page-test inventory are
     generated and continuously updated.
+
+### 26.6 Render, discovery, AI, cache and scale-out directives recorded 2026-08-28
+
+These are architectural guardrails, not a request to pause functional porting. The
+small seams in the first group apply to new work now. The renderer, MCP, load and EKS
+workstreams start only at their planned foundation milestones.
+
+**Guardrails for every current functional slice**
+
+1. Each event element exposes a deterministic presentation DTO and a template or
+   render component that consumes only that DTO. Event preview, print,
+   correspondence and later event-image output must not depend on a browser login,
+   controller session state or a second reading of mutable configuration.
+2. The event page root exposes `data-oe-render-state="loading|ready|error"` and changes
+   to `ready` only after every registered element, drawing and font needed by a render
+   has settled. Render automation waits for this signal, never a fixed sleep or
+   `networkidle` guess.
+3. New event, element and correspondence rows preserve the version and immutable
+   display snapshots needed to reproduce output. A later renderer must never update
+   or lock the hot `event` row merely to record a cache hit, job state or image path.
+4. Every end-user HTML control carries `data-oe-user-input` plus a stable semantic
+   input id. Rich HTML, file, free-text and query controls also declare their input
+   class and purification policy. CI combines static Vue inspection, rendered-page
+   crawling and backend request schemas into one penetration-test input inventory.
+5. Every route is named and registered in PageRegister with URI parameters, RBAC,
+   navigation parent, component, help, fixture provider and test. CI fails an
+   unregistered end-user page or action, and generates compact JSON plus human-readable
+   sitemap output from the same registry.
+6. Every cache declares owner, source rows, key dimensions, version source,
+   invalidation event and fallback. Mutable clinical or configuration data uses
+   versioned keys and after-commit invalidation. TTL is only cleanup, never the
+   correctness mechanism. If currency cannot be proved, the app reads the source or
+   reports the value unavailable; it never displays a known-stale clinical value.
+7. Messaging is not a global page dependency. Shared Inertia props and unrelated page
+   controllers perform zero messaging queries. Inbox and badge state use an explicit
+   bounded endpoint or subscription backed by a maintained projection; an unavailable
+   projection is shown as unavailable, not as a stale count.
+8. New code follows the applicable OpenEyes replatform standards now: clinical safety,
+   authorization, request validation, typed PHP, Eloquent relation typing, pagination,
+   API envelopes and deterministic tests. A standards-gap inventory tracks existing
+   rewrite code that needs mechanical remediation; functional porting does not stop for
+   a repository-wide reformat or speculative abstraction.
+9. New hot paths expose route, query-count, duration, queue and render metrics with no
+   patient-identifying labels. Test data generators remain deterministic and scalable
+   so the same scenario can run against tiny and multi-million-event profiles.
+10. Legacy bugs and intentional differences continue to enter their linked registers
+    with source evidence, reason, risk and deterministic proof.
+11. Ordered collections use one contract. Persist a non-null non-negative
+    `display_order`, render every selected row with `display_order`, stable code and id
+    as deterministic sort keys, and never discover rows by walking expected numeric
+    positions. A reorder accepts the complete scoped list, locks and updates it in one
+    transaction, and omission cannot mean hidden or deleted. New families validate
+    duplicate or invalid positions, while readers still show every row and emit a
+    diagnostics failure if legacy or imported data violates the invariant. Generator,
+    import/export, administration and clinical-picker tests must cover gaps, duplicate
+    positions, inactive rows and concurrent reorder attempts.
+12. Patient medication reads never traverse `latest_med_use_id` or any successor chain.
+    The summary and prescribing safety paths read one latest complete snapshot or a
+    maintained current-state projection with a fixed query count and a bounded row
+    count. CI must prove the query count does not grow when a deterministic patient has
+    hundreds or thousands of historical medication revisions, and that cycles or
+    broken legacy links cannot hang or hide the current list.
+13. Audit is comprehensive but cheap to append. Each state-changing action, sensitive
+    patient read, search or export, authentication result, authorization denial,
+    configuration change, background job and integration outcome declares a stable
+    audit action in PageRegister or the command registry; an undeclared auditable path
+    fails CI. The append-only partitioned table has no foreign keys or lookup-row writes
+    and starts with only the primary key plus patient-time and actor-time investigation
+    indexes. Any further index needs a measured investigation query, write-amplification
+    evidence and approval; broad analytics use an off-path projection or replica.
+    Mandatory clinical write audit stays in the clinical transaction, while access and
+    denied-attempt audit uses the durable audit channel. Neither may be silently dropped.
+14. Default workflows and other required defaults have a protected lifecycle. A
+    referenced default or the last effective fallback cannot be hard-deleted or retired.
+    Replacement is one transaction that validates the complete workflow, promotes it,
+    rewrites only explicit configuration references and then retires the old default.
+    Otherwise the operation fails with a dependency report and makes no change. Runtime
+    resolution returns a validated built-in safe workflow or a bounded unavailable
+    response with an operational alert; missing configuration must never cause a
+    system-wide exception cascade.
+15. Permission migration preserves familiar access without preserving unsafe breadth.
+    Every legacy role and permission has a reviewed mapping to stable target capability
+    codes, and migration reports unmapped or changed grants before cutover. UI, APIs,
+    commands and future MCP operations use the same policies. Expensive non-essential
+    work receives separate view, run, export, bulk-run and administer capabilities where
+    warranted, so ordinary clinical roles do not acquire data-heavy operations merely
+    because an old menu permission was broad. Unknown mappings fail closed. Permissions
+    never replace bounded queries, rate limits, queue isolation or resource ceilings.
+16. Every OpenEyes-owned log record uses an ASCII one-line contract beginning `OELOG`
+    and includes a registered stable `event_code`. Structured context uses grepable
+    `key=value` fields, with request, job and trace identifiers where applicable, and
+    never includes secrets or patient-identifying values. CI inventories application,
+    command, queue, integration and container logging calls and fails unregistered event
+    codes. Runtime and sidecar streams that OpenEyes does not own are normalized or
+    queried separately. This makes a production investigation expressible as a stable
+    AWS Logs Insights filter instead of matching changeable prose.
+
+**Event image and correspondence rendering foundation**
+
+1. Treat rendering as a derived-output pipeline. A render request snapshots the event
+   revision, element revisions, template revision, asset manifest, locale, theme and
+   relevant configuration revision into one dependency digest. The content-addressed
+   output key is derived from that digest, so identical work is reused and changed
+   input cannot accidentally return an old image.
+2. Prefer direct server-side templates for supported event previews and correspondence.
+   The normal path renders from a presentation DTO without authenticating a browser or
+   loading the interactive application shell. Headless Chromium remains a separate,
+   tightly bounded render worker only for output that genuinely requires a browser.
+3. Store job, lease, attempt, output and dependency metadata outside `event`, using
+   indexed renderer-owned tables and object storage. Do not add render-status churn to
+   the event history table. Claim work with short compare-and-swap leases or a queue,
+   never `LOCK TABLES`, and enforce per-patient and per-event idempotency.
+4. Design the hot query for at least 10 million events: start from an institution and
+   event id or immutable revision, use covering indexes, load bounded element sets, and
+   avoid group-wise maxima, offset scans, cross-schema mutable lookups and N+1 queries.
+   Prove the plan on the history-heavy profile before declaring the renderer complete.
+5. Apply bounded render concurrency, memory, CPU, wall-clock and output-size limits.
+   Queue isolation prevents an image burst from delaying clinical HTTP or
+   correspondence. Retries are finite and idempotent; poison jobs quarantine with a
+   visible operational reason.
+6. Measure separate SLOs for cache hit, template render, browser fallback, queue wait,
+   total preview time and correspondence generation. The user-visible request should
+   return an existing valid artifact immediately or enqueue once and report status; it
+   must not hold a clinical request open while Chromium starts.
+7. Cache invalidation is dependency based. Event or element replacement, template or
+   asset deployment, theme, locale or applicable config change produces a new digest.
+   Old immutable objects may be retained for audit or garbage-collected later, but are
+   never selected for a different digest.
+
+**Machine discovery and a future MCP boundary**
+
+1. PageRegister, documentation registry and OpenAPI are the source of truth for a
+   compact authenticated machine-navigation manifest: stable operation id, route,
+   capability, inputs, outputs, next actions and documentation link. Keep responses
+   cursor-bounded and offer field selection so an agent need not ingest page HTML or a
+   large schema to perform one operation.
+2. Use semantic APIs for reads and actions; browser automation is a last resort for UI
+   verification. Stable labels, ARIA and `data-test` hooks make the remaining browser
+   path deterministic and low-token. Machine-facing documentation is native Markdown,
+   not generic authenticated HTML converted after the fact.
+3. A future MCP server is a separate optional container or disabled application role.
+   It calls authorized application APIs, never the database, and inherits the same
+   institution scope, rate limits, audit, cursor bounds and redaction. Its production
+   exposure is off by default and requires a concrete approved use case and threat
+   model.
+
+**CI and load-test preparation**
+
+1. Inventory every legacy CI job and map it to `retain`, `rewrite`, `replace` or
+   `retire`, with a reason. Carry forward relevant migration, PHP, JavaScript,
+   deterministic browser, security, dependency, licence and packaging checks; do not
+   copy Yii-only or obsolete runner ceremony.
+2. Run Pint, Larastan/PHPStan, OpenEyes standards checks, architecture boundaries and
+   Rector dry runs incrementally on changed code. Tighten gates only after the existing
+   target tree is measured, so a new baseline never hides a newly introduced failure.
+3. Define containerized k6 scenarios from PageRegister and deterministic fixture APIs.
+   Scenario setup is explicitly non-production and cannot become a live backdoor.
+   Thresholds, request mixes, think times, concurrency and seed identities are versioned
+   with the application.
+4. Export request ids, `Server-Timing`, query counts, DB waits, worker occupancy, queue
+   depth and renderer spans so a load failure identifies its route and resource cause.
+   Test profiles include concurrency on the same patient and event, messaging-disabled
+   normal pages, cached and uncached renders, and correspondence bursts.
+5. Add architecture tests for the canonical ordered-collection contract and a
+   high-cardinality medication-summary scenario. The ordering test fails position-loop
+   readers, unstable one-column ordering, partial-list reorder writes and silent row
+   omission. The medication test fails recursive lineage traversal, N+1 queries,
+   unbounded hydration and query counts that grow with medication history.
+6. Generate an audit-coverage matrix and permission matrix from PageRegister, command,
+   queue and integration registries. Test high-rate audit writes, missing mandatory
+   actions, forbidden cross-role access, old-to-new role migration, and safe denial of
+   every expensive operation. Test deletion, retirement and concurrent replacement of
+   every required default workflow.
+
+**Stateless EKS and ALB scale-out**
+
+1. Redis-backed sessions and secure application cookies are shared across replicas.
+   Assets and durable output are immutable image layers or object storage. ALB target
+   stickiness is not required, and a request can reach any healthy pod.
+2. Users are not assigned to pods, so `logged-in users per pod` is a diagnostic, not a
+   scaling truth. Publish global active sessions and recently active distinct users
+   from expiring Redis presence records, plus per-pod in-flight requests, request rate,
+   worker utilization, memory, CPU and latency. A support view may show the last pod to
+   serve a request without implying ownership.
+3. HPA uses measured saturation such as ALB request count per target, in-flight
+   requests, worker utilization and latency, with active sessions as a leading or
+   scheduled-capacity signal. The example of 50 additional users causing five pods is
+   accepted only after a load test proves the chosen target of roughly ten active users
+   per pod; it is not hard-coded as a capacity rule.
+4. Set minimum and maximum replicas, scale-up and scale-down stabilization, disruption
+   budgets, readiness removal and graceful drain. Web worker count, request timeout,
+   memory limit, max requests, PID ceiling and queue separation must make overload fail
+   boundedly rather than cycle, swap or exhaust the node.
+
+**Measured decisions still required before implementation**
+
+1. Event-image formats, dimensions, visual tolerance and synchronous-preview SLO.
+2. Which complex drawings still require Chromium after direct templates are proven.
+3. Render retention and whether historic template revisions must reproduce byte-identical
+   artifacts or only clinically equivalent presentation.
+4. Production traffic distribution, acceptable scale-up delay, per-pod resource request
+   and the concurrency measurement that replaces the illustrative users-per-pod ratio.
+5. Whether the messaging badge needs push updates or may refresh only when the inbox is
+   opened. Either choice retains the zero-query unrelated-page rule.
+
+### 26.7 Container implementation checkpoint and next frontend sequence recorded 2026-08-29
+
+The container foundation now exists in `/home/toukan/openeyes-docker` and is a prerequisite
+checkpoint, not a new diversion from functional porting. One cache-efficient BuildKit graph uses
+the Laravel repository as a named external build context and produces four targets: immutable
+production web, manager, queue and development. All use `WROOT=/var/www/openeyes`, `/init.sh`,
+ordered `/init_scripts`, a non-root `tkl` user, explicit container-role variables, the familiar
+protected-file and protected-event-image symlinks, a separate Laravel storage mount, MariaDB CLI,
+environment configuration and secret-file-first loading with environment fallback. No `.env` is
+copied or mounted. Client module sources are a controlled pre-build input, never cloned with
+credentials during the image build.
+
+The production web target serves HTTP only. The manager target owns migrations, schema
+verification, scheduler, log pruning and custom volume-supplied cron jobs. The queue target owns
+workers. Cron schedules retain legacy environment aliases where known, each custom invocation has
+an isolated run id and log, and a simple collision warning is emitted without pretending to solve
+distributed scheduling. All new container-owned records follow `OELOG event_code=...`; migrating
+all Laravel-owned log sites to the same registered contract remains a cross-cutting release gate.
+The production root filesystem is read-only under Compose and Helm, Linux capabilities are
+dropped, PID and memory ceilings are explicit, and only tmpfs plus declared storage volumes are
+writable.
+
+Verification from a clean Compose project passed all 227 application migrations, seven-schema
+verification, manager release-marker gating, web, manager, queue, database and Redis health, role
+identity, secret boundaries and separation of Laravel storage, protected files and event images.
+Image tests passed for production, manager and development. The schedule contract passed one test
+with 45 assertions without requiring an env file. Shellcheck, Hadolint, Helm lint and render,
+gitleaks and diff checks passed. The final Alpine refresh removed all high and critical
+operating-system findings. Measured image sizes are 221,586,320 bytes for web, 221,592,456 for
+manager, 221,586,320 for queue and 464,568,694 for development. Trivy still reports three high
+and one critical finding in the latest stable official FrankenPHP binary's embedded Go graph:
+three affect `kin-openapi` and one affects gRPC xDS. Those code paths are not configured by this
+Caddyfile, but no patched stable upstream artifact exists on the checkpoint date, so the literal
+no-known-vulnerability production gate remains open and the findings must not be hidden by a
+permanent scanner ignore. Representative load, FrankenPHP worker-state isolation and
+deployment-specific secret templates also remain release gates rather than claims made by this
+checkpoint.
+
+After this checkpoint, the next five ordinary frontend modules are:
+
+| Order | Module | Frozen legacy files | Active estimate | Why now |
+|---|---|---:|---:|---|
+| 1 | OphDrPGDPSD | 74 | 5-7 h | Closes the current medication workflow while Prescription and medication contracts are fresh. |
+| 2 | OphCoDocument | 68 | 4-6 h | Establishes the reusable protected-document and stateless storage boundary. |
+| 3 | OphCoCorrespondence | 296 | 14-20 h | Meets the explicit correspondence-speed priority and reuses direct rendering, signatures and Document. |
+| 4 | OphCoMessaging | 85 | 6-9 h | Removes messaging work from unrelated page requests before more pages depend on the shared shell. |
+| 5 | OphCoRequestForm | 73 | 5-8 h | Reuses Document and Correspondence contracts and closes another bounded clinical workflow. |
+
+The sequence is 34-50 active hours after the container checkpoint. The 2026-08-31 07:00 BST date
+is a progress checkpoint, not a stop condition; work continues until all five selected boundaries
+are implemented, verified, accounted for and staged for the human to review and push. Hourly
+percentage, current item and ETA are appended to
+`/home/toukan/ui-parity/progress/openeyes-laravel-hourly-progress.md` by the containerized
+`/home/toukan/ui-parity/scripts/record-port-progress.php`. The 2026-08-29 05:31 BST baseline is
+4,215 of 14,125 exact files accounted for (29.84 percent) and 3,280.23 equivalent files (23.22
+percent). UI remains function-first during these five modules; exact visual parity stays in the
+later consolidated pass. OphCoConsent and OphCiBiometry remain the leading following candidates,
+with Biometry requiring a separate calculation-vector and clinical-signoff budget.
+
+### 26.8 Messaging query, realtime and operational notification boundary recorded 2026-08-29
+
+Messaging must not add a mailbox query, unread count, shared fragment or hydrated Message model to
+ordinary page requests. One rebuildable `messaging_inbox_item` projection holds the indexed folder,
+participant, read, urgency and last-activity facts required by the inbox. Only `/messages` and
+`/api/messages` read it, cursor pages are bounded, and message or reply text is joined only after an
+explicit text search. The manager owns bounded projection repair. Clinical Message rows and replies
+remain the authority; the projection is disposable.
+
+Laravel Reverb is the preferred optional push adapter. It runs as a separate realtime role behind a
+WebSocket-capable load balancer, never inside each web container. Multiple Reverb replicas share
+Redis for fanout and presence. Private per-user or per-mailbox channels publish only a small
+after-commit hint containing stable opaque identifiers and a monotonic version. Disconnects,
+duplicates and out-of-order hints are expected. The browser refetches the bounded authoritative API
+before changing the unread badge or showing a toaster notification. A deployment can disable the
+realtime role without changing the clinical write or inbox read path.
+
+Thousands of concurrent users are an explicit load-test target, not an unqualified capacity claim.
+The test must cover connection churn, reconnect storms, Redis fanout, per-process file descriptors,
+memory, ALB idle timeout, rolling replacement, duplicate hints and a Redis or realtime-node outage.
+Realtime replicas scale on active connections, connection rate, event rate, memory, CPU and delivery
+latency independently from HTTP web replicas.
+
+Patient messages and operational notices use the same browser envelope but different stores,
+retention and authorization. NOD Export completion creates an `operational_notification`; it never
+creates a fake patient, Episode, Event or OphCoMessaging row. Later jobs can use the same contract
+after each notification kind has an owner, retention policy, idempotency key and capability.
+
+`optom_portal_message_mode` is an institution setting with three stable values: `off` creates no
+Message, `actionable` creates one only for a comment or ready-for-second-eye outcome, and `all`
+preserves creation for every imported portal examination. Every skip is audited with policy and
+reason. Email intent is durable and dispatched outside the import transaction. Configuration is
+available through the normal setting administration, import and export contract.
+
+The current functional Messaging port implements the database projection, short named inbox
+predicates, bounded APIs, manager rebuild, portal policy, documentation and deterministic backend,
+clean-room and browser proof. The non-patient store, broadcaster, private channel authorization,
+toaster UI, Reverb container and the load tests above remain one explicit later slice. They must not
+be approximated by page-wide polling while deferred.
 
 Execution note 2026-08-25: the Glaucoma Overall Plan slice completed direct and
 whole-event APIs, administration import and export, indexed patient and IOP target
@@ -6324,7 +6641,7 @@ v26.0.9 tree and a live v26.1 sample DB (counts as of 2026-08-19); Risk is `clin
 | DIV-009 | ops | `OEConfig::getMergedConfig()` cached in APCu per container as `oe_merged_config_<env>`; the only flush is `/apc_clear.php` (18 lines, loopback `REMOTE_ADDR` guard) with `oe-fix.sh:280`, the `clearapc` shell alias (`profile.d/oe-shortcuts.sh:45`) and `.githooks/oe-common.sh:12` its only callers; `OE_CONFIG_TEST_RUNNING=1` bypass | config / route / view / event caches built at image build or container start into tmpfs; shared runtime config in Redis with tag invalidation; no flush endpoint | §4.7; §9.1; §26 Q15 | none |
 | DIV-010 | schema | `patient.hos_num` / `patient.nhs_num` columns kept beside `patient_identifier` rows, their labels rewritten at runtime (`Patient.php:339-342`); identity resolved by `patient_identifier_type.usage_type` LOCAL / GLOBAL | identifier rows only; no identifier columns on `patient`; merge lineage and identifier history per §5.4 | §5.4; §17 §3.3; §4.8 patient identity block | low |
 | DIV-011 | ops | three PDF paths: `DocumentRenderServicePuppeteer` (`BaseEventTypeController::setPDFprintData()`, `PUPPETEER_BASE_URL`), TCPDF / `TCPDFBarcode` (`OphCoDocument` print, barcodes), LibreOffice headless for CVI ODT (`ODTTemplateManager.php:669`) | one render contract to the Chrome sidecar; barcodes as inline SVG; the ODT and TCPDF paths retired behind the same contract | D9; §4.4; §4.5; §7.2 (c) | low |
-| DIV-012 | ops | `oe-web-live` image = Ubuntu 24.04 LTS + Apache 2.4 mpm-event + PHP-FPM 8.4; the `master` container is the same image with a cron entrypoint | FrankenPHP built onto Ubuntu 24.04, worker mode, non-root, in one web image; scheduler and Horizon are roles of that image | D2; §4.1; §17 §4; §26 Q19, Q1 | none |
+| DIV-012 | ops | `oe-web-live` image = Ubuntu 24.04 LTS + Apache 2.4 mpm-event + PHP-FPM 8.4; the `master` container is the same image with a cron entrypoint | one pinned, cache-efficient BuildKit graph produces distilled Alpine FrankenPHP web, manager, queue and development targets; all run non-root with the same application and release layers, while manager alone owns migrations and maintenance | D2; section 4.1; section 17 item 4; section 26 Q19, Q1 and 26.7 | none |
 | DIV-013 | ops | `QUEUE_CONNECTION` default `database` (`oe-laravel/config/queue.php`); the worker is cron `.cron/reportsqueue` running `queue:work --max-time=60` every minute; 13 cron fragments gated by `CRON_*_SCH`; Horizon only when Redis is configured | Redis queue + Horizon supervisors; the Laravel scheduler replaces every cron fragment; `queue:prune-failed` scheduled | §4.4; §4.6; §9.1 | none |
 | DIV-014 | behaviour (no change, documented) | `SettingMetadata::$CONTEXT_CLASSES` resolves User -> Firm -> InstitutionSubspecialty -> Subspecialty -> Specialty -> Site -> Institution -> Installation -> `default_value` (`SettingMetadata.php:44-53`); a file `params[$key]` short-circuits the chain (`SettingMetadata.php:256-260`) | the same nine-step order, unchanged; the file-param short-circuit is removed and its keys become explicit config families | §4.8 settings block; §4.9; §26 Q15, Q20 | low |
 | DIV-015 | behaviour | `MenuHelper` caches the main menu per session id + institution + patient; PatientTicketing `getMenuItems` is the largest contributor to the build; admin menu = `params['admin_structure']` + `ModuleAdmin::getAll()` | menu compiled from the module registry, cached in Redis per role set + institution + site + enabled modules, never per session; patient-scoped items resolved per request | §4.8 menu block; §5.10; sharp edge #23 | none |
