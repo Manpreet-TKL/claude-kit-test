@@ -24,7 +24,15 @@ GNU screen 5 reconnects to an existing session after SSH or terminal loss. Run `
 
 ## Installer flags
 
-`codex-install.sh` accepts the same feature flags as `install.sh`: `-q`, `-p`, `-m`, `-s`, `-d`, `-r`, `-F`, `-n`, `-U`, `-y`, `-j`, `-c`, `-J`, `-g`, `-G`, `-x`, `-X`, `-a`, `-A`, `-w`, and `-l <target>`. Run `bash /home/toukan/claude-kit/codex-install.sh -h` for exact values. The `-x` and `-X` flags are accepted no-ops because this entry point already is the standalone Codex setup.
+`codex-install.sh` accepts the same feature flags as `install.sh`: `-q`, `-p`, `-m`, `-t`, `-s`, `-d`, `-r`, `-F`, `-n`, `-U`, `-y`, `-j`, `-c`, `-J`, `-g`, `-G`, `-x`, `-X`, `-a`, `-A`, `-w`, and `-l <target>`. Run `bash /home/toukan/claude-kit/codex-install.sh -h` for exact values. The `-x` and `-X` flags are accepted no-ops because this entry point already is the standalone Codex setup.
+
+Set the maximum number of concurrent native subagents with `-t <positive integer>`. The installer saves it as `CODEX_AGENT_THREADS` and writes it to the generated Codex profile. For example:
+
+```bash
+bash /home/toukan/claude-kit/codex-install.sh -t 50 -U -y
+```
+
+Start a new Codex session after changing it. To restore Codex's built-in default, set `CODEX_AGENT_THREADS=` in `generated/.codex.env` and rerun the installer.
 
 If Codex is missing, the installer uses OpenAI's standalone installer. A normal re-run updates Codex. If an existing global npm installation is root-owned, the installer uses `sudo npm install -g @openai/codex`; otherwise it uses `codex update`. Pass `-U` to leave an existing version unchanged; it does not suppress a required first install.
 
@@ -40,6 +48,7 @@ If Codex is missing, the installer uses OpenAI's standalone installer. A normal 
 | Shift-enter and terminal input | Native Codex TUI. In VS Code, the launcher sets `CODEX_TUI_DISABLE_KEYBOARD_ENHANCEMENT=1` only for the child Codex process. | Complete workaround; Ctrl+J remains the newline fallback. See OpenAI issue #16189. |
 | Screen resilience | Managed aliases start each CLI inside GNU screen 5 and remain available without nesting from shells already inside screen. | Complete and idempotent |
 | Auto-compaction | `model_auto_compact_token_limit` in the Codex profile. | Native equivalent |
+| Native subagents | `CODEX_AGENT_THREADS` becomes `[agents].max_concurrent_threads_per_session` in the generated profile. | Configurable with `-t`; applies to new sessions. |
 | Session pruning | `-d` locates old rollout files and calls `codex archive`. | Complete |
 | Reset and fresh install | `-r` archives regenerable data; `-F` backs up and restores auth, history, sessions, and memory state. | Complete |
 | Memory | Native Codex memories are enabled. Raw memory remains in `~/.codex/memories/` and `~/.codex/memories_*.sqlite*`. | Preserved by reset/fresh; deliberately never copied into the git repository. |

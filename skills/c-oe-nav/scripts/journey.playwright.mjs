@@ -120,13 +120,22 @@ async function dump(page) {
 
 async function login(page) {
   await page.goto(BASE + '/site/login', { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await settle(page);
+  const inst = env('OE_INSTITUTION_ID', '1');
+  const site = env('OE_SITE_ID', '1');
+  if (!(await page.locator('#LoginForm_username').isVisible())) {
+    const institution = page.locator(`.js-institution[data-id="${inst}"]`).first();
+    if (await institution.isVisible()) await institution.click();
+    const siteOption = page.locator(`.js-site[data-id="${site}"]`).first();
+    if (await siteOption.isVisible()) await siteOption.click();
+  }
   await page.fill('#LoginForm_username', env('OE_USERNAME', 'admin'));
   await page.fill('#LoginForm_password', PASSWORD);
   // The institution/site pickers are custom JS; the real inputs are hidden.
   await page.evaluate(({ inst, site }) => {
     const i = document.querySelector('#LoginForm_institution_id'); if (i) i.value = inst;
     const s = document.querySelector('#LoginForm_site_id'); if (s) s.value = site;
-  }, { inst: env('OE_INSTITUTION_ID', '1'), site: env('OE_SITE_ID', '1') });
+  }, { inst, site });
   await page.click('#login_button');
   await settle(page);
   if (page.url().includes('/site/login')) {

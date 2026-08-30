@@ -1,6 +1,6 @@
 ---
 name: c-note-style
-description: TKL knowledge-base note style (runbooks, how-tos)
+description: DevOps process and short task-note style, outside claude-kit
 disable-model-invocation: false
 ---
 
@@ -8,7 +8,11 @@ disable-model-invocation: false
 
 When loaded as context with no task, reply only `Context loaded.` This skill is context-only: it never does anything by itself - it just loads knowledge; act only on instructions given in the conversation.
 
-For the DevOps team's knowledge-base notes - not code comments, commit messages, READMEs, or PR text. Detailed conventions and examples: `subs/reference.md`. Notes are text-only, grep-discoverable, act-on-able in seconds.
+For the DevOps team's process notes, runbooks, how-tos, and short knowledge
+about tasks - not code comments, commit messages, READMEs, PR text, or anything
+inside `~/claude-kit`. The kit uses Markdown throughout. Detailed conventions
+and examples: `subs/reference.md`. DevOps notes are text-only,
+grep-discoverable, and act-on-able in seconds.
 
 ## Shape (top -> bottom)
 

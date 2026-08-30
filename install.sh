@@ -49,6 +49,7 @@ GITHUB_MODE=""                                  # -g / --with-github / "" (leave
 GITHUB_REMOVE=0                                 # --without-github sets to 1
 CODEX_MODE=""                                   # -x / --with-codex / "" (leave alone)
 CODEX_REMOVE=0                                  # --without-codex sets to 1
+AGENT_THREADS=""                               # -t <number>: maximum concurrent native Codex subagents; "" = saved/default
 AWS_MODE=""                                     # -a / --with-aws / "" (leave alone)
 AWS_REMOVE=0                                    # --without-aws sets to 1
 WALKER_SETUP=0                                  # -w / --setup-walker: run docker/oe-chrome-agent/setup-walker.sh
@@ -64,12 +65,12 @@ usage() {
     cat <<'USAGE'
 Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                   [-m <default|plan|acceptEdits|auto|dontAsk|bypassPermissions>]
-                  [-s <on|off>] [-d <days|YYYY-MM-DD>]
+                  [-t <positive integer>] [-s <on|off>] [-d <days|YYYY-MM-DD>]
                   [-r] [-F] [-n] [-U] [-y] [-j] [-c] [-J] [-g | -G] [-x | -X]
                   [-a | -A] [-w]
 
   Every option has a single-letter (-x) and a long (--word) form.
-  Short flags may be bundled: -jc == -j -c (value-taking -p / -m / -s / -d must be last).
+  Short flags may be bundled: -jc == -j -c (value-taking -p / -m / -t / -s / -d must be last).
   Run with no flags at all, install.sh prints this help and exits with an
   error - pass -q for the no-questions-asked run with defaults.
 
@@ -95,6 +96,8 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       bypassPermissions  skip ALL checks - widest mode; sandbox/VM only.
                       Omitted -> DEFAULT_MODE (auto); never prompted for - interactive
                       runs only ask for the tier.
+  -t, --agent-threads Maximum concurrent native Codex subagents per session. Use with
+                      -x; the value is saved in generated/.codex.env.
   -r, --reset         Archive Claude Code's auto-generated state directories
                       (file-history, paste-cache, backups, shell-snapshots,
                       stats-cache, session-env, plugins, tasks) into
@@ -306,6 +309,11 @@ while [[ $# -gt 0 ]]; do
     -m | --mode)
         requireValue "$@"
         MODE="${2}"
+        shift
+        ;;
+    -t | --agent-threads)
+        requireValue "$@"
+        AGENT_THREADS="${2}"
         shift
         ;;
     -q | --quick)
@@ -603,6 +611,11 @@ case "${STATUSLINE_REFRESH}" in
     ''|*[!0-9]*)
         echo "Invalid STATUSLINE_REFRESH '${STATUSLINE_REFRESH}' - must be a whole number of seconds (0 = event-driven only)" >&2
         exit 1
+        ;;
+esac
+case "${AGENT_THREADS}" in
+    ''|*[!0-9]*|0)
+        [ -z "${AGENT_THREADS}" ] || { echo "Invalid --agent-threads '${AGENT_THREADS}' - must be a positive integer" >&2; exit 1; }
         ;;
 esac
 # No -s: leave every skill exactly as committed. The per-skill values in git are
@@ -1492,7 +1505,7 @@ applyCodex() {
     fi
 
     # Load saved knobs (non-secret) so re-runs preserve prior choices.
-    local cx_model cx_effort cx_sandbox cx_approval
+    local cx_model cx_effort cx_sandbox cx_approval cx_threads
     if [ -f "${codex_secrets}" ]; then
         # shellcheck source=/dev/null
         . "${codex_secrets}"
@@ -1500,11 +1513,14 @@ applyCodex() {
         cx_effort="${CODEX_REASONING_EFFORT:-}"
         cx_sandbox="${CODEX_SANDBOX:-}"
         cx_approval="${CODEX_APPROVAL:-}"
+        cx_threads="${CODEX_AGENT_THREADS:-}"
     fi
     # Defaults: flagship model, xhigh reasoning, workspace-write (network off -> no push).
     cx_model="${cx_model:-gpt-5.6-sol}"
     cx_effort="${cx_effort:-xhigh}"
     cx_sandbox="${cx_sandbox:-workspace-write}"
+    cx_threads="${AGENT_THREADS:-${cx_threads:-}}"
+    case "${cx_threads}" in ''|*[!0-9]*|0) [ -z "${cx_threads}" ] || { echo "CODEX_AGENT_THREADS must be a positive integer" >&2; return 1; } ;; esac
     # Read and written back only so this file stays the shared home for both entry
     # points: approval_policy is codex-install.sh/codex.sh's knob for interactive
     # runs, and MCP agents pin never below regardless. Truncating it here would
@@ -1515,7 +1531,7 @@ applyCodex() {
     [ "${ASSUME_YES}" = "1" ] || [ ! -t 0 ] && noninteractive=1
 
     if [ "${noninteractive}" = "1" ]; then
-        echo "  Codex: model=${cx_model} effort=${cx_effort} sandbox=${cx_sandbox} (from ${codex_secrets} / defaults)"
+        echo "  Codex: model=${cx_model} effort=${cx_effort} sandbox=${cx_sandbox} agent_threads=${cx_threads:-default} (from ${codex_secrets} / defaults)"
     else
         echo ""
         echo "  Codex agent defaults (non-secret; saved to generated/.codex.env)"
@@ -1523,6 +1539,9 @@ applyCodex() {
         cx_model="${_in:-${cx_model}}"
         read -r -p "  CODEX_REASONING_EFFORT (low|medium|high|xhigh|max|ultra) [${cx_effort}]: " _in
         cx_effort="${_in:-${cx_effort}}"
+        read -r -p "  CODEX_AGENT_THREADS (positive integer; blank = Codex default) [${cx_threads}]: " _in
+        cx_threads="${_in:-${cx_threads}}"
+        case "${cx_threads}" in ''|*[!0-9]*|0) [ -z "${cx_threads}" ] || { echo "CODEX_AGENT_THREADS must be a positive integer" >&2; return 1; } ;; esac
         if [ "${cx_runtime}" = "host" ]; then
             read -r -p "  CODEX_SANDBOX (read-only|workspace-write|danger-full-access) [${cx_sandbox}]: " _in
             cx_sandbox="${_in:-${cx_sandbox}}"
@@ -1546,6 +1565,7 @@ applyCodex() {
         echo "CODEX_REASONING_EFFORT=${cx_effort}"
         echo "CODEX_SANDBOX=${cx_sandbox}"
         echo "CODEX_APPROVAL=${cx_approval}"
+        echo "CODEX_AGENT_THREADS=${cx_threads}"
     } > "${codex_secrets}"
     chmod 600 "${codex_secrets}"
     echo "  saved -> ${codex_secrets}"
@@ -1561,12 +1581,16 @@ applyCodex() {
         --arg model   "${cx_model}" \
         --arg effort  "${cx_effort}" \
         --arg sandbox "${cx_sandbox_launch}" \
+        --arg threads "${cx_threads}" \
         '
         ["mcp-server",
          "-c", ("model=\"" + $model + "\""),
          "-c", ("model_reasoning_effort=\"" + $effort + "\""),
          "-c", ("sandbox_mode=\"" + $sandbox + "\""),
          "-c", "approval_policy=\"never\""]
+        + (if $threads == ""
+           then []
+           else ["-c", ("agents.max_concurrent_threads_per_session=" + $threads)] end)
         + (if $sandbox == "workspace-write"
            then ["-c", "sandbox_workspace_write.network_access=false"]
            else [] end)

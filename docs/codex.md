@@ -129,6 +129,7 @@ agent inherits them:
 | `CODEX_MODEL` | `gpt-5.6-sol` (flagship) | `-c model="..."` |
 | `CODEX_REASONING_EFFORT` | `xhigh` | `-c model_reasoning_effort="..."` |
 | `CODEX_SANDBOX` | `workspace-write` | host mode only: `-c sandbox_mode="..."` (+ `network_access=false`) |
+| `CODEX_AGENT_THREADS` | Codex default | `-c agents.max_concurrent_threads_per_session=<number>` when set |
 
 In docker mode the sandbox knob isn't prompted for and is ignored at launch: codex's
 own bwrap sandbox cannot start inside a container (user-namespace/loopback `EPERM`,
@@ -252,6 +253,7 @@ fresh container `login` brings the tools straight back without a re-run.
 CODEX_MODEL=gpt-5.6-sol
 CODEX_REASONING_EFFORT=xhigh
 CODEX_SANDBOX=workspace-write
+CODEX_AGENT_THREADS=
 ```
 
 It lives in the kit's single `generated/` folder (gitignored wholesale) alongside the

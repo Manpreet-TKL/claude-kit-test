@@ -39,6 +39,24 @@ portable recipe).
   each skill's frontmatter after any `-s` flip, so it never bakes a stale state
   or silently opts a Claude-only skill into Codex.
 
+## Native subagents and concurrency
+
+- Native Codex subagents do not require the Codex MCP server. Current Codex
+  releases expose them directly.
+- `[agents].max_concurrent_threads_per_session` is the supported numeric limit
+  for concurrent open subagent threads. It excludes the primary agent. The
+  older `agents.max_threads` name is a legacy alias.
+- Configure the kit with
+  `bash /home/toukan/claude-kit/codex-install.sh -t 50 -U -y`. The installer
+  saves `CODEX_AGENT_THREADS=50` in `generated/.codex.env` and writes the
+  native setting to `~/.codex/claude-kit.config.toml`.
+- The setting is read when a Codex session starts. A running session keeps its
+  existing limit, so restart after changing it.
+- This is a concurrency limit, not a total-agent target. Large swarms can run
+  in waves, and account or service limits can still cap effective concurrency.
+  Shared browsers and mutable databases usually need narrower waves than
+  independent code-reading tasks.
+
 ## Container reachability
 
 - The registration mounts the kit at its **identical absolute path**,
@@ -73,6 +91,8 @@ fine for a one-off machine, but copies drift, which is why this kit links.
 
 ## Sources
 
+- https://learn.chatgpt.com/docs/agent-configuration/subagents
+- https://learn.chatgpt.com/docs/config-file/config-reference
 - https://developers.openai.com/codex/skills
 - https://developers.openai.com/codex/agents-md
 - https://github.com/openai/codex

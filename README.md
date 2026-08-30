@@ -470,6 +470,7 @@ Docker is used only for MCP services and the browser walker.
 ```bash
 bash scripts/codex_bwrap_install.sh      # once per blank Ubuntu host
 bash codex-install.sh -q                 # write profile, links and rules, then verify
+bash codex-install.sh -t 50 -U -y        # set native subagent concurrency for new sessions
 bash codex.sh                            # interactive session in the current directory
 bash codex.sh exec "review the changes"  # normal Codex arguments pass straight through
 ```

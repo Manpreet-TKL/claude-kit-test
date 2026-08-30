@@ -24,6 +24,7 @@ DO_FRESH=0
 QUICK=0
 PERMISSION_TIER=""
 SESSION_MODE=""
+AGENT_THREADS=""
 SKILLS_AUTO=""
 PRUNE_BEFORE=""
 LOGOUT_TARGET=""
@@ -42,7 +43,7 @@ usage() {
     cat <<'USAGE'
 Usage: codex-install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                         [-m <default|plan|acceptEdits|auto|dontAsk|bypassPermissions>]
-                        [-s <on|off>] [-d <days|YYYY-MM-DD>]
+                        [-t <positive integer>] [-s <on|off>] [-d <days|YYYY-MM-DD>]
                         [-r] [-F] [-n] [-U] [-y] [-j] [-c] [-J] [-g | -G]
                         [-x | -X] [-a | -A] [-w] [-l <codex|github|atlassian|aws|all>]
 
@@ -52,6 +53,7 @@ must be last. Run with no flags to see this help, or use -q for saved/defaults.
   -q, --quick              Non-interactive defaults; yolo unless -p is given.
   -p, --permissions        Codex permission tier: ultra-safe|standard|trusted|yolo.
   -m, --mode               Session mode: default|plan|acceptEdits|auto|dontAsk|bypassPermissions.
+  -t, --agent-threads      Maximum concurrent native subagents per session.
   -s, --skills-auto        on|off; shared skill implicit-invocation switch.
   -d, --prune-sessions     Archive Codex sessions older than days or YYYY-MM-DD.
   -r, --reset              Archive regenerable state; preserve auth, sessions and memories.
@@ -125,6 +127,7 @@ while [[ $# -gt 0 ]]; do
     -q | --quick) QUICK=1 ;;
     -p | --permissions) requireValue "$@"; PERMISSION_TIER="$2"; shift ;;
     -m | --mode) requireValue "$@"; SESSION_MODE="$2"; shift ;;
+    -t | --agent-threads) requireValue "$@"; AGENT_THREADS="$2"; shift ;;
     -s | --skills-auto) requireValue "$@"; SKILLS_AUTO="$2"; shift ;;
     -d | --prune-sessions) requireValue "$@"; PRUNE_BEFORE="$2"; shift ;;
     -r | --reset) DO_RESET=1 ;;
@@ -184,6 +187,7 @@ fi
 [ -f "${claude_md_src}" ] || { echo "Missing ${claude_md_src} ... exiting" >&2; exit 1; }
 case "${PERMISSION_TIER:-standard}" in ultra-safe|standard|trusted|yolo) ;; *) echo "Invalid permissions tier ... exiting" >&2; exit 1 ;; esac
 case "${SESSION_MODE:-auto}" in default|plan|acceptEdits|auto|dontAsk|bypassPermissions) ;; *) echo "Invalid session mode ... exiting" >&2; exit 1 ;; esac
+case "${AGENT_THREADS}" in ''|*[!0-9]*|0) [ -z "${AGENT_THREADS}" ] || { echo "Invalid agent thread limit ... exiting" >&2; exit 1; } ;; esac
 case "${SKILLS_AUTO}" in ''|on|off) ;; *) echo "Invalid skills-auto value ... exiting" >&2; exit 1 ;; esac
 case "${LOGOUT_TARGET}" in ''|codex|github|atlassian|aws|all) ;; *) echo "Invalid logout target ... exiting" >&2; exit 1 ;; esac
 mkdir -p "${generated_dir}" "${codex_home}/rules" "${agents_skills_dir}" "${backup_root}" "${mcp_env_dir}"
@@ -271,25 +275,31 @@ freshInstall() {
 }
 
 writeCodexEnv() {
-    local model effort tier mode
+    local model effort tier mode threads
     [ -f "${codex_env}" ] && . "${codex_env}"
     model="${CODEX_MODEL:-gpt-5.6-sol}"
     effort="${CODEX_REASONING_EFFORT:-xhigh}"
     tier="${PERMISSION_TIER:-${CODEX_PERMISSION_TIER:-standard}}"
     mode="${SESSION_MODE:-${CODEX_MODE:-auto}}"
+    threads="${AGENT_THREADS:-${CODEX_AGENT_THREADS:-}}"
+    case "${threads}" in ''|*[!0-9]*|0) [ -z "${threads}" ] || { echo "CODEX_AGENT_THREADS must be a positive integer" >&2; return 1; } ;; esac
     if [ "${ASSUME_YES}" != "1" ] && [ -t 0 ]; then
         read -r -p "CODEX_MODEL [${model}]: " answer; model="${answer:-${model}}"
         read -r -p "CODEX_REASONING_EFFORT [${effort}]: " answer; effort="${answer:-${effort}}"
+        read -r -p "CODEX_AGENT_THREADS (blank = Codex default) [${threads}]: " answer; threads="${answer:-${threads}}"
+        case "${threads}" in ''|*[!0-9]*|0) [ -z "${threads}" ] || { echo "CODEX_AGENT_THREADS must be a positive integer" >&2; return 1; } ;; esac
     fi
     {
         echo "CODEX_MODEL=${model}"
         echo "CODEX_REASONING_EFFORT=${effort}"
         echo "CODEX_PERMISSION_TIER=${tier}"
         echo "CODEX_MODE=${mode}"
+        echo "CODEX_AGENT_THREADS=${threads}"
     } > "${codex_env}"
     chmod 600 "${codex_env}"
     PERMISSION_TIER="${tier}"
     SESSION_MODE="${mode}"
+    CODEX_AGENT_THREADS="${threads}"
 }
 
 writeProfile() {
@@ -301,6 +311,11 @@ writeProfile() {
         echo 'project_doc_max_bytes = 65536'
         echo 'model_auto_compact_token_limit = 200000'
         echo ''
+        if [ -n "${CODEX_AGENT_THREADS}" ]; then
+            echo '[agents]'
+            echo "max_concurrent_threads_per_session = ${CODEX_AGENT_THREADS}"
+            echo ''
+        fi
         echo '[features]'
         echo 'memories = true'
         echo 'prevent_idle_sleep = true'
@@ -447,6 +462,9 @@ verifyAll() {
     grep -qF 'alternate_screen = "never"' "${codex_profile}" || { echo "[FAIL] terminal scrollback"; failed=1; }
     grep -qF 'raw_output_mode = false' "${codex_profile}" || { echo "[FAIL] rich output mode"; failed=1; }
     grep -qF 'terminal_title = []' "${codex_profile}" || { echo "[FAIL] terminal title disabled"; failed=1; }
+    if [ -n "${CODEX_AGENT_THREADS}" ]; then
+        grep -qF "max_concurrent_threads_per_session = ${CODEX_AGENT_THREADS}" "${codex_profile}" || { echo "[FAIL] native subagent limit"; failed=1; }
+    fi
     for name in atlassian github aws chrome-devtools playwright; do
         if codexMcpConfigured "${name}" && ! codex mcp get "${name}" --json 2>/dev/null | grep -Eq '"enabled":[[:space:]]*false'; then
             echo "[FAIL] ${name} MCP starts enabled"
@@ -488,6 +506,7 @@ disableRegisteredMcps
 
 echo "Codex profile: ${codex_profile}"
 echo "Permission tier: ${PERMISSION_TIER}; mode: ${SESSION_MODE}"
+echo "Native subagent limit: ${CODEX_AGENT_THREADS:-Codex default}"
 echo "Run: bash ${kit_root}/codex.sh"
 [ "${DO_VERIFY}" == "1" ] && verifyAll
 
