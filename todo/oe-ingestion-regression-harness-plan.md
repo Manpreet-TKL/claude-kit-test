@@ -2,7 +2,8 @@
 
 ## Goal
 
-Build one lightweight image in `OEImageBuilder` that characterises
+Build one lightweight image in the isolated
+`/home/toukan/OEImageBuilder-ingestion-harness` clone that characterises
 `IOLMasterImport` and `PayloadProcessor` as black boxes. The image must run next
 to an OpenEyes web container, database, both components and the shared IOL
 incoming volume, then report every selected result and exit once.
@@ -28,14 +29,15 @@ but the image must emit stable JSON and JUnit reports for that later work.
   prerequisite failure.
 - Optional suites log the exact enabling option when skipped. If selected, their
   missing prerequisites are errors. The harness never creates configuration.
-- The normal suite is serial. Concurrency uses all configured patients and a
-  configurable per-patient rate.
+- The normal suite is serial. Concurrency sends one DICOM total per interval,
+  rotates configured patients and ramps from 10 seconds toward 1 second.
 - Known unsupported cases are strict characterisation tests. A changed failure
   or unexpected success requires deliberate promotion of the case contract.
 - Approved core fixtures are compressed in the image. Large or client-derived
   fixtures are supplied in a checksum-pinned private mount.
-- Browser rendering is outside v1. Document tests cover routing, storage,
-  metadata, clinical linkage and byte-accurate retrieval.
+- Browser rendering is human-confirmed in v1. The harness writes exact
+  navigation, expected results and version-pinned guide images; a future
+  browser verifier may automate rendering checks.
 - Optional A/B comparisons require an immutable operator-supplied image digest.
 
 ## Work
@@ -65,7 +67,7 @@ payloads, logs, hostnames and client names.
 
 ### 3. Image and runtime
 
-Create `Integration-Harness/` in `OEImageBuilder` with a pinned slim Python base,
+Create `Integration-Harness/` in the isolated OEImageBuilder clone with a pinned slim Python base,
 `pydicom`, DCMTK, qpdf and only the database/HTTP/reporting libraries required at
 runtime. Do not include a JVM, browser, Mirth or either component.
 
@@ -105,7 +107,13 @@ Required coverage includes:
 - Supported embedded PDFs, images and multiframe content.
 - Optional document formats and PDF version behaviour.
 - Advanced JPEG-CV, malformed/private-tag cases, stale routes, MIME mismatches,
-  unsupported documents and resource/error boundaries.
+unsupported documents and resource/error boundaries.
+
+All non-generated files require an approved release state, accepted privacy
+review state and pinned checksum in the fixture pack that supplies them. Runtime
+patient editing is not treated as de-identification. Real/downloaded material
+stays quarantined until metadata, private tags, embedded content, pixels/frames,
+OCR output and archives have passed independent and human review.
 
 ### 5. Results and comparison
 
@@ -113,7 +121,8 @@ Scope evidence to a run correlation ID and DB watermarks. Normalise generated
 IDs, timestamps, paths and regenerated UIDs while retaining clinical values,
 ordering, laterality, patient slot, statuses and hashes.
 
-Write console, `results.json`, `junit.xml` and a run manifest. Continue through
+Write console, `results.json`, `junit.xml`, a run manifest and
+`manual-review.md`. Continue through
 all selected cases after preflight. Exit codes distinguish invalid config,
 sample safety, missing prerequisites, behavioural mismatches and harness errors.
 
@@ -127,10 +136,10 @@ Unit-test configuration, manifests, preflight aggregation, transformations,
 normalisation, reports and comparison. Then run the core suite on v26.0.9 and
 develop in separate isolated compose projects.
 
-Start concurrency calibration at one small unique DICOM per configured patient
-per second for 60 seconds. If that does not drain cleanly on both profiles, use
-the highest passing rate from 0.5 and 0.25. Allow documented overrides from 0.1
-to 5.0 within a maximum-in-flight bound.
+Start concurrency calibration at one small unique DICOM total every 10 seconds,
+then every 5, 2 and 1 seconds, rotating patients on each send. Drain between
+stages, stop on the first failed stage and report the highest passing rate.
+Allow explicit intervals down to 0.1 seconds within a maximum-in-flight bound.
 
 Keep image builds, stacks, large fixtures and load tests serial. Never run the
 v26.0.9 and develop stacks together. Limit the harness to one CPU and 1 GiB
@@ -139,6 +148,11 @@ unless a measured case proves that inadequate.
 Document compose usage, variables, secrets, volumes, modes, skipped-suite
 messages, patient CSV overrides, sample-canary drift, fixture provenance,
 private packs, editing, reports, exits, promotion and future CI integration.
+
+Maintain a top-50 fixture acquisition catalog with source/contact links and a
+separate tooling roadmap covering codec, curation, PACS/DICOMweb, document
+normalization and browser-verification containers. Record the exact generic and
+IOLMaster 700 encapsulated-PDF flows.
 
 ## Acceptance
 
@@ -161,3 +175,16 @@ private packs, editing, reports, exits, promotion and future CI integration.
 1. Aggregate inventory output from all active clients.
 2. Approval and provenance for any additional deidentified authentic fixtures.
 3. Immutable known-good component image digests for optional A/B runs.
+
+## Current implementation status
+
+- CR download complete and validated: 419 tickets, about 438 MiB.
+- OE download and automatic post-processing are running at low priority in
+  detached GNU screen sessions.
+- Public codec research samples are queued in a separate detached screen. The
+  queue waits for OE completion and is capped at 1 MiB/s.
+- The original `/home/toukan/OEImageBuilder` working tree is pristine. All
+  harness work is staged only in the renamed clone.
+- The 21 containerized unit tests and offline core/document fixture preparation
+  pass. The latest production image rebuild is queued at low priority in screen.
+  Live v26.0.9/develop runs remain pending.

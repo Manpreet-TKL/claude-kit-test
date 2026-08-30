@@ -108,9 +108,12 @@ Everything below serves these two constraints.
   patients is a safety bug). Enforce via Larastan rules + Octane-safe patterns +
   per-request context reset (auth, current-institution, Carbon "now", RNG seeds) +
   worker max-request recycling.
-- **Modular monolith, package-per-module.** Each `Oph*`/core module is a Laravel
-  package (ServiceProvider, routes, migrations, models, DTOs, Vue components, print
-  views, tests, machine-readable manifest). **Deptrac** enforces layer boundaries
+- **Modular monolith, application-owned modules.** First-party modules live under
+  `modules/core`, while optional customer modules live under `modules/custom` and
+  may be supplied by Git clone or submodule. Each module has a validated
+  `module.json`, ServiceProvider, routes, migrations, models, DTOs, Vue components,
+  print views and tests directly at its root, with no `src` directory and no
+  Composer package boundary. **Deptrac** enforces layer boundaries
   (Domain ← Application ← Infrastructure ← HTTP) and module isolation (module A reaches
   module B only via published contracts in `oe-shared`). This is what makes "one
   release doesn't break another" and "AI can't accidentally couple modules" real.
@@ -3738,10 +3741,13 @@ closes with its outcome; every consequence has now been applied to the body (v3)
    row, explicit `transaction_id`, minimal indexes, RANGE-partitioned by year); real FKs stay on
    all clinical tables (nothing is partitioned by SYSTEM_TIME any more); the pre-M3 spike now
    proves the twin writer. §5.3 carries the folded state.
-9. Repos + layering - seven repos; app stays the modular monolith `modules/<Module>/`; `oe-shared` =
-   `Modules\Core\Contracts`; default code shape = Actions + Models + `spatie/laravel-data` DTOs +
-   FormRequests with a mandatory framework-free `Domain/` sub-namespace for calculators/value
-   objects in `clinical_risk: high` slices; repository interfaces optional. Consequence if adopted:
+9. Repos + layering - seven repos; app stays the modular monolith with first-party code in
+   `modules/core/<Module>/` and optional image-time clones or Git submodules in
+   `modules/custom/<Module>/`; modules use the application manifest loader rather than Composer;
+   `oe-shared` = `Modules\Core\Contracts`; default code shape = Actions + Models +
+   `spatie/laravel-data` DTOs + FormRequests with a mandatory framework-free `Domain/`
+   sub-namespace for calculators/value objects in `clinical_risk: high` slices; repository
+   interfaces optional. Consequence if adopted:
    §4.1 Deptrac sentence; §17 §1 tree; §17 §2 layer table; §17 §7.4 "Eloquent outside
    Infrastructure" -> "Eloquent in HTTP/Views"; §18 L1.1/L1.3/L1.4; §9 rules repo; §14 assets.
    RESOLVED - §26 Q10: as recommended.
@@ -5026,7 +5032,7 @@ ordered `/init_scripts`, a non-root `tkl` user, explicit container-role variable
 protected-file and protected-event-image symlinks, a separate Laravel storage mount, MariaDB CLI,
 environment configuration and secret-file-first loading with environment fallback. No `.env` is
 copied or mounted. Client module sources are a controlled pre-build input, never cloned with
-credentials during the image build.
+credentials during the image build and never resolved as Composer packages.
 
 The production web target serves HTTP only. The manager target owns migrations, schema
 verification, scheduler, log pruning and custom volume-supplied cron jobs. The queue target owns
@@ -5114,6 +5120,26 @@ predicates, bounded APIs, manager rebuild, portal policy, documentation and dete
 clean-room and browser proof. The non-patient store, broadcaster, private channel authorization,
 toaster UI, Reverb container and the load tests above remain one explicit later slice. They must not
 be approximated by page-wide polling while deferred.
+
+### 26.9 Core and optional module loading decision recorded 2026-08-29
+
+First-party OpenEyes modules are application source under `modules/core`; they are not Composer
+packages. Optional customer modules are complete repositories placed under `modules/custom` by a
+controlled image-time clone or by a Git submodule. Composer remains the application dependency
+manager only. It does not discover modules, resolve module versions or run module providers.
+
+Every core or custom module has one `module.json` manifest containing its stable code, name,
+version, supported core constraint, namespace, provider, dependencies and migration order. PHP
+namespaces map directly from the module root, with no `src` directory. The application loader
+validates every manifest, registers its namespace directly and then
+registers providers in dependency and migration order. Duplicate codes or namespaces fail startup.
+A custom module cannot shadow or patch a core module. Module providers retain the normal Laravel
+route, view and migration hooks, and production migrations remain manager-only.
+
+This keeps the useful logical boundary and customer-specific derived images without adding a second
+package lifecycle for code already governed by an OpenEyes image release. A custom module that needs
+a new third-party PHP library must have that dependency approved and pinned by the derived image's
+application build; it cannot silently mutate the base application's dependency graph at runtime.
 
 Execution note 2026-08-25: the Glaucoma Overall Plan slice completed direct and
 whole-event APIs, administration import and export, indexed patient and IOP target
@@ -6579,6 +6605,255 @@ linkage. Keep functional behavior ahead of exact visual parity and do not port a
 special module. A dev-image follow-up must relocate Pest result-cache state away
 from read-only image-built `vendor/`; the production web image must not become
 writable for test tooling.
+
+### 26.10 Canonical API correction and coverage acceleration wave recorded 2026-08-30
+
+This section supersedes the route-version wording elsewhere in this plan and the
+older single-module sequencing note immediately above. Historical text remains in
+place as a record of how the plan developed.
+
+#### Canonical API route decision
+
+The application exposes one canonical, unversioned `/api` contract within each
+OpenEyes release. Do not add `/api/v1` to new routes. In earlier sections, read
+`/api/v1` as `/api` unless the text is explicitly describing a measured legacy
+client adapter. A "versioned API contract" means that the contract is released,
+documented and regression-tested with the OpenEyes release; it does not require a
+version segment in the URI.
+
+Legacy Core REST v1 and v2, PASAPI v1 to v3 and xAPI are separate historical
+families. A legacy route is added only when the customer integration inventory
+proves that a caller needs it. The adapter translates to and from the canonical
+application service and contains no second clinical implementation. New UI, future
+MCP and first-party integrations use `/api`. The legacy xAPI implementation is in
+the `oe-laravel` tree, not `protected/modules/XAPI`.
+
+#### Coverage target and baseline
+
+The pinned source remains OpenEyes v26.0.9 at
+`ad2324084788608246a8250e817198c2f26a4fd6`. The pushed Laravel baseline is
+`6ad9017f7b47d703529cf3c0c49da9f449d73cde`.
+
+| Measure | Baseline |
+|---|---:|
+| Pinned legacy files | 14,125 |
+| Inventoried unique legacy paths | 5,398, or 38.2159 percent |
+| Highest-score-per-path equivalents | 4,037.15 |
+| Exact weighted coverage | 28.5816 percent |
+| Equivalents needed for 40 percent | 1,612.85 |
+| Sign-off target | 41.5 percent, or 5,861.875 equivalents |
+
+Reaching 40 percent cannot be done by completing the current inventory alone: even
+5,398 fully covered paths would be only 38.2159 percent. Every acceleration wave
+must therefore both finish partial mappings and open exact, SHA-pinned new source
+groups. The 41.5 percent sign-off target provides a 211.875-equivalent buffer for
+later duplicate, exclusion and evidence corrections.
+
+Forty percent is a strong velocity target, not permission to inflate scores. A row
+earns weight only when it names the exact legacy path, target or disposition,
+equivalent behavior, deterministic evidence, documentation status and any relevant
+divergence. Inventory-only and explicitly deferred rows remain at zero.
+
+#### Eight Sol agents for the next eight-hour implementation wave
+
+| Lane | Exclusive source scope | Conservative gain | Expected gain | Optimistic gain |
+|---|---|---:|---:|---:|
+| 1 | PatientTicketing and direct workflow consumers | 35 | 65 | 105 |
+| 2 | OphCoTherapyapplication | 40 | 70 | 115 |
+| 3 | OphGeneric, EventSupport, FileStorage and Webhooks, with attachments and linked-device upload first | 40 | 70 | 110 |
+| 4 | Core Admin shell plus the 198-path portable reference-configuration cohort | 65 | 130 | 165 |
+| 5 | Examination history and safety: allergies, accessibility, comorbidities, contacts, family, social and surgical history, and safeguarding | 55 | 95 | 150 |
+| 6 | Examination orthoptics and ocular surface: prism, cover, sensory, stereo, strabismus, synoptophore, lids, lacrimal, Van Herick, anterior segment and gonioscopy | 60 | 105 | 165 |
+| 7 | Non-calculating Consent, CVI and Biometry completion paths | 70 | 120 | 200 |
+| 8 | Legacy `oe-laravel`, `oe-shared` and core API equivalence census plus shared target foundations | 120 | 215 | 375 |
+| Total | Eight disjoint lanes | 485 | 870 | 1,385 |
+
+| Forecast | Equivalent files | Weighted coverage |
+|---|---:|---:|
+| Conservative first wave | 4,522.15 | 32.0152 percent |
+| Expected first wave | 4,907.15 | 34.7409 percent |
+| Optimistic first wave | 5,422.15 | 38.3869 percent |
+| Two expected coverage-focused waves | 5,777.15 | 40.9002 percent |
+
+The first wave does not promise 40 percent. Its purpose is to restore coverage
+velocity without weakening evidence. Work does not stop when that eight-hour wave
+ends. After its consolidated verification and ledger reconciliation, start the next
+coverage-focused wave automatically and continue through as many waves as required
+until exact weighted coverage is greater than 40 percent. Do not close `/goal`,
+declare the coverage programme complete, or wait for another prompt below that
+threshold. A safety, evidence or repository-state stop condition causes a replan,
+not completion. At the expected rate, the second focused wave reaches 40.9002
+percent; another 84.725 equivalents then reaches the preferred 41.5 percent
+reconciliation buffer.
+
+Lane 4 owns `app/Admin/AdminScreens.php`,
+`app/ConfigFamilies/ConfigFamilies.php` and `resources/js/Pages/AdminScreen.vue`.
+It first reconciles the generic administration behavior already present, then
+closes procedure benefits, procedure complications, OPCS codes, lens-removal
+procedures, procedure-to-subspecialty assignments, subspecialty subsections and
+assignments, common systemic disorder groups and disorders, anaesthetic agents,
+anaesthetic-to-procedure mappings and anaesthetic defaults. Every completed family
+has stable natural keys, deterministic display order, retirement, authorization,
+audit, an admin page and `/api/admin/<family>` import and export.
+
+Lane 3 uses the canonical `/api` only. Event attachments and linked-device uploads
+receive bounded FormRequests, ownership and institution checks, MIME and size
+validation, safe metadata responses, named registered routes and complete
+`data-oe-*` input tags. No storage path or object key appears in an API response.
+OphGeneric and Webhooks are stretch scope only after the attachment and storage
+contracts pass their static acceptance checks.
+
+Lane 7 must not infer a formula, unit, clinical threshold or signing rule. Biometry
+calculation work stops at the first missing authoritative vector and leaves the row
+deferred. The lane may close already evidenced imports, administration, lifecycle,
+protected evidence, delivery, render-payload and non-calculating presentation paths.
+
+Lane 8 is not a score-only exercise. It may map existing Laravel behavior rapidly,
+but every non-zero row still needs named target code and deterministic proof. It
+does not add Core REST, PASAPI or xAPI compatibility routes without a measured
+caller inventory.
+
+#### Parallel execution and ownership
+
+1. At the implementation start, create or update `/goal` with the eight-hour
+   coverage-wave objective, the pinned legacy and Laravel commit hashes, the
+   28.5816 percent baseline, the expected 34.7409 percent first-wave target and
+   the mandatory greater-than-40-percent terminal condition plus the preferred
+   41.5 percent sign-off target. Keep the same goal active across consecutive
+   waves. Do not mark it complete until the integrated coverage calculation is
+   greater than 40 percent and final verification evidence exists.
+2. Hour 0 to 0.5: freeze the two commit hashes, generate exact per-lane path
+   manifests, reserve migration and divergence identifiers, and reject any source
+   or target overlap.
+3. Hour 0.5 to 6: implement in parallel under direct-root
+   `modules/core/<module>` trees where practical. There is no Composer module
+   packaging and no `src` directory. Tests are written with the code but not run.
+4. Hour 4: recalculate projected evidence-backed yield. If the total is below 250
+   equivalents, stop low-yield work and reassign the remaining time to lane 8's
+   verified equivalence census or a high-headroom clinical lane.
+5. Hour 6: code freeze. Each agent returns proposed central registrations, exact
+   ledger rows, documentation checks, data-dictionary notes, bug and divergence
+   records, and test references.
+6. Hour 6 to 7: one integrator applies shared registrations and ledgers, then
+   recalculates coverage using the highest score for each unique legacy path.
+7. Hour 7 to 8: run one consolidated verification batch and fix only deterministic
+   failures attributable to this wave.
+
+Only the integrator edits shared hotspots during this wave:
+
+- route files;
+- `app/Clinical/ElementTypes.php`;
+- `EventView.vue` and shared page-shell files;
+- shared providers and seed registration;
+- PageRegister and every `docs/porting/*.csv` ledger;
+- divergence numbering.
+
+Module agents return registration and ledger fragments instead of editing these
+files concurrently. Migration names are reserved before work starts. All agents
+work from the same clean pushed commits, and source HEAD changing is a stop
+condition.
+
+#### One end-of-wave verification batch
+
+Run each test family once after integration freeze, never repeatedly during the
+parallel implementation window:
+
+1. One clean seven-schema migration, tiny deterministic seed and schema verification.
+2. Pint once over the changed PHP set.
+3. The complete Pest suite once, including module, documentation, route, input,
+   migration, ledger and query-count contracts.
+4. The production frontend build once.
+5. The affected Playwright workflows once through the separate frontend-test
+   repository and official Playwright image, one worker, no retries, and an early
+   URI-existence check in every test.
+
+The verification record distinguishes implementation failures from already known
+canonical-schema or renamed-schema harness debt. CI remains disabled for now; this
+local consolidated gate is not evidence that external integrations or production
+load have been verified.
+
+#### Stop and replan conditions
+
+- No exact pinned path manifest exists after 45 minutes.
+- Two lanes claim the same legacy or target file.
+- A clinical rule lacks authoritative evidence.
+- A score lacks a target, equivalent behavior and deterministic evidence.
+- A lane starts pixel-perfect work, a special module or unscored platform work.
+- A full suite starts before the hour-six integration freeze.
+- Shared schema or migration ordering requires live coordination between lanes.
+- The evidence-backed projected total is below 250 equivalents at hour four.
+
+Runtime completion, direct-template render adapters, audit search, realtime
+messaging and exact UI parity remain planned. They are deliberately outside this
+coverage-focused wave because their honest eight-hour file yield is small and none
+blocks the selected functional slices. The current container foundation is already
+sufficient for this wave; runtime work returns before deployment hardening.
+
+### 26.11 Verified coverage execution correction recorded 2026-08-30
+
+The reproduced baseline is 4,037.15 of 14,125 highest-score-per-path equivalents,
+or 28.5816 percent. The existing inventory can reach only 38.2159 percent, so
+execution must continue opening exact source groups as well as closing partial
+ones. Finishing all 33 nearly complete features would add at most 55.08
+equivalents and is not a useful first-wave priority. The mandatory terminal
+condition remains exact weighted coverage greater than 40 percent; 41.5 percent is
+the preferred reconciliation target.
+
+The execution repositories are frozen at these commits:
+
+| Repository | Commit |
+|---|---|
+| Legacy OpenEyes v26.0.9 | `ad2324084788608246a8250e817198c2f26a4fd6` |
+| Laravel application | `6ad9017f7b47d703529cf3c0c49da9f449d73cde` |
+| Docker runtime | `ef578cd1a85a536bdfb8b7b746a07d831ac0ecee` |
+
+The first wave uses exact SHA-pinned, disjoint source manifests and this corrected
+ownership order:
+
+| Lane | Exclusive work |
+|---|---|
+| 1 | Consent functional closure: decision parties, staff signing, leaflets and booking integration |
+| 2 | CVI functional closure: patient status, register, administration, issuing and delivery boundaries |
+| 3 | Biometry functional closure: manual measurements, signing, importer boundary and Operation Note projection, without inferred clinical formula rules |
+| 4 | Medication Management, History Medications and Prescription closure, including constant-query patient summaries |
+| 5 | PatientTicketing and direct workflow consumers |
+| 6 | OphCoTherapyapplication |
+| 7 | Core administration shell and the verified 198-path reference-configuration cohort |
+| 8 | EventSupport, FileStorage and attachment or device-upload APIs with security tagging |
+
+The integrator alone owns the `oe-laravel`, `oe-shared` and core API equivalence
+census, routes, shared registries, page registration, seed registration,
+divergence identifiers and all porting ledgers. Workers return proposed fragments
+for those files. New application routes use canonical unversioned `/api`; the
+renderer's private `/v1/render` contract is not an OpenEyes public API version.
+Modules remain directly under `modules/core/<module>`, with no Composer module
+package and no `src` directory. No special module is ported.
+
+After every integration freeze, recalculate exact highest-score-per-path coverage
+without running the full test batch. If it is not greater than 40 percent, start
+the next disjoint wave immediately in this order: Operation Booking, Operation
+Note, remaining Prescription and medication consumers, Event Export plus System
+Events plus Webhooks, Examination history and safety, Examination orthoptics and
+ocular surface, Genetics plus device-usage recording, then remaining shared
+Laravel and API equivalence. If another wave is needed, use daily-use Examination
+clusters followed by Admin, Case Search and ordinary core modules. Add PASAPI or
+historical API adapters only where caller evidence requires them.
+
+A module is functionally closed only when its workflow, authorization,
+administration, canonical API, generation or import or export behavior, input
+tagging, sitemap registration, documentation evidence and deterministic tests are
+present. Exact visual parity, unsupported external integrations and unverified
+historical migration behavior remain explicitly deferred and receive no inflated
+score.
+
+Only after exact weighted coverage is greater than 40 percent, preferably at least
+41.5 percent, run one consolidated verification batch: clean seven-schema
+migration and seed verification, Pint once, the complete Pest suite once, one
+production frontend build, affected Playwright workflows once with one worker and
+no retries, then ledger integrity, duplicate-path, route discovery, input tagging
+and final coverage recalculation. Fix attributable deterministic failures and
+rerun only their focused tests. Keep CI disabled. Stage and show the final diff;
+do not commit or push.
 
 ---
 

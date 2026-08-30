@@ -108,7 +108,7 @@ How to read: sections 1–3 are decisions; sections 4–9 are phases in executio
 | `openeyes-docker` | Base runtime image (PHP 8.4 + extensions), app Dockerfile, compose stacks, Helm chart, build/scan/sign pipeline (§9.1, §9.3, §9.5, §9.7). |
 | `openeyes-phpstan-rules` | Custom PHPStan/Rector rules and Pest arch presets encoding the pattern rules (App. F); consumed by every PHP repo. |
 | `openeyes-ui-assets` | Existing CSS/JS/images/fonts, byte-identical at first, published as an npm package (`@openeyes/ui`) with semver. Blade views live in the app; only assets live here. Rationale: independent cadence, and parity is provable by hash. |
-| `openeyes-docs` | Markdown docs consumed by the Docs module as a Composer path/VCS package (§12). |
+| `openeyes-docs` | Markdown docs cloned into a documented content root and read directly by the built-in Docs feature (§12). |
 | `openeyes-rewrite-tracker` | Mini-app + its DB (§4.1). |
 | `openeyes-legacy-facts` | Generated JSON specs mined from Yii code, walks, and workload captures (§4.2–4.4). Read-only input for generation. |
 
@@ -303,7 +303,8 @@ Clients will not accept a long outage, so the design target is write-unavailabil
 
 ```
 app/                      # thin: kernel wiring only
-modules/<Module>/         # one per OpenEyes module + Core, Docs, Migration, Integrations
+modules/core/<Module>/    # first-party modules released as application source
+modules/custom/<Module>/  # optional image-time clones or Git submodules
   Actions/                # one class per use case (Create*, Update*, Void*, Export*)
   Models/                 # Eloquent, #[TableCategory], explicit casts/relations
   Data/                   # spatie/laravel-data DTOs used by web + API + MCP
@@ -315,7 +316,9 @@ modules/<Module>/         # one per OpenEyes module + Core, Docs, Migration, Int
   module.json             # name, prefix, owner, legacy module ids
 ```
 
-Module boundaries enforced by Deptrac (a module may depend on `Core` and its own namespace only; cross-module calls go through published Actions/DTOs). Element and event types register through a `Core` registry (attribute-based discovery, cached), replacing the Yii module config.
+Module boundaries are enforced by Deptrac (a module may depend on `Core` and its own namespace only; cross-module calls go through published Actions/DTOs). Element and event types register through a `Core` registry (attribute-based discovery, cached), replacing the Yii module config. Modules use the application-owned `module.json` loader, not Composer package discovery. Duplicate codes, namespaces and attempts by `modules/custom` to replace a core module fail at startup.
+
+Module PHP namespaces map directly from the module root. Do not add a `src` directory.
 
 ### 6.2 AI-friendly segmentation
 
@@ -619,7 +622,7 @@ Targets on the perf seed at each client's expected concurrency ×3: p95 within b
 
 ## 12. Documentation
 
-- Repo `openeyes-docs`, markdown only, consumed by the `Docs` module (Composer path/VCS package) and rendered at `/docs` (authenticated, searchable — your vector search or FTS).
+- Repo `openeyes-docs`, markdown only, cloned into a documented content root at image build time, read directly by the built-in Docs feature and rendered at `/docs` (authenticated, searchable - your vector search or FTS).
 - Layout: `features/<module>/<feature>/{overview,behaviour,api,test-plan}.md`; `schema/{rules,decisions,dropped}.md` + generated `schema/tables/*.md`; `adr/NNNN-*.md`; `platform/{container,kubernetes,security,observability}.md` (container page generated from the SBOM: every package/extension, version, purpose, CVE status); `operations/*` (runbooks; exportable to your c-note text format if wanted); `migration/{mapping,validation-report,cutover}.md`.
 - Rule: hand-written where judgement lives, generated where facts live; a docs coverage test blocks merges.
 
@@ -693,7 +696,7 @@ PHP
 Routes/API/UI
 
 9. Routes kebab-case, names `module.resource.action`; API `/api/v1/<resources>` with uuids; API Resource field names match DB column names in snake_case.
-10. Blade views `modules/<Module>/Views/<feature>/<action>.blade.php`; components `x-oe-<thing>`; legacy ids/classes preserved verbatim.
+10. Blade views `modules/core/<Module>/Views/<feature>/<action>.blade.php` for first-party code; custom modules mirror the path under `modules/custom`; components `x-oe-<thing>`; legacy ids/classes preserved verbatim.
 11. Artisan `oe:<module>:<verb>-<noun>`; config keys `openeyes.<module>.<key>`; setting keys `<module>.<feature>.<key>`.
 12. Git: branches `feat/<module>-U<id>`, commit trailers `Unit: U<id>`, `Migrates: <legacy path>`, `Fixes: <bug id>`; tests named `it('does x when y')`.
 
