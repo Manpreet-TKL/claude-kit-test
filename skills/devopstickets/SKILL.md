@@ -6,11 +6,20 @@ disable-model-invocation: false
 
 # DevOps JIRA triage (TKLS)
 
-**Run `/jiramcp` first.** It makes the Atlassian MCP tools available (touching the kit's startup-gate flag and advising the `/mcp` reconnect if needed) and loads the OE / TKLS / OPD project context this skill relies on. All JIRA/Confluence access here goes through the `mcp__atlassian__*` MCP tools only - never the REST API, never `curl` an Atlassian endpoint. If any `mcp__atlassian__*` call below fails with a permission or connection error, stop and tell the user to run `/jiramcp` - do **not** fall back to REST.
+**Load the `jiramcp` skill first using the current client's invocation syntax.**
+It makes the Atlassian MCP tools available and loads the OE / TKLS / OPD
+project context this skill relies on. All JIRA/Confluence access here goes
+through the `mcp__atlassian__*` MCP tools only - never the REST API and never
+`curl` an Atlassian endpoint. If a call fails with a permission or connection
+error, stop and tell the user to load `jiramcp`; do **not** fall back to REST.
 
 ## Step 1 - Present the menu, then wait
 
-If invoked with `$ARGUMENTS`, parse them and skip the prompt: first token = option#, optional second token = filter#. A bare `TKLS-1234`-style key means option 4 for that ticket. For option 6 the second token is the search keyword (quote a multi-word phrase) and an optional trailing number is the filter#. Otherwise print exactly:
+If the invocation or current request supplies arguments, parse them and skip
+the prompt: first token = option#, optional second token = filter#. A bare
+`TKLS-1234`-style key means option 4 for that ticket. For option 6 the second
+token is the search keyword (quote a multi-word phrase) and an optional
+trailing number is the filter#. Otherwise print exactly:
 
 ```
 Filters (TKLS):
@@ -41,7 +50,10 @@ Filter table - each filter is a raw JQL **where-clause** (no `ORDER BY`); option
 
 ## Step 2 - Dispatch (load detail on demand)
 
-Once the option is known, **read the matching sub-file from this skill's directory with the Read tool and follow it exactly.** Each holds the full workflow and is loaded only when its option runs - do not pre-read them:
+Once the option is known, **read the matching sub-file from this skill's
+directory with the available filesystem reader and follow it exactly.** Each
+holds the full workflow and is loaded only when its option runs - do not
+pre-read them:
 
 - Option 1 -> `subs/option1.md`
 - Option 2 -> `subs/option2.md`

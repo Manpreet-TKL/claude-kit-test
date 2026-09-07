@@ -66,7 +66,10 @@ EOF
 
 ## Subagent prompt template
 
-Launch with the Agent tool, **model `haiku`** when the journey is known (walk + transcribe), `sonnet` only when the flow itself must be figured out. Paste in the exact `docker exec`/`docker run` command for the target's shape (above) and any known navigation (from `c-oe-nav`'s `subs/paths.md`/`subs/examination.md` if that skill is also loaded, otherwise describe the goal plainly) - the subagent does not load skills:
+Use the current client's native collaboration facility. The subagent does not
+load skills, so paste in the exact `docker exec`/`docker run` command for the
+target's shape and any known navigation from `c-oe-nav`. Use the current or
+inherited model unless the user explicitly approves an override:
 
 ```
 You are probing a running OpenEyes sample instance via Playwright to capture EXACT

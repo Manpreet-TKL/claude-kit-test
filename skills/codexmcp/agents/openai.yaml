@@ -1,3 +1,0 @@
-interface:
-  display_name: "codexmcp"
-  short_description: "Codex MCP context + gate enable, then fan out agents"

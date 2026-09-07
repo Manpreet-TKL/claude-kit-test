@@ -45,7 +45,9 @@ Roles are **per user**, not a standalone screen: editing a user toggles their ro
 So the first time a lever is actually needed, the form behind it has to be probed:
 
 1. Get the edit URI from `admin-forms.md`'s entry for the list screen (e.g. `admin/editsite?site_id=ID`), or from the list page's own row markup.
-2. Walk it on rung 1 - a Haiku subagent with `journey.mjs`, `{"goto":"/admin/editsite?site_id=1"}` then `{"dump":true}` - and bring back the quoted labels and required-ness.
+2. Walk it on rung 1 - a lightweight subagent with `journey.mjs`,
+   `{"goto":"/admin/editsite?site_id=1"}` then `{"dump":true}` - and bring back
+   the quoted labels and required-ness.
 3. **Can the result in the existing catalogue**: `c-oe-nav/subs/canned/setup-<lever>.md`, indexed in `c-oe-nav/SKILL.md` like any other journey. Do **not** start a second catalogue inside `a-oe-repro` - the next bug on a different journey needs the same file.
 
 ## Worked example

@@ -47,14 +47,14 @@ CONFLUENCE_MODE=""                              # -c / --with-confluence / "" (l
 ATLASSIAN_REMOVE=0                              # --without-atlassian sets to 1
 GITHUB_MODE=""                                  # -g / --with-github / "" (leave alone)
 GITHUB_REMOVE=0                                 # --without-github sets to 1
-CODEX_MODE=""                                   # -x / --with-codex / "" (leave alone)
+CODEX_MCP_MODE=""                               # -x / --with-codex / "" (leave alone)
 CODEX_REMOVE=0                                  # --without-codex sets to 1
 AGENT_THREADS=""                               # -t <number>: maximum concurrent native Codex subagents; "" = saved/default
 AWS_MODE=""                                     # -a / --with-aws / "" (leave alone)
 AWS_REMOVE=0                                    # --without-aws sets to 1
 WALKER_SETUP=0                                  # -w / --setup-walker: run docker/oe-chrome-agent/setup-walker.sh
 SKILLS_AUTO=""                                  # -s on|off: flip disable-model-invocation across kit skills; "" = leave as authored (report only)
-LOGOUT_MCP=""                                   # -l codex|github|atlassian|aws|all: clear stored MCP credentials and exit (standalone action)
+LOGOUT_MCP=""                                   # -l codex|github|atlassian|aws|all: clear stored integration credentials and exit
 PRUNE_BEFORE=""                                 # -d <days|date>: archive+delete sessions last active before the cutoff; "" = off
 CLEANUP_PERIOD_DAYS="${CLEANUP_PERIOD_DAYS:-365}"  # settings.json cleanupPeriodDays - Claude Code's own transcript retention
 STATUSLINE_REFRESH="${STATUSLINE_REFRESH:-5}"   # statusLine.refreshInterval (seconds) - timer re-runs on top of event-driven updates; 0 = events only
@@ -146,32 +146,39 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       the host; a host `codex` binary is used only if Docker is
                       absent. Sign in once via the printed login command
                       (`... claude-kit-codex login --device-auth`; auth lands
-                      in ~/.codex). Pins the flagship model (gpt-5.6-sol) at
-                      xhigh reasoning effort and a workspace-write, no-network
-                      sandbox; tweakable in generated/.codex.env. With -y,
+                      in ~/.codex). Pins execution to gpt-5.6-sol at xhigh and
+                      installs a read-only gpt-6-astra/max planner; sandbox
+                      settings are tweakable in generated/.codex.env. With -y,
                       reads that file silently. Also wires codex compat:
-                      ~/.codex/AGENTS.md and ~/.codex/skills/* link back to
-                      this kit, so Codex agents share the same global
-                      instructions and skills as Claude.
+                      ~/.codex/AGENTS.md plus ~/.agents/skills/* and
+                      ~/.codex/skills/* link back to this kit, so Codex agents
+                      share the same global instructions and skills as Claude.
   -X, --without-codex
                       Deregister the codex MCP server (claude mcp remove, user
                       scope) and remove the kit's codex-compat links
-                      (~/.codex/AGENTS.md + skill links). generated/.codex.env
-                      and your ~/.codex login are left alone.
-  -a, --with-aws      Configure the read-only AWS MCP server
-                      (awslabs aws-api-mcp-server, run as a container). Prompts
-                      for AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and
-                      AWS_REGION; saves to ~/.claude/mcp-env/.aws.env (outside
-                      the kit). Use a DEDICATED read-only IAM user's key, never
-                      a personal login. Read-only is enforced
-                      (READ_OPERATIONS_ONLY=true) and is NOT configurable - the
-                      server refuses any CLI command that is not on its
-                      read-only list. Note that the AWS-managed ReadOnlyAccess
-                      policy still permits secret and object reads; deny those
-                      at the IAM end (see docs/aws.md). With -y, reads the env
-                      file silently instead of prompting.
-  -A, --without-aws   Deregister the aws MCP server (claude mcp remove, user
-                      scope). Credentials file is left in place.
+                      (~/.codex/AGENTS.md + both skill-root link sets).
+                      generated/.codex.env and your ~/.codex login are left
+                      alone.
+  -a, --with-aws      Configure read-only AWS access through the official
+                      aws-cli container (public.ecr.aws/aws-cli/aws-cli). Not an
+                      MCP server: awslabs' aws-api-mcp-server wraps AWS CLI v1,
+                      which is removed on 15/07/2027. Prompts for
+                      AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_REGION;
+                      saves to ~/.claude/mcp-env/.aws.env (outside the kit),
+                      starts or reuses the shared container ai-kit-aws-ro, and
+                      pre-arms the gate so the next session
+                      reads without a touch. Use a DEDICATED read-only IAM
+                      user's key, never a personal login: there is NO command
+                      allow-list any more, so IAM is the only boundary, and the
+                      AWS-managed ReadOnlyAccess policy still permits secret and
+                      object reads - deny those at the IAM end (docs/aws.md).
+                      Agents read with scripts/agent-aws-cli.sh run <args>; you
+                      read with docker exec -i ai-kit-aws-ro aws <args>. The
+                      container self-removes after 8h idle. With -y, reads the
+                      env file silently instead of prompting.
+  -A, --without-aws   Stop and remove the ai-kit-aws-ro container, drop the gate
+                      flag, and deregister any legacy aws MCP server.
+                      Credentials file is left in place.
   -w, --setup-walker  Run docker/oe-chrome-agent/setup-walker.sh: asks for the
                       OE deployment's docker network, boots the container
                       (always named claude-chrome, build output silenced -
@@ -214,12 +221,14 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       vanish from claude --resume but nothing is destroyed
                       (delete the archive yourself to free the disk).
                       Interactive runs show a summary and ask y/N; -y skips.
-  -l, --logout        <codex|github|atlassian|aws|all>. Log out of an MCP and
+  -l, --logout        <codex|github|atlassian|aws|all>. Log out of an integration and
                       EXIT - a standalone action, nothing else runs (which is why
                       the permission tiers can always-allow `install.sh -l *`).
                       Removes the stored credentials: ~/.codex/auth.json for
-                      codex; for github/atlassian/aws also the env file AND the
+                      codex; for github/atlassian also the env file AND the
                       ~/.claude.json registration (it embeds the credentials).
+                      For aws it removes the env file, stops the ai-kit-aws-ro
+                      container and clears the gate.
                       codex stays registered - sign back in and it works again.
                       Local only: the printed pointers tell you where to revoke
                       each token server-side.
@@ -238,13 +247,16 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
   -h, --help          This message.
 
 MCP startup gate:
-  Every MCP server (-j/-c/-g/-x/-a) is registered behind a one-shot startup
+  Every MCP server (-j/-c/-g/-x) is registered behind a one-shot startup
   gate: a new session starts NO MCP containers/processes - each server shows
   "failed" in /mcp until requested. To start one mid-session run
-  touch ~/claude-kit/generated/mcp-on/<atlassian|github|codex|aws> and reconnect
+  touch ~/claude-kit/generated/mcp-on/<atlassian|github|codex> and reconnect
   the server in /mcp (its tools bind on the late connect). The flag is
   consumed on start, so the next session begins gated again - touch it just
   before launching Claude Code to have a server up from the start.
+  AWS (-a) sits behind the same flag but is not an MCP: the first
+  agent-aws-cli.sh run consumes it and leaves a per-session marker, so one
+  touch covers that whole session and no other.
   install.sh pre-arms the flag for every server it (re-)registers, so the
   session right after a -j/-c/-g/-x/-a run connects without a manual touch;
   that first start consumes the flag as usual.
@@ -350,7 +362,7 @@ while [[ $# -gt 0 ]]; do
         GITHUB_REMOVE=1
         ;;
     -x | --with-codex)
-        CODEX_MODE="on"
+        CODEX_MCP_MODE="on"
         ;;
     -X | --without-codex)
         CODEX_REMOVE=1
@@ -418,12 +430,18 @@ codex_secrets="${generated_dir}/.codex.env"   # model/sandbox knobs only, no sec
 codex_docker_dir="${kit_root}/docker/codex"
 codex_home="${HOME}/.codex"
 codex_agents_md="${codex_home}/AGENTS.md"
+codex_agents_dir="${codex_home}/agents"
+codex_planner_agent="${codex_agents_dir}/claude-kit-planner.toml"
 codex_skills_dir="${codex_home}/skills"
 codex_skills_manifest="${codex_home}/.claude-kit-skills"   # names of skills linked for codex, for prune-on-removal
+agents_home="${HOME}/.agents"
+agents_skills_dir="${agents_home}/skills"
+agents_skills_manifest="${agents_home}/.claude-kit-skills"
 skills_src_dir="${kit_root}/skills"
 skills_auto_state="${generated_dir}/skills-auto.state"      # pre-flip per-skill gate values, so -s off restores rather than inverts
 memory_src_dir="${kit_root}/memory"
 claude_md_src="${kit_root}/claude-md/CLAUDE.md"
+planner_agent_src="${kit_root}/settings/codex/agents/planner.toml"
 statusline_src="${kit_root}/settings/statusline.sh"
 claude_dir="${HOME}/.claude"
 claude_skills_dir="${claude_dir}/skills"
@@ -443,7 +461,7 @@ statusline_bak="${statusline_file}.bak"
 # -l/--logout: clear stored MCP credentials, then exit - deliberately standalone,
 # BEFORE any pre-flight prompt or install step, so the permission tiers can
 # always-allow `install.sh -l *` knowing it can only ever log out. Local-only:
-# each block prints where to revoke the token server-side. The atlassian/github/aws
+# each block prints where to revoke the token server-side. The atlassian/github
 # registrations embed their credentials in ~/.claude.json, so those are deregistered
 # too; codex's registration holds no secret and stays - a fresh container login
 # brings it straight back without a re-run.
@@ -481,13 +499,14 @@ logoutMcp() {
     fi
     if [ "${target}" = "aws" ] || [ "${target}" = "all" ]; then
         did=0
+        bash "${kit_root}/scripts/agent-aws-cli.sh" down >/dev/null 2>&1 || true
+        rm -f "${generated_dir}/mcp-on/aws" "${generated_dir}/mcp-on/aws.win"
+        rm -f "${generated_dir}"/mcp-on/aws.session.* 2>/dev/null || true
         if command -v claude >/dev/null 2>&1; then
             if claude mcp remove aws -s user >/dev/null 2>&1; then
-                echo "aws: deregistered from ~/.claude.json (the registration embeds the access key)"
+                echo "aws: deregistered the legacy MCP from ~/.claude.json (that registration embedded the access key)"
                 did=1
             fi
-        else
-            echo "aws: claude CLI not found - check ~/.claude.json for a leftover aws registration (it embeds the access key)" >&2
         fi
         if [ -f "${aws_secrets}" ]; then
             rm -f "${aws_secrets}"
@@ -1260,25 +1279,23 @@ applyGitHub() {
     echo "  restart Claude Code to pick up the new MCP server"
 }
 
-# Configure or remove the aws MCP server via the claude CLI at user scope
-# (registered in ~/.claude.json, like atlassian/github). Read-only by construction:
-# READ_OPERATIONS_ONLY=true is baked in below, so the server refuses any CLI
-# command outside its read-only list - the AWS analogue of GITHUB_READ_ONLY. That
-# is a guard rail, not the boundary: the IAM principal behind the key must be
-# read-only too (see docs/aws.md). Driven by AWS_MODE, AWS_REMOVE.
+# Configure or tear down agent AWS access. Unlike atlassian/github there is no MCP
+# server here: awslabs' aws-api-mcp-server wraps AWS CLI v1, which left maintenance
+# on 15/07/2026 and is removed on 15/07/2027, so the kit drives the official
+# aws-cli container through scripts/agent-aws-cli.sh instead. That means read-only
+# is NOT enforced in the container any more - IAM is the whole boundary, which it
+# always was in truth (see docs/aws.md). Driven by AWS_MODE, AWS_REMOVE.
 applyAws() {
-    # --without-aws: deregister the server (user scope) and return.
+    local cli="${kit_root}/scripts/agent-aws-cli.sh"
+
+    # --without-aws: stop the container, drop the gate, clear any legacy MCP entry.
     if [ "${AWS_REMOVE}" = "1" ]; then
-        command -v claude >/dev/null 2>&1 || {
-            echo "  claude CLI not found - cannot remove the aws MCP server" >&2
-            return 1
-        }
-        if claude mcp remove aws -s user >/dev/null 2>&1; then
-            echo "  removed aws MCP server (user scope)"
-        else
-            echo "  aws MCP server not registered at user scope - nothing to remove"
+        bash "${cli}" down || true
+        if command -v claude >/dev/null 2>&1 && claude mcp remove aws -s user >/dev/null 2>&1; then
+            echo "  removed the legacy aws MCP server (user scope)"
         fi
         rm -f "${generated_dir}/mcp-on/aws" "${generated_dir}/mcp-on/aws.win"
+        rm -f "${generated_dir}"/mcp-on/aws.session.* 2>/dev/null || true
         echo "  credentials file ${aws_secrets} left in place - delete manually to clear the key"
         return
     fi
@@ -1286,12 +1303,8 @@ applyAws() {
     [ "${AWS_MODE}" = "on" ] || return 0
 
     command -v docker >/dev/null 2>&1 || {
-        echo "  docker not found - the aws MCP runs as a container (public.ecr.aws/awslabs-mcp/awslabs/aws-api-mcp-server)" >&2
+        echo "  docker not found - AWS reads run in a container (public.ecr.aws/aws-cli/aws-cli)" >&2
         echo "  install Docker and retry" >&2
-        return 1
-    }
-    command -v claude >/dev/null 2>&1 || {
-        echo "  claude CLI not found - needed to register the MCP server (claude mcp add-json)" >&2
         return 1
     }
 
@@ -1332,6 +1345,8 @@ applyAws() {
     fi
     aws_region="${aws_region:-eu-west-2}"
 
+    # docker --env-file parses these directly, so the key never reaches a command
+    # line or ~/.claude.json.
     {
         echo "AWS_ACCESS_KEY_ID=${aws_key}"
         echo "AWS_SECRET_ACCESS_KEY=${aws_secret}"
@@ -1340,49 +1355,23 @@ applyAws() {
     chmod 600 "${aws_secrets}"
     echo "  saved -> ${aws_secrets}"
 
-    # Build the env object. The three safety settings are fixed constants - not
-    # sourced from the file - so read-only can never be turned off by editing
-    # creds: READ_OPERATIONS_ONLY refuses non-read CLI commands, no-access keeps
-    # the server out of the local filesystem, and telemetry (on by default
-    # upstream) is off because the commands describe client infrastructure.
-    local env_json
-    env_json="$(jq -n \
-        --arg key    "${aws_key}" \
-        --arg secret "${aws_secret}" \
-        --arg region "${aws_region}" \
-        '{AWS_ACCESS_KEY_ID: $key,
-          AWS_SECRET_ACCESS_KEY: $secret,
-          AWS_REGION: $region,
-          READ_OPERATIONS_ONLY: "true",
-          AWS_API_MCP_TELEMETRY: "false",
-          AWS_API_MCP_ALLOW_UNRESTRICTED_LOCAL_FILE_ACCESS: "no-access"}')"
+    # A previous kit version registered an MCP server whose registration embeds the
+    # access key - clear it so the key does not linger in ~/.claude.json.
+    if command -v claude >/dev/null 2>&1 && claude mcp remove aws -s user >/dev/null 2>&1; then
+        echo "  removed the legacy aws MCP server (its registration embedded the access key)"
+    fi
 
-    # Same "sh -c" + gate + per-spawn container name as github, and one bare
-    # "-e VAR" per key so the access key never appears on the command line. The
-    # name carries the wrapper's PID because a fixed name shared by every session
-    # meant the second session to connect force-removed the first one's live
-    # container; --rm is a daemon-side HostConfig flag, so each spawn's container
-    # still cleans itself up when its stdio closes.
-    local image="public.ecr.aws/awslabs-mcp/awslabs/aws-api-mcp-server:latest"
-    local cname="claude-mcp-aws"
-    local gate run_cmd
-    gate="$(mcpGate aws)"
-    run_cmd="$(jq -rn --arg gate "${gate}" --argjson env "${env_json}" --arg img "${image}" --arg name "${cname}" \
-        '$gate + "exec docker run -i --rm --name \($name)-$$ " + ($env | keys | map("-e " + .) | join(" ")) + " " + $img')"
-
-    local server_json
-    server_json="$(jq -n --arg cmd "${run_cmd}" --argjson env "${env_json}" \
-        '{command: "sh", args: ["-c", $cmd], env: $env}')"
-    claude mcp remove aws -s user >/dev/null 2>&1 || true
-    claude mcp add-json aws "${server_json}" -s user >/dev/null
+    # Pre-create the container AND pre-arm the gate, so the next session's first
+    # read needs neither a download nor a touch.
+    bash "${cli}" up || return 1
     touch "${generated_dir}/mcp-on/aws"
-    echo "  registered aws MCP (docker/aws-api-mcp-server, read-only) at user scope (~/.claude.json)"
     echo "  default region: ${aws_region} (anything else needs an explicit --region)"
-    echo "  READ-ONLY IS A GUARD RAIL, NOT THE BOUNDARY - the IAM principal must be read-only,"
-    echo "  and should explicitly Deny secretsmanager:GetSecretValue, ssm:GetParameter,"
-    echo "  s3:GetObject and kms:Decrypt (managed ReadOnlyAccess allows all four). See docs/aws.md."
-    echo "  gated + pre-armed: connects on your NEXT session start (or /mcp -> aws -> reconnect now); later sessions need touch ${generated_dir}/mcp-on/aws (one-shot flag, then open for ${mcp_gate_window}s)"
-    echo "  restart Claude Code to pick up the new MCP server"
+    echo "  READ-ONLY IS IAM AND NOTHING ELSE - there is no command allow-list in front of it."
+    echo "  The principal must be read-only, and should Deny secretsmanager:GetSecretValue,"
+    echo "  ssm:GetParameter, s3:GetObject and kms:Decrypt (managed ReadOnlyAccess allows all four)."
+    echo "  Check it with: bash ${cli} run iam simulate-principal-policy --policy-source-arn <user-arn> --action-names rds:DeleteDBInstance --query 'EvaluationResults[].EvalDecision' --output text"
+    echo "  gated + pre-armed: the next session reads without a touch; later sessions need touch ${generated_dir}/mcp-on/aws (one-shot flag, then armed for that whole session)"
+    echo "  reads run as: bash ${cli} run <aws arguments>; yours run as: docker exec -i ai-kit-aws-ro aws <arguments>"
 }
 
 # Configure or remove the codex MCP server via the claude CLI at user scope
@@ -1397,7 +1386,7 @@ applyAws() {
 # autonomous Codex coding agents. Auth is ChatGPT sign-in (stored in ~/.codex),
 # so no token is kept here - generated/.codex.env holds only the non-secret model /
 # effort / sandbox knobs, baked into the registration as `-c key=value` overrides so
-# every spawned agent inherits them. Driven by CODEX_MODE, CODEX_REMOVE.
+# every spawned agent inherits them. Driven by CODEX_MCP_MODE, CODEX_REMOVE.
 applyCodex() {
     # --without-codex: deregister the server (user scope) and return.
     if [ "${CODEX_REMOVE}" = "1" ]; then
@@ -1418,24 +1407,35 @@ applyCodex() {
             rm -f "${codex_agents_md}"
             echo "  removed ${codex_agents_md} (kit link)"
         fi
-        if [ -f "${codex_skills_manifest}" ]; then
-            local prev mdst removed=0
+        if [ -L "${codex_planner_agent}" ] && [ "$(readlink "${codex_planner_agent}")" = "${planner_agent_src}" ]; then
+            rm -f "${codex_planner_agent}"
+            echo "  removed ${codex_planner_agent} (kit link)"
+        fi
+        local skill_root skill_manifest prev mdst removed
+        for skill_root in "${codex_skills_dir}" "${agents_skills_dir}"; do
+            if [ "${skill_root}" = "${codex_skills_dir}" ]; then
+                skill_manifest="${codex_skills_manifest}"
+            else
+                skill_manifest="${agents_skills_manifest}"
+            fi
+            [ -f "${skill_manifest}" ] || continue
+            removed=0
             while IFS= read -r prev; do
                 [ -n "${prev}" ] || continue
-                mdst="${codex_skills_dir}/${prev}"
+                mdst="${skill_root}/${prev}"
                 if [ -L "${mdst}" ]; then
                     rm -f "${mdst}"
                     removed=$((removed+1))
                 fi
-            done < "${codex_skills_manifest}"
-            rm -f "${codex_skills_manifest}"
-            echo "  removed ${removed} codex skill link(s) + manifest"
-        fi
+            done < "${skill_manifest}"
+            rm -f "${skill_manifest}"
+            echo "  removed ${removed} codex skill link(s) + manifest from ${skill_root}"
+        done
         echo "  ${codex_secrets}, ~/.codex (your ChatGPT login) and the claude-kit-codex docker image left in place"
         return
     fi
 
-    [ "${CODEX_MODE}" = "on" ] || return 0
+    [ "${CODEX_MCP_MODE}" = "on" ] || return 0
 
     command -v claude >/dev/null 2>&1 || {
         echo "  claude CLI not found - needed to register the MCP server (claude mcp add-json)" >&2
@@ -1515,7 +1515,7 @@ applyCodex() {
         cx_approval="${CODEX_APPROVAL:-}"
         cx_threads="${CODEX_AGENT_THREADS:-}"
     fi
-    # Defaults: flagship model, xhigh reasoning, workspace-write (network off -> no push).
+    # Defaults: Sol/xhigh execution, workspace-write (network off -> no push).
     cx_model="${cx_model:-gpt-5.6-sol}"
     cx_effort="${cx_effort:-xhigh}"
     cx_sandbox="${cx_sandbox:-workspace-write}"
@@ -1650,6 +1650,7 @@ applyCodex() {
     # Codex compat: the same global instructions + skills for codex agents.
     echo "  wiring codex compat (AGENTS.md + skills)..."
     writeCodexAgentsMd
+    writeCodexPlannerAgent
     syncCodexSkills
 }
 
@@ -1672,13 +1673,18 @@ writeCodexAgentsMd() {
     echo "  linked    -> ${codex_agents_md} -> ${claude_md_src}"
 }
 
-# Mirror the kit's skills into ~/.codex/skills/<name> so Codex agents can invoke
-# them ($name). Same shared linker as syncSkills - codex materialises its own
-# bundled skills in ~/.codex/skills/.system, a dotname the globs never match.
-# The registration's read-only kit mount is what makes these links resolve
-# inside the agent container.
+writeCodexPlannerAgent() {
+    [ -f "${planner_agent_src}" ] || { echo "  missing kit source: ${planner_agent_src}" >&2; return 1; }
+    mkdir -p "${codex_agents_dir}"
+    ln -sfn "${planner_agent_src}" "${codex_planner_agent}"
+    echo "  linked    -> ${codex_planner_agent} -> ${planner_agent_src}"
+}
+
+# Mirror the kit's skills into both roots inspected by current Codex releases.
+# The ~/.codex copy also resolves inside the Codex MCP container.
 syncCodexSkills() {
     linkKitSkills "${codex_skills_dir}" "${codex_skills_manifest}" codex
+    linkKitSkills "${agents_skills_dir}" "${agents_skills_manifest}" codex
 }
 
 # Adopt every real ~/.claude/projects/<slug>/memory dir into the kit
@@ -1800,7 +1806,7 @@ screenHint() {
 # Verification block - the 6 checks from the brief, plus conditional codex checks:
 # (7) registration when -x/-X was passed this run, (7b) compat wiring after -x.
 verifyAll() {
-    local failed=0
+    local failed=0 aws_running aws_registered
     echo ""
     echo "Verification checks"
     echo "-------------------------------"
@@ -1858,7 +1864,7 @@ verifyAll() {
     # INFO (not FAIL) when codex wasn't touched.
     local codex_registered=1
     [ -f "${HOME}/.claude.json" ] && jq -e '.mcpServers.codex' "${HOME}/.claude.json" >/dev/null 2>&1 || codex_registered=0
-    if [ "${CODEX_MODE}" = "on" ]; then
+    if [ "${CODEX_MCP_MODE}" = "on" ]; then
         if [ "${codex_registered}" -eq 1 ]; then
             echo "[PASS] (7) codex MCP server registered (user scope)"
         else
@@ -1877,13 +1883,14 @@ verifyAll() {
     # 7b. codex compat state - only after -x this run: gate flag pre-armed for
     # the next session, AGENTS.md linked to the kit, codex skills manifest
     # non-empty.
-    if [ "${CODEX_MODE}" = "on" ]; then
+    if [ "${CODEX_MCP_MODE}" = "on" ]; then
         if [ -f "${generated_dir}/mcp-on/codex" ] \
             && [ -L "${codex_agents_md}" ] && [ "$(readlink "${codex_agents_md}")" = "${claude_md_src}" ] \
-            && [ -s "${codex_skills_manifest}" ]; then
-            echo "[PASS] (7b) codex gate pre-armed + AGENTS.md/skills linked"
+            && [ -L "${codex_planner_agent}" ] && [ "$(readlink "${codex_planner_agent}")" = "${planner_agent_src}" ] \
+            && [ -s "${codex_skills_manifest}" ] && [ -s "${agents_skills_manifest}" ]; then
+            echo "[PASS] (7b) codex gate pre-armed + AGENTS.md/planner/skills linked"
         else
-            echo "[FAIL] (7b) codex compat incomplete - check ${generated_dir}/mcp-on/codex, ${codex_agents_md}, ${codex_skills_manifest}"; failed=1
+            echo "[FAIL] (7b) codex compat incomplete - check ${generated_dir}/mcp-on/codex, ${codex_agents_md}, ${codex_planner_agent}, ${codex_skills_manifest}, ${agents_skills_manifest}"; failed=1
         fi
     fi
 
@@ -1906,6 +1913,29 @@ verifyAll() {
         echo "[PASS] (9) statusLine.refreshInterval=${slr}s"
     else
         echo "[FAIL] (9) statusLine.refreshInterval mismatch (have='${slr}', want='${want_slr}')"; failed=1
+    fi
+
+    aws_running="$(docker ps -q -f 'name=^ai-kit-aws-ro$' 2>/dev/null || true)"
+    aws_registered=0
+    [ -f "${HOME}/.claude.json" ] && jq -e '.mcpServers.aws' "${HOME}/.claude.json" >/dev/null 2>&1 && aws_registered=1
+    if [ "${AWS_MODE}" = "on" ]; then
+        if [ -n "${aws_running}" ] && [ -f "${generated_dir}/mcp-on/aws" ] && [ "${aws_registered}" -eq 0 ]; then
+            echo "[PASS] (10) AWS container running + next-session gate pre-armed"
+        else
+            echo "[FAIL] (10) AWS -a must start the container, pre-arm the gate and remove the legacy MCP"; failed=1
+        fi
+    elif [ "${AWS_REMOVE}" = "1" ]; then
+        if [ -z "${aws_running}" ] && [ ! -f "${generated_dir}/mcp-on/aws" ] && [ ! -f "${generated_dir}/mcp-on/aws.win" ] && ! compgen -G "${generated_dir}/mcp-on/aws.session.*" >/dev/null && [ "${aws_registered}" -eq 0 ]; then
+            echo "[PASS] (10) AWS container, gates and legacy MCP removed"
+        else
+            echo "[FAIL] (10) AWS -A left a container, gate or legacy MCP behind"; failed=1
+        fi
+    fi
+
+    if bash "${kit_root}/scripts/validate-skills.sh"; then
+        echo "[PASS] (11) shared skill compatibility"
+    else
+        echo "[FAIL] (11) shared skill compatibility"; failed=1
     fi
 
     echo "-------------------------------"
@@ -1983,12 +2013,12 @@ if [ "${GITHUB_MODE}" = "on" ] || [ "${GITHUB_REMOVE}" = "1" ]; then
 fi
 
 if [ "${AWS_MODE}" = "on" ] || [ "${AWS_REMOVE}" = "1" ]; then
-    echo "Applying AWS MCP settings..."
+    echo "Applying AWS settings..."
     applyAws
     echo -e "[Done]\n"
 fi
 
-if [ "${CODEX_MODE}" = "on" ] || [ "${CODEX_REMOVE}" = "1" ]; then
+if [ "${CODEX_MCP_MODE}" = "on" ] || [ "${CODEX_REMOVE}" = "1" ]; then
     echo "Applying Codex MCP settings..."
     applyCodex
     echo -e "[Done]\n"

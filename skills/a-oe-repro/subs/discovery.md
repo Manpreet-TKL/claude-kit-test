@@ -68,9 +68,11 @@ Discovery needs writes - creating an event, saving a form, adding an admin row. 
 
 Never point any of this at a clinical instance.
 
-## Subagent brief - bracketed walk (Haiku, rung 1)
+## Subagent brief - bracketed walk (rung 1)
 
-Launch with the Agent tool, model `haiku`. The subagent loads no skills, so paste in what it needs.
+Use the current client's native collaboration facility. The subagent loads no
+skills, so paste in everything it needs. Use the current or inherited model
+unless the user explicitly approves an override.
 
 ```
 You are probing a running OpenEyes sample instance to confirm a bug reproduces.
@@ -104,9 +106,11 @@ Return ONLY:
 No transcripts, no screenshots unless asked.
 ```
 
-## Subagent brief - path finding (rung 3, via `oe-probe-chrome`)
+## Subagent brief - path finding (rung 3, interactive Chrome)
 
-Only after all three gates. Invoke the **`oe-probe-chrome`** skill and hand it this shape:
+Only after all three gates. Invoke the interactive Chrome skill installed for
+the active client: `oe-probe-chrome` in Claude Code or
+`oe-probe-codex-chrome` in Codex. Hand it this shape:
 
 ```
 Find the click path to <outcome> in the OpenEyes instance already open in Chrome

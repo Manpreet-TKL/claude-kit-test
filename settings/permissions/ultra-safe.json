@@ -10,7 +10,8 @@
     "Bash(git log *)",
     "mcp__atlassian",
     "mcp__github",
-    "mcp__aws",
+    "Bash(bash ~/claude-kit/scripts/agent-aws-cli.sh run *)",
+    "Bash(~/claude-kit/scripts/agent-aws-cli.sh run *)",
     "Bash(~/claude-kit/install.sh -l *)",
     "Bash(bash ~/claude-kit/install.sh -l *)",
     "Bash(~/claude-kit/codex-install.sh -l)",
@@ -25,6 +26,8 @@
     "Bash(git push *)",
     "Bash(git commit *)",
     "Bash(aws *)",
+    "Bash(docker run * aws-cli *)",
+    "Bash(docker exec * ai-kit-aws-ro *)",
     "Read(./.env)",
     "Read(./.env.*)",
     "Read(~/.ssh/**)"

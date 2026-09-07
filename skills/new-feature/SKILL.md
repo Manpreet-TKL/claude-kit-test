@@ -8,81 +8,93 @@ disable-model-invocation: false
 
 When loaded as context with no task, reply only `Context loaded.`
 
-A green-field feature is the wrong place to start typing. This skill enforces a four-step shape: **plan -> question -> divide -> verify**.
+A green-field feature is the wrong place to start typing. Use this four-step
+shape: **plan -> question -> divide -> verify**.
 
-## 1. Enter plan mode immediately
+## 1. Plan before writing
 
-Before any tool that writes (`Edit`, `Write`, `Bash` that mutates), call `EnterPlanMode`. The user will see a plan-mode banner. From now on, no implementation tool calls until the plan is approved with `ExitPlanMode`.
+In standalone Codex, keep the main thread on `gpt-5.6-sol` at `xhigh`. For a
+non-trivial plan, spawn one read-only `planner` agent, pinned by the kit to
+`gpt-6-astra` at `max`, and integrate its result in the main thread. This one
+planner is pre-authorized by the kit's global model route. After approval,
+execute in the Sol main thread. For a trivial plan or when that custom agent is
+unavailable, plan read-only in the current thread.
 
-If `EnterPlanMode` isn't available in the session (rare), say so explicitly and proceed in "draft plan only - no edits" discipline manually.
+In other clients, use the available native planning mode or work read-only and
+produce a draft plan. Do not edit or run mutating commands until the user
+approves the implementation plan.
 
 ## 2. Ask up to 10 clarifying questions
 
-Use `AskUserQuestion` once with **as many of the most load-bearing questions as you actually have** (the tool accepts 1-4 per call, so chain calls if you need more - but cap the total at **10**). A bad question costs the user a click; a missing question costs them a re-do. Prioritise the questions whose answer would flip your design.
+Explore the real environment first. Then ask only the load-bearing questions
+whose answers would change the design, capped at 10. Use the client's
+structured question facility when available; otherwise ask one concise
+numbered question at a time. A bad question costs the user a click; a missing
+question costs them a re-do.
 
 Question topics, in rough order of payoff:
 
-1. **Outcome:** what user/system behavior should exist when this is done?
-2. **Scope edges:** what is explicitly *out* of scope for this iteration?
+1. **Outcome:** what user or system behavior should exist when this is done?
+2. **Scope edges:** what is explicitly out of scope for this iteration?
 3. **Surface:** UI, API, CLI, background job, or a mix?
-4. **Data model:** new table/column? Mutating an existing one? Soft-delete or hard?
-5. **Auth / multi-tenancy:** per-user, per-org, public? Does it cross trust boundaries?
-6. **Failure mode:** what should happen on partial success / retry / network loss?
-7. **Performance envelope:** how many records, how often, latency budget?
-8. **Existing patterns:** is there a sibling feature whose conventions we should mirror?
-9. **Release path:** flagged behind a toggle? Migration window? Backwards-compat needed?
-10. **Done-ness:** what concretely makes this "shippable" - a passing test, a screenshot, a sign-off?
+4. **Data model:** new table or column? Mutating an existing one? Soft-delete
+   or hard-delete?
+5. **Auth and multi-tenancy:** per-user, per-org, or public? Does it cross a
+   trust boundary?
+6. **Failure mode:** what should happen on partial success, retry, or network
+   loss?
+7. **Performance envelope:** how many records, how often, and what latency?
+8. **Existing patterns:** is there a sibling feature whose conventions should
+   be mirrored?
+9. **Release path:** feature flag, migration window, or backwards compatibility?
+10. **Done-ness:** what concretely makes this shippable?
 
-Skip any that the user has already answered in the brief. Stop asking the moment you have enough to write a sharp plan.
+Skip anything the user already answered. Stop asking as soon as the plan is
+decision-complete.
 
-## 3. Divide the work - assign models and subagents
+## 3. Divide the work
 
 Build the plan as an ordered list of phases. For each phase, name:
 
-- **Who runs it.** Default model (Opus) for design, judgment, and edits inside an active session. Sonnet for high-volume mechanical sweeps. Haiku for tight loops where latency matters more than nuance.
-- **Which subagent (if any).** Use the lightest tool that fits.
-
-  | Subagent              | Use for                                                                                  |
-  |---                    |---                                                                                       |
-  | `Explore`             | Bounded read-only code search. "Find every call site of X." Quick / medium / thorough.   |
-  | `Plan`                | Architect a step-by-step implementation plan when the design space is non-trivial.       |
-  | `claude-code-guide`   | Questions about Claude Code itself, the Agent SDK, or the Anthropic API.                 |
-  | `general-purpose`     | Open-ended multi-step research or coding work that doesn't fit the specialised agents.   |
-
-  Prefer running independent subagents **in parallel** (single message, multiple `Agent` calls) when their work doesn't depend on each other. Two review/verify steps are skills rather than subagents: `/code-review` for an independent diff pass, and `/run` to drive the running app and confirm the feature works end-to-end.
-
-- **Verify check.** One concrete thing that proves the phase is done - a test name, a `curl` you'll run, a screenshot, a log line.
+- **Who runs it.** Keep design and integration with the main agent. Assign a
+  subagent only when the work has a bounded independent slice that benefits
+  from delegation.
+- **Which capability.** Use the current client's native collaboration tools
+  when delegation is available and authorised. Prompts must be self-contained,
+  and model or reasoning overrides require explicit user approval, except for
+  the kit-managed planner above. Ask once before any other multi-agent fan-out
+  because each agent consumes additional usage.
+  Use the matching installed review or UI-probe skill for independent review
+  and end-to-end checks rather than assuming a client-specific slash command.
+- **Verify check.** Name one observable check that proves the phase is done: a
+  test, request, UI state, or log line.
 
 A good plan reads like:
 
 ```
-1. Explore , Explore-agent (quick), find existing soft-delete pattern in modules/X
+1. Explore, main agent, find the existing soft-delete pattern in modules/X
    -> verify: report cites the trait and 2+ call sites
 
-2. Design  , Opus inline, sketch model + migration, share schema diff
+2. Design, main agent, sketch the model and migration, then share the schema diff
    -> verify: user accepts schema
 
-3. Build   , Opus inline, write migration + model + 1 unit test
+3. Build, main agent, write the migration, model, and one unit test
    -> verify: `yiic migrate --all` and `phpunit tests/unit/.../FooTest.php` both green
 
-4. UI      , Opus inline, wire form + controller
-   -> verify: manual click-through (/run) + screenshot of success state
+4. UI, main agent, wire the form and controller
+   -> verify: live click-through reaches the expected success state
 
-5. Review  , /code-review on the working diff
+5. Review, installed review capability on the working diff
    -> verify: no high-severity findings
 ```
 
-## 4. End with a verification / goal statement
+## 4. End with a verification goal
 
-The plan must close with a single line of the form:
+The plan must close with one line in this form:
 
 > **Goal:** when `<concrete observable thing>` is true, this feature is done.
 
-Examples:
-- "When a user with role `clinic_admin` can click 'Archive' on a patient row and the row disappears from the default list but reappears under `?showArchived=1`, this feature is done."
-- "When `POST /api/v1/widgets` accepts `{name,quantity}`, returns `201` with a created body, persists a row, and an integration test asserts all three, this feature is done."
-
-This is the line you'll re-quote at the end of every phase to check you haven't drifted.
+Re-quote this line after every implementation phase to detect drift.
 
 ## When to invoke this skill
 
@@ -96,10 +108,13 @@ This is the line you'll re-quote at the end of every phase to check you haven't 
 | "Update the readme" | no |
 | "Investigate why X breaks" | no - debugging, not building |
 
-Invoke by name when you genuinely want this shape imposed on the work - the table above is the trigger test, not a hint to reach for it on every task.
+Invoke by name when this planning shape is wanted. Do not auto-apply it to
+every task.
 
-## What this skill is **not**
+## What this skill is not
 
-- Not a substitute for understanding the codebase. The `Explore` phase is mandatory the moment the plan touches anything you haven't read.
-- Not a license to over-engineer. Karpathy guideline #2 - simplicity first - still applies. The plan should be the smallest set of phases that gets to the Goal line.
-- Not a ceremony. If the user pushes back ("this is a 20-line change, skip the questions") respect that and drop straight to a one-line plan + Goal.
+- Not a substitute for understanding the codebase. Exploration is mandatory
+  when the plan touches anything you have not read.
+- Not a license to over-engineer. Simplicity first still applies.
+- Not ceremony. If the user says a change is small and wants fewer questions,
+  use the smallest useful plan plus the Goal line.

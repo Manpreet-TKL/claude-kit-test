@@ -31,8 +31,11 @@ Named a topic? Teach that. Vague? Do not guess - mine the conversation and offer
 
 1. Scan back for concepts, terms, and techniques that went past unexplained.
 2. **Prioritise the esoteric** - jargon, acronyms, named algorithms, domain shorthand. The words a practitioner uses casually and an outsider must look up. "Zone of proximal development" beats "learning".
-3. Offer them via `AskUserQuestion` with `multiSelect: true`, one option per candidate lesson.
-4. They may pick several. Teach one at a time in the order that builds best, and state the queue.
+3. Offer a numbered menu, one option per candidate lesson. Use structured
+   multi-select input when the client provides it; otherwise ask the user to
+   reply with one or more numbers.
+4. They may pick several. Teach one at a time in the order that builds best,
+   and state the queue.
 
 Fresh session with no conversation to mine: read the learning records and propose what the mission needs next.
 

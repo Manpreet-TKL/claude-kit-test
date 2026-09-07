@@ -19,7 +19,7 @@ Gotchas (hard-won):
 - develop's multi-step site picker breaks journey.mjs `login()`; prefix OE_ACTIONS with: `[{"login":false},{"goto":"/site/login"},{"click":"li.js-site[data-id=\"1\"]"},{"wait":800},{"fill":["#LoginForm_username","admin"]},{"fill":["#LoginForm_password","admin"]},{"click":"#login_button"},{"wait":3000}]` (sample-box default credentials).
 - Detecting in-flight ImageMagick scratch in the web container: use `ls -la /tmp | grep magick`; the glob form `ls /tmp/magick-*` intermittently fails to match files that exist when run inside `docker exec` watch loops (mechanism undiagnosed; it burned three watch runs).
 
-Scripted replay (rung 1, Haiku subagent) - force a render, then confirm completion:
+Scripted replay (rung 1, lightweight subagent) - force a render, then confirm completion:
 
 1. `docker exec -i -e OE_ACTIONS='[<login prefix above>,{"goto":"/OphCoDocument/default/createImage/<event_id>"},{"wait":1000}]' -w /var/www/openeyes <web> node --input-type=module - < ~/.claude/skills/c-oe-nav/scripts/journey.mjs`
 2. Completion: `{"goto":"/eventImage/getImageInfo?event_id=<event_id>"},{"read":"body"}` shows `"page_count":N`, or count `event_image` rows via `c-dblogin`.

@@ -2,47 +2,57 @@
 
 ## Standalone Codex
 For the complete direct-use guide, see [Standalone Codex usage](codex-standalone.md).
-
-
-Standalone use does not require Claude Code or a host Codex installation:
+Standalone use runs Codex on the host inside its bubblewrap sandbox. Docker remains
+the runtime for MCP services, AWS CLI, and the browser walker.
 
 ```bash
-cd ~/claude-kit
-./codex-install.sh
-./codex.sh
+bash /home/toukan/claude-kit/scripts/codex_bwrap_install.sh
+bash /home/toukan/claude-kit/scripts/screen5_install.sh
+bash /home/toukan/claude-kit/codex-install.sh -q
+bash /home/toukan/claude-kit/codex.sh
 ```
 
-The installer requires Docker, builds or reuses `claude-kit-codex`, and creates
-only `~/.codex` and `~/.agents`. It links global instructions at
-`~/.codex/AGENTS.md` and every Codex-enabled skill at the official personal root,
-`~/.agents/skills/<name>`. The `~/.agents/.claude-kit-skills` manifest makes
-re-runs idempotent. Pruning removes only recorded symlinks or links targeting
-this kit; real directories and foreign symlinks remain. A pre-existing real
-`AGENTS.md` is backed up to `AGENTS.md.bak`.
+`codex-install.sh` installs Codex with OpenAI's standalone installer when it is
+missing. It writes the kit profile and rules under `~/.codex`, links global
+instructions at `~/.codex/AGENTS.md`, and links every Codex-enabled skill under
+both `~/.agents/skills/<name>` and `~/.codex/skills/<name>`. Current releases scan
+both roots, so synchronizing them prevents stale skills. The `~/.codex` copy also
+resolves inside the Codex MCP container. A manifest beside each root makes re-runs
+idempotent and leaves real directories and foreign symlinks alone.
 
 The presence of `skills/<name>/agents/openai.yaml` opts a skill into Codex. Each
 run updates existing metadata from `SKILL.md` frontmatter but does not create a
-missing file. It never creates or changes `~/.codex/config.toml`.
+missing file. An `agents/claude.yaml` file with `enabled: false` makes the skill
+Codex-only. Normal setup does not change the user-owned
+`~/.codex/config.toml`.
 
-When `~/.codex/auth.json` is absent, an interactive install starts this device login:
+Installer verification runs the shared schema and compatibility validator.
+Standalone setup also calls the real Codex `skills/list` app-server method and
+requires the installed skill set to match with no parse errors. Run the same
+check directly with
+`bash /home/toukan/claude-kit/scripts/validate-skills.sh -c`.
 
-```bash
-docker run --rm -it --network host --user "$(id -u):$(id -g)" -v "$HOME/.codex:/home/codex/.codex" claude-kit-codex login --device-auth
-```
+`codex.sh [codex arguments]` passes arguments through to the host CLI, including
+`exec`, and applies the generated profile, model, reasoning, permission tier, and
+approval mode. Codex's bubblewrap sandbox enforces the selected filesystem and
+network boundaries.
 
-A non-interactive install prints the same exact login command.
-
-`./codex.sh [codex arguments]` passes all arguments through, including `exec`.
-It mounts Codex state read-write, personal skills and the kit read-only, and the
-current directory read-write at the same path. Inside `claude-kit`, the kit is
-mounted once read-write. SSH keys, Git credentials, host runtimes, and unrelated
-home directories are not mounted.
+The main thread uses `gpt-5.6-sol` at `xhigh` for implementation. Setup also
+links a custom read-only `planner` agent that uses `gpt-6-astra` at `max` for
+non-trivial planning, then hands the plan back to the Sol main thread. Native
+Codex supports `plan_mode_reasoning_effort` but rejects `plan_mode_model`, so
+the custom agent is the model boundary; direct Plan mode effort is pinned to
+`max` as a fallback.
 
 The launcher uses Codex's native footer to show model and reasoning, current
 directory, five-hour limit, and weekly limit. This is a command-line override,
 so user-owned Codex configuration remains untouched.
 
 ## Codex as a Claude Code MCP server
+
+This entire section is the Claude Code-side route. The `codexmcp` skill is
+Claude-only; standalone Codex uses its native collaboration tools through the
+shared `codex-swarm` and `codex-grill` skills.
 This kit can wire Claude Code into **OpenAI Codex** so Claude can hand a coding task -
 or many in parallel - to autonomous Codex agents. Like the Atlassian and GitHub
 integrations, Codex runs **in a Docker container**: OpenAI ships no official CLI image,
@@ -63,8 +73,9 @@ Once configured, Claude can:
 - spawn a single Codex agent on a self-contained task, or **several at once** (one per
   module / file / failing test) that run concurrently;
 - continue any agent's thread with `codex-reply` (feed back test output, ask for a fix);
-- have each agent run at the **flagship model (`gpt-5.6-sol`) + `xhigh` reasoning
-  effort**, sandboxed (`approval_policy=never`, so unattended). In docker mode the
+- have general implementation agents run at **`gpt-5.6-sol` + `xhigh` reasoning
+  effort**, with **`gpt-6-astra` + `max`** available for planning, sandboxed
+  (`approval_policy=never`, so unattended). In docker mode the
   **container is the sandbox** - only the project dir, `~/.codex`, and the kit
   (read-only) are mounted, and it carries no git credentials; in host-fallback mode
   it's codex's own **workspace-write, network-off** sandbox.
@@ -126,7 +137,7 @@ agent inherits them:
 
 | Knob | Default | Becomes |
 |---|---|---|
-| `CODEX_MODEL` | `gpt-5.6-sol` (flagship) | `-c model="..."` |
+| `CODEX_MODEL` | `gpt-5.6-sol` (execution) | `-c model="..."` |
 | `CODEX_REASONING_EFFORT` | `xhigh` | `-c model_reasoning_effort="..."` |
 | `CODEX_SANDBOX` | `workspace-write` | host mode only: `-c sandbox_mode="..."` (+ `network_access=false`) |
 | `CODEX_AGENT_THREADS` | Codex default | `-c agents.max_concurrent_threads_per_session=<number>` when set |
@@ -173,10 +184,10 @@ Edit `generated/.codex.env` and re-apply silently:
 ./install.sh -x -p standard -y    # re-reads the knobs, re-registers
 ```
 
-- **Model.** The GPT-5.6 family as of mid-2026: `gpt-5.6-sol` (flagship - complex,
-  ambiguous, or high-value work), `gpt-5.6-terra` (everyday workhorse),
-  `gpt-5.6-luna` (fast/cheap repeatable tasks). Point `CODEX_MODEL` at whatever is
-  current - update it when OpenAI ships the next one.
+- **Model.** `gpt-6-astra` is the planning tier for complex decisions and
+  supports `max` effort. `gpt-5.6-sol` at `xhigh` remains the implementation
+  default. The GPT-5.6 family also includes `gpt-5.6-terra` for everyday work
+  and `gpt-5.6-luna` for fast repeatable tasks.
 - **Reasoning effort.** `xhigh` is the default; the family accepts
   low/medium/high/xhigh/max/ultra.
 - **Sandbox.** Host mode only: keep `workspace-write` (network off) so agents can't
@@ -184,7 +195,7 @@ Edit `generated/.codex.env` and re-apply silently:
 
 The registration values are only **defaults**: the `codex` MCP tool accepts `model`
 and `config` (e.g. `{"model_reasoning_effort": "low"}`) per call, so a single agent
-can run on a different tier without re-registering - the `codex-grill` (sol at xhigh)
+can run on a different tier without re-registering - the `codex-grill` (Astra at max)
 and `codex-swarm` (luna/terra) skills pick their tiers exactly this way.
 
 ## Why the sandbox, and never-commit
@@ -216,12 +227,16 @@ prompt the first time.
 
 `-x` also makes the kit legible to Codex itself: `~/.codex/AGENTS.md` is symlinked to
 `claude-md/CLAUDE.md` (Codex's global-instructions file), each skill carrying
-`agents/openai.yaml` is symlinked into `~/.codex/skills/` (manifest-pruned exactly
-like the Claude ones), and that metadata carries generated display name, description, and
+`agents/openai.yaml` is symlinked into both Codex skill roots (manifest-pruned
+exactly like the Claude ones), and that metadata carries generated display name, description, and
 `allow_implicit_invocation: false` mirroring `disable-model-invocation: true`). Codex
 agents invoke a skill explicitly with `$skill-name`. The read-only kit mount is what
 lets those symlinks resolve inside the container. Full recipe and rationale:
 `knowledge/codex-compatibility.md`.
+
+Client-specific metadata keeps `codexmcp` and `oe-probe-chrome` out of Codex,
+and keeps `oe-probe-codex-chrome` out of Claude Code. Shared skills describe
+native Codex and Claude-side MCP paths separately.
 
 ## Teardown
 
@@ -255,6 +270,10 @@ CODEX_REASONING_EFFORT=xhigh
 CODEX_SANDBOX=workspace-write
 CODEX_AGENT_THREADS=
 ```
+
+The planning model is versioned separately in
+`settings/codex/agents/planner.toml` because Codex custom agents, rather than
+the general execution environment, own that override.
 
 It lives in the kit's single `generated/` folder (gitignored wholesale) alongside the
 Atlassian/GitHub creds, so one backup of that folder survives a `git reset --hard`.

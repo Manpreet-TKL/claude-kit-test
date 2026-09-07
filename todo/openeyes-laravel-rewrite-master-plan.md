@@ -522,7 +522,7 @@ level as a filter; a setting key is a row in the `oe_config` git seed (§5.7), n
 
 **Import/export contract (req 19f).** Every admin page is one config family, and every family has:
 
-1. `GET` / `PUT /api/v1/admin/<family>` - the family's **CSV document** (§26 Q20), natural keys
+1. `GET` / `PUT /api/admin/<family>` - the family's **CSV document** (§26 Q20), natural keys
    only (never autoincrement ids), `?dry_run=1` returns the diff without writing, PUT is
    idempotent (a second PUT of the same document is a no-op), auth per §20 decision 13 gated by
    the page's RBAC task.
@@ -792,7 +792,7 @@ The deep sections of this plan (§5.8 below, plus §17 Developer Notes, §18 Cri
 
 10. **Validation split (not duplication).** FormRequests own **input/shape** validation (types, required, ranges -> user-facing messages). Domain value-objects/services own **business invariants** (typed exceptions). These are *different* checks and both are legitimate; the rule is "no *duplicated* rule", not "no domain validation".
 
-11. **Altering a big clinical table on 11.8 — one runbook.** Base tables are plain InnoDB (no system versioning, §5.3), so standard online DDL applies. Add a column: `ALGORITHM=INSTANT` (11.4+ permits any position). Add a secondary index: `ALGORITHM=INPLACE` — does **not** rebuild the table. Genuine rebuild: gh-ost/pt-osc, rehearsed on a prod-sized copy first. The history twin gets its own independent, far cheaper `ALTER` (minimal indexes, §5.3). Populate any new pointer/flag/projection column **set-based** (one `UPDATE … JOIN` / `INSERT … SELECT`), never row-by-row, then reconcile.
+11. **Live DDL is an extreme exception, with one MariaDB 11.8 runbook.** The normal release drains or stops the frontend, gives DDL credentials only to the manager container, runs the reviewed migration, verifies the schema, invalidates the schema generation, and then starts or resumes web workers. Web, queue, reporting, and integration processes have no DDL authority. Running DDL while clinical requests are active requires explicit incident-level approval and proof that no offline or expand-and-contract alternative exists. Base tables are plain InnoDB (no system versioning, section 5.3), so the exceptional runbook uses standard online DDL: add a column with `ALGORITHM=INSTANT` (11.4+ permits any position); add a secondary index with `ALGORITHM=INPLACE`, which does **not** rebuild the table; and use gh-ost/pt-osc for a genuine rebuild only after rehearsal on a production-sized copy. The history twin gets its own independent, far cheaper `ALTER` (minimal indexes, section 5.3). Populate any new pointer, flag, or projection column **set-based** (one `UPDATE ... JOIN` / `INSERT ... SELECT`), never row-by-row, then reconcile.
 
 12. **Collation policy (stated once).** `utf8mb4` + `utf8mb4_uca1400_ai_ci` for human text; **`utf8mb4_bin`** for identifiers, hashes and every join key. One collation per join key — mixed collations silently disable indexes.
 
@@ -802,7 +802,9 @@ The deep sections of this plan (§5.8 below, plus §17 Developer Notes, §18 Cri
 
 15. **No MySQL `ENUM` columns (added 2026-08-19).** A closed value set is a PHP-backed enum (`enum VaMethod: int`) stored as `TINYINT UNSIGNED` + `CHECK` when the column sits in a hot serving index, else as `VARCHAR(32)` + `CHECK`; a set an administrator may edit is a lookup table in `oe_config`, never an enum. *Rationale:* extending a MySQL `ENUM` is an `ALTER TABLE` rebuild of a large clinical table, and its history twin's DDL must follow in step (the lifecycle caveat in §17 §1 and §8), the legacy schema already carries `ENUM` columns on 23 tables that migrations have to rewrite, and the cookbook's own element example already uses `string('left_status', 16)` + a PHP enum (§17 §1) - this rule makes that form the only form. The five earlier `ENUM(...)` sketches in §5.4, §5.6, §5.8.3 and §17 §7.1 were rewritten to this rule; the v0.6 execution plan bans `ENUM` for the same reason (§20 decision 4).
 
-### 5.8.1 The ruleset (27 rules)
+16. **Do not force optimizer choices.** Runtime SQL and query builders must not use index or join-order hints. MariaDB releases, data distributions and concurrent workloads can legitimately change the cheapest plan, while a hint freezes an assumption in application code. CI rejects `FORCE INDEX`, `USE INDEX`, `IGNORE INDEX`, `STRAIGHT_JOIN` and framework equivalents. If production-scale evidence proves there is no schema or query-shape alternative, the exception must be a visible CI registry entry with the operation ID, owner, rationale, exact hint, high-data evidence, concurrency evidence and an expiry or review trigger. Query-plan gates record the index selected by the optimizer but fail on bounded cost properties, not on a required index name.
+
+### 5.8.1 The ruleset (28 rules)
 
 **(A) Retrieval-first design — design the hot queries, then the indexes, then the tables.**
 1. **Enumerate the hot reads before drawing a single table.** Each screen/report/API declares its query, cardinality, and latency budget first; tables exist to make those queries index-only. *Rationale: tables drawn from an ER diagram optimise storage, not the reads clinicians run 10⁶×/day.*
@@ -846,6 +848,9 @@ The deep sections of this plan (§5.8 below, plus §17 Developer Notes, §18 Cri
 **(H) Temporal consistency (directive, 2026-08-20).**
 26. **One temporal vocabulary.** Every point-in-time column is `DATETIME` in UTC (Rules 20, 23); `DATE` is reserved for genuine calendar facts (date of birth, "asserted none as of" dates); the same concept never appears as `DATE` in one table and `DATETIME` in another, and never as a string. *Rationale: mixed temporal types on one concept force implicit casts in joins and comparisons, and a cast on the column side of a predicate disables the index.*
 27. **Day/period filters are half-open ranges on the bare column** - `col >= :day AND col < :day + INTERVAL 1 DAY` - **never a function wrapped around the column** (`DATE(col) = :day`, `YEAR(col) = :y`, `DATE_FORMAT(col, ...)`): MariaDB cannot serve a function-wrapped column from an index. Legacy report and worklist SQL filters by day exactly this way (`DATE(t.last_modified_date) = DATE('2026-08-20')`) and pays a full scan for it. The query layer ships `whereDay()`/`whereDayRange()` helpers that emit the half-open form, so the sargable shape is also the easiest one to type. *Rationale: the function form is evaluated per row; the half-open range is one contiguous index range scan (Rule 16).*
+
+**(I) Optimizer portability.**
+28. **Prove query cost without optimizer hints.** EXPLAIN evidence records the selected and possible indexes, access type, row estimate, filesort and temporary-table use. Budgets fail on unbounded scans, excessive estimated rows, filesort and temporary tables rather than requiring a named selected index. Fix failures by changing the schema or query shape and verify again on large data and under concurrency. A hint is the final exception path governed by canonical decision 16, never a routine tuning tool.
 
 ### 5.8.2 Latest / current-per-group solution catalog
 
@@ -1169,6 +1174,29 @@ any sample DB and fail in production.
 The gates above are the performance arm of §7.7; the SLIs they feed are tabulated in §22, and §23
 sizes the buffer pool, Redis and connection budgets they assume.
 
+**Next-tranche connection-pooling decision gate.** Do not enable connection
+pooling during the current worklist checkpoint. After the representative
+migrated-data harness records connection demand, compare the current direct
+FrankenPHP worker connections with an optional MariaDB-aware pool or proxy. The
+evaluation covers multiple web containers across multiple nodes, queue and
+integration workers, and older single-host monolithic installations where the
+additional component may cost more than it saves. Direct connections remain a
+supported on/off baseline and the application connection names and repository
+usage must be identical in both modes so developers do not branch around the
+pool.
+
+The decision records potential benefits such as a hard backend-connection cap,
+reused TLS/authentication setup, burst smoothing, read-replica routing, and
+central connection observability. It also proves or rejects the costs: another
+stateful failure point, queueing latency, transaction or session-state leakage,
+prepared-statement and temporary-table behavior, sticky read-after-write
+semantics, failover behavior, TLS boundaries, health checks, and starvation of
+clinical traffic by reporting or integration work. Pool frontend and backend
+limits, per-workload reservations, overload behavior, node loss, pool loss, and
+direct-mode fallback belong in the capacity matrix. A pool never replaces
+application admission control, short transactions, or the fixed database
+connection budget. Select no product until this evidence exists.
+
 ---
 
 ## 6. Data migration — big-bang, one source, extremely fast (req 17, 1d)
@@ -1293,7 +1321,12 @@ from the migration tree; counting rules in Appendix D).
   (`oe-reset.sh` imports `sample/sql/openeyes_sample_data.sql` or `sample_db.zip`; `--demo` replays
   `sample/sql/demo/*`): 2,284 patients / 6,916 events / 1,251 episodes. In the rewrite the sample
   dataset is **constructed from the CSV seeds** (§26 Q20/Q24), so the dump-shipping `sample` repo
-  disappears; deploy-supplied add-on modules are rewritten as ordinary modules (§26 Q24).
+  disappears; deploy-supplied add-on modules are rewritten as ordinary modules (§26 Q24). The
+  rolling worklist post-migration script is already replaced by the disabled-by-default
+  `oe:seed:worklist-demo` manager command. It derives a UTC reference date at execution time, or
+  accepts an explicit date for reproducible tests, and bulk-upserts the eight demo definitions,
+  242 list instances, 913 appointments, current-row projections, and Code mappings. It does not
+  generate SQL, invoke Bash, or emit hundreds of pointless live-update events for initial state.
 - **Its shape is not representative:** the top 15 tables by rows are all reference data
   (`medication_attribute_assignment` 939k, `medication_set_item` 148k, dm+d `f_*`, `disorder` 62k;
   clinical starts at #16 with `event`), and `_version` is 41 MB against 520 MB base (7.4%) only
@@ -1540,9 +1573,13 @@ existing brand link, inline tooltips, module READMEs, ADRs, ERD, and the xlsx da
 dictionary remain secondary evidence. Before a legacy function is implemented, its
 feature row records the OeDocumentation topic/route lookup, matching slug and status,
 or an explicit `not-documented` result. Missing documentation is queued and does not
-block the functional port. The rewrite ports the documentation module and corpus into
-the Laravel application, preserving route-to-help resolution while generating the new
-help pages, test runbooks, and old/new/why pages from BSpecs and divergence records.
+block the functional port. During porting, OeDocumentation is evidence rather than an
+implementation workstream: record the matching slug or the gap, but do not port the
+special module or build the replacement help corpus yet. After behavior freeze and the
+production-scale migration and performance work, build the route-linked Laravel help
+capability and generate its help pages, test runbooks, and old/new/why pages from BSpecs
+and divergence records. Ordered program step 11 is authoritative for this timing and
+supersedes earlier wording that implied documentation implementation during porting.
 The data-dictionary-in-schema habit is kept with a recorded purpose and source evidence
 for every table and column.
 
@@ -1556,7 +1593,9 @@ for every table and column.
   Run diff-scoped (whole-repo on ~1.15M PHP LOC is too slow).
 - **Pest architecture tests:** controllers don't touch the DB directly, clinical calc
   code is pure/side-effect-free, audit writes aren't bypassed, no `env()` outside
-  config.
+  config. A repo-wide optimizer-hint policy test rejects SQL and query-builder index
+  or join-order hints unless the auditable exception registry contains all evidence
+  required by section 5.8.0 decision 16.
 - **Contract tests** (Pact/Spectral) for xAPI/HL7/FHIR/PAS. Golden-master/approval
   tests run as ordinary PHPUnit.
 
@@ -1665,7 +1704,7 @@ look better than it is.
   policy. The public community-edition mirror lags the development tip by up to about a
   quarter. The rewrite's rule therefore assumes at least two supported lines in the
   field and a mirror one quarter behind: Pennant flags, expand/contract, additive-only
-  schema between minors, `/api/v1/version` + `oe:about` replacing the env string, and a
+  schema between minors, `/api/version` + `oe:about` replacing the env string, and a
   CHANGELOG + release notes generated from §27 entries and ADRs on every tag.
 
 ---
@@ -1753,7 +1792,7 @@ Laravel-native, are kept; each rename or retirement below is a §27 entry; `env(
 | Env var | Legacy meaning | Rewrite: keep / rename (mapping) | Notes |
 |---|---|---|---|
 | `OE_MODE` | `live` = production; anything else = debug and loads `TestHelper` (`common.php:579`, `:1217`); a deployment label, not a code-freeze test | keep; feeds `APP_ENV` / `APP_DEBUG` in `config/app.php` | `oe-laravel/phpunit.xml` forces `OE_MODE=test` |
-| `OE_VERSION` | `params['oe_version']`, default `UNRELEASED` (`common.php:975`); brand flyout, `site/debuginfo`, telemetry; nothing branches on it | keep as the build input for `/api/v1/version` + `oe:about` | `protected/version.txt` = literal `3.0`, read by nowhere; no successor |
+| `OE_VERSION` | `params['oe_version']`, default `UNRELEASED` (`common.php:975`); brand flyout, `site/debuginfo`, telemetry; nothing branches on it | keep as the build input for `/api/version` + `oe:about` | `protected/version.txt` = literal `3.0`, read by nowhere; no successor |
 | `DATABASE_HOST/PORT/NAME/USER/PASS` (+ `_TEST` triad, `DATABASE_SSL_*`) | resolution order above | keep names; mapped once in `config/database.php` | `db.conf` retired (§27 entry) |
 | `QUEUE_CONNECTION` | default `database` (`oe-laravel/config/queue.php`); `redis` needs the redis container + Horizon | keep; default becomes `redis` (§4.4, §4.7) | `database` queue + cron worker -> Redis + Horizon is a §27 seed entry |
 | `REDIS_HOST/PORT/PASSWORD` (+ `REDIS_USERNAME/DB/URL`) | Laravel-native (`config/database.php:99-104`) | keep | mandatory once sessions/cache move to Redis (D10) |
@@ -1799,7 +1838,7 @@ downgrade, no parallel-version path, no schema-version check. The rewrite's coun
 4. The full suite (Pest unit/feature/arch, query-count, §7.4 Playwright, mutation on `high`-risk
    calculators) runs in the public workflow on every PR; private-runner dispatch may add capacity,
    never replace the job; `composer test` exists.
-5. Version is an artefact: `/api/v1/version` (app, schema, git sha, build id) + `oe:about`;
+5. Version is an artefact: `/api/version` (app, schema, git sha, build id) + `oe:about`;
    `OE_VERSION` stays the build input; `protected/version.txt` gets no successor.
 6. Migrations are expand/contract and phase-tagged (§8); `oe:migrate` refuses a contract step while
    a version inside the support window still needs the old shape; no `--all`-then-grep-the-log.
@@ -1936,7 +1975,7 @@ requirement with no section is a plan defect, not a gap to be filled later.
 | 19c code very readable and commented | §17 §7.2 conventions; §9 comment rule (why, legacy reference, clinical rationale - never what) |
 | 19d touching code makes it obvious what else might break | §27 `#[LegacyRef]` + `oe:impact` blast radius printed on every PR; §9 Deptrac + coverage-impact |
 | 19e admin pages consistent in how they are filled in | §4.9 one declarative page pattern (`AdminScreen` + `make:admin-screen`, recipe 5.4) |
-| 19f every admin page has an import/export API | §4.9 config families: `GET/PUT /api/v1/admin/<family>` + `oe:config:export/import`, round-trip CI test; §5.7 "seed format = export format" |
+| 19f every admin page has an import/export API | §4.9 config families: `GET/PUT /api/admin/<family>` + `oe:config:export/import`, round-trip CI test; §5.7 "seed format = export format" |
 | 19g patient data linked so it can be pruned patient by patient | §5.4 patient closure + §5.5 (CI lint: every patient-linked table reaches `patient` through FKs); §6 known-unknowns (47/36/12 linkage, 439-table closure, cross-patient rows); §23 |
 | 19h data never grows infinitely; always a plan to offload | §5.5; §5.8.0 #11; §23 retention class per table + `oe_archive` |
 | 20 divergences from legacy well documented; old OpenEyes well referenced (how it used to work, how it works now) | §27 divergence register + `#[LegacyRef]` + legacy reference corpus; §7.2, §7.5, §7.6 cross-refs; §25 (weekly parity review); §26 (register tooling decision) |
@@ -2360,8 +2399,9 @@ OeSchema::forCategory('clinical')->create('et_ophci_iop_reading', function (Blue
 });
 ```
 > **Lifecycle caveat (feeds §8 expand/contract):** base tables are plain InnoDB - no
-> system versioning (§26 Q9) - so standard online DDL applies (INSTANT/INPLACE first,
-> gh-ost when neither fits: the one runbook, §5.8.0 #11); the `oe_history` twin gets its
+> system versioning (§26 Q9). Normal DDL runs while the frontend is drained. If the
+> extreme live-DDL exception is approved, use INSTANT/INPLACE first and gh-ost only
+> when neither fits (the one runbook, §5.8.0 #11); the `oe_history` twin gets its
 > own independent ALTER, which is cheaper (no FKs, minimal indexes). An ALTER that touches
 > a history-written column ships the twin's matching ALTER in the same migration.
 > (MariaDB's `JSON` type is already `LONGTEXT`
@@ -2864,8 +2904,8 @@ cites its `DIV-NNN` entry (§27).
   in `Infrastructure`.
 - **Domain events:** past-tense (`IntraocularPressureRecorded`); listeners
   `<Event>Projector`/`<Event>Auditor`.
-- **Routes:** REST-ish, numeric-id-keyed (patient lookup by identifier, §26 Q8), versioned
-  APIs (`/api/v1/...`); admin routes keep the **legacy category names** for parity.
+- **Routes:** REST-ish, numeric-id-keyed (patient lookup by identifier, §26 Q8), canonical
+  unversioned APIs (`/api/...`); admin routes keep the **legacy category names** for parity.
 
 **7.3 Standard error-handling pattern.** Domain throws **typed domain exceptions**
 (`InvalidIopReading extends DomainException`); Application lets them bubble or maps to a
@@ -3632,7 +3672,7 @@ all; rows with no action, such as the shared `id BIGINT UNSIGNED` primary key, a
 | Golden masters / corpus | §7.2 five channels, canonicaliser, differential proxy; §18 L5.1/L5.2 | §4.3 per-walk goldens; §7.7 equivalence corpus >=100 per family, comparators, canary (R50) | refinement - adopt by reference | corpus sizing + comparators execute §7.2a/c/e; calc vectors (§7.2d) and DB deltas (§7.2b) stay master requirements |
 | Shadow soak | D3 + §7.2 months-long shadow; §18 Chain C | §5.11 "optional dark launch" | aligned* (D3 locked) | v0.6 must mark it mandatory; canonical term "shadow run" (Appendix C) |
 | Testing stack | §7.7 Pest + arch + Infection (superseded - Pest `--mutate`, §26 Q13) + Pact/Spectral + Playwright; §17 §6 | §3.1/§7.3/§11 Pest 4 `--mutate`, Larastan/Pint/Rector/Deptrac; §11.1 determinism (R43); §11.2 canary; App. F OE-TST | refinement - adopt by reference (+ decision 12) | gates, determinism, canary adopted; one mutation tool |
-| Contract tests / API auth | §7.2e Pact + Spectral; §17 §5.5 `/api/v1`; baseline 13 xAPI endpoints, HTTP Basic | §6.5 Sanctum/Passport, Scramble OpenAPI; no xAPI mention; FHIR deferred (R8) | decision required | decision 13 |
+| Contract tests / API auth | §7.2e Pact + Spectral; §17 §5.5 canonical `/api`; baseline 13 xAPI endpoints, HTTP Basic | §6.5 Sanctum/Passport, Scramble OpenAPI; no xAPI mention; FHIR deferred (R8) | decision required | decision 13 |
 | Docs | §7.6 BSpec-generated `/help/<id>`, doc-drift gate | §12 docs repo + Docs module; §12.1 construction record (R33); §12.2 DevOps notes + `oe:doctor` (R34) | refinement - adopt by reference | layout/record/doctor adopted; behaviour/test-plan stay generated from walks |
 | Deployment target | OPEN (§2, §13): K8s/Helm primary + compose | §9.2 K8s assumed (HPA, KEDA, operator, Helm in the docker repo); §9.6 VM path; App. E #5 | aligned (both open, both lean K8s) | closed - §26 Q1: Kubernetes AND compose, one image container-configurable; v0.6 §9.2 stack = execution detail |
 | Docker image | D9/D10, §4.5 layers, §4.7 read-only root | §9.1 base + app images, <150 MB, non-root, one image many roles; §9.5 build speed; §9.7 arm64 (R9, R36, R42) | refinement - adopt by reference | targets/arm64/roles adopted; cache timing -> decision 14 |
@@ -3764,7 +3804,7 @@ closes with its outcome; every consequence has now been applied to the body (v3)
     §17 §6.5, §18 L1.4. RESOLVED - §26 Q13: as recommended (Pest 4 `--mutate`; Infection only if
     its custom mutators are ever needed).
 13. API auth/compat - `/xapi` v1 frozen byte-compatible (HTTP Basic + `OprnApi` permission; Pact
-    where a real consumer exists); new `/api/v1` with Sanctum, Scramble-generated OpenAPI linted by
+    where a real consumer exists); canonical `/api` with Sanctum, Scramble-generated OpenAPI linted by
     Spectral. Consequence if adopted: §4.4, §7.2e, §8 API versioning, §17 §5.5. RESOLVED - §26
     Q14: as recommended.
 14. Config cache timing - route/view/event caches baked at build; `config:cache` generated at
@@ -3911,7 +3951,7 @@ one guard contract with local / LDAP / OIDC / SAML providers (§18 L3.3); the sa
 states and thresholds kept at parity as a config family (§4.9); service accounts become an explicit,
 audited, rate-limited account kind instead of two env lists of names (§27 entry); `/xapi` and
 `/PASAPI` keep HTTP Basic + `OprnApi` byte-compatible - the frozen contract of §12 Phase 4 and §20
-decision 13 (per-principal rate limits are additive) - while new `/api/v1` routes use Sanctum (§20
+decision 13 (per-principal rate limits are additive) - while canonical `/api` routes use Sanctum (§20
 decision 13); PIN countersign and the collision guard port as-is (L3.2).
 
 **Authorization.** Legacy: `authitem`/`authitemchild`/`authassignment` tree of ~176 `Oprn*`
@@ -4037,7 +4077,7 @@ reference).
 | Cookie signing key | `OE_COOKIE_VALIDATION_KEY` optional; empty = `CSecurityManager` not registered (`common.php:1341-1352`) | `APP_KEY`/`APP_KEY_FILE` mandatory; boot fails without it | CI boots the image without the key and expects a failed readiness probe (§22) |
 | Session cookie flags | `HttpOnly` + `SameSite` present; `Secure` never set; 12 h persistent cookie; DB sessions (`user_session`) | `Secure` + `HttpOnly` + `SameSite=Strict`; browser-session lifetime; Redis (D10) | Playwright asserts `Set-Cookie` on login (§7.4); sharp edge #21; §27 entry |
 | Password lockout | five states on `user_authentication`, `PW_STAT_*` thresholds, `is_special` bypass (`UserIdentity.php:346-352`) | same states and thresholds as a config family; service accounts explicit, no status bypass | characterization tests per state (§7.2); §27 entry |
-| API auth | HTTP Basic + `OprnApi` (PASAPI `V1/V2/V3Controller`, xAPI `routes/api.php:31`) | frozen byte-compatible; new `/api/v1` on Sanctum (§20 decision 13); per-principal rate limits | contract tests (§17 §5.5); OpenAPI diff |
+| API auth | HTTP Basic + `OprnApi` (PASAPI `V1/V2/V3Controller`, xAPI `routes/api.php:31`) | frozen byte-compatible; canonical `/api` on Sanctum (§20 decision 13); per-principal rate limits | contract tests (§17 §5.5); OpenAPI diff |
 | RBAC engine | ~176 `Oprn*` + `Task*` in `authitem`; string bizrules; per-request memo | Gate/Policy port with the same ability names; typed policies with explicit context (L3.4) | BSpec RBAC matrices (L5.3); Playwright allowed/denied specs; arch test: no string dispatch |
 | Break-glass | `BreakGlass` module healthboard compare | L3.5 flow; audit durable across rollback (§5.8.0 #4) | Pest: rollback still leaves the audit row; hazard row (§10.1) |
 | Audit context | dropped when `REMOTE_ADDR` absent (`Audit.php:175`); CLI/queue audits context-less | `AuditContext` mandatory on http/cli/queue; `oe_audit` append-only | arch test + DB-state-delta golden masters (§7.2 (b)); §27 entry |
@@ -4589,7 +4629,7 @@ versioning proves necessary. Lands in §7.3.
 needed.** Why: one toolchain, one report; mutation testing is the guard that the TDD suite actually
 bites. Lands in §7.7.
 
-**Q14. API - `/xapi` frozen byte-compatible (HTTP Basic); all new capability on `/api/v1` with
+**Q14. API - `/xapi` frozen byte-compatible (HTTP Basic); all new capability on canonical `/api` with
 Sanctum.** Why: partner retesting is the single most expensive external dependency of the cutover;
 freezing the surface removes it, and the clean API grows beside it. Lands in §8, §21, Appendix B.
 
@@ -5257,6 +5297,15 @@ fully covered, four partial and one deferred file at 97.0 percent mean coverage.
 Strabismus workflow preselection, shared history placement, OpenAPI operation ids,
 in-app help publication and exact visual parity remain recorded work so functional
 coverage continues first.
+
+Architecture correction 2026-09-02: Strabismus workflow preselection is not an
+element-local default. The pinned source defines one complete ordered workflow for
+Strabismus and Paediatrics, while the target's portable workflow resolver is not yet
+connected to the Examination page and has no authoritative legacy import. Port the
+complete workflow as one later slice: migrate stable context keys and all ordered
+items, resolve from immutable event context with a declared query budget, preserve
+Manage Elements fallback, and prove Cataract, Strabismus and Paediatrics activation.
+Do not hard-code isolated element defaults around the shared workflow contract.
 
 Execution note 2026-08-25: the Red Flags slice completed the explicit `No red flags`
 state and institution-scoped multi-select findings with stable option codes, immutable
@@ -6857,6 +6906,3531 @@ do not commit or push.
 
 ---
 
+### 26.12 Master correction and terminal run recorded 2026-08-30
+
+The Laravel baseline is now
+`bac68960899df26f26427ea24ed81ea83849b11e` at 40.4147 percent exact weighted
+coverage. The greater-than-40-percent target in section 26.11 is complete and is
+retired as a stopping condition. The pinned baselines for the next run are:
+
+| Repository | Commit |
+|---|---|
+| Legacy OpenEyes v26.0.9 | `ad2324084788608246a8250e817198c2f26a4fd6` |
+| Laravel application | `bac68960899df26f26427ea24ed81ea83849b11e` |
+| Docker runtime | `ef578cd1a85a536bdfb8b7b746a07d831ac0ecee` |
+
+The active run has two terminal conditions. It cannot voluntarily complete,
+hand off or idle before `2026-08-31T12:00:00+01:00`, and it cannot complete until
+the final integrated checkpoint has been recorded. It may complete at the first
+safe boundary at or after that time. The user extended the original 08:00 guard
+to 12:00 BST at 07:00 BST; the 06:30 functional-scope freeze remains in force.
+An external service or host interruption is
+not controllable, so an on-disk checkpoint is written at least hourly and always
+states the next two actions.
+
+#### Problem hierarchy and triage
+
+Every request discovered during the rewrite is classified before implementation.
+This rule applies to every future run plan.
+
+| Class | Meaning | Required action |
+|---|---|---|
+| Architecture now | Affects schema or import shape, route or API contracts, rendering, storage, caching, authorization, audit, concurrency, observability or shared UI behavior | Establish the pattern now and apply it to the current rewrite |
+| Seam now, implementation later | Needs a stable interface now but depends on a more complete application | Define the contract and acceptance gate now, then put implementation in the ordered backlog |
+| Independent later | Does not alter current rewrite decisions | Record prerequisite, priority and trigger in the tertiary backlog without diverting the active run |
+
+#### Migration confidence pack
+
+Rapid functional porting uses a migration confidence pack rather than exhaustive
+early testing. Each ordinary slice requires one representative happy-path parity
+or characterization test, authorization and validation tests, clinically
+important invariant tests, small-versus-large query-count proof, a storage test
+when schema changes, and one browser smoke for a user-facing workflow. Mutation
+testing, exhaustive edge cases, pixel-perfect UI, complete documentation and the
+full UAT corpus move to stabilization unless the slice contains a clinical
+calculation, irreversible transform, authorization boundary or signing rule.
+Those exceptions require stronger proof immediately.
+
+#### Performance by construction
+
+Every new or changed page must:
+
+- use a stable named operation from the application-surface manifest;
+- declare a query budget and prove no N+1 growth between small and large fixtures;
+- use bounded projections, keyset pagination where needed and indexes matching
+  filtering and ordering;
+- avoid row-by-row neighbouring-table reads and group-wise maximum queries;
+- select only required columns and scope reads to the relevant institution,
+  patient, date range or worklist;
+- record caching as `none`, `candidate` or `enabled`; an enabled cache records its
+  owner, complete key dimensions, source version, after-commit invalidation and
+  authoritative fallback, because TTL is not invalidation; and
+- expose the global page-readiness contract below.
+
+A bounded context completes one schema packet before its first bulk import. The
+packet contains its initial columns, indexes, foreign keys and transforms. Any
+post-load DDL records rebuild cost and an offline migration plan. An online plan
+is added only for the incident-level extreme exception in section 5.8.0 rule 11.
+
+#### Rendering decision
+
+The renderer remains deterministic server-side HTML built from bounded DTOs,
+with PDF and PNG work isolated from clinical web workers. It keeps the pinned
+full Chromium and Puppeteer engine, one persistent browser, isolated contexts,
+maximum concurrency two, and hard CPU, memory, PID, timeout and output-size
+limits. Cache identity includes content and renderer revisions, and render
+readiness stays explicit. PDF and screenshot fidelity are separate capabilities
+with separate gates. No engine switch is justified without an output corpus
+showing equivalent fidelity and better resource use. Activity telemetry is part
+of the foundation; large-scale fidelity and capacity tuning wait for
+representative output families.
+
+Renderer startup reads Puppeteer's declared Chrome revision and compares it
+exactly with the launched browser's reported four-part version. An unknown or
+mismatched value prevents readiness and terminates the isolated service. The
+internal health response exposes the verified Puppeteer and Chrome pair, and
+the image contract test proves the accepted pair, mismatch rejection,
+unrecognized-version rejection, and successful PDF and PNG output. Upgrading
+either side therefore requires one reviewed compatibility-pair change and the
+independent fidelity gates, rather than an accidental browser-only update.
+
+#### Discovery, readiness and operational visibility
+
+The authenticated `/api/application-surfaces` response remains the route
+discovery source of truth. Every application page has a stable route name and
+feature owner. A later benchmark combines this manifest with fixture providers
+for safe patient, event, worklist and configuration examples, then reports page
+duration, query count, database time, slowest query, response size and peak
+request memory. Benchmark identifiers do not belong in route definitions.
+
+The global DOM readiness contract is
+`document.documentElement.dataset.oePageState` with `loading`, `ready` or
+`error`. Successful completion dispatches `oe:page-ready` with contract version
+1. The existing `oe-render-ready-v1` contract remains separate.
+
+Every HTTP response returns a server-generated request ID. Privacy-bounded
+`http.request.started` and `http.request.completed` OELOG events contain only
+operation ID, method class, status, duration, query count, total database time,
+slowest query time, response bytes and peak request memory. They never contain a
+raw URL, route parameter, query string, SQL text, patient identifier or request
+payload. Query and peak-memory state is request-scoped and reset for every
+persistent worker request. Renderer start, completion, rejection and failure
+events contain output type, duration, active slots, capacity, result, cache hit
+or miss and output size. These events are operational telemetry, not clinical
+audit. Later exporters may connect them to OpenTelemetry, Prometheus, Pulse or
+external log aggregation.
+
+The developer request profiler is a separate, development-only diagnostic
+surface. `fruitcake/laravel-debugbar` stays in Composer `require-dev`, is absent
+from production images, cannot be enabled in `production` or `testing`, and has
+no publicly readable request store. Before release, configure and verify it to
+show every query on every Laravel connection, per-query and accumulated database
+time, connection name, application source and backtrace, total request time,
+the non-database remainder, request-local peak memory, and redirect, fetch,
+XHR, and Inertia requests. The slow-query threshold highlights rather than
+filters, because hiding fast statements would conceal N+1 and unrelated work.
+Bindings, request data, session data, authentication details, configuration,
+query-result replay, and external visual EXPLAIN services remain off by default.
+Manual local EXPLAIN is a separate deliberate action.
+
+The toolbar's exact-query duplicate display is only a useful clue. It does not
+prove absence of N+1 when otherwise identical statements carry different
+bindings. Add a bounded custom query-family view that normalizes placeholders,
+groups by connection and application caller, and displays repetition count,
+cumulative time, maximum time, and first call site. It is fed after execution
+from Laravel `QueryExecuted` events and never changes SQL, adds SQL comments,
+wraps repositories, forces plans, or runs database work on the page path. Keep
+the small-versus-large query-count tests for every changed page, and enable
+Eloquent lazy-loading violations in local and test environments after a bounded
+compatibility pass. Lazy-loading detection complements query-family growth; it
+cannot catch raw SQL or service-loop N+1 by itself.
+
+This toolbar is an attribution tool, not a benchmark: its collectors and
+backtraces add overhead. Uninstrumented route telemetry and the later benchmark
+remain the timing authority. After go-live, scalar OELOG events identify the
+slow operation without exposing SQL. Detailed investigation happens in a
+private support or performance image against representative anonymized data,
+using the same named operation and fixture provider, plus MariaDB slow-log and
+performance-schema evidence when the problem is database-specific. No raw SQL,
+binding, patient value, URL, payload, or debug dataset enters ordinary
+production logs or the custom telemetry module. A production-only symptom that
+cannot be reproduced uses a separately approved, time-bounded and audited
+diagnostic procedure, not a publicly enabled toolbar.
+
+#### Home overload boundary
+
+The home control uses guarded Inertia navigation. Repeated same-destination
+clicks are ignored while navigation is active and the control exposes an
+accessible busy state. The named home-page rate limiter is keyed by authenticated
+user and permits a small burst. The GET remains idempotent and query-bounded.
+Client cancellation is not treated as server protection.
+
+#### Complete source accounting
+
+The FileLedger contains exactly one canonical inventory row for every path in an
+immutable manifest generated from `git ls-files` and blob SHA-1 values at the
+legacy pin, while secondary feature mappings remain allowed. The ledger adds
+`mapping_role`, `source_class`, `review_state`, `legacy_purpose` and
+`disposition_reason`. Integrity checks require exact equality with all 14,125
+tracked files and matching SHA-1 values.
+
+Recognized source classes cover code, migrations, tests, scripts,
+documentation, CI/build/config, fixtures/data, assets, vendored dependencies,
+licences and repository metadata. Automated census rows remain zero coverage and
+`pending-review`; they cannot inflate progress. An `obsolete` disposition is
+invalid without a path-specific reason and replacement or retirement evidence.
+All 35 shell scripts and all documentation paths are explicitly reviewed during
+the initial census. Rewrite completion requires every canonical row to be
+reviewed and have a final disposition. Deploy-supplied modules and other external
+code remain a separate mandatory deployment inventory.
+
+#### Ordered later workstreams
+
+These workstreams are recorded now but do not block rapid functional breadth:
+
+1. Route-driven duration, query, N+1 and memory benchmarking after basic page coverage stabilizes.
+2. Renderer fidelity corpus, capacity tests and independent PDF or PNG engine evaluation.
+3. Paired role-based human UAT using the PageRegister, with side-by-side behavior, output, accessibility, perceived speed, clinical sign-off and divergences recorded.
+4. Exhaustive test hardening, mutation testing, final visual parity and documentation completion.
+5. Refactoring after functional parity and measured load identify the code that needs redesign.
+
+The canonical clinical `/api` remains unversioned. No parallel API family is
+introduced by this correction.
+
+The 2026-08-31 execution checkpoint preserves the established `/xapi` route
+family only as the webhook follow-up compatibility seam. Seven bounded read
+operations have stable ownership, one-request authentication, authorization,
+audit and query-growth evidence. Clinical writes, external-identifier lookup,
+generic element mapping, the complete code-system catalogue and OpenAPI
+publication remain deferred under DIV-467. The remaining legacy Api module
+adapters are also reviewed without inventing compatibility routes. Supported
+authentication, patient search, Document, and EyeDraw evidence receives partial
+credit; anonymous signature import, exact response wrappers, generated CRUD
+views, and unused assets remain explicit zero-credit dispositions. The Document
+date filter uses an indexable half-open range. The exhaustive FileLedger verifies
+14,125 canonical paths, zero missing paths, 1,086 pending reviews and 44.2833
+percent weighted coverage after this forty-seventh bounded census cluster.
+
+The embedded-Laravel diagnosis layer is the forty-eighth bounded census
+cluster. Its record, projection, lifecycle, repository and event paths map to
+the versioned diagnosis aggregate and one rebuildable current projection. The
+required-diagnosis route now has the correct diagnosis feature owner and a
+four-query small-to-large fixture gate. Required-diagnosis context selection is
+functional; prompt enforcement and satisfaction history remain an explicit
+later implementation seam. The FileLedger verifies 14,125 canonical paths,
+zero missing paths, 1,018 pending reviews and 44.7081 percent weighted coverage.
+
+The patient-identifier schema packet and embedded mapper, DTO and repository
+seam are the forty-ninth bounded census cluster. Identifier types now retain
+usage, institution and site scope, validation and display rules, portable
+configuration, history and the legacy uniqueness shape. Patient identifiers
+retain verification status and source provenance while patient presentation
+omits the integration-only source field. Small and 101-patient fixtures keep
+directory search at four queries with an index-backed exact identifier path.
+The legacy local-type query's ungrouped `OR` precedence is not copied. Display
+ordering, identifier code assignments, automatic numbering, complete PAS
+assignments and generic repository envelopes remain deferred under DIV-468.
+The 25 directly evidenced pending mapper, repository, contract, DTO and matching
+test rows are reviewed without crediting those deferred behaviors. The
+FileLedger verifies 14,125 canonical paths, zero missing paths, 997 pending
+reviews and 44.8376 percent weighted coverage.
+
+The embedded webhook framework and its secondary feature mappings are the
+fiftieth bounded census cluster. Stable subscription codes, portable
+configuration, exact verified payloads, after-commit durable enqueue, a
+six-query manager projection from 1 to 100 occurrences, isolated bounded HTTP
+delivery, acknowledgement, retry and authenticated xAPI follow-up replace the
+request-memory transaction stack. The legacy admin hard delete is explicitly
+replaced with deactivation so delivery attribution remains available; focused
+proof shows inactive subscribers receive no new work and pending work becomes
+terminal without HTTP. The audit reviews 86 pending mappings: 82 secondary
+feature mappings and four canonical test-fixture paths. Fifty-six unsupported
+or unverified paths in the exact 174-path webhook feature ledger retain zero
+credit. The focused webhook pack passes 30 tests with 120 assertions. The
+FileLedger verifies 14,125 canonical paths, zero missing paths, 993 pending
+reviews and 44.8767 percent weighted coverage.
+
+The embedded allergy layer is the fifty-first bounded census cluster. Sixty-four
+canonical mapper, model, repository, shared DTO, service, observer, event,
+fixture and test paths now map to the direct allergy aggregate and reviewed
+consumers. The patient flag path no longer computes a group-wise latest row: an
+institution-scoped `patient_allergy_current` pointer is rebuilt in the same
+clinical transaction under a patient row lock, with a deterministic upgrade
+backfill and source-element fallback after soft deletion. One- and one-hundred-
+patient fixtures both use two clinical queries and the scope index. The focused
+pack passes 11 tests with 160 assertions, and the clean seven-schema migration,
+complete configuration and tiny seed, schema verification, and seeded xAPI
+capability assertion pass. Importer reconciliation, batched general-health
+worklists, exact header wiring and the legacy SQL compatibility view remain
+explicitly deferred under DIV-469. The FileLedger verifies 14,125 canonical
+paths, zero missing paths, 929 pending reviews and 45.2767 percent weighted
+coverage.
+
+The embedded History Risks layer is the fifty-second bounded census cluster.
+Twenty-five canonical mapper, model, repository, shared DTO, observer, event,
+fixture and test paths now map to the direct aggregate, transactional events,
+and maintained current pointer. Together with the allergy and accessibility
+pointers, the patient flag page now has no group-wise latest read. Editor saves,
+element and event soft deletion, and safeguarding risk resolution rebuild the
+relevant institution-scoped pointer in the same clinical transaction under a
+patient row lock. All three one- and one-hundred-patient reads use two clinical
+queries and their serving scope indexes. The focused patient-safety pack passes
+33 tests with 468 assertions, and the clean seven-schema migration, complete
+configuration and tiny seed, schema verification, and seeded xAPI capability
+assertion pass. Import reconciliation, batched general-health worklists,
+complete PAS mapping, and independent proof of all headers, popups,
+correspondence and whiteboards remain deferred under DIV-470. The FileLedger
+verifies 14,125 canonical paths, zero missing paths, 904 pending reviews and
+45.4393 percent weighted coverage.
+
+The embedded Clinic Outcome layer is the fifty-third bounded census cluster.
+Seventy canonical mapper, model, repository, contract, shared DTO, observer,
+event, fixture and test paths now map to the direct aggregate, seven portable
+configuration families, bounded patient history and transactional lifecycle
+events. Ordered follow-up, discharge and virtual-review entries retain
+immutable relationship snapshots and conditional clinical invariants. The
+latest Examination controls episode state, and queue-backed outcomes own one
+patient ticket. Due-work reads use the patient and state index; patient history
+is institution scoped, keyset paginated and capped at 50 rows plus one. Stable
+created, updated and deleted payloads enter the outbox only after commit. The
+focused aggregate, history, webhook and configuration pack passes 48 tests with
+380 assertions. Automated-event linkage, the aggregate xAPI resource, RTT,
+PAS, correspondence, pathway checkout, Injection Management AUTO rows,
+reports, worklists, search, public generation and exact UI remain deferred
+under DIV-298. The FileLedger verifies 14,125 canonical paths, zero missing
+paths, 834 pending reviews and 45.8850 percent weighted coverage.
+
+The final embedded OphCiExamination residual is the fifty-fourth bounded census
+cluster. Twenty-three canonical Diagnosis and singular Risk mapper, model,
+repository, DTO, codeable, service, provider, factory and test paths now map to
+the typed Diagnosis record, rebuildable patient diagnosis state, History Risks
+aggregate, maintained current risk pointer and request-built element registry.
+Diagnosis presentation stays at three queries for small and large fixtures;
+patient flags remain fixed, and the event page remains bounded as its timeline
+grows. The generic DTO create-event-with-elements service is not exposed by the
+target and remains deferred under DIV-467 rather than receiving inferred
+parity. The focused diagnosis, risk, xAPI and event-view pack passes 43 tests
+with 596 assertions. No embedded OphCiExamination path remains pending. The
+FileLedger verifies 14,125 canonical paths, zero missing paths, 811 pending
+reviews and 46.0316 percent weighted coverage.
+
+The embedded core configuration model cohort is the fifty-fifth bounded census
+cluster. Forty-two canonical model, factory and unit-test paths now map to
+direct stable-coded contact, country, disorder, OPCS, setting, patient
+identifier, service, specialty, subspecialty, site, institution and firm
+models. Portable natural-key configuration, complete history, relationship and
+validation coverage, authorized administration, bounded consumers and
+deterministic fixtures replace the embedded support layer. The clean
+seven-schema migration, tiny seed and schema verifier pass before a focused
+configuration pack of 50 tests and 746 assertions. Institution-specific
+authentication methods and active-method tenant selection remain behind the
+provider-registry seam recorded in DIV-471. The FileLedger verifies 14,125
+canonical paths, zero missing paths, 769 pending reviews and 46.2966 percent
+weighted coverage.
+
+The embedded audit model cohort is the fifty-sixth bounded census cluster.
+Twenty-four canonical audit model, normalized lookup satellite, factory and
+unit-test paths map to the accepted single append-only audit spine in DIV-010.
+Stable scalar snapshots remove lookup writes from the hot append path. Access
+audits commit independently, routine write audits join the clinical
+transaction, and focused login, access, search and rollback tests pass 10 tests
+with 54 assertions. Historical satellite ETL and production-shaped throughput
+remain deferred under DIV-010 and DIV-012. The FileLedger verifies 14,125
+canonical paths, zero missing paths, 745 pending reviews and 46.4354 percent
+weighted coverage.
+
+The shared xAPI codeable-concept cohort is the fifty-seventh bounded census
+cluster. Seven canonical service and test paths map to stable coding objects in
+the bounded webhook follow-up read model. JSON and capability enforcement,
+request-scoped authentication, privacy-bounded audits, named route ownership,
+no-state responses and fixed associated-contact query growth pass six focused
+tests with 163 assertions. The generic multi-system resolver and broad
+code-system catalogue remain deferred under DIV-467. The FileLedger verifies
+14,125 canonical paths, zero missing paths, 738 pending reviews and 46.4722
+percent weighted coverage.
+
+The shared core service cohort is the fifty-eighth bounded census cluster.
+Nineteen canonical service and service-test paths map to request-built typed
+services and direct Eloquent aggregates for patient, episode, event, element,
+contact, context and user behavior. Event creation and episode claiming,
+transactional element batches, authentication, stable context relationships
+and bounded event-view growth pass 23 focused tests with 149 assertions.
+Provider-specific global authentication selection remains deferred under
+DIV-471. The FileLedger verifies 14,125 canonical paths, zero missing paths,
+719 pending reviews and 46.5804 percent weighted coverage.
+
+The embedded support model cohort is the fifty-ninth bounded census cluster.
+Thirty-nine canonical model, factory and unit-test paths map address, location,
+GP and practice facts to contact snapshots; procedures, complications, setting
+metadata and specialty types to portable configuration; follow-up periods to
+Clinic Outcome; and ethnicity to the bounded CVI snapshot. Local authentication
+is direct while provider-specific rows and global selection remain behind
+DIV-471. Configuration, settings, Clinic Outcome, CVI validation and login pass
+36 focused tests with 432 assertions. The FileLedger verifies 14,125 canonical
+paths, zero missing paths, 680 pending reviews and 46.7855 percent weighted
+coverage.
+
+The embedded model-to-DTO mapper cohort is the sixtieth bounded census
+cluster. Seventy-five canonical mapper and mapper-test paths map to direct
+models, typed clinical aggregates, bounded projections and portable
+configuration for configuration, contacts, events, diagnoses, Clinic Outcome
+and the bounded CVI ethnicity snapshot. Provider-specific authentication
+mapping remains behind DIV-471 and the generic compatibility layer receives no
+inferred parity. The focused consumer pack passes 60 tests with 616 assertions.
+The FileLedger verifies 14,125 canonical paths, zero missing paths, 605 pending
+reviews and 47.1652 percent weighted coverage.
+
+The repository abstraction cohort is the sixty-first bounded census cluster.
+Eighty-three canonical Laravel implementations, shared contracts, concerns and
+unit-test paths map to direct models, typed application services and bounded
+projections only where current configuration, contact, event, diagnosis,
+Clinic Outcome, CVI and login consumers prove the behavior. The generic DTO,
+query-builder, codeable-concept and table-derived element repository framework
+is not recreated under DIV-467. Provider-specific authentication selection
+remains behind DIV-471. A dirty shared schema exposed one pre-existing
+exact-fixture assumption in the contacts test, while the clean seven-schema
+migration, tiny seed, schema verification and complete focused pack pass 84
+tests with 1,031 assertions. The FileLedger verifies 14,125 canonical paths,
+zero missing paths, 522 pending reviews and 47.5552 percent weighted coverage.
+
+The shared DTO cohort is the sixty-second bounded census cluster. Sixty-three
+canonical DTO, DTO contract, trait, framework exception, fixture and unit-test
+paths map to stable configuration models, typed contact and event aggregates,
+Diagnosis and Clinic Outcome records, and the bounded CVI ethnicity snapshot
+where current consumers prove the behavior. The generic mutable DTO, mapper,
+patch, relation and internal exception framework receives only low partial
+credit under DIV-467 and is not recreated. The focused consumer pack passes 76
+tests with 909 assertions. The FileLedger verifies 14,125 canonical paths, zero
+missing paths, 459 pending reviews and 47.7664 percent weighted coverage.
+
+The embedded module-factory and model-test cohort is the sixty-third bounded
+census cluster. Thirty-four canonical factory, model-test, compatibility
+fixture and scope or history helper paths map diagnosis-state fixtures to the
+typed aggregate, Operation Note surgeon fixtures to portable eligible-surgeon
+configuration, and patient, contact and event tests to their direct bounded
+consumers. Broad Yii compatibility and version-tracker helpers receive low
+partial credit under DIV-467. The focused pack passes 81 tests with 1,554
+assertions, including fixed query growth for diagnoses, event views and bulk
+history. The missing Patient Search feature-progress row is now derived from
+its exact 27-path ledger. The FileLedger verifies 14,125 canonical paths, zero
+missing paths, 425 pending reviews and 47.9104 percent weighted coverage.
+
+The generator and scaffold cohort is the sixty-fourth bounded census cluster.
+Eighteen canonical embedded DTO, mapper, repository, model-test and
+Yii-compatible generator commands and templates are development-only scaffolds
+for the generic layer the target does not expose. They are explicitly deferred
+under DIV-467 with zero coverage until a proven target extension workflow needs
+equivalent tooling. This closes the census rows without inflating application
+parity. The FileLedger verifies 14,125 canonical paths, zero missing paths, 407
+pending reviews and 47.9104 percent weighted coverage.
+
+The embedded Laravel framework-shell cohort is the sixty-fifth bounded census
+cluster. Thirty-four canonical configuration, build, public-entry, resource and
+repository-support paths are reviewed. Thirty retain direct target equivalents;
+the target skin, application entry point and named JSON xAPI resources replace
+three others. Horizon remains explicitly deferred under DIV-467 with zero
+credit. The focused pack passes 26 backend tests with 2,685 assertions and
+three JavaScript contract tests, including privacy-bounded telemetry,
+query-free manifest generation, page readiness and the 100-click home guard.
+The FileLedger verifies 14,125 canonical paths, zero missing paths, 373 pending
+reviews and 48.1138 percent weighted coverage.
+
+The embedded application-boundary cohort is the sixty-sixth bounded census
+cluster. Thirty-two canonical request, validation, middleware, service,
+resource-exception and focused-test paths map to direct typed identifier and
+fuzzy-date validation, authenticated JSON xAPI resources, append-only audit,
+explicit settings precedence and request-built context. Generic DTO resource
+discovery and package version behavior remain partial under DIV-467. The
+focused pack passes 57 tests with 2,985 assertions, including bounded identifier
+and diagnosis queries, one-request authentication reset and query-free route
+discovery. The FileLedger verifies 14,125 canonical paths, zero missing paths,
+341 pending reviews and 48.2677 percent weighted coverage.
+
+The final embedded Laravel cohort is the sixty-seventh bounded census cluster.
+Fifty-two canonical application, provider, factory, migration and test-harness
+paths are reviewed. Direct event transactions, named routes, deterministic
+fixtures, surgeon eligibility, diagnosis and xAPI boundaries retain
+evidence-backed credit. The exact ephemeral failed-job schema is retained,
+while the unproven database queue fallback, Horizon dashboard, event-group
+model and generic factory discovery remain zero-credit deferrals. The focused
+pack passes 182 tests with 4,934 assertions. No canonical `oe-laravel/` path
+remains pending. The FileLedger verifies 14,125 canonical paths, zero missing
+paths, 289 pending reviews and 48.4867 percent weighted coverage.
+
+The final shared-library cohort is the sixty-eighth bounded census cluster.
+Forty canonical contracts, helpers, enums, jobs, system events and proof
+fixtures are reviewed. Request-scoped context, typed settings, named routes,
+direct audit, stable system events, bounded xAPI projections and clinical
+laterality retain direct evidence. The generic event-owned writer and
+multi-system coding conflict layer remain zero-credit deferrals under DIV-467.
+The focused pack passes 138 tests with 3,587 assertions. No canonical
+`oe-shared/` path remains pending. The FileLedger verifies 14,125 canonical
+paths, zero missing paths, 249 pending reviews and 48.6874 percent weighted
+coverage.
+
+The shared-medication residual is the sixty-ninth bounded census cluster.
+Seventy-eight canonical configuration, migration, model, fixture, test and
+workflow paths are reviewed. Portable medication configuration, automatic and
+tenant-scoped sets, shared History and Management consumers, prescription
+safety, signatures, amendment history and current-state projections retain
+direct evidence. The reachable legacy adherence editor, generic attribute and
+form vocabularies, exact dm+d bulk reference-data import and historical merge
+reconciliation remain explicit zero-credit deferrals under DIV-280. The focused
+confidence pack passes 86 tests with 1,979 assertions. No canonical
+shared-medication path remains pending. The FileLedger verifies 14,125 canonical
+paths, zero missing paths, 171 pending reviews and 49.0752 percent weighted
+coverage.
+
+The Examination schema and configuration residual is the seventieth bounded
+census cluster. Forty-three canonical migrations, reference fixtures,
+repository placeholders and scenario seeders are reviewed. Portable workflows,
+scoped draft restore points, typed required diagnoses, visual acuity
+configuration, surgical history, Clinic Outcome and correspondence or Biometry
+seams retain direct evidence. Further Findings, exact visual acuity reporting
+views, the default iris colour, per-event workflow completion, disorder time,
+incomplete-element auto-close and unmapped fixture corpora remain explicit
+zero-credit or partial deferrals. The focused pack passes 86 tests with 1,493
+assertions. Its single correspondence failure on the long-lived shared schema
+is fixture contamination: the complete 13-test Correspondence suite passes with
+257 assertions after a clean seven-schema migration, tiny seed and schema
+verify. No canonical Examination schema/configuration path remains pending. The
+FileLedger verifies 14,125 canonical paths, zero missing paths, 128 pending
+reviews and 49.2123 percent weighted coverage.
+
+The Examination UI workflow residual is the seventy-first bounded census
+cluster. Forty canonical image, JavaScript, fixture, test-harness and view paths
+are reviewed. Shared raster controls, lazy element configuration, portable
+workflow administration, IOP and Refraction contracts, device intake, event
+presentation, pathway progression, visual-acuity correspondence snapshots and
+renderer seams retain direct or partial evidence. CXL Outcome, Further Findings
+and exact print or raster fidelity remain explicit zero-credit deferrals. A
+stale Refraction assertion exposed by the focused pack now verifies the lazy
+configuration endpoint and exact ordered vocabulary. The PHP confidence pack
+passes 138 tests with 5,315 assertions and the JavaScript readiness, 100-click
+guard and draft-refraction pack passes 3 tests. No canonical Examination UI
+workflow path remains pending. The FileLedger verifies 14,125 canonical paths,
+zero missing paths, 88 pending reviews and 49.3943 percent weighted coverage.
+
+The Examination General Health and Safety residual is the seventy-second
+bounded census cluster. Thirty-five canonical controller, factory, migration,
+model, admin, seeder, test and view paths are reviewed. Patient diagnoses,
+required-diagnosis rules, common systemic disorders, History Risks
+configuration, bounded History text and exact allergy or risk system-event
+families retain direct evidence. CXL History, History macros,
+procedure-to-risk assignments and medication-derived risk discovery remain
+explicit zero-credit or partial deferrals. The focused confidence pack passes
+113 tests with 1,252 assertions, including fixed diagnosis query counts and
+stable outbox family mapping. No canonical Examination General Health and
+Safety path remains pending. The FileLedger verifies 14,125 canonical paths,
+zero missing paths, 53 pending reviews and 49.5372 percent weighted coverage.
+
+The Examination domain-consumer residual is the seventy-third bounded census
+cluster. Twenty-six canonical component, contract, event, factory and model
+paths are reviewed. Portable workflow rules and element sets, bounded injection
+booking, typed protected event attachments, feature-owned correspondence
+generators and the institution-scoped Accessibility projection retain direct
+evidence. The PASAPI V1 and V2 AIS adapters remain partial and the CXL Outcome
+aggregate remains an explicit zero-credit deferral. The shared confidence run
+passes 77 tests with 1,264 assertions before reproducing the known fixture
+contamination in one Correspondence assertion. A clean seven-schema migration,
+tiny seed and schema verification pass the exact Correspondence suite with 13
+tests and 257 assertions. No canonical Examination domain-consumer path remains
+pending. The FileLedger verifies 14,125 canonical paths, zero missing paths, 27
+pending reviews and 49.6624 percent weighted coverage.
+
+The Core Administration Configuration residual is the seventy-fourth bounded
+census cluster. Twenty-three canonical administration, operation-note, Facial
+Injection, document and procedure-set paths are reviewed. Portable
+administration and feature-owned configuration retain direct or partial
+evidence. Exact procedure warnings and catalogues, OEScape compatibility and
+bulk death-cancellation behavior remain explicit deferrals. The first focused
+run exposes stale Facial Injection assertions for the established lazy
+configuration contract and a semantic API fixture without an owning
+institution. The corrected confidence pack passes 112 tests with 4,602
+assertions. The FileLedger then verifies 14,125 canonical paths, zero missing
+paths, four pending reviews and 49.7368 percent weighted coverage.
+
+The final canonical residual is the seventy-fifth bounded census cluster. The
+legacy BaseAPI and CoreAPI components, the Injection Management
+therapy-application Cypress workflow and the therapy-application
+consent-settings migration are reviewed. Typed feature services, the
+application-surface manifest, Intravitreal Injection warnings and
+per-treatment validity retain evidence. Broad Yii compatibility,
+digital-consent handoff and exact presentation settings remain explicit partial
+or zero-credit deferrals. The FileLedger verifies exact equality with the pinned
+14,125-path manifest, matching blob SHA-1 values, zero missing paths, zero
+pending canonical reviews and 49.7578 percent weighted coverage.
+
+The Therapy Application Event Export seam is the seventy-sixth bounded
+cluster. The final three secondary mappings are reviewed, and a module-owned
+payload adapter now emits a complete deterministic snapshot with two bounded
+clinical queries for either one or two eyes before the renderer registry
+freezes. Mandatory, Optional and Hidden warning modes, together with the
+absence of the retired fork-only override setting, are explicitly
+characterized. A clean seven-schema migration, tiny seed and schema
+verification pass the focused renderer and warning pack with 37 tests and 673
+assertions; the preceding full module pack passes 46 tests with 890 assertions.
+The feature has no pending secondary mappings and the FileLedger remains at
+14,125 canonical paths, zero missing, zero pending and 49.7652 percent weighted
+coverage.
+
+The Document, Checklist and Phasing Event Export payloads form the
+seventy-seventh bounded cluster. Checklist retains its ordered snapshotted
+definitions and answers with three bounded clinical queries. Phasing retains
+snapshotted instrument identity and at most 96 ordered readings with two
+bounded clinical queries. Both reject overflow. Document performs three bounded
+metadata queries without exposing protected object locators or file contents;
+comments-only output is complete, while any file-bearing Event fails closed
+until the isolated renderer gains bounded image and PDF binary composition.
+Clean seven-schema migration, tiny seed and schema verification packs pass 56
+tests with 384 assertions and 36 tests with 220 assertions. Event Export reaches
+73.7 percent across its exact 55 paths, and the FileLedger verifies 14,125
+canonical paths, zero missing, zero pending and 49.7885 percent weighted
+coverage.
+
+The complete typed Request Form Event Export payload forms the seventy-eighth
+bounded cluster. One clinical query retains the snapshotted form identity,
+status, typed definition and answers, administration notes and change metadata
+without patient or internal configuration identifiers. The expanded 100-field
+fixture remains one query and missing source state fails closed. A clean
+seven-schema migration, tiny seed and schema verification pack passes 46 tests
+with 420 assertions. Event Export reaches 75.4 percent across its exact 55
+paths, Core Webhooks reaches 67.9 percent across its exact 231 paths, and the
+FileLedger verifies 14,125 canonical paths, zero missing, zero pending and
+49.7951 percent weighted coverage.
+
+The complete Operation Booking Event Export payload forms the seventy-ninth
+bounded cluster. Five indexed clinical reads retain the current booking,
+schedule, contact and preassessment snapshots plus ordered procedures,
+anaesthetic types, diagnoses and unavailability windows. Each child family is
+capped at 64 rows and overflow fails closed. The small and large fixtures remain
+five queries and expose no internal identity or import fields. A clean
+seven-schema migration, tiny seed and schema verification pack passes 48 tests
+with 675 assertions. Event Export reaches 77.1 percent across its exact 55
+paths, Core Webhooks reaches 68.3 percent across its exact 231 paths, and the
+FileLedger verifies 14,125 canonical paths, zero missing, zero pending and
+49.8018 percent weighted coverage.
+
+The complete Laser Event Export payload forms the eightieth bounded cluster.
+Two indexed clinical reads retain the snapshotted site, device, operator, six
+drawing slots and at most 50 ordered per-eye procedures with their unit-specific
+measurements, lenses and complications. Overflow fails closed, and the small and
+large fixtures remain two queries without internal identities or import
+provenance. A clean seven-schema migration, tiny seed and schema verification
+pack passes 40 tests with 354 assertions. Event Export reaches 78.8 percent
+across its exact 55 paths, Core Webhooks reaches 68.7 percent across its exact
+231 paths, and the FileLedger verifies 14,125 canonical paths, zero missing,
+zero pending and 49.8084 percent weighted coverage.
+
+The complete Operation Note Event Export payload forms the eighty-first bounded
+cluster. Five indexed clinical reads retain the snapshotted site, theatre,
+source mode and booking reference, surgeon, personnel, anaesthetic selections,
+instructions, generation choices, procedures and typed section content. Each
+child family is capped independently at 64 rows and overflow fails closed.
+Recursive internal identifiers, usernames, source booking identifiers and
+import provenance are excluded. The small and large fixtures remain five
+queries. A clean seven-schema migration, tiny seed and schema verification pack
+passes 65 tests with 1,295 assertions. Event Export reaches 80.5 percent across
+its exact 55 paths, Core Webhooks reaches 69.1 percent across its exact 231
+paths, and the FileLedger verifies 14,125 canonical paths, zero missing, zero
+pending and 49.8151 percent weighted coverage.
+
+The complete Messaging Event Export payload forms the eighty-second bounded
+cluster. Three indexed clinical reads retain the immutable message type,
+status, text, sender and thread summary with at most 128 ordered recipient and
+comment snapshots. Overflow fails closed, and internal patient, institution,
+mailbox and configuration identifiers plus import provenance are excluded. The
+small and large fixtures remain three queries. A clean seven-schema migration,
+tiny seed and schema verification pack passes 45 tests with 355 assertions.
+Event Export reaches 82.3 percent across its exact 55 paths, Core Webhooks
+reaches 69.5 percent across its exact 231 paths, OphCoMessaging reaches 93.1
+percent across its exact 86 paths, and the FileLedger verifies 14,125 canonical
+paths, zero missing, zero pending and 49.8217 percent weighted coverage.
+
+The complete Prescription Event Export payload forms the eighty-third bounded
+cluster. Four indexed clinical reads retain the immutable prescription,
+ordered medication and taper snapshots, dispensing data, primary signature
+and secondary-signature roles. The authoritative limits of 50 items and 20
+tapers per item are retained, secondary signatures are capped at 64, and
+overflow fails closed. Internal patient, configuration and source identifiers,
+usernames and import provenance are excluded. The small and large fixtures
+remain four queries. A clean seven-schema migration, tiny seed and schema
+verification pack passes 55 tests with 1,099 assertions. Event Export reaches
+84.0 percent across its exact 55 paths, Prescription reaches 55.9 percent
+across its reconciled 235 paths, and the FileLedger verifies 14,125 canonical
+paths, zero missing, zero pending and 49.8284 percent weighted coverage.
+
+#### Frozen-scope integration verification
+
+Functional scope froze at 06:30 BST after cluster 83. The required single full
+Pest run completed with 2,211 passed, 133 failed and 34,151 assertions, so the
+run does not claim a passing full suite. Clean-schema isolation identified and
+fixed one attributable webhook regression: missing or legacy-zero institution
+ownership now reaches the existing authenticated-institution fallback instead
+of being rejected before the transactional outbox write. The remaining sampled
+failures were stale inline-configuration assertions or manager-only schedule
+assertions executed under the web role. Named lazy configuration endpoints and
+explicit clean-room runtime roles now provide the correct acceptance boundary.
+
+Independent seven-schema regression reruns pass Adnexal 13 tests and 150
+assertions, Clinical Management 13 and 225, Drug Administration 3 and 49,
+Refraction 14 and 195, Retinoscopy 13 and 190, and manager-role optometrist
+portal delivery and retrieval 8 and 74. A 90-test, 3,158-assertion foundation
+pack passes for webhooks, outbox and xAPI, request telemetry, home rate limiting,
+the application-surface manifest, EventView query growth and exact FileLedger
+integrity. A broader lazy-configuration pack passes 194 tests and 2,956
+assertions across 21 Examination element families. A clean schema and storage
+pack passes 39 tests and 560 assertions for correspondence attachments,
+automatic medication sets and consumers, bounded device-import leases, patient
+identifier and flag projections, history twins, and configuration export and
+import. Its correspondence performance gate now uses a representative one-row
+small fixture and retains constant query-count and serving-index proof. A
+separate patient-safety and case-search pack passes 51 tests and 710 assertions
+across maintained patient flags, portable medication criteria with fixed cohort
+query growth, diagnosis reconciliation, required-diagnosis policy and
+authenticated event search. A cross-module clean-schema pack passes 59 tests
+and 879 assertions for Biometry, Therapy Application, Patient Ticketing, and
+protected genetics/device-usage reporting. A further clinical integration pack
+passes 110 tests and 1,738 assertions for Medication Management, injection
+workflows, Clinical Outcome, EyeDraw policy, linked-device file storage, login,
+and associated-contact security. The ledger command reports 14,125 canonical paths,
+18,421 rows, zero
+missing, zero pending and 49.8284 percent weighted coverage. Changed PHP files
+pass scoped Pint validation across 209 staged PHP files, repository diffs pass
+whitespace checks, and the isolated renderer
+passes its live PDF, PNG, capacity, cleanup and bounded telemetry contract. The
+local production web image passes its complete 223,366,255-byte image contract. The
+unavailable isolated Chrome endpoint leaves browser smoke and exact output
+fidelity explicitly unverified.
+
+The repository-wide Pint invocation also identifies one style issue in the
+untouched `PermissionFirstRouteAuthorizationTest.php`; it is a pre-existing
+baseline issue and is outside the frozen rewrite diff.
+
+All renderer payload adapters subsequently pass together at 37 tests and 258
+assertions, including bounded deterministic content, fail-closed overflow,
+missing-element rejection, and renderer registration. At 09:18 BST the original
+post-08:00 integrated checkpoint was recorded. The user-requested continuation
+through 12:00 BST retains the 06:30 functional-scope freeze and permits only
+integration verification or attributable corrections.
+
+At 09:22 BST, the remaining webhook, outbox, manager API, xAPI resource, and
+Ophthalmic Surgery changed-surface clean pack passed 86 tests and 782
+assertions after a fresh seven-schema migration, tiny seed, and schema
+verification. It confirms canonical transport-neutral delivery, post-commit
+outbox behavior, bounded claims, xAPI persistent-worker isolation, and the
+Ophthalmic Surgery contract without opening new functional scope.
+
+At 09:26 BST, an independent clean-room FileLedger integrity pack also passed
+2 tests and 22 assertions, including the immutable pinned-source equality check
+and the `oe:porting-ledger:verify` command output.
+
+At 09:44 BST, the two stale Correction Given tests were aligned with the
+existing lazy configuration contract: EventView exposes no source configuration
+until its named configuration endpoint is requested. The focused clean-room
+pack passed 9 tests and 129 assertions, then the complete staged PHPUnit and
+Pest surface passed 620 tests and 10,615 assertions after a fresh schema
+migration. This was an assertion correction only and opened no new functional
+scope.
+
+At 09:50 BST, a static migration audit found one application-clock `now()`
+call in the outbox payload migration. It now uses the database
+`CURRENT_TIMESTAMP(6)` expression, preserving the historical state transition
+without application-clock behavior. The affected fresh-schema webhook, outbox,
+manager API, xAPI resource and Ophthalmic Surgery pack passed again at 86 tests
+and 782 assertions; the audit reports no remaining prohibited migration calls.
+
+At 09:55 BST, the complete staged PHPUnit and Pest surface passed again after
+that migration correction: 620 tests and 10,615 assertions in 142.26 seconds
+after a fresh schema migration.
+
+### 26.13 Ordered master correction and terminal run recorded 2026-08-31
+
+The next durable run continues from legacy `ad2324084788608246a8250e817198c2f26a4fd6`,
+Laravel `bac68960899df26f26427ea24ed81ea83849b11e`, and Docker
+`ef578cd1a85a536bdfb8b7b746a07d831ac0ecee`. It cannot complete, hand off, or
+voluntarily idle before `2026-09-02T07:00:00+01:00`, and it finishes only at the
+first safe integrated checkpoint at or after that time. The verified starting
+ledger remains 14,125 canonical paths, 18,421 mapping rows, zero missing, zero
+pending review, and 49.8284 percent weighted coverage. Seventy percent is a
+loose stretch aim, not a terminal condition: clinical correctness, current
+functional work, architecture, security, integration, and verification are
+never displaced merely to raise it.
+
+Every new request is classified before implementation:
+
+| Class | Required treatment |
+|---|---|
+| Architecture now | Establish the schema, API, rendering, storage, caching, authentication, audit, concurrency, observability, or shared UI pattern now. |
+| Seam now, implementation later | Define the stable contract and acceptance gate now, then schedule implementation by dependency. |
+| Independent later | Record the prerequisite, priority, and trigger without diverting the active run. |
+
+Early slices use a migration confidence pack: one representative parity or
+characterization test, authorization and validation checks, clinically
+important invariants, small-versus-large query and N+1 proof, schema proof where
+storage changes, and one browser smoke for a user-facing flow. Clinical
+calculations, irreversible transforms, authorization boundaries, and signing
+rules require stronger proof immediately. Mutation testing, exhaustive edge
+cases, full UAT, and final visual fidelity remain later stabilization gates.
+
+Playwright is the browser-test target during functional porting. Do not create
+new Cypress tests and do not use the remaining legacy Cypress files as the
+active implementation queue. They remain source evidence only. After the rest
+of the codebase is ported, review the still-relevant Cypress behavior, close any
+remaining parity gaps and express the retained browser coverage in Playwright.
+That end-of-porting reconciliation is separate from current functional
+coverage and pending Cypress rows remain at zero until it occurs.
+
+Disposable Docker resources have an explicit later cleanup gate. Inventory
+containers, networks, and named volumes by exact run or Compose project, remove
+stale containers and networks once their checks finish, and retain volumes
+until their database or artifact evidence is no longer needed for reproduction.
+The inventory must explicitly include accumulated `oe-patient*` and
+`oe-laravel*` test, debug, browser, web, database, and Redis containers. Review
+their age, Compose ownership, activity, restart policy, mounted volumes, and
+memory use at each integration checkpoint so abandoned environments cannot
+accumulate into host OOM pressure. Then stop and remove only exact reviewed
+projects and remove only exact reviewed volumes after their evidence-retention
+gate passes. Broad Docker pruning is forbidden, and active or unidentified data
+is never a cleanup target.
+
+#### Query-plan and database-I/O protection
+
+Query count and index-presence checks remain the immediate guard. A test-only
+`QueryPlanInspector` and declarative `QueryPlanBudget` registry are added by
+stable operation id. They inspect bounded SELECT statements with `EXPLAIN
+FORMAT=JSON` and a traditional EXPLAIN fallback, fail missing expected indexes,
+unbounded ALL or index scans, excessive estimated row growth, filesort,
+temporary table, and disk temporary table, and permit only path-specific,
+row-bounded waivers with an owner and reason. SQL and bindings may exist in the
+test process but never in operational telemetry. The command contract is
+`oe:query-plan:verify --profile=tiny|history-heavy --json=<path>`.
+
+The inspector treats a JSON `materialized` or `materialization` node and a
+traditional `DERIVED`, `LATERAL DERIVED`, or `MATERIALIZED` select type as
+temporary work even when MariaDB omits `Using temporary`. This is deliberately
+conservative: an unmerged derived result is materialized into an internal
+temporary table, and the gate must expose that hidden database I/O without
+forcing an index or join order.
+
+The first applications are EventView, patient summary and search, specialist
+worklists, NOD and reporting reads, followed by the main worklist. Runtime
+`ANALYZE FORMAT=JSON` is deferred until an anonymized production-scale migration
+rehearsal and runs only against a disposable or read-only performance
+environment because it executes the query. MariaDB extended slow-log plan and
+engine statistics are then used to catch bad queries that happen to be fast on
+small data but perform filesorts, temporary tables, full scans, excessive rows
+examined, or costly storage-engine I/O.
+
+`UrlBenchmarkCommand` remains an external standalone tool for legacy OpenEyes.
+It is not copied into either repository and no Laravel replacement is built
+now. It is used after production-scale migration testing exposes realistic slow
+paths, alongside the Laravel application-surface manifest and safe fixture
+provider registry.
+
+Execution checkpoint 2026-09-01: the patient summary no longer loads the full
+episode and event graph to build its initial timeline. A maintained
+`patient_event_timeline` projection carries patient, episode, event type, event
+date, and event id on one row and has one serving index for patient-bound newest
+first keyset pages. The initial page reads 50 rows plus one look-ahead row and
+resolves event types in one batch; one versus 160 events uses the same two
+clinical queries. Event lifecycle listeners maintain the projection and seed
+loading rebuilds it after bulk fixtures. The first real legacy importer must
+populate it before web readiness. Drafts, deleted-event display, grouping, issue
+state, laterality, and rich quicklook parity remain later slices. The clean
+MariaDB plan uses the serving index without filesort, a temporary table, or an
+optimizer hint, and a production browser loaded events 51 through 60 with one
+additional request.
+
+#### Patient-summary parity and reversible image controls
+
+The full patient summary is a clinical familiarity exception to the general
+rule that exact visual fidelity can wait. Its established panel order, labels,
+information placement, collapsed areas, source links, and access to clinical
+content remain the default release contract. Retrieval, projections, batching,
+and pagination may change substantially, but an unexplained missing or moved
+clinical item is a defect. The far-future compact patient summary remains a
+separate clinician-approved change request with the full legacy view one click
+away.
+
+Local folders under `/home/toukan/pullrequests` are evidence, not a queue to
+copy blindly. Each candidate is first checked against current Laravel behavior
+and skipped when the cause is already absent. In particular,
+`oe-pr-medication-chain-prewarm`, `oe-pr-ajax-defer-history-medications`,
+`oe-pr-eventmeduse-memoize-chain`, `oe-pr-medication-preload-refs`,
+`oe-pr-medication-sort-keys`, `oe-pr-medicationset-hasusagecode-memo`, and
+`oe-pr-prescription-item-eager-relations` define regression families for the
+patient medication panels. The Laravel acceptance gate is constant query count
+between small and large medication fixtures, no per-row or sort-comparator
+lineage lookup, no lazy neighboring reference reads, and the same current,
+stopped, untracked-prescription, laterality, date, tooltip, and source-link
+content as the established panels.
+
+High-impact optional behavior changes use a reversible release control. The
+control records an owner, stable name, legacy-compatible default, both-mode
+tests, telemetry, rollback behavior, and a removal or permanent-approval gate.
+Pure internal query, storage, or security fixes do not gain switches merely for
+being new. This prevents release controls from becoming an alternate permanent
+application configuration.
+
+The first optional patient-summary progressive-image mode is therefore off by
+default. When enabled it loads a bounded initial group, then offers accessible
+`Load more` and `Load all` actions. The group size is not fixed at 10: choose it
+from clinical usability, response size, renderer demand, and realistic-load
+evidence before implementation. Disabling the mode restores the established
+all-images behavior. The number, ordering, source identity, image status, and
+load-all result are tested against the full view; the initial request and every
+continuation have bounded query, render-enqueue, response-byte, and memory
+budgets. This is a seam-now decision and is not implemented until the event
+image serving workflow exists.
+
+The separate installation setting `generate_event_images` is an emergency
+generation gate and defaults to `on`. When it is `off`, a compatible protected
+image already in the authoritative cache is still served, a cache miss cannot
+invoke the PNG renderer or write an artifact, PDF generation is unaffected, and
+the patient-summary image section shows a stable unavailable state rather than
+retrying. Content and renderer revision checks are not weakened to serve a
+clinically stale image. The current renderer foundation enforces the cache-hit
+and cache-miss boundary; the serving endpoint and patient-summary UI must close
+the graceful-state gate before event images are declared ported.
+
+Execution checkpoint 2026-09-01: one parent-owned lazy request now supplies the
+legacy Eye Medications and Systemic Medications summary panels. The bounded DTO
+includes current, stopped, and otherwise-untracked final prescription rows,
+eagerly resolves prescription lineage, sorts from precomputed values, preserves
+the established panel labels and source links, and has constant query count from
+one through 25 linked sources. The medication source rows carry and index the
+authoritative institution snapshot on the same row, avoiding a neighbouring
+event lookup for every institution-bound read. A production browser made one
+GET for both panels and rendered current and stopped evidence without errors.
+The source cap is explicit rather than silently hiding content; paginated
+continuation remains required before exact behavior is claimed above that cap,
+and the remaining patient-summary panels and exact change-history tooltip are
+still open. The renderer now also enforces the default-on
+`generate_event_images` emergency gate after a compatible cache lookup and
+before PNG generation. The separate progressive-image mode remains off by
+default, has no fixed initial count, and is not implemented until realistic
+clinical and load evidence selects a sensible bounded group.
+
+Execution checkpoint 2026-09-01: the patient page now separates current
+ophthalmic and systemic diagnoses into the familiar Eye Diagnoses and Systemic
+Diagnoses panels instead of mixing both under the eye heading. The bounded
+current-state DTO applies the legacy landing-page retirement filters, merges
+bilateral observations, retains priority, certainty, comments, laterality,
+dates, and the configured eye event link, and uses three queries for small and
+large fixtures. Its serving plan is indexed and does not use filesort, a
+temporary table, a scan, or an optimizer hint. A 500-row source safety boundary
+is explicit rather than silent, but clinically usable continuation remains
+required. Exact diagnosis history dialogs, rich tooltips, nil-confirmation,
+mandatory statuses, expanding panels, fuzzy-date typography, and both procedure
+panels remain parity work. The progressive event-image mode remains off by
+default and no initial image count has been selected.
+
+Execution checkpoint 2026-09-01: the familiar Eye Procedures and Systemic
+Procedures panels are restored in the established six-panel order. Eye history
+merges performed entries from the latest recorded ophthalmic state with bounded
+Operation Note and Laser summaries; systemic history uses the latest recorded
+systemic state. Laterality, fuzzy dates, explicit no-history states and
+authoritative event links are retained. Four source reads have declarative
+query-plan budgets, and one versus 100 local entries uses the same eight
+clinical queries. External sources read 100 events plus one look-ahead each and
+the final eye panel presents at most 500 rows with an explicit warning. Exact
+popup interactions and a continuation path beyond that safety boundary remain
+open pending representative migrated history. No optimizer hint is used.
+
+Execution checkpoint 2026-09-01: the familiar patient-summary REF row now
+consumes the bounded Correction Given, Refraction and Retinoscopy sources. It
+preserves newest-event selection, same-event source precedence, deterministic
+row ties, the legacy priority Refraction string, right and left values, `NA`,
+`Unknown`, and NHS date presentation. One versus 100 rows in every source stays
+at four clinical queries. Three serving plans use the existing latest-source
+indexes without filesort, a temporary table, a scan, or an optimizer hint. The
+Retinoscopy order was aligned with its existing indexed event tie-break after
+the plan gate detected an avoidable filesort. Popup consumers remain separate
+presentation gates. Progressive event-image loading remains off by default and
+no initial group size is selected without clinical and realistic-load evidence.
+
+Execution checkpoint 2026-09-01: the familiar patient-summary VA row now uses
+the standardized latest-element contract rather than selecting an unrelated
+latest row for each eye. One bounded reader selects the newest live VA element
+and the best BEO, right and left values within that element, preserves later
+reading ties, exact `ua`, `ph` and `rx` abbreviations, `Unknown` fallbacks, and
+the NHS event date. The request boundary and database both enforce the same
+six-readings-per-side maximum, so the 18-row source limit is an import-safe
+schema contract rather than an HTTP-only assumption. One versus 100 historical
+elements stays at two clinical queries and both serving plans use existing
+indexes without filesort, a temporary table, a scan, or an optimizer hint. A
+production browser proved BEO, right and left presentation from one event with
+no browser or request failure. Pinned source and documentation prove Near
+Visual Acuity deliberately has history but no copy-forward, so the rewrite must
+not invent that behavior. Per-institution and per-subspecialty VA default-scale
+configuration follows if its pinned source supports a stable seam. Progressive
+event-image loading remains off by default, and its sensible initial group size
+is deliberately undecided until clinical and realistic-load evidence exists.
+
+Execution checkpoint 2026-09-01: the distance and Near VA scale setting keys
+are now stable code-based contracts consumed through the shared settings
+resolver. New elements use installation defaults or institution overrides from
+their immutable event context and fall back safely when a configured scale is
+missing or inactive. One versus 100 additional scales has fixed query growth.
+The scale picker and setting lookup use explicit serving indexes without
+filesort, a temporary table, a scan, an optimizer hint, or forced optimizer
+behavior. Legacy subspecialty overrides remain a stable deferred seam until the
+event has authoritative firm ownership. The misleadingly named legacy fixture
+is recorded for its actual Near VA edit-scale purpose; it is not evidence for a
+Near VA copy feature. The optional progressive event-image mode remains off by
+default, and its bounded initial group will be selected later from clinical and
+realistic-load evidence rather than a prescribed count.
+
+Execution checkpoint 2026-09-01: distance and Near VA now have separate stable
+default record-mode setting keys because rewrite setting keys are globally
+unique. New elements resolve installation defaults and institution overrides
+from immutable event context, accept only `simple` or `complex`, and fall back
+to the established simple layout for missing or invalid values. Complex mode
+starts right, left and BEO active. The unsafe Near VA guess based on the logged-
+in user's first active firm has been removed. Legacy Strabismus and Paediatrics
+complex defaults remain a stable deferred seam until DIV-009 supplies
+authoritative event firm ownership. The optional progressive event-image mode
+remains off by default, and its initial group remains an evidence-based policy
+decision rather than a fixed count.
+
+Execution checkpoint 2026-09-01: saved and editable distance and Near VA
+readings now expose the closest active value in every other active compatible
+scale. The equivalent values are derived from the bounded scale configuration
+already loaded for the form, so this closes the clinical presentation gap
+without a new query, route, cache, or schema seam. Deterministic scale order
+resolves equal-distance values, rich tooltip content is escaped, and a plain
+title preserves access when the tooltip initializer is unavailable. A
+production browser proved saved distance, editable distance and newly added
+Near VA values without a mutation or browser failure. Exact tooltip geometry
+remains a later fidelity gate. Progressive event-image loading remains off by
+default, and its eventual bound and interaction remain a clinical and
+realistic-load decision rather than a fixed image count.
+
+Execution checkpoint 2026-09-01: pinned caller review corrected an inventory
+mistake: `OphCiExamination_Episode_VisualAcuityHistory` is a distance VA
+history consumer, not evidence for a Near VA chart. The rewrite now exposes a
+named, patient-bound, newest-first distance VA history endpoint with a 20-row
+default, 50-row maximum and a versioned keyset cursor bound to the patient and
+complete ordering tuple. Best BEO, right and left points include base value,
+stable scale identity and method identity for the later familiar chart. One
+versus 101 history elements remains at two clinical queries through the exact
+same-row element and child-reading indexes, with no filesort, temporary table,
+scan, forced index or optimizer hint. The patient-summary chart itself has not
+changed: its unit selector, VFI and MD combination, operation markers,
+interactions, OEscape image side panel and exact geometry remain later
+presentation and fidelity gates. No Near VA history behavior has been
+invented. Progressive event-image loading remains off by default, and its
+eventual policy remains evidence-led rather than a fixed image count.
+
+Execution checkpoint 2026-09-01: the pinned user-save messaging listener is
+now active in the rewrite. Saving an active user creates one personal mailbox
+and direct assignment when missing; repeated saves are idempotent and inactive
+users wait for activation. The user row is locked inside the configuration
+transaction, portable identity is derived from the unique username, and a
+mailbox code previously assigned to another user is rejected even when the old
+assignment is inactive. The lookup remains one query as mailbox volume grows
+and uses the initial `ix_mailbox_personal_active` schema packet without
+filesort, a temporary table, a scan, a forced index, or an optimizer hint.
+Recursive team-derived grants remain fail-closed under DIV-060 until the team
+hierarchy, deployed data and disclosure behavior are approved. AIS webhook
+publication remains narrowly deferred until the linked canonical PAS AIS
+resource exists; emitting a dead absolute link is not payload parity. A clean
+seven-schema migration, tiny seed and the focused messaging regression gates
+pass. Progressive event-image loading remains off by default, and no fixed
+initial image count has been selected.
+
+Execution checkpoint 2026-09-01: the direct patient CVI fallback is now
+available on the familiar patient summary with the exact five legacy choices
+and fuzzy date. Examination and formal CVI event sources always supersede it;
+the later event date wins, and formal CVI wins an equal-date tie. The direct
+row is versioned, audited, institution-bound and optimistic-concurrency
+protected. Event writes and deletes rebuild the one-row current projection and
+restore the direct fallback after the last event source disappears. The
+initial patient page reads only that bounded projection; configuration and
+combined history load on request. The direct read stays one indexed query as
+unrelated volume grows, and all 20 central query-plan budgets avoid filesort,
+temporary tables, scans, forced indexes and optimizer hints. The named manual
+GET and PUT operations are in the query-free application-surface manifest. A
+clean 298-migration MariaDB 11.8 build, tiny seed, schema verification,
+combined 32-test and 2,768-assertion pack, production build, image contract and
+browser edit/reload/restore flow pass. Worklist, popup, search, reporting, ODT
+and delivery parity remain separate CVI gates. Progressive event-image loading
+remains off by default, with no fixed initial image count.
+
+Execution checkpoint 2026-09-01: direct event attachment types now preserve
+the pinned legacy eligibility control independently of event-type policy. The
+same active-and-enabled rule drives the declarative admin screen, portable
+configuration, event picker, linked-device picker, canonical API and
+compatibility paths; every reachable write boundary rejects a disabled type.
+Older portable exports default this new capability off. The initial schema
+packet includes the exact picker index, and MariaDB uses it without filesort,
+temporary table, scan, forced index or optimizer hint. A clean 298-migration
+build, tiny seed, schema verification, focused and security packs, all 21
+central query-plan budgets, production build and image contract pass. A
+production browser disabled a type through admin, proved it absent from both
+pickers while other types remained, and restored the seeded state with no
+failed response or console error. Historical blob import remains a migrated-
+data rehearsal and protected-file scanning remains a much later security gate.
+Progressive event-image loading remains off by default, with no fixed initial
+image count.
+
+Execution checkpoint 2026-09-01: automatic Medication Set composition now
+supports the complete reachable pinned rule shape. Explicit medication rules,
+recursively included manual or automatic sets, normalized medication attributes,
+and indexed parent or child dm+d hierarchy expansion are materialized atomically.
+Portable Medication configuration carries parent natural keys and the complete
+attribute option document. A zero-wait MariaDB named lock rejects concurrent
+rebuilds immediately, row locks protect the bounded set, cycles and unavailable
+sources fail before replacement, and targeted indexed reads avoid catalogue
+scans, filesort, temporary tables, forced indexes and optimizer hints. One versus
+twenty source sets retains bounded query growth. Derived hierarchy or attribute
+members have null prescribing defaults so the interactive Prescription editor
+can present them for review, while non-interactive Operation Note generation
+requires a complete default document and fails clearly otherwise. A fresh
+seven-schema migration and tiny seed, backend confidence pack, query-plan gates,
+portable export, lock-contention proof and no-retry Playwright prescription flow
+pass. Historical raw-row conversion remains a real-data migration rehearsal.
+Selected-firm context remains the shared DIV-009 architecture item rather than a
+medication-specific first-firm guess. Working signing, printing, reporting and
+pharmacy paths are not reopened for coverage alone. Progressive event-image
+loading remains off by default, with no fixed initial image count; the enabled
+policy will be chosen from clinical and realistic-load evidence.
+
+Execution checkpoint 2026-09-01: the exact previous-visit Visual Acuity loss
+warning is now available on saved and in-progress Visual Acuity elements. It
+uses the pinned corrected-method set, ETDRS conversion, five-letter threshold,
+NHS date and wording, with deterministic same-time event ordering. The latest
+prior element and its bounded readings use two indexed reads with fixed query
+count from one to 100 historical elements. All 23 central query-plan budgets
+avoid filesort, temporary tables, scans, forced indexes and optimizer hints. A
+clean 298-migration MariaDB 11.8 build, tiny seed and schema verification were
+retained; the final focused and ledger packs, production build, web image,
+image contract and exact browser warning smoke pass. Injection-course and
+OEscape warning consumers remain deferred until a normalized patient, eye and
+clinical-time projection makes them bounded. Progressive event-image loading
+remains off by default and no fixed initial image count is selected. The next
+bounded vision/refraction slice is pinned Retinoscopy copy-forward with
+explicit provenance and retained configuration snapshots.
+
+Execution checkpoint 2026-09-01: pinned Retinoscopy review found that the
+target already implements its complete copy-forward contract, so no duplicate
+production path was added. The existing date-safe selector copies both eyes,
+working distances, angles, powers, dilation and comments, records source-event
+provenance, preserves retired distance snapshots and rejects future sources. A
+new confidence gate proves fixed configuration query count from one to 21 prior
+events within four queries, while the existing optimizer-selected covering
+index assertion uses no forced index or hint. The Retinoscopy and ledger pack
+passes 16 tests with 236 assertions. A production-image browser copied and
+saved the exact values and provenance, reached the global ready state and
+recorded no unexpected failed response or browser error. The canonical pinned
+Cypress row is now reviewed at 100 percent and exact overall coverage is
+50.1298 percent across 14,125 canonical paths and 18,437 mappings. The next
+bounded step reconciles the remaining Visual Acuity and Near Visual Acuity
+Cypress contracts before adding any behavior.
+
+Execution checkpoint 2026-09-01: explicit edit-scale evidence now closes the
+complete pinned Near VA Cypress contract and the safe distance VA portion. Two
+saved 1/60 Snellen readings remap to the nearest active ETDRS value without
+being lost or selecting the inactive N/A row; a saved Near VA reading remaps to
+Jaeger (Approx). A production-image browser saved both through the real event
+batch, rendered them, reopened edit mode, retained both scales and readings,
+reached the global ready state and recorded no browser errors. The remaining
+distance Cypress scenarios depend on unsaved same-page VA and Social History
+state automatically opening Driving Advice. That clinically sensitive
+cross-element draft-state contract remains explicit under DIV-316 and is not
+guessed inside the VA component. The Near row is reviewed at 100 percent, the
+mixed distance row remains partial at 35 percent, and exact overall coverage is
+50.1394 percent across 14,125 canonical paths and 18,437 mappings. The next
+bounded review is the pinned Correction Given Cypress contract.
+
+Execution checkpoint 2026-09-01: the complete pinned Correction Given Cypress
+contract is now closed without changing working production behavior. A focused
+first-save characterization proves that one adjusted right-eye order persists
+while all excluded left-eye fields remain null and saved presentation reports
+Not recorded. A production-image browser repeated the real Manage Elements,
+adder, free-text and event-batch save flow, retained the excluded eye on edit
+reopen, reached global page state `ready` and recorded no browser errors. The
+focused test passed with 31 assertions and the ledger pack passed two tests
+with 22 assertions. The canonical Cypress row is reviewed at 100 percent and
+exact overall coverage is 50.1465 percent across 14,125 canonical paths and
+18,437 mappings. The next bounded review is the pinned Cover Test Cypress
+contract.
+
+Execution checkpoint 2026-09-01: the Cover Test row editor now exposes its
+already persisted per-reading note and the legacy numeric bounds. The focused
+pack passes 11 tests with 187 assertions; the JavaScript pack passes 24 tests;
+the ledger pack passes two tests with 22 assertions; and the production build,
+image contract and no-retry Playwright flow pass. The browser flow retained all
+seven selected row values, updated and persisted the note, reopened cleanly at
+global page state `ready` and recorded no browser errors. Exact coverage is
+50.1477 percent across 14,125 canonical paths and 18,437 mappings. The Cover
+Test Cypress row remains pending at zero. Cypress reconciliation is now
+deferred until the rest of functional porting is complete; current browser
+confidence uses Playwright and the active queue returns to pinned source,
+callers and OeDocumentation.
+
+Execution checkpoint 2026-09-01: Medication History once again follows the
+pinned legacy confirmation rule. An empty review requires `No eye medications`
+but does not require `No systemic medications`; either confirmation still
+contradicts a current medication of that kind. The complete focused file passes
+eight tests with 124 assertions, scoped Pint passes, and the production image
+and image contract pass. A no-retry Playwright flow saved the asymmetric state
+through the real event batch, rendered only the eye confirmation, reached the
+global ready state, recorded no browser errors and removed its disposable
+event through the normal route. The ledger pack passes two tests with 22
+assertions and reports exact coverage of 50.1478 percent across 14,125 canonical
+paths and 18,437 mappings, with zero missing and zero pending review. Allergy
+warnings, risk-drug automation and Prescription-source composition remain
+separate clinically sensitive gates rather than being guessed here.
+
+Execution checkpoint 2026-09-01: the first three application-owned legacy
+system-event callers are now live. User saves, successful web logins, and
+individual or batch element saves emit typed, bounded `UserSaved`,
+`WebUserLoggedIn`, and `ClinicalEventSaveCompleted` occurrences through the
+existing durable named-connection after-commit dispatcher. Personal mailbox
+creation remains a synchronous user invariant. The focused system-event,
+outbox, login, mailbox and event-batch pack passes 60 tests with 470 assertions;
+scoped Pint, the production image build, the 227,838,933-byte image contract,
+and the two-test ledger pack pass. Exact coverage is 50.1575 percent across
+14,125 canonical paths and 18,437 rows, with zero missing and zero pending
+review. A post-commit dispatcher failure is caught and logged with bounded
+metadata, without sensitive exception text or an occurrence identifier, so it
+cannot make a committed source action appear rolled back. `SessionSiteChanged`
+remains behind a stable institution, site and firm
+context-switch contract, and the old login-wide stale-draft warning is not
+guessed over the rewrite's bounded per-event restore points. High-volume
+request and transaction events require an evidenced consumer before callers
+are added.
+
+Execution checkpoint 2026-09-01: the legacy Pain `aps` value and Pain event
+search registration are now adapted. The named patient-bound API resolves the
+latest Examination from the maintained event timeline and returns the exact
+ordered score and time fragment. It returns empty when that latest Examination
+has no Pain rather than falling back to an older Pain record. A matching
+`(patient_id, event_type_id, event_date, event_id)` index keeps the selection at
+four fixed queries from one to 151 Examination events with no filesort,
+temporary table, group-wise maximum, forced index, or optimizer hint. The typed
+Pain element supplies its shared event search term with no database work. The
+manager-role migration, 19-test 2,469-assertion focused pack, scoped Pint,
+production build and 227,843,241-byte image contract pass. Exact coverage is
+50.1722 percent across 14,125 canonical paths and 18,437 rows, with zero missing
+and zero pending review. Pain historical interchange, public generation,
+formal OpenAPI publication, help, author attribution and visual fidelity remain
+later gates, and no Cypress coverage is added during functional porting.
+
+Execution checkpoint 2026-09-01: the four pinned Triage correspondence values
+are now adapted through a named patient-bound operation. `cce`, `cco`, `ccc`,
+and `pri` use immutable saved snapshots from the latest Examination and all
+return empty when that Examination contains no Triage element instead of
+falling back to an older record. Pain and Triage share one readable
+latest-Examination selector while retaining element-owned presentation. The
+Triage path remains at three queries from one to 151 events and the existing
+covering timeline index has no filesort, temporary table, forced index, or
+optimizer hint. Scoped Pint, the 20-test 2,471-assertion focused pack, the
+three-test 23-assertion ledger and migration-policy pack, the production build,
+and the 227,847,631-byte image contract pass. Exact coverage is 50.1849 percent
+across 14,125 canonical paths and 18,437 rows, with zero missing and zero
+pending review. Worklist priority, the A&E report, PAS ECDS output, interchange,
+help, and fidelity remain later Triage gates. No Cypress work is added during
+functional porting.
+
+Execution checkpoint 2026-09-01: the pinned Safeguarding `asc` value is now
+adapted through a named patient-bound operation. It reads ordered immutable
+concern terms only from the latest Examination, emits the exact legacy HTML
+fragment, and returns the exact no-issues text rather than falling back when
+that Examination has no Safeguarding element. It reuses the shared
+latest-Examination selector and stays at four queries from one to 151 events;
+the covering index has no filesort, temporary table, forced index, or optimizer
+hint. Scoped Pint, the 24-test 2,492-assertion focused pack, the three-test
+23-assertion ledger and migration-policy pack, the production build, and the
+227,851,271-byte image contract pass. The added explicit secondary API mapping
+raises the ledger to 18,438 rows while retaining exactly 14,125 canonical paths,
+zero missing, zero pending review, and 50.1913 percent coverage. Global
+Safeguarding RBAC, other projections, and exact geometry remain later gates,
+and no Cypress work is added during functional porting.
+
+Execution checkpoint 2026-09-01: the latest live Observations aggregate now
+feeds a named patient-bound correspondence operation with the exact eight
+versioned values `lbp`, `lst`, `lbg`, `lhb`, `lht`, `lwt`, `lpu`, and `bmi`.
+It never falls back past a newer empty aggregate, and BMI independently selects
+the newest valid height and weight within the selected aggregate. The read
+stays at two queries from one to 151 historical elements; both selected indexes
+have no filesort, temporary table, forced index, or optimizer hint. A fresh
+MariaDB 11.8 database passes all 299 migrations, the tiny seed, and seven-schema
+verification. Scoped Pint, the 24-test 2,567-assertion focused pack, the
+three-test 23-assertion ledger and migration-policy pack, the production build,
+and the 227,856,623-byte image contract pass. The ledger remains exactly 14,125
+canonical paths and 18,438 rows, with zero missing, zero pending review, and
+50.2062 percent coverage. The wider correspondence macro catalog and template
+integration remain later gates. This API-only slice adds no browser test, and
+no Cypress test is created or used as the implementation queue during porting.
+
+Execution checkpoint 2026-09-01: Observations now owns all ten exact pinned
+event-search labels and aliases in the generated source-controlled index. The
+later Temperature correction uses a stable live-field target; Oxygen
+Saturation aliases and both field-focus paths pass in a no-retry production
+Playwright smoke with no browser errors. Generation issues zero database
+queries once the event type is loaded and requires no mutable table, cache,
+recursive lookup, forced index, or optimizer hint. A fresh MariaDB 11.8
+database passes all 299 migrations and the tiny seed. Scoped Pint, 24
+containerized JavaScript tests, the 19-test 178-assertion focused pack, the
+three-test 23-assertion ledger and migration-policy pack, the production build,
+and the 227,859,147-byte image contract pass. All 33 exact Observations paths
+are now fully covered at 100.0 percent unweighted feature coverage. The global
+ledger remains exactly 14,125 canonical paths and 18,438 rows, with zero
+missing, zero pending review, and 50.2104 percent exact coverage. Historical
+search presentation and exact visual fidelity remain later shared gates. No
+Cypress test is created or used during functional porting.
+
+Execution checkpoint 2026-09-01: the familiar patient-summary Allergies panel
+now reads `patient_allergy_current` through one focused patient-bound route only
+when the section approaches the viewport. Present, none-known, and not-checked
+alerts, immutable labels, severity, reactions, comments, and category icons are
+retained without adding an unproven edit link or unrelated general-health
+queries. The clinical service stays at five queries from one to one hundred
+entries and its scope index has no filesort, temporary table, forced index, or
+optimizer hint. The three-test allergy pack passes 50 assertions. The
+neighboring pack passes 33 tests with 2,724 assertions except one transient
+combined-order login failure; the case then passes in isolation and the full
+Login file passes seven tests with 71 assertions. Scoped Pint, 24 containerized
+JavaScript tests, a Playwright create-view-cleanup workflow with one lazy
+request and no browser errors, the production build, and the 227,873,593-byte
+image contract pass. The ledger remains exactly 14,125 canonical paths and
+18,438 rows, with zero missing, zero pending review, and 50.2188 percent exact
+coverage. Exact pixel fidelity, imported-data reconciliation, full clinical
+safety sign-off, and the six-section general-health batch remain later gates.
+No Cypress test is created or used during functional porting.
+
+Execution checkpoint 2026-09-01: the familiar patient-summary Risks panel now
+reads `patient_history_risks_current` through one focused patient-bound route
+only when its section approaches the viewport. The familiar Alerts tri-state,
+level-one-first ordering, immutable risk names, Other text, comments, and
+current diabetes diagnosis terms are retained. The read stays at six queries
+from one to one hundred risks, excludes newer foreign-institution sources, and
+caps diagnosis output with an explicit overflow warning. Its pointer and
+diagnosis plans have no filesort, temporary table, forced index, or optimizer
+hint. The final five-test Risks pack passes 75 assertions, including the
+one-hundred-row overflow boundary; the wider neighboring pack passes 21 tests
+with 286 assertions.
+Scoped Pint, all 24 containerized JavaScript tests,
+a final Playwright create-view-cleanup workflow with one lazy request and no
+browser errors, the production build, and the 227,888,715-byte image contract
+pass. General Health and Safety has 398 exact paths and 84.2 percent unweighted
+coverage. The ledger remains exactly 14,125 canonical paths and 18,438 rows,
+with zero missing, zero pending review, and 50.2261 percent exact coverage.
+Exact pixel fidelity, imported-data reconciliation, medication-derived risk
+automation, remaining consumers, and full clinical safety sign-off remain
+later gates. No Cypress test is created or used during functional porting.
+
+Execution checkpoint 2026-09-01: the familiar patient-summary Family History
+panel now reads `patient_family_history_current` through one focused
+patient-bound route only when its section approaches the viewport. The
+familiar unknown and no-history text and recorded Relative, Side, Condition,
+and Comments table are retained using immutable snapshots and Other values.
+The read stays at three service queries from one to one hundred and one
+entries, excludes newer foreign-institution sources, and caps output with an
+explicit warning. Its pointer and entry ordering plans have no filesort,
+temporary table, forced index, or optimizer hint. A fresh MariaDB 11.8 database
+passes all 300 migrations, schema verification, the tiny seed, and the focused
+four-test 68-assertion pack. The neighboring pack passes 14 tests with 195
+assertions, and the ledger, manifest, and migration-policy pack passes 14 tests
+with 2,444 assertions. Scoped Pint, all 24 containerized JavaScript tests, a
+final Playwright create-view-cleanup workflow with one lazy request and no
+browser errors, the production build, and the 227,907,079-byte image contract
+pass. General Health and Safety has 399 exact paths and 84.2 percent unweighted
+coverage. The ledger remains exactly 14,125 canonical paths and 18,438 rows,
+with zero missing, zero pending review, and 50.2335 percent exact coverage.
+Cross-event copy-forward, the combined Family Social tile, direct
+patient-summary editing, exact pixel fidelity, and clinical sign-off remain
+later gates. No Cypress test is created or used during functional porting.
+
+Execution checkpoint 2026-09-01: the familiar patient-summary Social History
+panel now reads `patient_social_history_current` through one focused
+patient-bound route only when its section approaches the viewport. It retains
+`Nil recorded`, the familiar eight-row order, immutable option labels,
+line-separated driving statuses, the type-of-job precedence rule, and a zero
+alcohol value. The read stays at three service queries from one to six driving
+statuses, excludes newer foreign-institution sources, and uses a schema-bound
+maximum of six statuses. Its pointer and status plans have no filesort,
+temporary table, forced index, or optimizer hint. A fresh MariaDB 11.8 database
+passes all 301 migrations, schema verification, the tiny seed, and the focused
+four-test 63-assertion pack. The neighboring pack passes 17 tests with 242
+assertions. Scoped Pint, the 14-test 2,444-assertion ledger, manifest, and
+migration-policy pack, all 24 containerized JavaScript tests, a final
+Playwright create-view-cleanup workflow with one lazy request and no browser
+errors, the production build, and the 227,925,809-byte image contract pass.
+General Health and Safety has 399 exact paths and 84.7 percent unweighted
+coverage. The ledger remains exactly 14,125 canonical paths and 18,438 rows,
+with zero missing, zero pending review, and 50.2474 percent exact coverage.
+Historical bulk import, the combined Family Social popup, exact pixel fidelity,
+and clinical sign-off remain later gates. No Cypress test is created or used
+during functional porting.
+
+Execution checkpoint 2026-09-01: the familiar patient-summary AIS panel now
+reads the maintained institution-scoped current pointer through one focused
+patient-bound route only when the panel approaches the viewport. It appears
+before Management Summaries and preserves the familiar warning-colored header,
+`Nil recorded`, stored entry order, per-entry warning color, immutable labels,
+and saved language suffixes. The service stays at three queries from one to one
+hundred and one stored entries, returns at most one hundred entries with an
+explicit overflow warning, and its pointer and entry plans have no filesort,
+temporary table, forced index, or optimizer hint. The focused pack passes 3
+tests with 51 assertions and the neighboring pack passes 22 tests with 355
+assertions. Scoped Pint, the 14-test 2,444-assertion ledger, manifest, and
+migration-policy pack, all 24 containerized JavaScript tests, a clean dependency
+production build, and a final Playwright create-view-cleanup workflow with one
+lazy request and no browser errors pass. The production image contract is
+227,938,356 bytes. Orthoptics and clinical decisions has 10,178 exact
+highest-per-path points over its fixed 283-path denominator and 36.0 percent
+unweighted coverage. The ledger remains exactly 14,125 canonical paths and
+18,438 rows, with zero missing, zero pending review, and 50.2493 percent exact
+coverage. Compact AIS popups, PAS synchronization, remaining consumers,
+imported-data reconciliation, exact pixel fidelity, and clinical sign-off
+remain later gates. No Cypress test is created or used during functional
+porting.
+
+Execution checkpoint 2026-09-01: the familiar patient-summary Appointments
+panel replaces the static placeholder with current and future rows in the
+pinned order and keeps `Past Appointments (n)` separate. Past rows load only
+after the accessible expansion control is opened and continue through
+patient-bound keyset pages. Stable appointment identity preserves a matching
+live Did Not Attend fallback without loading entire worklists. Both named
+manifest routes are institution scoped, read only, and privacy-bounded in
+telemetry. The current summary stays at three service queries and each past
+page at two, independent of fixture size. A two-phase ordered-ID and batched
+detail read avoids the filesort found in the first joined design without a
+forced index or optimizer hint. Current output is capped at one hundred with an
+explicit overflow warning; past pages default to fifty and cap at one hundred.
+The focused pack passes 4 tests with 70 assertions, the neighboring appointment
+and worklist pack passes 40 tests with 664 assertions, and the final appointment,
+ledger, manifest, and migration-policy pack passes 18 tests with 2,514
+assertions. Scoped Pint, all 24 containerized JavaScript tests, fresh
+seven-schema migrations, schema verification, the tiny seed, a clean production
+build, and the final Playwright create-view-cleanup workflow pass. The
+production image contract is 227,966,731 bytes. Worklist has 3,390 exact
+highest-per-path points over 53 assigned source paths and 64.0 percent
+unweighted coverage. The ledger remains exactly 14,125 canonical paths and
+18,439 rows, with zero missing, zero pending review, and 50.2699 percent exact
+coverage. The separate appointment popup branch, imported-data reconciliation,
+exact pixel fidelity, realistic migrated-data load tuning, and clinical
+sign-off remain later gates. No Cypress test is created or used during
+functional porting.
+
+Execution checkpoint 2026-09-01: the familiar read-only patient-summary
+Problems and Plans panel replaces its static placeholder with the ordered
+active statements and created metadata from the pinned source. The exact
+`Past/closed problems (n)` count remains separate and closed rows load only
+after an accessible expansion control is opened, through patient-bound keyset
+pages with closed metadata. Both named manifest routes are institution scoped,
+read only, and privacy-bounded in telemetry. The current summary stays at three
+service queries and each past page at two, independent of fixture size. Current
+output is capped at one hundred with an explicit overflow warning; past pages
+default to fifty and cap at one hundred. All serving plans use the declared
+patient, state, deletion, order, and identity index with no filesort, temporary
+table, forced index, or optimizer hint. The focused pack passes 4 tests with 70
+assertions, the neighboring patient-summary pack passes 19 tests with 322
+assertions, and the final Problems and Plans, ledger, manifest, and
+migration-policy pack passes 18 tests with 2,514 assertions. Scoped Pint, all
+24 containerized JavaScript tests, fresh seven-schema migrations, schema
+verification, the tiny seed, a clean production build, and the final Playwright
+create-view-cleanup workflow pass. The production image contract is
+227,994,073 bytes. Patient Summary has 225 exact highest-per-path points over
+its fixed 4-path denominator and 56.3 percent unweighted coverage. The ledger
+remains exactly 14,125 canonical paths and 18,440 rows, with zero missing, zero
+pending review, and 50.2858 percent exact coverage. Editable popup creation,
+closure, reordering, authorization, and concurrency behavior remain a separate
+surface, together with imported-data reconciliation, exact pixel fidelity,
+realistic migrated-data load tuning, and clinical sign-off. No Cypress test is
+created or used during functional porting.
+
+Execution checkpoint 2026-09-01: the familiar conditional patient-summary
+Injection Management panel now reads the current bilateral plan through one
+lazy request and three fixed clinical queries. It presents right then left and
+distinguishes no plan, saved no-treatment reasons, and active diagnosis, drug,
+regime, bounded sequence, interval, start, IOP-lowering, and follow-up detail
+without exposing mutation controls. The active-series query has a patient,
+status, deletion, eye, and identity serving index. Plan items use the existing
+unique series and sequence index after a redundant identity order was removed;
+realistic noise fixtures prove no filesort, temporary table, forced index, or
+optimizer hint. The final focused pack passes 16 tests with 211 assertions, the
+wider clinical pack passes 68 tests with 1,089 assertions, and the ledger,
+manifest, and migration-policy pack passes 14 tests with 2,444 assertions.
+Scoped Pint, all 24 containerized JavaScript tests, fresh seven-schema
+migrations, schema verification, the tiny seed, and a clean production build
+pass. The production image contract is 228,016,071 bytes. The one no-retry
+Playwright run observed the expected request, content, ordering, read-only
+boundary, position, no browser errors, and exact cleanup but exited non-zero on
+a harness-only `Treat and Extend` versus configured `Treat and extend` case
+mismatch. The assertion is corrected and syntax checked without rerunning it.
+Injection Management has 12,186 exact highest-per-path points over its fixed
+138-path graph and 88.3 percent unweighted coverage, with 82 full paths and 6
+inventoried-deferred paths. The ledger remains exactly 14,125 canonical paths
+and 18,441 rows, with zero missing, zero pending review, and 50.2871 percent
+exact coverage. Ongoing Injection Management actions, longitudinal history,
+exact progress icons, imported-data reconciliation, realistic migrated-data
+load tuning, and clinical sign-off remain later gates. No Cypress test is
+created or used during functional porting.
+
+Execution checkpoint 2026-09-01: authenticated web requests now resolve an
+authorized institution, site, firm, service, and subspecialty into immutable
+request-scoped state. The global accessible picker validates and persists the
+selection; its option lists remain at exactly two queries at small and large
+fixture sizes. Interactive event creation reuses one live episode per patient
+and subspecialty and snapshots ownership without worker-persistent mutable
+state. The familiar Management Summaries panel presents one current summary per
+subspecialty and lazily retrieves patient-, institution-, and
+subspecialty-bound keyset history. Its current read remains at three clinical
+queries independent of fixture size, with declared serving indexes and no
+filesort, temporary table, forced index, or optimizer hint. Fresh seven-schema
+migrations, schema verification, the tiny seed, 35 focused and neighboring
+tests with 469 assertions, 17 governance tests with 2,504 assertions, scoped
+Pint, 24 JavaScript tests, and a clean production build pass. The production
+image contract is 228,078,375 bytes. The one no-retry Playwright workflow
+reached the real element picker after switching context and creating a cleanly
+removed fixture, but an ambiguous harness locator stopped it before the summary
+was saved; the corrected script is syntax checked and browser sign-off remains
+deferred. The ledger remains exactly 14,125 canonical paths and 18,441 rows,
+with zero missing, zero pending review, and 50.3591 percent exact coverage.
+Provider-constrained context, external and background creator mappings,
+historical reconciliation, exact visual fidelity, migrated-data tuning, and
+clinical sign-off remain later gates. No Cypress test is created or run during
+functional porting.
+
+The tiny seed now carries the authoritative City Cataract firm and
+subspecialty snapshots required by that current-context contract. New
+Prescription events therefore reuse the existing same-subspecialty episode,
+and the pinned same-episode repeat-prescription boundary remains unchanged.
+Legacy migrated episodes with null service context require an explicit
+reconciliation policy during data-migration design; the live request path must
+not guess a subspecialty for them.
+
+#### Next-tranche temporal query-shape gate
+
+Do not interrupt the current functional-breadth tranche for this work. At the
+next checkpoint, audit the Laravel runtime query surface and implement the
+temporal lint already required by Rules 26-27 and the section 5.8.6 smell gate.
+
+- A point in time remains a UTC `DATETIME`; `DATE` remains correct for a genuine
+  calendar fact. Consistency means one type for one concept, not making every
+  temporal column the same type.
+- On interactive and other declared hot paths, CI rejects `DATE(column)`,
+  `YEAR(column)`, `DATE_FORMAT(column, ...)`, Laravel `whereDate` / `whereYear`,
+  and equivalent column-side transformations in `WHERE`, `JOIN`, `GROUP BY`, or
+  `ORDER BY`. These shapes evaluate the function per candidate row and normally
+  prevent one serving index from satisfying the operation.
+- A day filter over a `DATETIME` uses a timezone-correct half-open range on the
+  bare column: `column >= :start_utc AND column < :next_start_utc`. Equality and
+  ranges over a genuine `DATE` column compare the bare column directly.
+- Do not blanket-ban a date conversion used only to format a small, already
+  bounded result or to satisfy a fixed export contract. Hot UI reads format at
+  the application edge. If a large query genuinely groups or orders by a local
+  calendar day, give that concept an explicit indexed date column or a
+  rebuildable projection with documented timezone semantics rather than
+  repeatedly deriving it from every source row.
+- Enforcement combines a source scan of raw SQL and query-builder calls,
+  captured runtime SQL for every named hot operation, and its existing EXPLAIN
+  budget. The tranche starts with an inventory of current matches, classifies
+  true calendar columns and output-only conversions, and closes every hot
+  predicate, grouping, and ordering violation without optimizer hints.
+
+#### Next-tranche temporal schema and data-cleanup investigation
+
+Run this investigation in the next tranche, after the current functional-breadth
+work and before the first production-scale migration rehearsal or target-schema
+freeze. It must not delay completing the application merely to raise a coverage
+percentage. The likely outcome is a small set of high-value column changes, but
+that is a hypothesis to measure rather than an assumption.
+
+Start with a read-only inventory of the final pinned legacy OpenEyes schema and
+representative small, old, history-heavy, and very large deployments. For every
+`DATE`, `DATETIME`, `TIMESTAMP`, `TIME`, `YEAR`, and date-shaped string column,
+record its table and bounded context, declared type and precision, nullability,
+default and automatic-update behaviour, indexes and foreign keys, base and
+`_version` row counts, data and index bytes, write rate where known, source-code
+readers and writers, and every comparison, grouping, ordering, cast, or date
+function applied to it. Compare actual live schemas with the pinned migrations;
+do not infer the estate from one sample database. The report must give the exact
+candidate columns, affected rows and bytes, including history twins, before any
+type change is proposed.
+
+Classify each column by meaning before choosing its type:
+
+1. A real instant uses an explicitly UTC `DATETIME` with one agreed precision.
+2. A calendar fact uses `DATE` and is never shifted by a timezone.
+3. A genuine time of day uses `TIME` only when its date and timezone context are
+   authoritative elsewhere.
+4. A partial clinical date uses structured year, month, day and precision fields,
+   not a string or an invented first day or midnight.
+5. A source value needed for traceability is preserved separately from its parsed
+   query-ready value.
+
+Consistency means one representation for one meaning, not one temporal type for
+the entire database. A value used repeatedly in equality, range, grouping, or
+ordering should be stored in that query-ready representation, or in an indexed
+maintained projection, rather than converted for every candidate row. For example,
+a repeated local clinic-day operation may justify an indexed `clinic_date` beside
+an authoritative UTC start instant, with the institution timezone and derivation
+rule documented.
+
+Build a reusable temporal data-quality profiler before writing cleanup SQL. It is
+read-only by default and reports aggregate counts and reason codes without raw
+clinical values or patient identifiers. Its rules are column-specific and include
+empty and zero dates, zero components, known sentinels such as 1900/1901/1970,
+impossible and out-of-range dates, mixed separators and compact formats, partial
+dates, unexpected future or old values, null/default disagreements, chronological
+contradictions, missing timezone context, and local times that are ambiguous or do
+not exist at a daylight-saving transition. `00:00:00` is only a missing-time
+candidate: midnight can be real, and a `DATETIME` does not retain whether its source
+omitted the time. Never invent a time merely to make a row parse.
+
+For each reason code the profiler offers one deterministic disposition: parse
+losslessly, retain as a `DATE`, combine with a documented authoritative parent
+value, preserve as an explicit partial/unknown value, quarantine for review, or
+leave unchanged. It produces a dry-run report and an idempotent proposed cleanup
+set with before/after counts, checksums and reversal evidence. Safe, unambiguous
+repairs may be run against legacy OpenEyes before cutover to shorten the freeze,
+but only through a reviewed, audited path with a clinical owner. Ambiguous clinical
+values remain quarantined; migration code must not guess.
+
+Use the Diagnoses2 migration
+`protected/modules/Diagnoses/migrations/m231201_164500_initialise_patient_state_from_old_model.php`
+as a precedent, not as a parser to copy blindly. It uses set-based `CASE`, `REGEXP`
+and `STR_TO_DATE` transforms for old diagnosis strings, records unparsed source
+values in a comment, and sometimes falls back to modification or examination data.
+The earlier
+`protected/modules/OphCiExamination/migrations/m180425_133636_set_diagnoses_date.php`
+also fills a missing diagnosis date from `created_date`. The new profiler improves
+on those migrations by separating classification from mutation, validating real
+calendar values rather than relying on a permissive pattern, preserving source
+precision, and requiring an explicit authority for every fallback.
+
+Treat the physical conversion method as a cutover decision. Benchmark the current
+same-instance, PK-chunked `INSERT ... SELECT` transform against at least a staged
+normalized CSV export plus bulk import and, where useful, a prebuilt target or
+shadow-table load. Use a production-sized disposable copy and the exact candidate
+columns. Measure wall time, conversion CPU, source and target I/O, temporary space,
+redo/undo and binlog volume, locks, replica/CDC effect, secondary-index build time,
+reconciliation time, failure restart point and rollback cost. The existing
+same-instance transform remains the default because it avoids an extra copy and
+keeps data on the database server. CSV is selected only when measured evidence
+shows a safer or materially faster cutover and the ETL decision record is changed;
+any CSV containing real clinical data is a controlled temporary migration artefact,
+never a repository file.
+
+The gate closes only when the inventory names every temporal column, the proposed
+change set and its scale are exact, dirty-value counts have a disposition, the
+chosen transform has met the overnight budget on a large rehearsal, and old-to-new
+row counts, checksums, null/unknown counts and clinical invariants reconcile. The
+resulting Laravel hot queries compare bare, indexed columns or half-open ranges and
+perform no recurring per-row temporal conversion.
+
+#### Schema metadata access and migration invalidation - raw idea for review
+
+Legacy Yii can issue `SHOW FULL COLUMNS FROM ...` repeatedly when its five-minute
+schema cache expires. A 2026-08-31 source audit found no equivalent automatic
+request-path behavior in the Laravel rewrite: ordinary Eloquent reads do not
+inspect table definitions, and no application route, middleware, model, or
+service calls Laravel's schema inspection methods. The installed Laravel MySQL
+grammar queries `information_schema.columns`, rather than `SHOW FULL COLUMNS`,
+only when code explicitly calls methods such as `getColumns`, `hasColumn`, or
+`getColumnListing`. Migrations, schema verification, manager-only partition
+maintenance, and tests do make deliberate schema calls outside normal web
+requests. This is a current source finding, not yet a production traffic proof.
+
+Decision 11 supersedes the older assumption that partition extension may run as
+ordinary monthly live maintenance. `oe:schema:partition-roll` is a transitional
+manager-only tool, not an approved production schedule. Before the first
+production-scale migration rehearsal, decide the required audit and history
+partition horizon and create or extend it during the normal drained release
+migration. Keep `pmax` as the safety catch-all. If a horizon must ever be
+extended between releases, that is the same incident-level live-DDL exception
+as any other online schema change, with explicit approval, locking and rebuild
+evidence, and a rollback plan. Reconcile the command schedule, configuration,
+tests, and DIV-012 after that decision; no web, queue, reporting, integration,
+or unattended cron path may perform the DDL.
+
+Preserve that property. Add a later request-query audit that visits every named
+application surface and fails if a web request issues `SHOW FULL COLUMNS`, any
+other `SHOW ...` metadata statement, or an `information_schema` schema-discovery
+query. Add a static architecture rule that keeps Schema facade calls and schema
+builder methods out of web, queue, reporting, and integration runtime code unless
+an explicit bounded exception is registered. Manager-only migrations and schema
+verification remain allowed. A partition change is allowed only within the
+drained release path or the extreme exception above. Audit optional modules and
+third-party packages as well as first-party code before claiming this gate
+complete.
+
+Discuss and design a release-versioned schema manifest before implementation.
+The raw proposal is to cache schema knowledge without a time-to-live and invalidate
+it only after a successful manager-owned migration. The cache identity should use
+an expected application schema generation or migration fingerprint, not a timer.
+The normal deployment sequence is: drain the frontend, run migrations in the
+manager container, verify all seven schemas, publish the new generation, prewarm
+or rebuild caches, and restart or resume matching web workers. A worker must fail
+closed on a generation mismatch rather than use stale column knowledge. The design
+must not replace repeated metadata queries with a new per-request generation query;
+one boot or readiness comparison against a small authoritative version record is
+the candidate seam.
+
+This remains a raw idea for further discussion because Laravel currently appears
+not to need a general runtime column cache at all. The preferred result may be to
+ban runtime schema discovery instead of building a cache for work that ordinary
+requests never perform. Acceptance needs captured SQL from cold boot, warm boot,
+persistent-worker requests, cache loss, a successful migration, a failed migration,
+and a deliberately stale worker. Resolve it before production deployment tooling
+and before accepting any dynamic-schema module. It is not part of the active
+terminal run.
+
+#### Exceptionally lightweight worklist program
+
+This section incorporates
+`/home/toukan/openeyes-worklist-realtime-scaling-plan.md`; that source remains
+the detailed authority for the hot-row and publisher corrections and for the
+full load and failure matrix.
+
+The main worklist is a dedicated high-value rewrite once patient, appointment,
+pathway, PAS, and current-state projection contracts are stable. Its schema and
+outbox packet land before bulk migration. The rewrite preserves all proven
+features and caller-facing legacy API behavior, not the old implementation. A
+parity register is built from controller actions, routes, existing legacy
+Cypress evidence, current Playwright flows, and
+`/home/toukan/jira-corpus/analysis/devops-keyword-worklist-2026-06-13.txt`.
+Do not create new Cypress tests during functional porting.
+It covers filters, favourites, combined and separate clinics, counts, manual and
+print flows, session context, check-in and undo, DNA, checkout and revert,
+priority, ownership, comments, pathways and steps, event reuse, medication and
+visual-field presets, patient detail, clinic-wide selection, definitions,
+mappings, display contexts, wait times, generation horizons, and every proven
+legacy caller. Compatibility adapters retain old endpoint shapes where caller
+evidence exists; canonical operations stay on the unversioned `/api` as
+`worklist.snapshot`, `worklist.delta`, `worklist.stream`, and
+`worklist.patient-detail`.
+
+The first source-backed register is
+`/home/toukan/openeyes-laravel/docs/porting/worklist-parity-register.csv`.
+It contains 88 unique capabilities and is guarded by
+`tests/Unit/WorklistParityRegisterTest.php`. The register is an acceptance map,
+not evidence that the worklist implementation is complete. Schema work starts
+only when the system actor, appointment ordering, patient-safety projection,
+and PAS mapping/error contracts form one coherent packet.
+
+Definitions remain in `oe_config`. Authoritative clinic instances,
+appointments, pathway state, a rebuildable `worklist_row_current` projection,
+and decision-bearing `patient_safety_current` projection live in `oe_clinical`.
+Redis and `oe_ephemeral` hold only short-lived stream, subscription, and cursor
+state. Reads never write. Source changes update the current projection and
+transactional outbox atomically. The clinical transaction never calls Redis or
+Reverb. Routine list reads never traverse medications, patient history, or
+event history; full clinical detail loads only on explicit row expansion through
+its own bounded operation.
+
+The worklist event contract is transport-neutral. Each durable event has an
+idempotent event id, appointment id, worklist id, action, projection version, and
+outbox cursor. The selected implementation is Laravel Reverb with Echo, using
+one private channel per authorized worklist over one browser WebSocket
+connection. Dedicated Reverb pods share central Redis; they do not run inside
+clinical web workers. The initial authorized snapshot uses keyset pagination,
+returns a high-water outbox cursor, and stays in browser memory. After commit,
+compact `upsert` and `remove` batches carry only projection fields. A short
+100-250 ms display window collapses repeated updates for the same appointment to
+the newest projection version without discarding clinical writes, audit records,
+or durable outbox evidence. A clinic move emits a removal for the old worklist
+and an upsert for the new one.
+
+Per-worklist channels deliberately avoid creating a channel for every possible
+clinic combination. The maximum-selection capacity test is 5,000 dashboards
+times 25 worklists, or 125,000 active private subscriptions, over 5,000 browser
+connections. It measures both Reverb fan-out and the subscription authorization
+path. A pod restart must not turn those subscriptions into an unbounded web or
+database authorization storm. Reconnect and resubscription are jittered, the
+authorization decision is bounded and policy-versioned, and a mere live-
+transport reconnect performs cursor recovery rather than reloading every
+snapshot.
+
+The browser applies a row only when its projection version is newer, updates
+visible order and counts locally, and does not request a delta for every event.
+On a cursor gap, reconnect, wake-up, or expired replay cursor it performs one
+authorized bounded delta recovery or takes a fresh snapshot. Final acceptance
+requires exponential socket reconnect delay with jitter. Pusher JS 8.6 currently
+uses an internal fixed one-second retry after a closed connection and exposes no
+supported reconnect-delay setting. Application-level private authorization and
+delta recovery are jittered now, but broad live use remains blocked until a
+maintained configurable client strategy or narrowly owned and detectable patch
+passes the pod-loss and reconnect-storm gates. Loss of Redis or Reverb exposes an
+accessible degraded state and never leaves the dashboard silently appearing current. A
+low-frequency jittered health or recovery check may be used while degraded, but
+normal full-page polling and `please refresh` broadcasts are rejected.
+`published_at` means accepted by the broadcast fabric, never delivered to every
+browser. Redis, Reverb, or a browser may lose events without losing the final
+clinical state.
+
+The explicit cache hierarchy is: browser memory for the open page;
+`worklist_row_current` as the authoritative bounded database read projection;
+a bounded Redis replay stream for fast recovery; and the database outbox for
+durable recovery. Shared Redis snapshot fragments are only a measured candidate.
+If later enabled, they are authorized before read, preferably keyed per worklist,
+versioned by access policy, schema, and application version, invalidated after
+commit by outbox identity, protected by distributed single-flight, and backed by
+the database. TTL alone is not invalidation. Web-pod local worklist caches,
+sticky clinic routing, service workers, and persistent browser PHI caches are
+rejected.
+
+Portable budgets are zero clinical queries for the HTML shell; no more than
+four clinical and eight total queries for the initial snapshot; zero clinical
+reads per subscriber when a live patch is available; no more than two for the
+delta fallback; and no more than eight for one explicitly opened patient-detail
+panel. Query counts remain constant across small and large fixtures. Hot plans
+have no filesort, temporary table, full scan, or plan-growth waiver unless the
+waiver is explicitly bounded and owned.
+
+One- and 25-worklist snapshot and delta plans are inspected again with migrated,
+production-sized distributions using `ANALYZE FORMAT=JSON`. Evidence includes
+actual loops, rows, pages accessed, pages read, temporary-table work, and sort
+work. A bounded in-memory top-N sort may be acceptable; an unbounded filesort or
+temporary table over the worklist population is not. The selected multi-clinic
+shape is chosen by measured I/O and concurrency from the existing bounded query,
+bounded indexed per-clinic branches combined with `UNION ALL`, or another normal
+schema/query design. A CTE is accepted only when measurement proves that it
+reduces each branch to a small indexed candidate set. `USE INDEX`, `FORCE INDEX`,
+join-order hints, optimizer hints, and framework equivalents remain prohibited
+except through the existing extreme, auditable exception gate.
+
+The early 10,000-row synthetic gate selected bounded per-worklist `UNION ALL`
+branches followed by an application-memory top-N merge for the current contract.
+Each of up to 25 branches reads at most 101 rows through the schedule or priority
+serving index, the database performs no filesort or temporary-table work, and one
+page remains one clinical statement. The leading worklist foreign key is part of
+the serving index, so MariaDB does not gain a shorter redundant index that can win
+costing and then sort. Two pages preserve exact global schedule and priority order
+without duplicates. This is an early query-shape decision, not completion of the
+migrated-data gate: statement parse cost, at most 2,525 returned candidates per
+page, real row widths, buffer-pool I/O, 1,000 simultaneous 25-clinic dashboards,
+and heavy-tailed clinic sizes must still pass `ANALYZE FORMAT=JSON`, concurrency,
+and soak tests. If those measurements reject this shape, change the normal schema
+or bounded query design without adding an index hint.
+
+Every supported server-side clinic selection, filter, and sort is a finite named
+query shape with an explicit budget; client input never chooses a raw column or
+SQL fragment. Tests cover every individual filter and sort, the highest-cost
+combinations, and a generated pairwise configuration set. The 5,000 unique-
+configuration run verifies that query work, prepared-statement variety, cache-key
+cardinality, memory, and database connections remain bounded without depending
+on response-cache hits. Browser-only display choices do not create server query
+or channel variants.
+
+Two current write-path designs are architecture-now defects and must be removed
+before further realtime implementation is claimed. Ordinary same-worklist
+appointment updates must not lock the shared `worklist_instance` row or depend on
+incrementing one shared generation value. Stored counts, if retained, change only
+for membership changes and are reconciled from the projection. Unchanged mapping
+sets and match states cause no mapping or issue write; changed mappings are
+diffed instead of deleted and recreated. Redundant refresh reads are removed.
+The write path has explicit query, rows-written, lock-wait, redo-byte,
+transaction-time, deadlock, and final-state budgets, including same-clinic
+contention.
+
+The former single global publisher lock was architecture-now debt. Each
+outbox row receives a stable logical partition derived in application code from
+institution and worklist instance. The fixed partition count starts only as a
+64 or 128 candidate and is accepted by measurement. One ordered expiring lease
+operates per partition and many partitions run in parallel. A worker claims a
+bounded batch in a short database transaction, commits the claim, performs Redis
+or Reverb network I/O, and then marks success. It never holds a database
+transaction across network I/O. Crash recovery reclaims expired leases and
+preserves order within each worklist; `SKIP LOCKED` alone is insufficient. A hot
+partition must not delay unrelated partitions. Worklist broadcasting has its
+own queue and exposes pending count, oldest age, partition lag, publish rate,
+retry rate, and failures.
+
+Capacity is budgeted independently for web, Reverb, publisher queue, Redis, and
+MariaDB. Web gates use active requests, queue time, latency, database-connection
+headroom, CPU, and memory. Reverb gates use active connections, subscriptions,
+outbound messages, event-loop lag, memory, disconnects, and send failures.
+Publisher gates use pending count, oldest event age, rate, retries, and partition
+lag. The whole deployment has a fixed database connection budget and explicit
+ingress backpressure. Reverb receives dedicated Kubernetes Deployments, Services,
+health checks, disruption budgets, topology spread, graceful drain, and separate
+ingress routing for `/app` and `/apps`. Central Redis and
+`REVERB_SCALING_ENABLED=true` support horizontal scaling. The pinned production
+image must prove its PHP, Reverb, Redis, and event-loop combination; more than
+about 1,000 connections per process is not claimed until a supported native
+high-performance event loop, open-file limits, and soak tests prove it. The
+current image uses `ext-event` and verifies `React\\EventLoop\\ExtEventLoop` at
+runtime. `ext-uv` remains an alternative only if compatibility and measured
+capacity are better.
+
+Worklist live delivery uses private channels with opaque channel identifiers,
+TLS, exact allowed origins, authenticated Reverb API calls, and non-public Redis.
+Every snapshot, delta, and subscription is authorized from server-side
+institution and worklist access rules. Client-supplied ids never grant access.
+An access-policy version and bounded reauthorization interval force stale
+long-lived dashboards to reauthorize or disconnect. Payloads contain only the
+narrow worklist projection; channel names, logs, telemetry, and failures contain
+no patient details, raw URLs, SQL, bindings, or request payloads. Cross-
+institution, guessed-channel, stale-permission, reconnect, and cache authorization
+tests are mandatory.
+
+Start with one shared Reverb cluster and one browser connection, but isolate the
+worklist through a feature channel namespace, its own broadcast queue, per-feature
+rate, payload-size, failure, and latency metrics, and configuration that can move
+it to a separate Reverb application or cluster without changing the event
+contract. Split only when mixed-load evidence shows event-loop contention,
+head-of-line delay, memory pressure, or unacceptable blast radius.
+
+The previous 500-dashboard and 50-update-per-second test remains a useful early
+gate, but it is not the production-scale acceptance gate. Final scale acceptance
+uses representative migrated distributions and the complete matrix below.
+
+| Scenario | Initial acceptance gate |
+|---|---|
+| Concurrent dashboards | 5,000 connected, plus a 10,000 stretch run; record sockets per pod, subscriptions, memory, event-loop lag, and reconnect rate. |
+| Multi-clinic users | At least 1,000 dashboards watch 25 clinics each with correct authorization and bounded initial reads. |
+| Subscription cardinality | 5,000 dashboards each subscribe to 25 private worklist channels, producing 125,000 subscriptions over 5,000 sockets; subscription authorization, reconnect, memory, and fan-out remain bounded. |
+| Configuration diversity | 5,000 dashboards use a heavy-tailed mix of clinic selections, filters, sorts, roles, and display settings; run a worst case in which every dashboard configuration is unique and no shared snapshot cache hit is available. Query counts, database connections, subscription counts, memory, and final state remain bounded. |
+| Diverse cold-start wave | Start at least 1,000 independently configured dashboards across the intended web-pod count within one test window; per-pod and aggregate database connections stay inside fixed budgets and admission control sheds excess work predictably. |
+| Hot clinic fan-out | 1,000 watchers receive 100 appointment changes per second; batching preserves exact final state and live visibility objectives. |
+| Broad update burst | 250 appointment changes per second across many worklists; clinical writes remain bounded and outbox age recovers. |
+| Identical cold snapshots | 100 simultaneous identical requests across web pods do not stampede the database; single-flight is required if shared cache is enabled. |
+| Unique pod traffic | 100 simultaneous unique snapshots forced to one web pod stay inside the database connection budget and shed overload predictably. |
+| Same-clinic writes | Concurrent writes show no shared instance-row serialization, lost projection versions, or incorrect counts. |
+| Publisher skew | One hot partition does not delay unrelated partitions and order remains exact within each worklist. |
+| Mixed Reverb features | Expected peak traffic from other realtime features does not breach worklist latency or disconnect objectives. |
+| Reverb pod loss | Kill or drain a pod; clients reconnect with jitter and delta recovery reaches the exact fresh-snapshot state. |
+| Redis loss | Clinical writes continue, the UI shows degraded state, and recovery creates neither a polling nor reconnect swarm. |
+| MariaDB pressure | Queries stay inside connection and I/O budgets; backpressure protects clinical writes before non-clinical work. |
+| Large-data plans | One- and 25-clinic `ANALYZE FORMAT=JSON` evidence has bounded rows and pages with no unbounded sort or temporary-table work. |
+| Authorization change | Revoked access cannot keep receiving live patches or recover rows from the old worklist. |
+
+Run both peaks and long soaks so connection leaks, cursor retention limits, slow
+subscribers, replay drift, and repeated reconnection cycles are visible. Initial
+service objectives are snapshot p95 at most 750 ms under the agreed concurrency
+test, live visible change p95 at most one second and p99 at most two seconds after
+commit, healthy oldest outbox age below two seconds, exact reconnect recovery,
+and no lost committed final state or unauthorized row. These are provisional
+gates, not production promises, and may change only with recorded evidence.
+
+The write rates above are appointment changes, not SQL-statement counts. The test
+records every query, rows read and written, lock wait, deadlock, redo and binlog
+bytes, transaction time, and database I/O so a nominally fast request cannot hide
+an expensive write pattern. The 100-per-second hot-clinic and 250-per-second broad
+burst gates are deliberately far above hundreds of appointment updates per
+minute. They must be sustained long enough to prove that queue lag and outbox age
+return to normal, not merely passed as a short request spike.
+Ingress concurrency and database connections are bounded so overload fails
+clearly before clinical work is starved. If the PAS contract later permits an
+asynchronous acknowledgement, a durable inbox may validate and persist the
+source message quickly and process stable partitions in order; it must never
+acknowledge before durable intake. If callers require a completed synchronous
+result, processing remains synchronous with explicit backpressure. Neither path
+uses a database trigger, scheduled event, procedure, or hidden database program.
+
+Clinic generation becomes an idempotent chunked maintenance job with a unique
+natural key and rolling horizon up to three years. The admin action previews
+and enqueues rather than generating synchronously. Diagnostics expose mapping
+whitespace and unknown keys before save, an unmatched-appointment inbox with
+stable reason codes, generated-through dates and gaps, duplicate and overdue
+jobs, per-clinic feed health, safe replay preview and audited reprocessing, and
+reconciliation of cancellation races, duplicates, and stale merge state.
+
+The worklist implementation order is fixed until scale evidence changes it:
+
+1. Freeze the transport-neutral event contract and correctness invariants while
+   preserving all 88 behavioral parity capabilities and old API compatibility.
+2. Remove the ordinary instance-row lock, unchanged mapping rewrites, redundant
+   reads, and write amplification; prove hot-clinic contention.
+3. Replace the global publisher with stable partition claims, expiring leases,
+   recovery, metrics, and a worklist-specific queue.
+4. Prove snapshot and delta plans for one and 25 clinics on migrated-scale data
+   and select the query shape from measured I/O without hints.
+5. Add Reverb, Echo, dedicated Kubernetes workloads, Redis scaling, ingress,
+   graceful drain, health checks, and native event-loop capacity proof.
+6. Add private per-worklist subscriptions, compact batches, browser patching,
+   cursor recovery, degraded state, and authorization expiry.
+7. Pass the complete scale and failure matrix and fix bottlenecks before broad
+   live use is enabled.
+8. Add administrator explanations and safe generation controls without reducing
+   any parity capability.
+9. Roll out behind an institution switch, compare live state with the database
+   projection, and increase scope gradually.
+10. Repeat large-data and mixed-traffic gates for every material MariaDB, PHP,
+    Reverb, Redis, or Kubernetes version change.
+
+The first implementation checkpoint landed on 2026-08-31. It adds an explicit
+audited `user`, `manager`, or `integration` actor; normalized definition,
+mapping, context, filter, user-order, instance, appointment, appointment-mapping,
+current-row, intake-issue, and transactional change-outbox storage; a locked
+idempotent appointment writer with source-sequence rejection, cancellation,
+rebooking, clinic movement, count maintenance, and privacy-bounded unmatched
+evidence; and a bounded keyset snapshot reader. The routine row projection is
+one narrow query and does not read medications, event history, or neighbouring
+clinical tables. A 101-row fixture proved the same one-query count at limits 1
+and 100 and an ordering plan with neither filesort nor a temporary table.
+
+The second implementation checkpoint is pushed at Laravel `fd5fd86`. It adds
+exact legacy definition matching in two bounded configuration queries, stable
+no-definition, missing-key, invalid-value, and ambiguity outcomes, and a
+manager-only automatic instance generator. Generation supports bounded daily,
+weekly, monthly, and yearly recurrence, a horizon up to 36 months, at most 1,100
+occurrences per definition, 100-row batches, the natural-key no-op upsert, an
+immutable displayed-mapping snapshot, and a generated-through cursor. The
+manager schedule is configurable, single-server, and overlap guarded. A
+three-year daily fixture produced 1,097 idempotent instances. Both matcher plans
+avoid filesort and temporary tables, the focused checkpoint passed 29 tests and
+239 assertions, and the exact FileLedger remains 14,125 canonical paths and
+18,421 rows at 49.8779 percent weighted coverage.
+
+The third implementation checkpoint normalizes legacy PAS appointment V1, V2,
+and V3 into one bounded adapter. It retains each version's patient identifier
+type location, applies Basic authentication and `can_use_xapi`, scopes writes
+to the integration account's institution, and rejects unsafe XML, ambiguous
+fields, oversized payloads, and invalid partial creates. Partial updates lock
+and merge the existing appointment and cannot silently move it between
+worklists. DELETE writes a cancellation tombstone and a later full Scheduled
+message can rebook it. An unmatched message is retained with a stable warning
+and privacy-bounded reason instead of causing an inbound retry storm. The exact
+instance resolver performs one indexed query with no filesort, temporary table,
+or optimizer hint. After a warm request, the full write remains 24 database
+operations for both the normal fixture and one with 40 extra definitions. The
+focused confidence pack passes 44 tests and 2,846 assertions. The FileLedger
+remains 14,125 canonical paths and 18,421 rows at 49.9746 percent weighted
+coverage.
+
+The fourth implementation checkpoint is pushed at Laravel `f7776ba`. It adds
+the dedicated `can_view_worklists` read capability, named and manifest-owned
+`worklist.snapshot` and `worklist.delta` operations, authorization of 1 to 25
+live same-institution instances, a three-query bounded snapshot, and a two-query
+authoritative database delta. Delta cursors are bound to the sorted clinic
+selection so a cursor cannot silently cross selections. The clinical outbox
+remains the recovery authority. An after-commit unique queue wakeup and a
+manager-only once-per-minute reconciler call the same 100-row publisher. Redis
+holds only bounded low-latency hints: one atomic Lua operation publishes,
+deduplicates retries, and retains the configured recent window with cluster
+co-located keys. Stream failure records only a bounded code and leaves the
+database row pending. The final checkpoint pack passes 54 tests and 3,716
+assertions. Query counts are constant for one and 25 clinics, the delta plan has
+no filesort, temporary table, or optimizer hint, and an exact 100-event Redis
+fixture remains bounded and duplicate-free. The FileLedger has 14,125 canonical
+paths, 18,423 rows, zero missing paths, zero pending review, and 49.9771 percent
+weighted coverage.
+
+The fifth implementation checkpoint is pushed at Laravel `14fe2a4`. It adds
+caller-evidenced PAS attendance reconciliation in the same clinical transaction
+as appointment, projection, outbox, and audit writes. An Attended appointment
+with an active configured preset creates one bounded pathway snapshot, completes
+the check-in step, and projects the pathway state without traversing history. A
+later Scheduled update undoes only a completed check-in, preserves other clinical
+step completion, and synchronizes scheduled time, owner, and priority. Stale
+source sequences do not replay pathway state; cancellation, rebooking, and
+re-attendance converge on one appointment and pathway. A two-step and 64-step
+preset both use 39 request database operations, and the source-identity plan has
+neither filesort nor temporary-table work. The focused worklist and policy pack
+passes 70 tests with 3,813 assertions; after restoring its documented tiny-seed
+precondition, the separate Next Steps pack passes 10 tests with 124 assertions.
+The FileLedger remains exact at 14,125 canonical paths, 18,423 rows, zero missing,
+zero pending review, and 49.9778 percent weighted coverage. The same checkpoint
+updates the unchanged 88-row parity register with the realtime scaling
+architecture gates; it does not claim those gates complete.
+
+The sixth implementation checkpoint is pushed at Laravel `5a5eb1a`. An ordinary
+update to an appointment that remains in the same clinic no longer reads, locks,
+or writes the shared worklist-instance row. Instance locks and stored count
+changes now occur only for an actual add, remove, or move, in deterministic id
+order. Existing mappings are compared as a bounded set, so only removed or
+changed keys are written. Intake issues are read or written only while unmatched
+or while resolving an unmatched transition, and identical reason plus evidence
+is a no-op. A two-connection test holds the instance row lock while the ordinary
+update completes in 0.36 seconds with no instance query, mapping mutation, or
+issue query. A separate query-log test proves identical unmatched evidence makes
+no mapping or issue mutation while changed evidence makes exactly one of each.
+The focused worklist pack passes 56 tests with 3,668 assertions. This removes the
+known ordinary-update hot row; final high-rate concurrency and membership-change
+contention remain part of the full scale gate.
+
+The seventh implementation checkpoint is pushed at Laravel `59f13a3` and Docker
+`f8d87fb`. The publisher now uses 64 fixed application-derived partitions,
+schema-backed expiring leases with generations and tokens, bounded ordered claims,
+network I/O outside database transactions, fenced completion, and expiry recovery.
+Redis keys use a partition hash tag so each atomic publish stays in one cluster
+slot. A manager reconciler schedules only pending partitions and worklist delivery
+has a dedicated `worklist-broadcast` queue and isolated Compose worker. The focused
+tests prove fixed query count from one to 100 rows, independent partitions, failure
+retry, stale-claim rejection, ordered idempotent Redis publication, and no filesort,
+temporary table, or optimizer hint on the publisher hot queries. Final partition
+count, skew, throughput, and soak acceptance remain governed by the migrated-scale
+matrix.
+
+The eighth implementation checkpoint is pushed at Laravel `0cecd17` and Docker
+`0994b0c`. An explicit opt-in manager command now creates the rolling demo worklist
+scenario directly from the tiny or demo patient data. The default current date
+produces the two-days-before through 30-days-after range; an explicit reference date
+makes the same run reproducible. The factory is idempotent, validates the institution
+and patient prerequisites before writes, uses at most 25 database statements for the
+8 definitions, 242 instances, and 913 appointments, and writes the authoritative
+initial projections without creating 913 outbox messages. The old generic interactive
+copy-forward and random-attribute developer command is still only partially covered
+and is not claimed as equivalent. The deploy-supplied sample script is now tracked by
+its pinned blob and source revision in the external deployment ledger.
+
+The ninth implementation checkpoint establishes the early synthetic worklist
+scale gate. A transaction-scoped fixture creates 25 worklists, 400 appointments
+per worklist, 10,000 current projection rows, and 10,000 pending changes using
+bounded bulk inserts. Schedule and priority snapshots use one SQL statement made
+from at most 25 independently limited index-ordered branches, then merge at most
+2,525 candidates in application memory. Clean-schema plans prove all 25 branches
+use the intended serving indexes with no filesort, temporary table, full scan, or
+optimizer hint. Two keyset pages for both sorts preserve exact global order and
+contain no duplicate appointment. Delta remains cursor-indexed. A deterministic
+10,000-worklist distribution exercises all 64 publisher partitions, with 123 to
+192 worklists per partition in the measured fixture. The focused worklist pack
+passes 39 tests with 1,239 assertions on a fresh migration and tiny seed. This
+does not claim representative row widths, migrated data, concurrent dashboards,
+update throughput, Redis or Reverb capacity, failure recovery, or soak acceptance.
+
+The tenth implementation checkpoint establishes the disabled-by-default Reverb
+and Echo deployment seam. Laravel Reverb 1 and Echo 2 are compatibility-major
+pinned with Pusher JS 8, while Composer and npm lock files retain exact builds.
+Realtime configuration is query-free in the Inertia shell and fails closed when
+enabled without exact origins, credentials, public browser endpoint, central
+Redis scaling, bounded payloads, or the dedicated role. The production image
+uses `ext-event`, verifies `React\\EventLoop\\ExtEventLoop`, and starts one
+persistent Reverb server with a provisional 6,000-connection process limit.
+Compose and Helm isolate Reverb from database credentials and clinical volumes,
+use independent services, health, graceful termination, topology spread, a
+disruption budget, and exact `/app` and `/apps` ingress routing without sticky
+sessions. A live Redis-only image check proves startup, health, runtime
+verification, role sealing, low open-file-limit rejection, and clean shutdown.
+This is deployment capability only. It does not claim 6,000 proven sockets per
+process, 5,000 dashboards, 125,000 subscriptions, private worklist delivery,
+failure recovery, or the final scale matrix.
+
+The eleventh implementation checkpoint adds private delivery without enabling
+it broadly. A five-minute encrypted lease binds one active user, institution,
+policy version, and selection of 1 to 25 worklists. One rate-limited request
+authorizes all selected private channels, rechecks the full selection in one
+clinical query, renews the lease, and cannot be bypassed through the generic
+broadcast authorization endpoint. The publisher collapses repeated appointment
+changes, emits bounded upsert or remove batches on the dedicated queue, and keeps
+the entire claim recoverable if either Redis streaming or broadcast enqueue
+fails. The browser reducer holds rows only in memory, applies newer versions,
+converges out-of-order clinic moves, updates order and counts locally, exposes a
+degraded state, and uses bounded delta recovery after reconnect. Authorization
+and recovery have jitter and independent renewal timers. Pusher JS's fixed
+one-second socket reconnect remains an explicit blocker for the pod-loss scale
+gate, so this checkpoint does not claim reconnect-storm safety or final capacity.
+
+The twelfth implementation checkpoint adds the first bounded dashboard without
+enabling live delivery broadly. A query-free named shell carries a validated local
+date, one of two finite sort modes, and at most 25 clinic ids. One indexed query
+lists 25 narrow current-date clinic options at a time and a date-bound
+`(starts_at, id)` cursor reaches the rest without offset paging. A 101-clinic
+fixture traverses all rows in five one-query pages with no overlap; first and
+continuation plans use range access on `ix_worklist_instance_dashboard` with no
+filesort, temporary table, or optimizer hint. The existing three-query keyset
+snapshot supplies rows, clinic names, and authoritative maintained totals only
+after a selection. Separate named clinic tables are the default and an explicit
+combined option groups the same bounded response in memory without a request.
+Only membership-changing outbox events carry a new total, so ordinary updates
+retain the no-shared-clinic-row path. The page patches memory-local state when
+live delivery is available, otherwise shows an explicit disabled state, and
+never polls the full snapshot. On a clean production-image
+stack, the current-date demo factory produced 8 definitions, 242 instances, and
+913 appointments; an isolated browser paged from 25 to all 38 test clinics,
+selected two clinics, rendered separate one-row and eight-row tables, combined
+them into one nine-row table without a request, made one snapshot request and no
+polling request, and emitted no console error. The focused pack passes 57 tests
+with 3,839 assertions. The live reducer then adds an explicit 100-row loaded
+capacity, enlarged only by bounded user-triggered keyset pages. It prunes rows
+and retained versions once per compact batch, preserves removals across an
+in-flight snapshot page, and converges a cross-clinic move in either channel
+delivery order. Live changes never trigger replacement snapshots; a fully
+consumed window whose authoritative total has grown exposes one explicit refresh
+action. JavaScript passes 19 tests, including 100 out-of-window changes that
+leave a two-row test window and its version state at two entries. Exact row and
+filter parity and the complete scale matrix remain open.
+
+The thirteenth implementation checkpoint adds private saved and recent filter
+state plus the first site and date parity. One versioned configuration table
+keeps at most 100 saved and five recent filters per institution and user. A
+same-name save replaces the complete supported setup, only the owner can choose
+or retire it, and one bounded query lists both groups without a clinical read.
+The criteria now contain active institution site, local date, finite sort,
+combined presentation, and one to 25 ordered clinic ids. The current-date picker
+resolves global and site-specific definitions in one bounded configuration query
+and reads matching instances in one indexed clinical query. Site and date are
+bound into the keyset cursor. A client request generation guard prevents a slow
+response for an earlier site from replacing the current site's options while
+preserving explicit selection. A named date-reset route removes only the date
+and retains site, sort, presentation, and clinic ids. Query plans show no
+filesort, temporary table, or optimizer hint. A production-image browser smoke
+proves site-specific visibility, selection preservation through rapid switching,
+date reset, and no console error. Wider context, quick-filter, row, and
+administrator parity remain open.
+
+The fourteenth implementation checkpoint adds one stable projection-only row
+contract for snapshots and realtime upserts. The ordinary dashboard can now
+render appointment and patient identity, bounded clinic source attributes,
+owner, priority, pathway or waiting state, and accepted AIS, allergy, and alert
+indicators without patient history, event, or medication queries. Owner display
+does not depend on a pathway. The source-triggered refresh of patient safety
+state remains an explicit clinical-projection gate rather than being inferred
+from stale or stream-only state. A production-image browser smoke proves the
+bounded row rendering from one snapshot request with no polling or console
+error.
+
+The fifteenth implementation checkpoint closes WL-028 with page-bounded client
+selection. A section can select only valid appointment ids already present in
+its loaded rows, partial selection is visible, and a live removal prunes stale
+ids. The control neither crosses an unloaded keyset cursor nor issues an HTTP
+request. The production browser proves all, partial, and clear states against
+the rebuilt image. This is only row selection and does not imply an unbounded
+bulk clinical action.
+
+The sixteenth implementation checkpoint adds the first read-only administrator
+diagnostics. A separately authorized page shows each active definition's
+maintained generated-through marker, configured target, bounded missing range,
+and exact recurrence estimate from the manager generation planner. It also
+shows leading or trailing mapping-key and value whitespace with normalized
+suggestions and privacy-bounded open intake reason totals. Its query count is
+fixed at three for one or 41 definitions, all three plans avoid filesort and
+temporary-table work, and permission is denied before any diagnostic query. The
+web page cannot generate worklists. Configuration writes, job state, feed
+horizon, replay, actual indexed instance gaps, and remediation remain open.
+
+The seventeenth implementation checkpoint deepens those diagnostics without
+adding a database query. The bounded configuration result now reports mapping
+keys or values that collapse after trim and case normalization, definitions
+with no active mapping criteria, and overlapping definitions with the same
+identifier type and identical exact criteria. These are deterministic warnings,
+not fuzzy guesses, and no configuration is changed automatically. The fixed
+three-query budget and no-filesort, no-temporary-table plan proof remain intact.
+
+The eighteenth implementation checkpoint adds bounded duplicate-instance and
+manager-generation health diagnostics. One covering-index aggregate inspects
+duplicate definition and start-time groups over the configured generation
+horizon without reading patient membership. A single ephemeral heartbeat row
+records the scheduled unscoped manager command's running, succeeded, or failed
+state, duration, rows affected, last success, and a bounded failure code.
+Manually scoped maintenance runs cannot hide scheduler health. The administrator
+page distinguishes never-run, running, stuck, failed, stale, and healthy states.
+It remains read-only and uses exactly five queries for one or 41 definitions;
+all five plans avoid filesort, temporary-table work, and optimizer hints. A
+stored zero row count identifies only a reconciliation candidate. Retirement
+still requires an authoritative membership recheck, audit, and a bounded
+manager-only action.
+
+The nineteenth implementation checkpoint adds that authoritative read-only
+membership recheck. Duplicate groups are capped at 500, each group is capped at
+20 instances, and one optional batched query verifies both active source
+appointments and the current row projection inside a consistent database
+snapshot. The preview keeps the single populated instance and identifies only
+verified empty extras. It withholds any proposed action for source/projection
+drift, mixed instance kinds, non-open status, multiple populated instances, a
+concurrent-count mismatch, or an oversized group. No instance is changed or
+retired. The diagnostic remains fixed at five queries without duplicates and
+six when duplicate membership needs verification, with no filesort, temporary
+table, or optimizer hint in any plan.
+
+The twentieth implementation checkpoint adds a bounded read-only replay impact
+preview. Retained appointments now carry the patient identifier type used at
+intake, so replay matching does not depend on a later patient-state lookup. The
+latest 500 open unmatched appointments and at most 32,000 mapping rows are
+checked against one compiled exact-definition catalog. The result exposes only
+safe reason-to-result totals and explicitly keeps mutation disabled. The replay
+candidate index covers its ordered projection, so the diagnostic stays at eight
+queries for one definition, 41 definitions, and 501 unmatched appointments with
+no filesort, temporary table, optimizer hint, or query-count growth. A current
+definition match is only an impact signal: exact generated-instance resolution,
+corrected-version evidence, authorization, audit, idempotent queue chunks, and
+post-run proof remain mandatory before replay can be enabled.
+
+The twenty-first implementation checkpoint resolves definition-ready replay
+candidates to the exact generated clinic without enabling replay. The compiled
+definition catalog derives the same automatic natural key as generation, and
+one institution-scoped batch query resolves up to 500 unique keys through the
+existing unique index. The preview validates definition ownership, automatic
+kind, live state, and the appointment time window in memory. Missing, deleted,
+manual, retired, mismatched, and out-of-window instances fail closed with safe
+diagnostic codes. No patient history is read, no instance key is exposed, and
+no appointment, issue, instance, or audit row is changed. Diagnostics use nine
+queries for one definition, 41 definitions, and 501 unmatched appointments. A
+500-key plan uses the unique natural-key index without filesort, temporary-table
+work, or an optimizer hint. An actual replay must recheck this evidence inside
+its mutation transaction.
+
+The twenty-second implementation checkpoint defines the replay evidence seam
+without enabling replay. The compiled exact-definition catalog now has a
+deterministic behavior revision independent of database row order. Each preview
+also fingerprints the retained source identity and payload revision, source
+ordering evidence, intake identifier and schedule snapshot, exact mapping
+values, open issue evidence, current eligibility state, match result, and exact
+generated-instance identity, lock version, state, and time window. Only a
+versioned opaque SHA-256 snapshot is returned; source identifiers, mapping
+values, patient data, and per-appointment evidence remain private. Repeating an
+unchanged preview returns the same snapshot, while a source, issue,
+configuration, decision, or instance change invalidates it. Corrected upstream
+appointment data must still arrive through the ordinary integration adapter;
+this seam applies only to re-evaluating the exact retained input after current
+worklist configuration is corrected. To keep the ordered candidate query on
+its narrow hot index, the additional evidence is fetched in one bounded
+primary-key batch instead of widening the index or forcing it. Diagnostics use
+ten queries for one definition, 41 definitions, and 501 candidates, with no
+filesort, temporary-table work, or optimizer hint. A later replay request must
+name this exact evidence contract and snapshot, capture its eligible items, and
+recheck every item inside the mutation transaction before doing work.
+
+The twenty-third implementation checkpoint enables that narrow replay contract.
+Appointments retain one normalized bounded source packet and a source-only
+digest so current configuration can be reapplied without consulting mutable
+patient history. A separate `can_replay_worklists` capability guards creation
+and status reads. The server recomputes the submitted evidence, captures exact
+private item revisions in an idempotent durable batch, and queues chunks of at
+most 25. Each chunk locks the relevant configuration rows across the clinical
+item writes and rechecks source, issue, mapping, generated instance, and current
+projection state before calling the ordinary writer. Changed items fail closed
+with bounded reason codes; completed items survive retry; unchanged failed
+batches can resume; and audit events contain no patient data. A production
+browser and queue proof applied one deliberately unmatched current-date sample
+appointment once, exposed only status counts, and left no replay-ready item.
+This is current-configuration replay, not fuzzy correction or authority to
+change upstream clinical data.
+
+The twenty-fourth implementation checkpoint removes the remaining shared
+membership-count hot row. `worklist_instance` no longer stores a mutable patient
+total. Membership add, move, and remove writes use an appointment-stable one of
+64 narrow count shards, while a shared instance lock fences the rare future
+retirement without serializing ordinary membership writers. New outbox records
+carry signed membership deltas rather than a potentially stale absolute total;
+the rollout reader still accepts old absolute totals. Initial snapshot cursor,
+authorized counts, and projection rows are read in one repeatable-read clinical
+transaction, and the boot schema gate now verifies that isolation contract.
+For 25 selected clinics, all 1,600 possible count shards are read in one bounded
+primary-key query with no filesort, temporary table, full-scan waiver, or index
+hint, even beside unrelated clinics. A two-connection MariaDB test proves a
+membership writer proceeds while another shared instance lock and unrelated
+count shard are held. The production current-date factory and browser also prove
+the exact eight-clinic option and loaded-row path. This is a lock-footprint and
+query-shape gate, not the final migrated-data throughput, I/O, failure, or soak
+claim.
+
+This is a foundation, not completion of the 88-capability worklist contract.
+Broad Reverb rollout, remaining admin diagnostics, rebuild proof, exact browser
+parity, and the complete migrated-data scale and failure proof remain.
+The existing one-active-pathway patient constraint is deliberately unchanged
+until multi-clinic clinical semantics have authoritative acceptance evidence.
+
+The 2026-08-31 realtime scaling correction supersedes the earlier SSE target and
+the single global publisher design without removing any of the 88 behavioral
+parity items. The database projection, durable outbox, snapshot, delta, and
+bounded Redis replay remain useful. The ordinary instance hot lock, unchanged
+mapping rewrites, and redundant issue writes are corrected at `5a5eb1a`; the
+partitioned publisher and dedicated worker are corrected at `59f13a3` and
+`f8d87fb`; the early 10,000-row and 10,000-worklist read and partition gate is the
+ninth checkpoint; the disabled Reverb and Echo deployment seam is the tenth.
+Private bounded authorization, compact delivery, and browser reduction form the
+eleventh checkpoint. The bounded dashboard component is the twelfth checkpoint.
+Private filter and site/date parity form the thirteenth checkpoint. Bounded
+always-visible row parity forms the fourteenth checkpoint. Page-bounded
+selection forms the fifteenth checkpoint. Read-only generation and first
+mapping diagnostics form the sixteenth checkpoint. Normalized mapping and exact
+definition-conflict
+diagnostics form the seventeenth checkpoint. Duplicate-instance and
+manager-generation health diagnostics form the eighteenth checkpoint. The
+authoritative read-only duplicate reconciliation preview forms the nineteenth
+checkpoint. The bounded current-configuration replay impact preview forms the
+twentieth checkpoint. Exact read-only generated-instance resolution forms the
+twenty-first checkpoint. Versioned source, configuration, issue, decision, and
+instance evidence forms the twenty-second checkpoint. Retained reconstructable
+inputs and separately authorized, audited, idempotent queued replay form the
+twenty-third checkpoint. The sharded count and concurrent membership proof form
+the twenty-fourth checkpoint. Bounded sampled backlog evidence, capped manager
+reconciliation, yielding publisher jobs, and a separately scalable worklist
+queue form the twenty-fifth checkpoint. The next boundary is the authoritative
+projection rebuild count and hash proof. The twenty-sixth checkpoint adds that
+manager-only repair as a fixed-maximum keyset pass with appointment-local
+transactions, independent monotonic projection revisions, retained-input and
+pathway verification, normal count-shard and outbox publication, keyed
+before/expected/actual hashes, and a repeatable-read final count proof. Bounded
+per-partition lag and recent publish-rate evidence plus honest source-feed
+activity form the twenty-seventh checkpoint. The publisher reuses its fenced
+partition write for exact cumulative and two-minute counters, reads all fixed
+partition heads in one bounded query, and emits at most 64 optional detail
+records. Administrator diagnostics use writer-owned intake time and distinguish
+observed activity, pending delivery, and broadcast-fabric acceptance from a PAS
+heartbeat or browser receipt. Explicit synchronous PAS appointment intake
+concurrency and backpressure form the twenty-eighth checkpoint. One atomic
+zero-wait Redis lease gate limits both the deployment and each institution after
+authentication and capability checks, with a finite lease longer than the
+maximum request time. Saturation returns the frozen XML caller a retryable 503
+before clinical database work. Redis coordination loss preserves the synchronous
+clinical write under finite per-pod web-worker bounds, while invalid admission
+configuration fails closed. The manager continues to own migration and already
+allows a 75-minute startup interval for hour-long major-version migrations. The
+current worklist tranche ends after a short redesign-risk review. Its only
+purpose is to catch a projection, transaction, publication, transport,
+authorization, or admission decision that would force the whole feature to be
+replaced. Realistic synthetic or migrated-scale load testing later selects exact
+query and view shapes, indexes, partition and worker counts, optional connection
+pooling, and capacity. Do not spend the current functional rewrite tuning small
+fixtures beyond rejecting an obviously unsafe architecture.
+The 2026-09-01 review found no whole-system rewrite blocker: the appointment-
+local writer, narrow current projection, transactional outbox, fenced
+partitioned publisher, transport-neutral compact patch, bounded authorization
+lease, cursor recovery, isolated Reverb role, dedicated publisher queue, and
+explicit PAS admission boundary can all be tuned or replaced independently.
+This is an architecture conclusion, not a scale claim.
+None of these substitutes for the final representative migrated-data,
+concurrency, failure, and soak matrix.
+
+The manager remains the single migration owner and publishes the exact release
+readiness marker only after migration and schema verification. Major-version
+migrations can take an hour. Compose manager startup health, the Kubernetes
+manager and web startup probes, and both queue waits therefore allow 75 minutes
+before failure while still releasing immediately on success. Normal readiness
+and liveness remain strict after startup.
+
+#### Platform seams and later high-value work
+
+Database business automation is prohibited: no triggers, stored procedures,
+stored functions, scheduled events, UDFs, or hidden business-logic views.
+Declarative keys, constraints, defaults, and indexes remain valid. CI scans the
+migrations and asserts all seven schemas through `information_schema`. Booking
+and cancellation automation moves to a PHP domain service with a due-work
+record, scheduler, idempotent job, transactional outbox, retry and backoff,
+dead-letter handling, distributed lock, heartbeat, and overdue reconciler. It
+uses at-least-once delivery with idempotent effects and never relies on one cron
+tick.
+
+Database work is divided into `clinical`, `reporting`, `integration`, and
+`maintenance` lanes. Request and job operation metadata select the lane through
+a request-scoped `DatabaseWorkloadContext`, while callers keep normal model and
+repository code. `DB_REPORTING_*`, `DB_INTEGRATION_*`, and `DB_MAINTENANCE_*`
+default to the current `DB_*` behavior when unset. An explicitly configured
+lane failure never silently falls back to clinical. Existing `NOD_AUDIT_DB_*`
+names are accepted for one release before NOD moves to the reporting lane.
+
+Selected admin settings may later be made deployment-owned through Docker,
+Kubernetes, or service environment configuration, following the existing
+`OE_BANNER_SHORT` precedent. Each eligible setting must opt in through one
+declared metadata entry that defines its environment name, type, precedence,
+safe display label, and whether it is secret. When an override is present it is
+the authoritative effective value, the admin control is disabled and visibly
+marked as deployment-managed, and exports or support views show the source but
+never a secret value. When absent, current database-setting behavior is
+unchanged. The same resolver serves PHP, validation, the effective-config view,
+and the admin UI so modules do not invent different environment conventions or
+branch around configuration sources. Changing an override follows the normal
+container restart and config-cache rebuild path; a clinical request never reads
+the process environment directly.
+
+Structured operational logs share a request or job correlation envelope.
+Information remains separately filterable from warning, error, and critical
+records. Browser global errors, unhandled promises, framework errors, and CSP
+reports go to a rate-limited privacy-bounded endpoint. No PHI, raw URL, route
+parameter, query string, SQL, binding, or payload is logged. System health shows
+bounded source status, counters, and top error fingerprints instead of using an
+application database error table as the primary store.
+
+The future opt-in telemetry and advisory module receives a stable
+privacy-bounded exporter seam now and later lives in a separate repository with
+Laravel and Yii adapters, a shared protocol, and an optional collector. Metrics
+and advisories have separate opt-ins. Advisories are pulled outbound as a
+signed manifest checked against a pinned public key; there is no inbound port,
+downloaded code execution, arbitrary HTML, or automatic patching.
+Exporter destinations may include AWS CloudWatch, Power BI through an owned
+collector, or another reviewed metrics service. The module contract remains
+provider-neutral so non-AWS deployments use the same bounded schema and security
+controls without sending customer identity or clinical data.
+
+The high-value sequence before production-scale migration is: clinically safe
+patient-summary keyset and lazy-section performance; event-image and Docman
+deduplication, bounded rendering, resumable delivery, and evidence-based
+retention; resilient GP reference import through a supported source with
+contract canaries and last-good fallback; production proof of the supplied
+queued NOD exporter on the reporting lane; analytics and advanced-search
+isolation with cancellable bounded exports; then integration queue smoothing
+with priorities, backpressure, rate limits, retries, circuit breakers, dead
+letters, replay, and source health. Proven queue patterns may be backported to
+legacy OpenEyes later as a separate program.
+
+#### Pinned component lifecycle and end-of-support watch
+
+This is a later release-engineering workstream, not part of the current
+terminal run. Platform components are pinned to a supported LTS release line,
+not to one patch release: for example, MariaDB `11.8`, PHP `8.4`, and Node
+`24`, rather than MariaDB `11.8.9`. A controlled rebuild may take a newer patch
+within that line after verification, without changing the selected release
+line. The reviewed image pin and recorded digest are refreshed together for
+each accepted build, so rollback stays exact without freezing future builds on
+an old patch. Composer and npm remain exceptions because committed lock files
+must resolve application dependencies reproducibly; their updates are reviewed
+lock-file changes.
+
+The renderer records its tested Puppeteer and Chromium compatibility pair, and
+each built image emits an SBOM containing resolved OS and transitive package
+versions. CI rejects unbounded tags such as `latest`, install steps that can
+rewrite a lock file, release-line drift, and a release whose recorded component
+inventory does not match the built images. Updates stay within the selected LTS
+line unless an owned compatibility change deliberately moves the line and
+rebuilds the complete release together.
+
+A checked-in, non-secret lifecycle registry maps each component to its version
+source, support-cycle identifier, applicable support date, owner, review date,
+and upgrade compatibility gate. A scheduled containerized check derives the
+actual versions from Dockerfiles, image labels, lock files, SBOMs, and live
+`--version` output, then compares them with primary vendor lifecycle sources.
+The endoflife.date v1 product API is an optional normalized secondary source:
+https://endoflife.date/docs/api/v1/. Its response is cached as dated build
+evidence and never queried by a clinical request or required for application
+startup. Vendor documentation overrides conflicting aggregator data, an
+unknown or changed product mapping is a review failure rather than an assumed
+date, and temporary network failure uses the last successful dated snapshot
+while raising a stale-evidence warning.
+
+Reports distinguish active bug-fix support, security-only support, end of
+support, and unknown support. Notices begin 12 months before the applicable
+security-support end date, escalate at 6, 3, and 1 month, and fail a release at
+end of support or when fewer than 90 days remain without an owned, dated
+exception and tested upgrade plan. Alerts feed the existing operational
+notification path and release dashboard without sending deployment or customer
+identity data to the lifecycle service. Acceptance requires fixtures for date,
+cycle, missing-data, stale-cache, API-schema-change, and vendor-conflict cases;
+an offline deterministic run; proof that every shipped component is either
+monitored or explicitly owned as `manual`; and a quarterly review of mappings
+and thresholds.
+
+Protected-file malware scanning is a much-later security-hardening decision,
+after attachment behavior and storage migration have stabilized. Evaluate
+ClamAV alongside maintained local or managed alternatives using representative
+file families, encrypted and malformed inputs, large files, archive limits,
+signature-update failure, throughput, false positives, privacy, deployment
+cost, and non-AWS operation. If adopted, new bytes enter a non-readable
+quarantine state, scanning is asynchronous and resource-isolated, release is
+an audited state transition, and scan failure or an unavailable scanner never
+silently marks content safe. Existing trusted files require an explicit
+back-scan and exception policy. Download authorization remains mandatory even
+for a clean file, and scan telemetry contains no file content, filename,
+patient identifier, or storage key. The final decision records why the chosen
+scanner is operated, updated, monitored, and recoverable, or why compensating
+controls are safer.
+
+This later decision supersedes earlier draft wording that selected ClamAV or an
+EICAR gate in advance. Those passages describe a candidate design and legacy
+integration evidence, not an approved scanner or a current rewrite blocker.
+
+Admin tooltips and shared field-help metadata are deliberately not on the
+current critical path. They remain a later master-plan item after rewrite and
+large-data performance behavior stabilizes. The later facility provides
+accessible hover, focus, keyboard, screen-reader, and tap help; keeps risky
+consequences visible inline rather than tooltip-only; avoids showing secrets;
+and uses the reviewed SSO guide as its first full reference screen. Once the
+facility lands, new editable fields require help metadata. A narrow inline
+warning may still land earlier for an immediate safety or security risk.
+
+The 2026-09-02 terminal integration found that the complete Pest surface no
+longer fits reliably in one 512 MiB process because the runner accumulates
+memory across the suite. A temporary 1024 MiB diagnostic run was evidence only,
+not a new default. The Docker repository now has a simple deterministic
+bounded-memory runner: it discovers each test file exactly once, assigns it to
+one stable chunk of no more than 80 files, runs chunks sequentially in fresh
+512 MiB processes, requires a prepared manager-equivalent seven-schema test
+database, aggregates failures and counts from JUnit, and fails on missing or
+duplicate assignment. Its fresh complete proof discovered all 364 files and
+passed 2,578 tests with 39,568 assertions and zero failures, errors or skips
+across five containers. This remains test execution infrastructure only and
+does not change application queries, runtime memory, or the production image.
+
+The earlier manual enumeration of all 364 Unit and Feature files was a useful
+diagnostic but is superseded by the reusable runner proof above. Stable
+discovery, assignment, prepared-schema ownership, failure aggregation and count
+reconciliation are now executable Docker verification contracts rather than a
+future requirement.
+
+The immediately following bounded readability review is also complete. It did
+not justify changing proven application control flow during the integration
+freeze. Worklist live state, sessions, filters, selection and subscriptions are
+already separate small modules; replay preview and diagnostics remain cohesive
+until the realistic load and failure matrix identifies a stable seam; and the
+medication-set graph stays explicit rather than becoming a speculative generic
+abstraction. Later evidence may justify three small shared patterns: a lazy-load
+composable for patient-summary panels, a typed cursor codec with caller-owned
+context validation, and a same-origin JSON client for the two worklist pages.
+Each still needs stable behavior coverage and two real matching consumers before
+implementation. The chunk runner also exposed and removed the only detected
+cross-test-file function dependency.
+
+#### Ordered remaining program
+
+1. Completed at the 07:01 BST checkpoint on 2 September: the frozen terminal
+   integration reconciled evidence and staged state and removed only exact
+   disposable verification resources. The later clean-harness work has since
+   supplied the missing no-retry browser evidence.
+2. Follow the adaptive code-equivalence program in section 26.15. Percentage
+   reviews never displace clinically useful behavior or independent safety gates.
+3. Run the dedicated worklist program before bulk migration.
+4. Close the patient-summary, image and Docman, GP import, NOD, analytics and
+   search, and queue-smoothing work in the order above.
+5. Complete remaining clinical, admin, API, storage, integration, and migration
+   behavior, including the declared deployment-owned admin-setting override
+   facility, with final disposition for every canonical FileLedger path.
+6. Once functional behavior has stabilized and before production-scale
+   migration, establish the pinned-component inventory, reproducible-build
+   rules, SBOM, lifecycle registry, and offline-capable end-of-support watch
+   described above. The early major-component security viability review is
+   already complete; this later release-engineering work must not displace
+   clinical breadth.
+7. Before production-scale migration, resolve the raw schema-metadata proposal:
+   prove whether any runtime surface performs schema discovery, choose a
+   migration-owned generation contract only if a cache is actually needed, and
+   prove cold boot, warm boot, failed migration, successful migration, and stale
+   worker behavior. At the same gate, replace the transitional scheduled
+   partition rollover with a drained release-owned horizon or record the exact
+   incident-level exception; unattended live partition DDL is not accepted.
+   Then, as the final rewrite task, consolidate the
+   unreleased Laravel migration chain so one table is not repeatedly rebuilt as
+   later migrations add columns, indexes, or foreign keys that could have been
+   present in its initial schema packet. Prove final-schema equivalence, a clean
+   seven-schema migration and seed, representative import, and no avoidable DDL
+   rebuild. Never rewrite migration history already applied to a supported
+   production deployment; in that case retain the immutable upgrade chain and
+   add a versioned fresh-install baseline. Every unavoidable post-load DDL
+   operation records rebuild cost, locking behavior, and an offline migration
+   plan. A live plan exists only for the incident-level extreme exception.
+8. Before go-live, close the development-only request-profiler contract: all
+   connections and statements visible, long-query sorting and highlighting,
+   normalized query-family repetition, source attribution, total versus
+   database time, request-local memory, Inertia and fetch capture, Octane reset,
+   and production-image absence. Close the tool contract on safe fixtures here;
+   its first representative anonymized-data use follows step 9. Never treat
+   its instrumented duration as benchmark truth or expose it publicly.
+9. Perform the first anonymized production-scale migration rehearsal.
+10. Close measured latency and database I/O using the external legacy benchmark,
+   the Laravel surface benchmark, slow-log plan statistics, runtime analysis,
+   worklist load, and renderer capacity.
+11. After behavior freeze, complete user documentation, admin tooltips and
+   field help, operational runbooks, migration guidance, the protected-file
+   scanning evaluation, and the final security evidence case.
+12. Run paired human UAT, accessibility and output equivalence, exhaustive
+   hardening, mutation testing, measured refactoring, release, cutover, and
+   rollback proof.
+13. Treat a compact default patient summary as a far-future change request with
+   clinician-approved highlights and the full view one click away.
+
+The evidence-backed coverage tranche beginning 2026-09-02 inserts one bounded
+execution wave between the completed terminal integration and the remaining
+program. It starts at 50.3667 percent exact coverage and aims for at least
+70.0000 percent by the first safe checkpoint at or after 14:00 BST on 3
+September. The deadline is hard but the percentage is not permission to weaken
+evidence. The run reports the honest result and stops at the checkpoint if the
+target is missed. Overall coverage is accompanied by per-source-class and
+code-only coverage so dependency, asset, migration, or test closure cannot
+conceal missing runtime behavior.
+
+This tranche also closes the immediate local OOM risk. It documents all 40
+current rewrite containers and retains only the three-container
+`oe-laravel-wave` stack; the other 37 exact reviewed containers stop without
+removal. All current volumes and networks remain. A later cleanup item covers
+the current 40 named `oe-laravel*` volumes, nine attached anonymous MariaDB
+volumes, and seven matching
+networks, re-inventoried at execution time. After a clean reproducibility gate
+and human evidence-retention approval, remove exact stopped containers first,
+then exact unmounted volumes and networks. Broad Docker pruning and deletion of
+unidentified data remain forbidden.
+
+At the 2026-09-02 22:48 BST checkpoint, the reachable medication-adherence
+workflow is no longer treated as obsolete. The new patient-level state keeps
+the five legacy levels, bounded comments, edit permission, optimistic version,
+history and privacy-bounded audit. Its two reads have fixed query count and
+verified plans without filesort, temporary tables, or optimizer hints. Existing
+archive rows remain a cutover obligation under DIV-473. Exact overall coverage
+is 52.4752 percent and code coverage is 60.5546 percent across 14,125 canonical
+paths and 18,635 mapping rows. The clean current-source migration and browser
+proof pass, while the long-lived browser fixture's migration-ledger drift is
+recorded rather than hidden.
+
+At the 2026-09-02 23:18 BST checkpoint, Operation Booking Effective Use of
+Resources is a server-decided, eye-specific workflow rather than a trusted form
+result. It gates configured Cataract bookings, locks after booking, and records
+versioned history and privacy-bounded audit. Its authorized institution-scoped
+report retains the six legacy columns and filters through a bounded keyset query
+with no filesort, temporary table, or optimizer hint. Historical EUR rows remain
+a cutover obligation under DIV-474 until duplicate and missing-configuration
+rules are approved. Exact overall coverage is 52.6012 percent and code coverage
+is 60.6901 percent across 14,125 canonical paths and 18,635 mapping rows. The
+38-test combined backend pack, 30 JavaScript tests, production build, and ledger
+integrity gates pass. Migrated-volume report latency remains a later scale gate.
+
+At the 2026-09-02 23:26 BST checkpoint, an exact dependency map accounts for
+848 copied paths from thirteen pinned browser and test distributions. Every
+credited path is classified as a vendored dependency, has exact replacement or
+retirement evidence, and is checked against the target dependency boundary.
+Legacy jQuery, EventEmitter, and PDF.js copies remain uncredited because their
+consumers or replacement parity are not yet closed. Exact overall coverage is
+58.6047 percent, first-party code coverage remains 60.6901 percent, and
+vendored-dependency coverage is 71.0570 percent across the unchanged 14,125
+canonical paths and 18,635 mapping rows. The seven-test 6,350-assertion
+dependency and ledger pack passes, and the locked production Composer and npm
+sets report zero known advisories. This accounting does not replace behavioral
+proof for first-party features.
+
+At the 2026-09-02 23:48 BST checkpoint, Visual Acuity restores the exact
+five-letter best-corrected loss warning since the first completed intravitreal
+injection without copying the legacy full-history loops. Application-owned
+injection writes and historical imports maintain patient and performed-at
+projection fields, and both-eye reads require at most four bounded indexed
+queries with no filesort, temporary table, or optimizer hint. The affected
+89-test backend pack, all 32 tiny query budgets, all 30 JavaScript tests, the
+838-module production build, and a fresh seven-schema run across all 308
+migrations pass. Historical projection backfill, OEscape behavior, history
+graph geometry, exact visual fidelity, migrated-volume load, and clinical UAT
+remain later gates. Exact overall coverage is 58.6079 percent and first-party
+code coverage is 60.6961 percent across 14,125 canonical paths and 18,635
+mapping rows.
+
+At the 2026-09-03 03:01 BST checkpoint, patient identifier display and search
+rules retain institution and optional site order, searchability, protocol
+prefixes, necessity, automatic-number configuration, administrator-only edit
+configuration, and complete history through one portable contract. Site rules
+fall back independently for LOCAL and GLOBAL usage. Normalized exact identifier
+search, hidden-value suppression, and familiar patient-header formatting remain
+fixed at seven queries from one to one hundred patients. Both scope plans avoid
+filesort, temporary tables, optimizer hints, and forced indexes. A fresh
+seven-schema migration and seed, 48 tests with 2,869 assertions, and an
+authenticated search, summary, and administration browser journey pass. Exact
+overall coverage is 61.2742 percent and code coverage is 61.1040 percent across
+14,125 canonical paths and 18,635 mapping rows. Patient-write enforcement,
+automatic allocation, usage settings, broader name and date-of-birth search,
+merge behavior, migrated-scale load, and UAT remain explicit later gates.
+
+At the 2026-09-03 03:30 BST checkpoint, the event-image foundation no longer
+renders through a clinical web request or stores new image blobs in clinical
+tables. Authenticated, institution-scoped requests deduplicate through an
+ephemeral state row, and exactly two manager-owned queue workers render one
+current preview into content-addressed protected storage. Row leases, finite
+retry, scheduled recovery, and a per-user rate limit bound duplicate work.
+Compatible cached images remain available when generation is disabled. The
+queue ordering index was split from the lease-recovery index after EXPLAIN
+showed that the combined shape caused filesort; the corrected plan uses
+`ix_event_image_queue` without filesort, temporary tables, optimizer hints, or
+forced indexes. The focused 95-test integration pack passes with 2,967
+assertions, the manager image verification passes, and all 312 retained
+migrations pass schema verification. Exact overall coverage is 61.3691 percent
+and code coverage is 61.2142 percent across 14,125 canonical paths and 18,635
+mapping rows. Legacy multi-image laterality, page, document, and attachment
+collections, proactive batches, historical blob migration, patient-summary UI,
+migrated-scale capacity, and exact fidelity remain explicit later gates under
+DIV-477.
+
+At the 2026-09-03 04:15 BST checkpoint, shared medication workflows now carry
+the legacy medication-form concept through one portable contract. Versioned
+forms use stable source and code keys, medications hold a default form, and a
+medication-set item may override that default. Medication Management, History
+Medications, Prescription, and their shared consumers save immutable form
+snapshots rather than rediscovering mutable configuration when old records are
+read. Live choices require active forms, while inactive configuration imports
+can preserve retired references for migration. The focused 53-test pack passes
+with 1,461 assertions, the isolated production frontend build passes, and the
+fresh 312-migration seven-schema seed and schema verification remain green.
+Exact overall coverage is 61.4009 percent and code coverage is 61.2416 percent
+across 14,125 canonical paths and 18,635 mapping rows. The authoritative DM+D
+form catalogue loader, historical cutover, alternate-form selection UI,
+migrated-volume load, exact visual parity, UAT, and clinical sign-off remain
+explicit later gates under DIV-280 and DIV-478.
+
+At the 2026-09-03 04:50 BST checkpoint, Red Flag options preserve all five
+legacy institution, site, specialty, subspecialty, and firm context mappings
+through one normalized history-backed table. The picker retains the legacy
+any-matching-level union in one bounded query, while portable configuration
+uses stable codes and references and rejects out-of-institution site or firm
+scope. The query remains fixed from seven through 107 options and EXPLAIN uses
+neither filesort, temporary table, optimizer hint, nor forced index. The
+17-test focused pack passes with 147 assertions, the combined ledger and
+migration pack passes 24 tests with 263 assertions, the 844-module production
+build passes, and one authenticated browser journey proves both the seven-item
+clinical picker and readable administration JSON. Exact overall coverage is
+61.4576 percent and code coverage is 61.3511 percent across 14,125 canonical
+paths and 18,635 mapping rows. Pathway, worklist, shared-history, migrated-scale,
+fidelity, UAT, and clinical sign-off remain later gates under DIV-315.
+
+At the 2026-09-03 05:10 BST checkpoint, xAPI event resources now retain
+worklist-patient, step, template, information, and firm-context linkage, and
+Clinic Outcome retains its typed legacy entry shape. The existing bounded code
+systems and coding resources were reconciled only to directly exercised source
+paths. The focused 60-test pack passes with 815 assertions, Clinic Outcome stays
+at one query through 51 entries, the event linkage plan avoids filesort,
+temporary tables, and optimizer hints, and a fresh seven-schema run passes all
+312 migrations, the tiny seed, and schema verification. Exact overall coverage
+is 61.7337 percent and code coverage is 61.4332 percent across 14,125 canonical
+paths and 18,635 mapping rows. Generic event mapping, complete contact and
+location fidelity, generated OpenAPI publication, service accounts,
+authoritative diagnosis rules, migrated-scale load, UAT, and clinical sign-off
+remain later gates.
+
+At the 2026-09-03 05:25 BST checkpoint, the existing CVI six-section draft,
+signatures, lifecycle, register, local-authority configuration, render payload,
+patient-status precedence, and visual-acuity alert are reconciled to their
+direct sources. The target initial migrations contain the final retained CVI
+columns, history twins, and serving indexes rather than replaying the legacy
+sequence of table rebuilds and incremental additions. The focused 74-test pack
+passes with 1,878 assertions. Exact coverage is 62.1475 percent overall,
+61.5278 percent for code, and 60.7084 percent for migrations across 14,125
+canonical paths and 18,635 mapping rows. Historical row and signature
+transforms, mutable disorder administration, statutory PDF fidelity, external
+delivery, migrated-scale load, UAT, and clinical sign-off remain explicit later
+gates.
+
+At the 2026-09-03 05:36 BST checkpoint, shared Examination correspondence now
+preserves every saved Cover Test and Prism Fusion Range measurement in order,
+and Conjunctival Hyperaemia selects the latest grading in the seven days ending
+on the letter date. The dated query joins the maintained patient timeline to the
+unique element event key and stays fixed through 100 unrelated historical
+events without filesort, temporary table, or optimizer hint. The related pack
+passes 47 tests with 745 assertions, all 39 JavaScript tests pass, and the
+production asset stage builds 844 modules. Exact coverage is 62.1738 percent
+overall and 61.5672 percent for code across 14,125 canonical paths and 18,635
+mapping rows. Anterior Segment print fidelity, Cover Test copy-forward, unused
+Hyperaemia HTML variants, migrated-scale load, final rebuilt-browser smoke, UAT,
+and clinical sign-off remain explicit later gates.
+
+At the 2026-09-03 05:58 BST checkpoint, Biometry retains imported device and
+manually entered general comments on the immutable source envelope and stores a
+separate bounded clinical comment on each append-only per-eye calculation. The
+event renderer and Operation Note projection expose these as escaped text, and
+the unreleased initial schema packet creates the final MariaDB `TEXT` columns
+once. A fresh seven-schema run passed all 312 migrations, tiny seed, schema
+verification, and 117 focused tests with 4,496 assertions. Exact coverage is
+62.1895 percent overall and 61.5702 percent for code across 14,125 canonical
+paths and 18,635 mapping rows. Formula logic and query shape did not change.
+Cataract target integration, raw measurement warning parity, importer delivery,
+migrated-volume load, UAT, and clinical sign-off remain later gates.
+
+At the 2026-09-03 07:21 BST checkpoint, portable History macros now combine
+global and current-subspecialty choices through two bounded indexed reads and
+insert their bodies as literal plain text. Stable codes, ordering, active state,
+subspecialty assignments, versioned history, and generic administration are
+part of the contract. The clean-room proof passed all 312 migrations, tiny seed,
+seven-schema verification, and 61 tests with 3,848 assertions. The production
+frontend built 844 modules, and an authenticated browser journey created two
+macros, inserted and saved both through the real Examination workflow, observed
+no browser errors, and removed its temporary event. Exact coverage is 62.2377
+percent overall, 61.6496 percent for code, and 60.8279 percent for migrations
+across 14,125 canonical paths and 18,635 mapping rows. Historical macro
+transformation, exact visual fidelity, migrated-volume load, UAT, and clinical
+sign-off remain later gates.
+
+At the 2026-09-03 07:45 BST checkpoint, Injection Management restores portable
+diagnosis-specific required Yes or No questions. The editor requires the exact
+stable-code answer set for the selected diagnosis, and saved answers retain the
+original question wording after retirement or renaming. Administration preserves
+legacy identity, diagnosis concept, wording, order, and active state without an
+unbounded disorder select. The final clean-room proof passed all 312 migrations,
+tiny seed, seven-schema verification, and 34 tests with 1,943 assertions. The
+844-module production build and authenticated administrator, clinical save,
+semantic snapshot, and cleanup Playwright journey passed with no browser errors.
+Exact coverage is 62.2593 percent overall, 61.6913 percent for code, and 60.8279
+percent for migrations across 14,125 canonical paths and 18,635 mapping rows.
+Ongoing actions, historical transformation, exact layout, migrated-volume load,
+UAT, and clinical sign-off remain later gates under DIV-294.
+
+At the 2026-09-03 09:32 BST checkpoint, the Responsible For Care fail-safe page
+and its read and transition APIs require one default-deny capability before
+model binding, preserving the pinned dedicated-role boundary and administrator
+grant. The generated in-event search also exposes exactly one linked OCT root,
+keeps manual OCT distinct, and omits the retired manual child terms. A fresh
+seven-schema run passed all 313 migrations, tiny seed, schema verification and
+44 focused tests with 4,537 assertions. All 39 JavaScript unit tests and a
+rebuilt authenticated Responsible For Care browser journey passed with no
+browser errors. Exact coverage is 62.2883 percent overall, 61.7057 percent for
+code and 60.9438 percent for migrations across 14,125 canonical paths and
+18,635 mapping rows. Functional scope is now frozen so remaining run time is
+reserved for integration, reconciliation and staged evidence through the first
+safe checkpoint at or after 14:00 BST.
+
+At the 2026-09-03 10:30 BST scope freeze, exact coverage remains 62.2883 percent
+overall, 61.7057 percent for code and 60.9438 percent for migrations across
+14,125 canonical paths and 18,635 mapping rows. No new functional slice may be
+opened in this run. A full one-process Pest diagnostic reached the Unit tail but
+then exhausted its cumulative 512 MiB process allowance; the large worklist
+fixture itself now completes within the bound. Fresh isolated correction packs
+are green apart from one attributable Event query-count assertion being
+rechecked. Final proof therefore uses bounded fresh-container chunks, exact
+image and Docker verification, ledger reconciliation and staged review evidence
+through the first safe checkpoint at or after 14:00 BST. The remaining distance
+to the loose 70 percent aim does not justify weakening an evidence gate.
+
+At the 2026-09-03 11:10 BST integration checkpoint, the exact clean database
+applied all 313 migrations, loaded the tiny seed and passed seven-schema
+verification. The bounded canonical runner assigned all 390 Pest files exactly
+once across six fresh containers; all 2,800 tests and 50,520 assertions passed
+with no failures, errors or skips. Repository-wide Pint passed 3,015 files, all
+39 JavaScript tests passed, and locked Composer and npm audits found no known
+advisories. Exact production and development role images are built, and the
+Docker verifier passed role isolation, live health, a disposable Compose
+deployment and Helm rendering. The FileLedger remains exact at 14,125 canonical
+paths and 18,635 mappings with 62.2883 percent overall coverage, 61.7057 percent
+code coverage and 60.9474 percent migration coverage. Functional scope remains
+frozen while staged-diff and resource reconciliation continue through the first
+safe checkpoint at or after 14:00 BST. Migrated-volume scale, full UAT, fidelity
+corpora, production load and clinical sign-off remain later gates.
+
+At the 2026-09-03 12:10 BST integration checkpoint, all 544 runtime and manifest
+files in the exact development image match the staged product tree. The expanded
+optimizer-hint ban covers every first-party PHP area with an empty exception
+registry and passed after another clean 313-migration, tiny-seed and seven-schema
+proof. The application exposes 801 routes, including 626 canonical `/api` routes
+and no `/api/v1` route; only two framework routes are unnamed. All 600 staged PHP
+files and 12 staged Docker shell scripts pass syntax checks, the renderer and
+development-only Debugbar packaging gates pass, and dependency and JavaScript
+checks remain green. The exact inventory has three running and 37 stopped rewrite
+containers and preserves the recorded volumes and networks. Earlier named
+fixture schemas remain on the retained wave volume, but no current final-verifier
+namespace remains. The staged sets remain limited to 774 Laravel, 27 Docker and
+12 Claude-kit files with no tracked unstaged or mode changes. Coverage remains
+62.2883 percent overall, 61.7057 percent for code and 60.9474 percent for
+migrations while the integration freeze continues to the first safe checkpoint
+at or after 14:00 BST.
+
+At the 2026-09-03 13:10 BST release-evidence checkpoint, a fresh exact ledger
+run remains green and the staged diffs remained byte-identical throughout the
+frozen interval. The exact production image successfully builds Laravel
+configuration, event, route and view caches, and all eight role images retain
+their expected revision and non-root user. The query-plan inspector passes its
+five tests and 15 assertions and detects filesort, temporary and materialized
+plans, unsafe scans and row-estimate growth without forcing an index. No
+first-party web request performs schema discovery; the transitional manager
+partition roller is the only runtime metadata reader and remains a mandatory
+pre-migration closure. The bounded worklist architecture still exposes no
+whole-system rewrite blocker, but the representative concurrency, failure and
+soak matrix is not claimed. The security review also remains open: the old
+EyeDraw dependency stack still requires upgrade or isolation evidence and the
+renderer retains 81 High or Critical Debian findings without fixed versions.
+The exact resource inventory remains three running and 37 stopped rewrite
+containers, with earlier fixture schemas and all recorded volumes preserved,
+no current final-verifier namespace, and 18 GiB host memory available. Coverage
+remains 62.2883 percent overall, 61.7057 percent for code and 60.9474 percent for
+migrations through the final terminal-boundary checks.
+
+At the 2026-09-03 14:00 BST terminal checkpoint, the time guard and final
+integration condition are satisfied. The exact FileLedger closes this bounded
+tranche at 62.2883 percent overall, 61.7057 percent for code and 60.9474 percent
+for migrations across 14,125 canonical paths and 18,635 mappings, with zero
+missing or pending-review canonical paths. This is 11.9216 percentage points
+above the 50.3667 baseline and honestly 7.7117 points below the loose 70 percent
+aim. The clean proof remains green across all 313 migrations, tiny seed,
+seven-schema verification, all 390 Pest files, 2,800 tests, 50,520 assertions,
+3,015 Pint files, 39 JavaScript tests, locked dependency audits, the 844-module
+frontend build, two authenticated browser journeys, all eight exact images,
+and the complete renderer, Compose and Helm isolation verifier. The product and
+Docker trees did not change after that proof. Final cheap gates reconfirmed the
+ledger, production framework caches, documentation, module and route ownership,
+realtime default, query-plan policy, staging safety, branch tips, excluded files
+and resource state. Exactly 774 Laravel, 27 Docker and 12 Claude-kit files remain
+staged with zero tracked unstaged changes; no commit or push was made. Three of
+the 40 rewrite containers remain running, 37 remain stopped, and no disposable
+verifier resource remains. The overall rewrite stays open in the ordered program
+above. Migrated-volume scale, database I/O, worklist load, renderer fidelity and
+capacity, UAT, accessibility, clinical sign-off, EyeDraw isolation, renderer
+residual-risk acceptance and transitional partition-DDL removal are not claimed
+by this tranche.
+
+The later global repository rule supersedes the earlier one-off Git override.
+Do not commit or push. Stage the bounded changes in
+`/home/toukan/openeyes-laravel`, `/home/toukan/openeyes-docker`, and Claude-kit,
+show the diffs, and leave the human to commit and push. Legacy OpenEyes remains
+read-only. There is no force push, amend, hook bypass, hard reset,
+protected-branch write, or pull-request mutation.
+
+### 26.14 Dual 80 percent coverage program recorded 2026-09-03
+
+The next coverage program starts from immutable legacy commit `ad232408`,
+Laravel commit `160005d`, and Docker commit `67cfbca`. Its measured starting
+point is 62.2883 percent overall and 61.7057 percent for the code source class
+across 14,125 canonical paths and 18,635 mappings. Completion requires both
+exact highest-per-path coverage gates to reach at least 80.0000 percent. An
+overall result at 80 percent with code below 80 percent, or the reverse, is not
+completion. The working forecast may use 81 percent as contingency, but it does
+not change the gate and never permits unsupported credit.
+
+Work runs in bounded 12-hour tranches. Each tranche spends its first hour on
+baseline and resource truth, works only evidence-backed vertical slices until
+hour eight, freezes new scope at hour eight, and uses the final four hours for
+integration and verification. At the first safe checkpoint at or after hour
+twelve, stage the intended files, show the diff and pause. A human confirmation
+is required before another tranche starts. The first tranche runs from 18:40
+BST on 3 September 2026 to the first safe integrated checkpoint at or after
+06:40 BST on 4 September 2026.
+
+Ledger integrity is the first implementation item. Automated census rows with
+the placeholder purpose remain `pending-review`, carry zero coverage and cannot
+be treated as reviewed merely because their status is `pending`. Every nonzero
+canonical row requires an owned feature, an explicit equivalent and replacement,
+test, divergence or sign-off evidence. The verifier reports unowned canonical
+paths, reviewed placeholders, exact coverage points and the remaining gaps, and
+supports independent `--minimum` and `--minimum-code` gates. Reclassification
+alone earns no coverage.
+
+After that correction, the execution order is core ownership, authentication,
+audit, context, patient, event, settings and shell; all 88 worklist parity items
+through the lightweight projection and delta architecture; PASAPI, GP, practice,
+merge, device, xAPI, webhook and queue smoothing; medication, prescription and
+therapy; remaining high-value clinical modules; familiar patient summary,
+images, correspondence and DocMan; search, analytics, NOD and administration;
+then residual first-party cohorts. Each completed slice carries the migration
+confidence pack and bounded-query proof. No new Cypress test, forced index,
+optimizer hint, unsupported clinical rule, inventory-only credit, broad resource
+prune, commit or push is permitted by this program.
+
+At the 02:00 BST integration checkpoint on 4 September 2026, the first tranche
+has reached 73.2123 percent overall and 77.1439 percent for code across 14,125
+canonical paths and 18,643 mappings. Exact equality remains green with zero
+missing paths and zero reviewed placeholders; 1,221 canonical rows remain
+pending review and 1,291 remain unowned. The remaining gaps to the independent
+80 percent gates are 6.7877 overall points and 2.8561 code points. Those gates
+are not met and unsupported ledger credit remains forbidden. The final
+integration phase preserves this honest result unless a verified correction is
+needed.
+
+The tranche's readability review establishes a narrow reuse seam rather than a
+broad refactor: PAS related and associated contact hydration may share small
+field or address helpers later only if that makes their distinct validation,
+identity, and lifecycle rules easier to read. The real browser gate must always
+use a current production asset build. It now proves login, patient summary,
+worklist, and event-image readiness without browser errors. The populated event
+image page's observed 15-query ceiling is the declared budget; synthetic and
+migrated-volume tuning remains a later gate.
+
+At the required 02:40 BST scope freeze on 4 September 2026, no new functional
+slice was open and the exact result remained 73.2123 percent overall and 77.1439
+percent for code. The changed-test integration pack passes 223 tests with 42,960
+assertions after test-owned Login limiter reset made repeated same-minute runs
+independent without changing production behavior. The focused worklist pack,
+query-plan registry, seven-schema verifier, route and documentation registries,
+PHP and JavaScript syntax and unit checks, dependency audits, and production
+asset build are green. Optional Composer strict-PSR mode still identifies
+fourteen test-local helper classes declared in Pest files; this is later test
+organization debt because standard strict Composer validation passes. The
+remainder of the tranche is limited to complete verification, attributable
+integration fixes, evidence reconciliation, intended-file staging, exact
+disposable-resource cleanup, and the first safe checkpoint at or after 06:40.
+
+At the 04:00 BST post-freeze checkpoint, an attributable saved-search list N+1
+found during intended-diff review was removed. All six supported portable
+configuration families now resolve in six batched queries for one or one hundred
+saved rows. The focused Case Search pack, 224-test changed pack, and current-asset
+Advanced Search browser smoke pass. Both the deterministic and six-shard
+randomized complete runs pass all 391 canonical files, 2,882 tests, and 83,089
+assertions. A deliberately single-process randomized diagnostic exhausted its
+512 MiB PHP test allowance without an assertion failure; it confirms why the
+complete gate uses fresh bounded processes. Coverage remains 73.2123 percent
+overall and 77.1439 percent for code. No new feature scope was opened.
+
+At the 05:00 BST post-freeze checkpoint, the last two attributable integration
+defects are corrected. Batched setting precedence performs two queries, bounds
+each scope branch, and sorts no more than 800 scalar rows in PHP, with neither
+filesort nor temporary-table work. The event-image projection migration uses
+one set-based event-type join to backfill existing rows; its rollback and
+reapplication leave all 65 rows with zero grouping mismatches and zero unknown
+groups. A fresh randomized affected-file run passes 224 tests and 42,978
+assertions under seed 9050001. All 47 query budgets, all seven schemas and 315
+migrations, route ownership, documentation, static checks, assets, dependency
+audits, and application cache boot remain green. Coverage remains 73.2123
+percent overall and 77.1439 percent for code. Only final reconciliation, exact
+staging, disposable-resource cleanup, and the 06:40 terminal guard remain.
+
+At the 06:00 BST final integration checkpoint, the unchanged product diff passes
+a fresh complete randomized six-shard run of all 391 canonical runnable PHP test
+files: 2,882 tests and 83,091 assertions with zero failures, errors, or skips
+under seeds 907501 through 907506. Six additional bootstrap and support PHP
+files read by the selector define no tests and are not counted as runnable test
+files. Seven-schema verification remains green across all 315 migrations, and
+all 47 query-plan budgets, 33 documentation pages, 44 JavaScript tests, the
+3,035-file Pint check, production build, dependency audits, manager schedule,
+route ownership, cache boot, exact ledger integrity, and policy scans remain
+green. The final randomized changed-file pack passes 224 tests and 42,978
+assertions under seed 907612. Exact coverage remains 73.2123 percent overall and
+77.1439 percent for code. Only exact disposable-resource cleanup, intended-file
+staging, final reconciliation, and the 06:40 time guard remain.
+
+At the 06:40 BST terminal integrated checkpoint, the time guard and final
+integration condition are satisfied. Exact coverage closes honestly at 73.2123
+percent overall and 77.1439 percent for code, leaving the independent 80 percent
+goals unmet by 6.7877 and 2.8561 percentage points. A second independent
+complete randomized six-shard run passes all 391 canonical runnable PHP test
+files, 2,882 tests, and 83,091 assertions under seeds 907701 through 907706. The
+final seven-schema, 315-migration verifier, 47 query budgets, 33 documentation
+pages, 3,035-file Pint check, 44 JavaScript tests, dependency audits,
+848-module build, route, cache, and schedule gates, and exact ledger integrity
+remain green. The bounded terminal handoff removes only the seven disposable
+schemas and dedicated runner, stages exactly 108 Laravel paths and the three
+planning files, preserves all unrelated resources and changes, and makes no
+commit or push. The next coverage tranche and all later scale, UAT, clinical,
+renderer-fidelity, and release gates remain open for explicit confirmation.
+
+### 26.15 Adaptive code-equivalence FileLedger program - 2026-09-04
+
+This section supersedes only the old coverage milestones and queues in sections
+26.13 and 26.14 without changing their historical evidence. Their dependency,
+migration, security, performance, and release principles remain in force except
+for the explicitly earlier exploratory import below. It is a plan, not an active
+run. No implementation tranche, deadline, or durable time guard starts until the
+user explicitly authorizes one.
+
+The right objective is not an arbitrary percentage. Aim toward 100 percent
+semantic disposition of canonical code paths, using 80, 85, 90, 92.5, 95, and
+98 percent as evidence and phase-decision checkpoints rather than automatic
+stopping points. One hundred percent means that every canonical legacy code path
+is fully ported, completely replaced by an approved equivalent, or
+authoritatively retired with path-specific evidence. It does not mean copying
+obsolete implementation, defects, hidden database automation, or inefficient
+query patterns.
+
+The planning baseline is legacy
+`ad2324084788608246a8250e817198c2f26a4fd6`, Laravel
+`1ad12cba8bb7a138346d90918b0ac2d1d2624a3c`, and Docker
+`67cfbca98a63d176af739686992e4aa0b303604d`. Recheck all three commits and the
+ledger before implementation. If they are unchanged, the exact staircase is:
+
+| Checkpoint | Required equivalents | Gain from baseline | Residual allowed | Purpose |
+|---:|---:|---:|---:|---|
+| Current | 4,751.29 | - | 1,407.71 | 77.1438545 percent baseline |
+| 80 percent | 4,927.20 | 175.91 | 1,231.80 | First verified ratchet |
+| 85 percent | 5,235.15 | 483.86 | 923.85 | Second verified ratchet |
+| 90 percent | 5,543.10 | 791.81 | 615.90 | First full residual review; migration readiness is independent |
+| 92.5 percent | 5,697.075 | 945.785 | 461.925 | Useful breadth ratchet, never a finish line |
+| 95 percent | 5,851.05 | 1,099.76 | 307.95 | Full independent residual audit |
+| 98 percent | 6,035.82 | 1,284.53 | 123.18 | Provisional functional-porting boundary |
+| 100 percent | 6,159.00 | 1,407.71 | 0 | Eventual semantic disposition objective |
+
+Current scores move in 0.01-equivalent increments. The first attainable total
+that passes 92.5 percent is therefore 5,697.08, but
+`php artisan oe:porting-ledger:verify --minimum-code=92.5` remains authoritative
+and the threshold is never rounded down. At 95, also preserve the earlier overall
+gate with `php artisan oe:porting-ledger:verify --minimum=80 --minimum-code=95`.
+The 98 and 100 reviews retain `--minimum=80` and use `--minimum-code=98` and
+`--minimum-code=100` respectively, plus their non-percentage gates.
+
+Every ratchet command supplies its exact `--minimum-code` value; the committed
+machine-readable floor and CI consume the same value. If one coherent slice
+crosses several thresholds, run one complete milestone gate at the highest
+crossed threshold rather than repeating identical lower gates.
+
+This is first-party FileLedger coverage for canonical rows whose `source_class`
+is `code`, not PHPUnit line coverage. Overall FileLedger coverage is reported
+separately. If non-code scores do not change, 95 percent code coverage projects
+to about 80.9982 percent overall, not 95 percent overall.
+
+Ninety percent is too permissive as a terminal target. Perfecting every one of
+the 5,744 currently nonzero code paths could reach 93.2619 percent while all 415
+zero-score paths remain untouched. Reaching 95 percent forces at least 107.05
+equivalents from current zero paths; reaching 98 percent forces at least 291.82.
+The 546 deferred rows hold 531.40 missing equivalents, and leaving them unchanged
+caps coverage at 91.3720 percent.
+
+One hundred percent is simpler to define and audit, but it is not easier to
+deliver. The 95-to-100 interval is another 307.95 equivalents and is fragmented
+across many small, specialist, external, historical, rendering, and
+data-dependent tails. Never delay higher-value migration, performance, security,
+or clinical evidence merely to remove that numerical remainder.
+
+#### Non-percentage terminal rules
+
+Percentage is a breadth indicator. The rules below are mandatory for functional
+porting completion regardless of score. They are not prerequisites for recording
+an honest intermediate measurement or resumable tranche handoff.
+
+1. Complete every reachable authentication, authorization, Break Glass,
+   patient-identity, signing, audit, and clinical-write boundary.
+2. Complete every clinical calculation, clinically important invariant, and
+   irreversible transform with stronger evidence.
+3. Make history, audit, and durable outbox behavior atomic and loss-resistant.
+4. Preserve required route, API, job, webhook, device, and external caller
+   contracts or record an approved replacement or retirement.
+5. Resolve all 88 worklist behavior items and retain the familiar patient-summary
+   content and layout. Full migrated-data load remains a separate later gate.
+6. Complete schema and import behavior required for a representative real-data
+   migration.
+7. Retain exact source accounting: zero missing paths and zero unowned canonical
+   code rows at each code checkpoint. Final rewrite completion requires every
+   source class to have an owned final disposition.
+
+At each checkpoint, divide the residual into three tiers:
+
+| Tier | Meaning | Decision |
+|---|---|---|
+| Mandatory | Safety, security, integrity, identity, audit, signing, migration, concurrency, or required caller behavior | Close regardless of percentage |
+| High value | Heavily used, high-load, recurrent support issue, shared dependency, or architecture-shaping behavior | Continue unless explicitly risk-accepted |
+| Discretionary or evidence-gated | Obsolete glue, unused optional behavior, exact visual fidelity, unavailable external systems, or work that needs later data or human evidence | Defer with owner, reason, prerequisite, risk, and trigger |
+
+The 95 and 98 reviews publish a tail decision record for every residual cohort:
+path count and equivalents, reachability, callers, prerequisite evidence,
+clinical and operational risk, estimated closure effort, retirement authority,
+and likelihood that later data will invalidate the answer. Continue to 100 when
+coherent port or retirement work is cheaper and safer than maintaining a permanent
+exception tail. A provisional boundary below 100 is acceptable only when no
+mandatory or unaccepted high-value behavior remains and every residual is
+evidence-gated with an owner and resume trigger. Never choose a score merely
+because it is easier to report.
+
+The first planned phase change is the migrated-data and failure-evidence review
+when its schema and core-contract readiness gates pass; its timing is independent
+of the percentage. A genuine safety or architecture blocker may interrupt sooner.
+A routine tranche handoff for human review is not a phase change. At 95, perform
+a full residual audit. Continue immediately toward 98 or beyond while any
+coherent mandatory or high-value slice is unblocked. Do not move into fidelity or
+full human-evidence work early merely because a percentage was reached. Return
+after each evidence phase and pursue 100 percent semantic disposition only
+through proved equivalence, approved divergence, or authoritative retirement.
+
+#### Coverage honesty and opening repairs
+
+All 14,125 pinned legacy paths retain exactly one canonical row, and the code
+denominator remains 6,159 unless a newly pinned source manifest proves a real
+change. Highest evidenced score per canonical path wins. Secondary mappings,
+inventory, status changes, ownership placeholders, tests, migrations, assets,
+documentation, configuration, or dependencies cannot add code credit. Every
+nonzero score needs exact legacy symbols, owned target symbols, behavioral
+evidence, tests, documentation status, and a divergence or sign-off where
+required. Partial increases state both what is implemented and what remains.
+
+Before feature work, complete these integrity repairs without awarding coverage:
+
+1. Correct the duplicate `DIV-464` identifiers, add missing divergence statuses,
+   and reconcile unreferenced divergence records.
+2. Add a canonical code-only feature scoreboard rather than treating
+   `feature-progress.csv` as the denominator.
+3. Freeze the 415 zero-score and 546 deferred cohorts and report gains from zero,
+   deferred, and partial paths separately at every checkpoint.
+4. Freeze a legacy controller-action census and classify each action as
+   reachable, internal-only, test-only, or retired with evidence.
+5. Separate PageRegister backend-test evidence from actual Playwright evidence.
+6. Split broad census, admin, view, model, asset, and widget buckets into owned
+   workflows. Relabelling earns no coverage.
+7. Strengthen the eventual final-disposition verifier. Its 100 percent allowlist
+   is reviewed, owned, score 100, and semantically ported, approved
+   replacement/adaptation, or authoritative path-specific retirement. It rejects
+   `partial`, `partial-symbol`, `ported-partial`, `ported-current-slice`,
+   `deferred`, `accounted-no-feature`, `pending-review`, and unresolved evidence.
+   Obsolete, not-applicable, and replaced paths require more than a nonempty
+   evidence field.
+8. Add a committed, machine-readable code-coverage ratchet and strict evidence
+   mode used by the CLI, CI, and final orchestrator. It resolves every referenced
+   target path, test, divergence, and evidence record and fails on an unowned code
+   row or an unresolved nonzero claim.
+
+#### Architecture-now gate
+
+Close or freeze these seams before building large dependent cohorts:
+
+1. Make the general system-event and webhook outbox durable and atomic with its
+   owning clinical or configuration write. Its current post-commit write to the
+   ephemeral database can lose an event after a successful source commit.
+   Network delivery remains after commit. Pending and dead-letter state survives
+   restart and cleanup. Consecutive-request tests prevent callback leakage under
+   persistent workers. The separate durable clinical worklist outbox is retained.
+2. Establish the invariant that a source write, history, audit, and durable
+   outbox occurrence use the originating write connection on the same primary
+   MariaDB server. Read replicas and reporting lanes never receive mutations,
+   history, audit, or outbox writes.
+3. Establish one authorization resolver for legacy roles, inheritance, SSO,
+   institution context, capabilities, and Break Glass. Routes, commands, queues,
+   and integrations use the same policy metadata, with permission-first denial.
+4. Establish a predictable workload-lane seam for clinical, reporting,
+   integration, and maintenance work. Default configuration preserves today's
+   single host and user. Explicit overrides fail closed. Connection pooling and
+   replica routing remain later measured decisions.
+5. Enforce source-of-truth writes through owned audited and versioned actions or
+   models. Maintain a small explicit exception register for imports, migrations,
+   projections, and genuinely ephemeral records.
+6. Consolidate protected-file callers behind one contract for authorized
+   streaming, immutable identity, ownership, retention, reconciliation, local
+   development, and durable object storage. Reserve only the quarantine seam
+   needed to prevent a later API or schema break. Scanner selection stays later.
+7. Freeze typed audit codes, stable route ownership and input metadata, cache
+   ownership, worker resets, privacy-bounded telemetry, and per-context schema
+   packets. Preserve the canonical unversioned clinical `/api`.
+8. Build and prove the development profiler contract on safe fixtures before
+   its first large-data use. It covers every connection, N+1 grouping, source
+   attribution, request and database time, memory, Inertia and fetch requests,
+   and persistent-worker reset, and is absent from production images. It must
+   observe existing operations without changing their query shape.
+9. Run a short component security and support-status delta review. Change a
+   component boundary now only for a critical reachable or unmaintainable risk.
+   EyeDraw isolation and renderer operating-system residuals remain release
+   blockers; the full evidence package stays later. Reconcile the current PHP
+   support declaration mismatch between the README, Composer lock policy, and CI
+   before version evidence is used.
+
+#### Evidence delivery portfolio
+
+The initial portfolio below accounts for the full 1,407.71-equivalent code gap.
+The figures are available debt, not score targets or stage acceptance thresholds.
+Stage 0 publishes exact feature-ID membership and one scoring owner per canonical
+path, then recalculates the table whenever ownership changes. Architecture work
+does not earn duplicate feature credit.
+
+| Order | Functional cluster | Available gap |
+|---:|---|---:|
+| 1 | Authentication, authorization, context, patient identity, PAS, patient search, Case Search behavior and event timeline | 293.52 |
+| 2 | Administration, protected files, device intake, webhooks, system events, documents, event images and xAPI | 207.08 |
+| 3 | Worklist, Patient Ticketing, Next Steps and Clinical Outcome | 89.25 |
+| 4 | Examination, diagnoses, patient summary, shared medication consumers, IOP, OCT, vision and refraction | 288.35 |
+| 5 | Therapy, surgery, Consent, CVI, Correspondence and DocMan, Prescription, Biometry, Intravitreal Injection, Messaging, Request Forms, checklists, Device Usage and Event Export | 284.33 |
+| Continuous | Laravel, shared, and API census paths reassigned to owning consumers during Stage 0 | 187.91 |
+| Clinical-first tail | Trials, Triage, Laser, Cataract Surgical Management, CVI Status, then remaining owned clinical and administration paths | 57.27 |
+
+Work by coherent reachable workflow, not directory size or score yield. The
+first cluster closes identity dependencies. The second closes storage and
+transactional integrations. Worklist remains early because its operational value
+is extreme even though its score yield is modest. Its 88-row register currently
+records only three covered behaviors and 85 still required. Examination and
+treatment close high-value clinical behavior with stronger proof for decisions,
+calculations, signing, statutory output, or irreversible changes. Census rows
+are reconciled continuously through actual consumers or path-specific retirement
+evidence; they are not a late standalone coverage lane.
+
+The patient summary retains familiar panel order, labels, clinical placement,
+source links, and complete-content access while retrieval is made bounded.
+Progressive event-image loading remains disabled by default and no arbitrary
+batch size is adopted. The generation-off control serves old images while
+gracefully suppressing new work. The compact summary remains a far-future change.
+Stage acceptance includes a side-by-side representative-patient check of those
+familiarity rules and the default-off progressive behavior. Large-history tuning
+must repeat that parity proof.
+
+The renderer remains private and isolated: pinned compatible full Chromium and
+Puppeteer, one persistent browser, isolated contexts, concurrency two, hard
+resource limits, explicit readiness, and separate PDF and PNG gates. Do not
+switch engines or claim fidelity during breadth work.
+
+#### Slice, tranche, and checkpoint proof
+
+Each credited slice contains exact pinned paths and callers, an owned operation,
+one representative parity test, authorization and validation proof, clinical
+invariants, small-versus-large query counts, query-plan cost checks, schema and
+transform proof where needed, and one current-asset no-retry Playwright smoke for
+a user-facing flow. Check filesort, temporary tables, materialization, unsafe
+scans, and row estimates by cost property. Never require a chosen index and never
+add an optimizer or join-order hint. Do not add triggers, stored routines,
+scheduled database events, hidden business-logic views, runtime DDL, runtime
+schema discovery, or new Cypress tests.
+
+The existing scheduled `oe:schema:partition-roll` path performs `ALTER TABLE`, so
+the runtime-DDL rule is not yet proved. Remove or unschedule that application
+behavior before Stage 1 exits and before the first percentage ratchet, or record
+the rare extreme exception with owner, rationale, detection, rollback, and
+release approval. A named forbidden-code and exception-register verifier rejects
+DDL, schema discovery, forced indexes, optimizer and join-order hints, triggers,
+routines, and database events from request, queue, integration, reporting, and
+scheduled application paths. Versioned migrations may perform DDL; manager
+migration and schema-verification tooling may inspect schema metadata.
+
+Calculations, signing, statutory output, irreversible transforms, and high-risk
+divergences receive targeted clinical review in their slice. They do not wait
+for the later full paired UAT corpus.
+
+Use bounded 12-hour implementation tranches. T+0 to T+1 confirms pins, resource
+state, prior-diff readability, exact paths, and acceptance evidence. T+1 to T+8
+delivers slices. Scope freezes at T+8, or earlier when the measured complete-gate
+duration plus contingency requires it. T+8 to T+12 contains only attributable
+fixes, integration proof, reconciliation, exact cleanup, and staging. Finish at
+the first safe integrated boundary at or after T+12. If verification is still
+running or fails, retain resumable evidence and continue verification without
+new scope; do not ratchet or claim the checkpoint. Shared routes, registries,
+PageRegister, divergence IDs, seeds, schema, and ledgers remain integrator-owned;
+parallel workers return bounded fragments.
+
+At the earlier of three credited slices or one additional percentage point of
+code coverage, run the combined affected PHP tests in fresh processes, related
+query budgets, authorization and route checks, ledger integrity, relevant
+JavaScript tests, and a production build when assets changed. After every slice
+that changes migrations, rebuild and verify all seven schemas from empty.
+
+At 80, 85, 90, 92.5, 95, 98, and 100 percent, ratchet the exact minimum only
+after this deterministic complete-gate protocol succeeds:
+
+1. Create a new disposable seven-schema namespace, run manager-equivalent
+   migrations, load `oe:seed:load --profile=tiny`, run `oe:schema:verify`, and
+   record the namespace and clean Redis identifier. This proves the complete
+   chain from empty. When new tail migrations exist, separately prepare an
+   upgrade fixture at the prior baseline, apply, roll back, and reapply only those
+   exact tail migrations. An edited unreleased historical migration receives a
+   clean-chain proof rather than a misleading batch rollback.
+2. Freeze HEAD plus a canonical digest of every file admitted to the Docker build
+   context, including staged, unstaged, and admitted untracked files. Embed that
+   source-tree identity in the image, resolve the image tag once to an immutable
+   image ID, reject any post-build source drift, and use that ID for discovery and
+   every shard.
+3. Discover Unit and Feature tests independently, fail on discovery errors or an
+   empty group, hash the complete discovered and assigned manifests, and run
+   sequential fresh-container shards of no more than 80 runnable files. A
+   cumulative 512 MiB Pest process is not a complete-suite gate.
+4. Hold an exclusive host runner lock, run a host-memory preflight before every
+   shard, and execute sequentially by default. Apply a measured container-memory
+   limit above PHP's 512 MiB allowance, swap and PID limits, and a per-shard
+   timeout. Record host availability, peak container memory, original exit
+   status, timeout, and Docker `OOMKilled` classification.
+5. Preserve one valid JUnit artifact for every normally completed shard. Missing
+   JUnit after a timeout, signal, or OOM is an explicit gate failure with retained
+   container logs, original exit status, and `OOMKilled` evidence; do not use
+   automatic container removal before inspection. Persist source identity,
+   manifests, runtime identity, seeds, exit classifications, test totals,
+   assertions, failures, errors, skips, duration, peak memory, and OOM state on
+   success and failure.
+6. Record exact MariaDB and Redis image IDs and server versions, `sql_mode`,
+   optimizer settings, schema and seed hashes, Redis isolation, Docker engine and
+   runtime versions, and effective resource limits.
+
+At 95, 98, and 100 percent, prepare a second independent seven-schema namespace
+and clean Redis state, then repeat the complete suite after a captured master seed
+shuffles the full test-file manifest before sharding and supplies recorded derived
+Pest or PHPUnit random-order seeds. Randomizing only inside fixed alphabetical
+shards is insufficient.
+
+The current runner and manual CI do not yet implement this protocol. The opening
+runner, ratchet, and orchestrator work is therefore a blocker for the first
+milestone claim, not evidence that may be assumed from earlier runs.
+
+One fail-closed milestone orchestrator runs the data preparation, deterministic
+and required randomized Pest passes, strict ledger integrity and exact minimum,
+`oe:query-plan:verify --profile=tiny --json=<artifact>`, module, documentation,
+realtime, route, authorization, manager-schedule, and named forbidden-code checks,
+`npm run test:unit`, `npm run build`, fresh Composer and npm audits bound to exact
+lockfiles, pinned copied or vendored distribution hashes, affected immutable
+image checks, and the complete tracked Playwright smoke manifest for all credited
+user-facing workflows. The browser gate launches the same immutable application
+image against the recorded disposable schemas and Redis namespace, waits for
+required manager, web, realtime, and renderer health, uses owned synthetic login
+fixtures, then runs Playwright with one worker, zero retries, current built assets,
+and the `oe:page-ready` contract. The current manual monolithic CI job is
+non-authoritative until it invokes this bounded contract.
+
+"All query budgets" means all registered factories, currently 47, not every SQL
+statement an application page could issue. Every changed operation registers its
+hot queries. Each complete gate records the registry count and hash. The `tiny`
+profile proves structural plan properties only; the deliberately unavailable
+history-heavy profile means it cannot support a migrated-data performance claim.
+
+Every checkpoint records raw points, zero/deferred/partial gains, residual by
+feature and status, critical behavior still open, worklist parity, test gaps,
+query changes, memory and OOM state, and exact repository and resource state. A
+change to relevant application code, tests, fixtures, seeds, migrations,
+lockfiles, build inputs, images, verification tooling, database or cache runtime
+identity, material server settings, or resource limits invalidates the affected
+complete evidence and requires it to be rerun.
+
+#### Migration evidence and the path to 100 percent
+
+Do not wait for an arbitrary score if the core schema and contracts become ready
+for better evidence. At the first checkpoint where schema-bearing mandatory
+contexts, irreversible transforms, and core contracts satisfy their recorded
+readiness criteria, run an exploratory anonymized production-volume import.
+This may happen before or after a percentage review; percentage neither triggers
+nor blocks it. Capture the exact database, PHP, framework, renderer, browser, and
+dependency versions used. This run discovers schema, cardinality, transform,
+reconciliation, and performance problems. It does not claim final migration
+readiness and will be repeated after final schema consolidation.
+
+For this exploratory run only, this section supersedes the older ordering that
+placed all production-volume evidence after complete functional breadth. It does
+not relax any prerequisite for the final release-relevant migration rehearsal.
+
+Only after representative large data exists, use the external untracked legacy
+`UrlBenchmarkCommand`, the Laravel application-surface benchmark, the development
+profiler, safe `ANALYZE FORMAT=JSON`, slow-log statistics, and storage-engine
+counters to find latency, filesort, temporary-table, row-examination, and I/O
+defects for each ready workflow. Representative data unlocks these checks; it
+does not make an unfinished workflow ready. Make evidence-led pooling or replica
+decisions and do not introduce index hints.
+
+Use those findings to resume mandatory and high-value breadth, including the 95
+and 98 reviews and data-dependent tails. Complete PDF and PNG fidelity as
+separate gates once representative families exist. Then perform measured
+refactoring and mutation or exhaustive hardening where evidence justifies it.
+Freeze product behavior, output contracts, schema, and release components when
+those changes settle.
+
+Use a readiness queue after the import:
+
+1. Worklist is the first ready scale gate once all 88 behaviors and its publisher
+   and subscription paths exist. It runs 5,000 dashboards, 125,000 subscriptions,
+   100 appointment changes per second, the 250-per-second broad burst, reconnect
+   storms, dependency failures, and soak behavior. It does not wait for unrelated
+   Stage 2 or Stage 3 breadth once Stage 1 and its required authorization,
+   context, and configuration seams are complete.
+2. If Worklist is not ready, take the next ready Case Search, Advanced Search,
+   Analytics, or supplied NOD replacement data-backed item, and return to
+   Worklist immediately when ready. The NOD special module has its own
+   reporting-lane functional and migrated-volume release gate and earns no
+   FileLedger points for this pinned denominator.
+3. Run patient-summary large-history retrieval after Stage 5 and repeat its
+   familiarity proof.
+4. Establish representative renderer capacity and a PDF fidelity baseline before
+   end-to-end DocMan bulk delivery.
+5. Run PNG and event-image fidelity and capacity as their separate gate.
+6. Finish remaining owned census and specialist tails.
+
+Basic reachable behavior and API contracts are ported before the import wherever
+possible; only data-sensitive query and storage redesign waits for representative
+volume.
+
+At that freeze, reach 100 percent semantic code disposition wherever complete
+evidence supports it. The final 100 percent gate requires zero deferred,
+partial, unowned, or unresolved canonical code rows, the strengthened
+final-disposition verifier, the complete critical-behavior register, and the
+proof appropriate to every credited cohort. It repeats both fresh deterministic
+and independently randomized complete gates and the full milestone orchestrator.
+Percentage does not trigger or delay the schema freeze.
+
+Before the final migration rehearsal, complete the component inventory, SBOM,
+supported LTS release-line policy, resolved build attestation, end-of-support
+alerting, and the automated Puppeteer/Chromium compatibility check, then freeze
+the release-candidate stack. Configuration uses supported release lines such as
+MariaDB 11.8 rather than hard-coding a patch tag, while the built artifact still
+records the exact resolved components.
+
+As the final schema-writing task, consolidate the unreleased migration chain so
+initial schema packets avoid repeated table rebuilds. Any later schema change
+invalidates this consolidation and the final rehearsal. Never rewrite migrations
+already applied to a supported production deployment. Then run the final
+release-relevant migration, reconciliation, performance, capacity, fidelity
+regression, and cutover-duration proof. Because consolidation changes migration
+and verification inputs, rerun the full 100 percent deterministic/randomized
+technical matrix against the consolidated chain before retaining its evidence.
+
+After rewrite behavior and migrated-data performance are stable, build and
+complete the route-linked Laravel help capability and generated documentation
+corpus from BSpecs and divergence records; do not port the legacy
+OeDocumentation special module. Complete operational and migration guidance, the
+protected-file scanning evaluation, and final security proof with primary-source
+links, SBOM and VEX decisions, threat model, and penetration-test evidence. Run
+paired UAT, accessibility, output equivalence, clinical sign-off, rollback, and
+cutover proof in that order. Safety-critical field help remains part of its
+owning slice; the general admin-tooltip backlog is nonblocking post-rewrite work
+and does not gate UAT or release. The compact patient summary remains a separate
+post-rewrite change.
+
+After the last application, migration, image, verification-tool, security, or
+UAT-driven code correction, rerun the full milestone orchestrator and required
+100 percent deterministic/randomized pair before freezing release evidence. A
+pre-correction pass is not the final technical gate.
+
+Any relevant application, test, fixture, seed, migration, dependency lock,
+build-input, image, verification-tool, query, renderer, security-control, or
+user-visible change after a final evidence gate invalidates the affected
+migration, regression, performance, fidelity, documentation, security, and UAT
+evidence and requires it to be rerun.
+
+No percentage checkpoint, including 95, 98, or 100 percent, claims release
+readiness. Full migrated-data performance, worklist scale, renderer fidelity,
+security, documentation, UAT, accessibility, and clinical sign-off retain their
+independent gates.
+
+The global repository rule applies throughout: stage and show bounded diffs.
+Do not commit, push, amend, force, bypass hooks, hard-reset, broadly prune Docker
+resources, or modify the pinned legacy repository.
+
+---
+
 ## 27. Divergence register - how OpenEyes worked, how it works now, and why
 
 The Laravel OpenEyes replaces an application that clinicians, integrators and deployers know by its exact behaviour, quirks included, so "it is imperative that changes in design decisions (how the laravel openeyes will be different) is well documented and the old openeyes is well referenced in how it used to work and how it works now." This section is that mechanism: one register of every deliberate departure from v26.0.9, each entry describing in plain words how the legacy app behaved on one side and what the new code does on the other, with the rule or decision that justified it and the reasoning behind it (§26 Q21). Everything downstream - the §7.6 per-module pages, the §8 release notes, the in-app "previously" callouts - is generated from it; legacy behaviour is described here once and referenced everywhere else.
@@ -6924,8 +10498,8 @@ v26.0.9 tree and a live v26.1 sample DB (counts as of 2026-08-19); Risk is `clin
 | DIV-017 | ops / API | per-institution config via `DataPatchCommand` (MigrateCommand fork, `datapatch_migration` table, external patch path), `ImportConfigurationCommand` (one XLSX per institution, import-only) and `RefMedicationAdminController::actionExport` as the only admin export | every admin page is a config family with `oe:config:export` / `oe:config:import` and a REST surface; seed format = export format | §4.9; §5.7; req 12; req 19f | none |
 | DIV-018 | data-lifecycle | pruning = 2 of 13 cron entries (`cleardownsession` 03:00 on `user_session`, `clearexpireddrafts` 00:00 on `event_draft`); `audit`, `request_details`, `event_image`, `protected_file`, seven `*_log` tables and all `_version` history grow without bound; no patient delete or archive command | retention class declared per table; history partitions aged into `oe_archive`; month-partitioned `oe_audit`; patient closure export + archive | §5.5; §5.3; §23; req 13; req 19h | low |
 | DIV-019 | ops | 382 of 2,169 migrations loop with `foreach` (140 core / 242 module); `OEMigration::initialiseData()` loads CSVs from inside migrations; `createOETable` auto-appends four audit columns and a `_version` twin | migrations are DDL plus set-based SQL only; reference data in seeders / `oe:data:patch`; anything else carries `#[ExceptionalMigration]` and a review | §17 §7.5; §5.7; req 19b | none |
-| DIV-020 | API (kept + extended) | xAPI = 13 endpoints / 7 resources (`oe-laravel/routes/api.php`), `AuthenticateOnceWithBasic` + `can:OprnApi`, `yii-session` guard driver; PASAPI V1-V3 behind the same HTTP Basic + `OprnApi` gate; no version endpoint | `/xapi` and PASAPI frozen byte-compatible behind the §7.2 (e) snapshots; new `/api/v1` with Sanctum tokens, OpenAPI generated and linted | §26 Q14; §7.2 (e); §8 | none |
-| DIV-021 | ops / API | `params['oe_version']` = `getenv('OE_VERSION') ?: 'UNRELEASED'`, shown in the brand flyout and `site/debuginfo`; `protected/version.txt` = `3.0` read by an unused `Version` component; nothing branches on either, no feature flags | `/api/v1/version` + `oe:about` (tag, schema fingerprint, enabled modules); Pennant flags for N-1 behaviour; expand / contract schema rule | §8; D5 | none |
+| DIV-020 | API (kept + extended) | xAPI = 13 endpoints / 7 resources (`oe-laravel/routes/api.php`), `AuthenticateOnceWithBasic` + `can:OprnApi`, `yii-session` guard driver; PASAPI V1-V3 behind the same HTTP Basic + `OprnApi` gate; no version endpoint | `/xapi` and PASAPI frozen byte-compatible behind the §7.2 (e) snapshots; canonical `/api` uses Sanctum tokens with generated and linted OpenAPI | §26 Q14; §7.2 (e); §8 | none |
+| DIV-021 | ops / API | `params['oe_version']` = `getenv('OE_VERSION') ?: 'UNRELEASED'`, shown in the brand flyout and `site/debuginfo`; `protected/version.txt` = `3.0` read by an unused `Version` component; nothing branches on either, no feature flags | `/api/version` + `oe:about` (tag, schema fingerprint, enabled modules); Pennant flags for N-1 behaviour; expand / contract schema rule | §8; D5 | none |
 | DIV-022 | naming | `php yiic <lowercasename> [<action>]`: 56 core `*Command.php` (`importdatadictionarycomments`, `resetuserlock`, `clearexpiredusersessions`, ...) + 11 module commands (`cvidelivery`, `eventexport`, `housekeeping`, ...) plus 26 `protected/scripts/*.sh` wrappers | `php artisan oe:<module>:<verb-noun>`; one-to-one map in Appendix A; old names listed in the release notes, no aliases | Appendix A; §17 §7 | none |
 | DIV-023 | behaviour | `Audit::save()` drops IP, server, UA, institution, site and firm when `REMOTE_ADDR` is absent (`Audit.php:175`) and auto-creates lookup rows; `Institution::getCurrent()` throws without a session; `BaseActiveRecordVersioned` merges saves within 2 s | every job and command carries an explicit actor + context DTO and an audit write without one fails; history is per transaction, no dedupe window | §21; §5.8.0 #4; §17 §4 | low |
 
@@ -7104,7 +10678,7 @@ authentication in §21, secrets handling in §21 and §20 decision 14.
 | B3 PASAPI V3 | inbound (PAS to app) | as B2 | `PASAPI/controllers/V3Controller.php` (`actionCreate`, `actionUpdate($resource_type, $id)`, `actionDelete`) + AIS flags trait; the newest version | as B1 | byte-compatible freeze (§20 decision 13) | Trust integration team; engine channel owner |
 | B4 HL7 v2 via the integration engine (BridgeLink/Mirth) | inbound ADT and MDM, remapped to PASAPI | HL7 v2 converted to PASAPI XML inside the engine; the app never parses raw HL7 | shim resources in `PASAPI/resources/`: `BaseHL7`, `BaseHL7_Section`, `HL7_A03`, `HL7_A08`, `HL7_A11`, `HL7_A13`, `HL7_Patient*`, `HL7_Diagnosis`, `HL7_Procedure`; the `Mirth` module (7 files) only carries hooks; no A01 shim exists in the repo - the engine maps A01 to a PASAPI appointment `Status = Attended`, which auto-starts a pathway (§4.8); `HL7_Patient_Visit` only reads pathway step state for the room field | engine channels live outside this repo; check-in behaviour under Admin > System > Settings > Worklists | engine stays an external sidecar (§4.4); contract test = replay of captured channel output against B1-B3 | Trust integration team; engine channel owner |
 | B5 Outbound PAS search and refresh | outbound (app to PAS) | HTTP client, XML; curl timeout 10 s | `PASAPI/components/Pases/BasePasConnection.php`, `DefaultPas.php`, `DefaultPasConnection.php`; `PasSearchManager`, `PasSearch`, `PasSearchBuilder`, `PatientCacheUpdater`, `resolvers/ResolveBy*Identifiers`; `PasApiObserver` on `emergency_care_update` | `PASAPI/config/common.php` (`OE_PASAPI_PROXY`, timeout); `patient_pas_last_update` | contract test per resolver and identifier type; refresh cadence unchanged (§4.8 PAS sync block) | PAS vendor; Trust integration team |
-| B6 xAPI (13 endpoints, 7 resources) | inbound (third-party clients) | JSON over HTTP; HTTP Basic + `can:OprnApi`; middleware `EnforceJsonAcceptHeader`, `AuthenticateOnceWithBasic` | `oe-laravel/routes/api.php`; docs `GET /xapi`, `/xapi/swagger`, `/xapi/openapi` in `routes/web.php` serving `resources/openapi/xapi.yaml` from `oe:generate-xapi-spec`; `yii-session` guard driver; `InitialiseApplicationContextFromRequest` | `oe-laravel/config/auth.php` (guard) and the route files | `/xapi` v1 frozen byte-compatible; new surface on `/api/v1` with Sanctum + Scramble and Spectral (§20 decision 13, §21); Pact + Spectral snapshots (§7.2 channel (e)) | xAPI consumer owners (per client); tech lead |
+| B6 xAPI (13 endpoints, 7 resources) | inbound (third-party clients) | JSON over HTTP; HTTP Basic + `can:OprnApi`; middleware `EnforceJsonAcceptHeader`, `AuthenticateOnceWithBasic` | `oe-laravel/routes/api.php`; docs `GET /xapi`, `/xapi/swagger`, `/xapi/openapi` in `routes/web.php` serving `resources/openapi/xapi.yaml` from `oe:generate-xapi-spec`; `yii-session` guard driver; `InitialiseApplicationContextFromRequest` | `oe-laravel/config/auth.php` (guard) and the route files | `/xapi` v1 frozen byte-compatible; the canonical `/api` surface uses Sanctum + Scramble and Spectral (§20 decision 13, §21); Pact + Spectral snapshots (§7.2 channel (e)) | xAPI consumer owners (per client); tech lead |
 | B7 Webhooks (22 payload classes) | outbound (app to subscribers) | HTTPS POST of a JSON payload from a queued job | subscriber `'*'` on `system_event` in `Webhooks/config/common.php:35-50`; `StoreDispatchedEventsForWebhooks`, `HandleTransactionStartedForWebhooks`, `HandleTransactionCommittedForWebhooks`, `HandleTransactionRolledBackForWebhooks`, `ProcessDispatchedEventsForWebhooks` on `EndRequestSystemEvent` calling `WebhookDispatchedEventsManager::sendJobsForDispatchedSystemEvents()`; job `SendWebhook` via `PostHttpPayload`; payloads in `oe-shared/app/Modules/Webhooks/Payloads/` (ClinicalEvent Created, Updated, SoftDeleted; PatientAllergies, PatientDiagnoses, PatientHistoryRisks, PatientClinicOutcome each Created, Updated, Deleted; PatientContactsUpdated) plus PASAPI `DispatchWebhookForAIS` | tables `webhooks_subscriber`, `webhooks_subscriber_event` (`m251020_131341_add_webhooks_subscribers_tables.php`); Admin > System > Webhook Subscribers (`/Webhooks/admin/WebhooksAdmin/subscribers`) | payload schema frozen per class (contract snapshot); transaction-gated dispatch kept (fires on commit only); queue on Redis (ADR 0019) | subscriber system owners; tech lead |
 | B8 Docman document drop | outbound (file drop) | .pdf, .rtf, .xml and copy scripts on a mounted directory; content fetched by an HTTP self-request | `protected/commands/DocManDeliveryCommand.php` (`actionIndex`, `actionGenerateOne($event_id, $path)`), `DocmanRetriever` (curl login via `docman_login_url` and `docman_print_url`, cookie jar `/tmp/cookie.txt`); `correspondence_delivery_configuration`; output types Print, Email, Email (Delayed), Internalreferral, Docman, Electronic; XML dialect templates under `OphCoCorrespondence/views/templates/xml/docman/` (`default`, `default_plus_sendto`, `default_plus_sendto_and_recipient_type` and two per-trust dialects) | env `OE_DOCMAN_EXPORT_DIRECTORY` (default `/docman`), `OE_DOCMAN_USER` and `OE_DOCMAN_PASSWORD` (defaults exist), `DOCMAN_FILENAME_FORMAT`, `DOCMAN_GENERATE_XML`, `DOCMAN_XML_TEMPLATE`, `DOCMAN_SENDING_LABEL`; cron `docmandelivery` 21:00, gated on the directory | same filenames, XML dialects and drop layout; written by a queued job to the export volume (§4.7) instead of the HTTP self-login; rendered-PDF channel (c) (§7.2) | document-management system owner (per Trust); clinical lead for letter content |
 | B9 Internal referral drop | outbound (file drop) | PDF + XML + CSV audit on a mounted directory | `protected/commands/InternalReferralDeliveryCommand.php`; `internal_referral_site_firm_mapping`; output type Internalreferral | same env family as B8; site-to-firm mapping table | as B8 | receiving service owner (per Trust) |

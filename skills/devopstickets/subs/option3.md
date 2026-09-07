@@ -6,7 +6,11 @@ Draft a client-ready reply for the 10 tickets most in need of one. **Do NOT post
 
 **Fetch:** the light list (Shared A), `jql = <filter JQL> ORDER BY updated ASC` (most stale first). Take the ~12 stalest and deep-dive them (Shared B) into `/tmp/oetriage/deep/<KEY>.json`; pick the 10 whose latest comment is from the reporter (i.e. awaiting our response).
 
-**Fan out:** 2 batches of 5, parallel haiku agents; each agent reads the saved `/tmp/oetriage/deep/<KEY>.json` files for its batch. Each returns JSON:
+**Fan out:** state that two agents will run and ask once for cost confirmation,
+then use the current client's native collaboration facility for two parallel
+batches of five. Use the current or inherited model unless the user explicitly
+approves an override. Each agent reads the saved
+`/tmp/oetriage/deep/<KEY>.json` files for its batch and returns JSON:
 
 ```json
 [{ "key": "TKLS-XXXX",

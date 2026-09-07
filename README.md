@@ -17,7 +17,7 @@ bash codex.sh               # run sandboxed host Codex in the current directory
 ├── windows-install.ps1     # Windows/PowerShell installer - project-local .claude, copies instead of symlinks (section 21)
 ├── README.md               # this file
 ├── lib/
-│   └── skills.sh           # skill plumbing shared by both installers (gate + snapshot, openai.yaml, symlink/prune)
+│   └── skills.sh           # shared skill policy, metadata, validation and link plumbing
 ├── radar/
 │   └── release-radar.md    # dated upstream-release digests, written by the release-radar skill
 ├── todo/                   # queued tasks for Claude + the plans behind them (git-tracked, public)
@@ -63,7 +63,7 @@ bash codex.sh               # run sandboxed host Codex in the current directory
 │                           #   ~/.claude/mcp-env/.github.env      (install.sh -g)
 │                           #   ~/.claude/mcp-env/.aws.env         (install.sh -a)
 │                           #   ~/.claude/oe-chrome-agent/         (install.sh -w, walker logins)
-├── skills/                 # 50 dirs, linked by agent eligibility in deterministic name order
+├── skills/                 # 51 dirs, linked by agent eligibility in deterministic name order
 │   │                       #   user-authored actions use a-; user-authored context uses c-
 │   │                       #   explicitly, and the kit currently ships all of them auto-invokable
 │   ├── c-frontend-design/  #   auto-load ┐ no disable-model-invocation at all -
@@ -77,13 +77,16 @@ bash codex.sh               # run sandboxed host Codex in the current directory
 │   ├── c-oe-iolmaster-import/ c-oe-payload-processor/           # OpenEyes file processors
 │   ├── c-bash-style/ c-yiic-command-style/ c-note-style/        # house style
 │   ├── c-claude-kit/ c-dblogin/ c-docbuilder-docset/ c-notes-app/   # kit/repo context
-│   ├── a-clarify/ a-pr-explainer/                               # user-authored actions
+│   ├── a-clarify/ a-pause/ a-pr-explainer/                      # user-authored actions
 │   ├── c-performance-indexes-rollup/ c-oe-unit-tests/            # context-only references
 │   ├── create-pr/ create-oe-pr/ create-oe-module/ new-feature/   # imported or legacy workflows
 │   ├── teach/ release-radar/ compact-memories/ c-grill-me/ c-handoff/  # imported or legacy names
-│   ├── oe-probe-chrome/ oe-probe-playwright/                    # OE UI probes (walker / Playwright)
-│   ├── jiramcp/ githubmcp/ awsmcp/ codexmcp/ devopstickets/     # MCP preflight - no "Context loaded" ack
-│   └── codex-grill/ codex-swarm/                                # built on codexmcp; confirm cost before spawning
+│   ├── oe-probe-playwright/                                     # OE UI probe shared by both clients
+│   ├── oe-probe-chrome/ oe-probe-codex-chrome/                  # client-specific interactive OE UI probes
+│   ├── jiramcp/ githubmcp/                                      # shared MCP preflight
+│   ├── codexmcp/                                                # Claude-only Codex MCP preflight/fan-out
+│   ├── awscli/ devopstickets/                                   # AWS CLI preflight / Jira workflow
+│   └── codex-grill/ codex-swarm/                                # Codex review/fan-out; confirm cost before spawning
 └── docs/
     ├── permissions.md      # how the 4 tiers work, deny -> ask -> allow
     ├── skills.md           # CLAUDE.md vs SKILL.md, sub-skills, naming
@@ -94,7 +97,7 @@ bash codex.sh               # run sandboxed host Codex in the current directory
     ├── codex.md            # Codex overview, standalone + MCP setup
     ├── codex-standalone.md # standalone Codex usage, flags and compatibility
     ├── chrome-agent.md     # the OE Chrome walker sidecar
-    └── aws.md              # AWS (read-only) via aws-api-mcp-server - setup + limitations
+    └── aws.md              # AWS (read-only) via the official aws-cli container - setup + limitations
 ```
 
 The installer writes / merges:
@@ -104,7 +107,7 @@ The installer writes / merges:
 - `~/.claude/CLAUDE.md` - **symlinked** to `claude-md/CLAUDE.md` in this kit (never-commit/push rules + condensed Karpathy guidelines); editing the kit file is live.
 - `~/.claude/skills/<name>` - symlinked to each Claude-enabled skill in this kit.
 - `~/.claude/.claude-kit-skills` - manifest of the skill links it created, used to prune the ones for skills since removed from the kit.
-- With `-x`, also `~/.codex/AGENTS.md` and each Codex-enabled `~/.codex/skills/<name>` compat link. An existing `skills/<name>/agents/openai.yaml` opts a skill into Codex and has its generated fields refreshed from `SKILL.md`; the installer never creates a missing one.
+- With `-x`, also `~/.codex/AGENTS.md` and each Codex-enabled skill under both `~/.agents/skills/<name>` and `~/.codex/skills/<name>`. Current Codex releases scan both roots; synchronizing both prevents stale skills, while the `~/.codex` links also resolve in the Codex MCP container. An existing `skills/<name>/agents/openai.yaml` opts a skill into Codex and has its generated fields refreshed from `SKILL.md`; the installer never creates a missing one. Claude receives skills by default, while `agents/claude.yaml` with `enabled: false` opts a skill out.
 
 **No secret ever lives inside this repo.** Tokens, cookies, keys and saved sessions go under `~/.claude/` - `~/.claude/mcp-env/` for the Atlassian, GitHub and AWS credentials, `~/.claude/oe-chrome-agent/` for the Chrome walker's two saved logins. This kit is a git repo with a remote, so anything in its working tree is one `git add -f`, one `.gitignore` edit or one archive away from being published; `.gitignore` is a convenience, not a security control. What the installer *does* keep in the gitignored `generated/` folder is machine-local **non-secret** config (Codex model knobs, the walker's network/URL, the MCP startup-gate flags) - see [Backing up generated config](#backing-up-generated-config). MCP server registrations themselves are written by the `claude` CLI to `~/.claude.json` (not `settings.json`), and those *do* embed the token, which is why `~/.claude.json` is also outside the kit.
 
@@ -202,25 +205,35 @@ Because it's a symlink, editing `claude-md/CLAUDE.md` rolls out immediately - no
 
 **Naming and agent availability.** A user-authored action or workflow is named `a-<topic>`; a user-authored context-only skill is named `c-<topic>`. Imported and built-in skills keep their upstream names. `agents/openai.yaml` opts a skill into Codex. Claude is enabled by default; `agents/claude.yaml` with `enabled: false` makes a skill Codex-only. A Claude-only skill therefore omits `agents/openai.yaml`. Installers recreate links and manifests in C-locale name order, which gives both agents the same deterministic alphabetical source order; an agent UI can still apply its own sorting.
 
-**How a skill gets its context in front of Claude - two modes:**
+**How a skill gets its context in front of an agent:**
 
-- **Auto-load (no `disable-model-invocation`).** Claude reads every skill's `name` + `description` at startup and decides *on its own* to pull the whole `SKILL.md` into context the moment a task matches the description. You don't name these - they load when relevant. Today: **`c-ascii`, `c-frontend-design`, `a-oe-docs`, `c-oe-helm`, `c-oe-ui`**. For these the **`description:` is the trigger**, so it's written to fire on the right task.
-- **Auto-invokable (`disable-model-invocation: false`).** Same behaviour, but flipped by `install.sh -s`. **This is the kit's current committed state for every other skill.**
-- **Manual (`disable-model-invocation: true`).** Claude will *never* auto-load these; the body only enters context when you (or a plan) invoke the skill **by name** (`/c-oe-code`, `/jiramcp`, ...). Nothing in the kit sits here today, but it's one `-s off` away.
+- **Always-auto (no `disable-model-invocation`).** The agent can load the skill when its `name` and `description` match. Today: **`c-ascii`, `c-frontend-design`, `a-oe-docs`, `c-oe-helm`, `c-oe-ui`**. These five are deliberately outside the `-s` toggle.
+- **Auto-invokable (`disable-model-invocation: false`).** Same behaviour, but controlled by `install.sh -s`. **This is the kit's current committed state for every other skill.**
+- **Manual (`disable-model-invocation: true`).** The body enters context only when the skill is invoked by name: `/skill-name` in Claude Code or `$skill-name` in Codex. For Codex, the installer mirrors this value to `policy.allow_implicit_invocation: false` in `agents/openai.yaml`.
 
 **A new skill must state the flag explicitly** - `false` to match the kit's current all-auto state, or `true` to keep it name-only. Omitting it is not a shortcut for either: it opts the skill out of `-s` entirely, and that is reserved for the five deliberate auto-load exceptions above.
 
 Either way the **`description:` is a single terminal line** (<= ~78 chars) so the whole thing is readable when you search skills inside Claude - keep it one line when editing.
 
-**Loading convention - "Context loaded".** Every skill except six (`awsmcp`, `codexmcp`, `devopstickets`, `githubmcp`, `jiramcp` and `c-ascii`) starts its body with:
+Both installers validate this contract during their normal post-install checks.
+The validation covers frontmatter, the five always-auto exceptions, generated
+Codex metadata, client availability and stale client-specific tool names. The
+Codex installer also asks the real `codex app-server` to discover the installed
+skills without starting a model turn. Run it directly with
+`bash /home/toukan/claude-kit/scripts/validate-skills.sh -c`; `-n` or
+`--no-verify` skips it along with the other installer checks.
+
+`a-pause` uses the active client's native one-shot wait or scheduler, defaults to one hour, emits no polling chatter, and resumes the unfinished target when the wait fires. The session must remain open.
+
+**Loading convention - "Context loaded".** Every skill except six (`awscli`, `codexmcp`, `devopstickets`, `githubmcp`, `jiramcp` and `c-ascii`) starts its body with:
 
 > When loaded as context with no task, reply only `Context loaded.`
 
-So invoking a skill just to prime context returns a one-word ack instead of a 2,000-token summary you didn't ask for. The five preflight skills are the deliberate exception - they *do* run a check and report - and `c-ascii` is always-auto, so it is never invoked bare in the first place. Aim to keep each `SKILL.md` **under ~2,000 tokens** (~ 8 KB) so loading is cheap; push volatile detail into `subs/*.md` and let Claude open those on demand. Two skills intentionally exceed this - `create-oe-module` (~4.2k) and `c-oe-coding-standards` (~3.2k) - because they're reference-dense scaffolding/standards docs.
+So invoking a skill just to prime context returns a one-word ack instead of a 2,000-token summary you didn't ask for. The workflow/preflight exceptions *do* run a check or workflow and report; `c-ascii` is always-auto, so it is never invoked bare in the first place. Aim to keep each `SKILL.md` **under ~2,000 tokens** (~ 8 KB) so loading is cheap; push volatile detail into `subs/*.md` and let the agent open those on demand. Two skills intentionally exceed this - `create-oe-module` (~4.2k) and `c-oe-coding-standards` (~3.2k) - because they're reference-dense scaffolding/standards docs.
 
 Each repo-specific skill follows the **stable mental model in `SKILL.md`, volatile detail in `subs/*.md`** convention. See **[docs/skills.md](docs/skills.md)**.
 
-**Symlink lifecycle.** `install.sh` records exactly which skills it symlinked in `~/.claude/.claude-kit-skills`. On every run it (1) re-links current eligible kit skills in name order, and (2) **prunes** any managed `~/.claude/skills/<name>` symlink for a removed or Claude-disabled skill. Codex uses the same process for skills without `agents/openai.yaml`. Two safety floors: a destination that is a **real directory** (your hand-added skill) is skipped with a warning and never touched, and a **symlink pointing somewhere other than this kit** (added by hand or another tool) is left alone. Only kit-created symlinks are ever removed.
+**Symlink lifecycle.** `install.sh` records exactly which skills it symlinked in `~/.claude/.claude-kit-skills`. On every run it (1) re-links current eligible kit skills in name order, and (2) **prunes** any managed `~/.claude/skills/<name>` symlink for a removed or Claude-disabled skill. Codex uses the same process for skills carrying `agents/openai.yaml`. Two safety floors: a destination that is a **real directory** (your hand-added skill) is skipped with a warning and never touched, and a **symlink pointing somewhere other than this kit** (added by hand or another tool) is left alone. Only kit-created symlinks are ever removed.
 
 ### 8. Reset to first-install state (`--reset`)
 
@@ -246,22 +259,22 @@ The installer manages the Claude Code CLI itself, so a brand-new machine needs n
 
 ### 11. Jira + Confluence (`-j` + `-c` / `--without-atlassian`)
 
-**All four MCP servers (sections 11-14) register behind a startup gate.** A new
-session starts **no** MCP containers - each server shows `failed` in `/mcp` until you
-request it: `touch ~/claude-kit/generated/mcp-on/<atlassian|github|aws|codex>` then
-reconnect the server in `/mcp` (its tools bind on the late connect - verified). The
-flag is consumed by the first spawn, so the next session begins gated again - touch it
-just before launching Claude Code to have a server up from the start.
+**All four integrations (sections 11-14) use a startup gate.** A new session starts
+no MCP containers, and the AWS CLI wrapper refuses reads until its gate is armed.
+Request one with `touch ~/claude-kit/generated/mcp-on/<atlassian|github|aws|codex>`.
+For an MCP, reconnect the server in `/mcp` (its tools bind on the late connect -
+verified). For AWS, retry the wrapper command immediately. The flag is consumed by
+the first use, so the next session begins gated again.
 
-Consuming the flag leaves a `<server>.win` marker that holds the gate open for a
-further **60 seconds**, because one `/mcp` reconnect spawns the wrapper more than once:
+For the MCP servers, consuming the flag leaves a `<server>.win` marker that holds the
+gate open for a further **60 seconds**, because one `/mcp` reconnect spawns the wrapper more than once:
 the first spawn ate the flag and a later spawn in the same reconnect hit a shut gate,
 so the reconnect always failed with `CONNECTION_CLOSED`. The window ages out on its own
 whether or not anything connected, so the gate never fails open.
 
 Register or remove the community **`mcp-atlassian`** server, run as a Docker stdio
-server (`ghcr.io/sooperset/mcp-atlassian`) at user scope - the same shape as GitHub
-and AWS. Jira and Confluence are configured independently and bundle as `-jc`:
+server (`ghcr.io/sooperset/mcp-atlassian`) at user scope - the same shape as GitHub.
+Jira and Confluence are configured independently and bundle as `-jc`:
 
 ```bash
 bash install.sh -jc               -p standard -y    # opt in  (--with-jira + --with-confluence)
@@ -305,29 +318,48 @@ Neither flag = `mcpServers.github` is left exactly as-is on re-runs.
 
 ### 13. AWS - read-only (`--with-aws` / `--without-aws`)
 
-Register or remove the **awslabs `aws-api-mcp-server`** container so Claude can read
-AWS state (`call_aws`, `suggest_aws_commands`) instead of clicking through the console:
+Start or tear down the shared **official `aws-cli` container** so the agents can
+read AWS state instead of clicking through the console:
 
 ```bash
 bash install.sh --with-aws    -p standard -y    # opt in  (-a)
 bash install.sh --without-aws -p standard -y    # tear down (-A)
 ```
 
-**Claude never changes anything in AWS.** No create, modify, delete, tag, start or
-stop - a hard rule in `CLAUDE.md`, backed by `READ_OPERATIONS_ONLY=true` baked into
-the registration (the server refuses any command off its read-only list) and by a
-`Bash(aws *)` deny on every tier so there is no route around the MCP. Telemetry is
-off and the server gets no local filesystem access.
+This is **not an MCP server**. The awslabs `aws-api-mcp-server` the kit used until
+06/09/2026 wraps AWS CLI v1, which is removed on 15/07/2027; the managed replacement
+processes London reads in Frankfurt and exposes only an arbitrary-Python tool. So
+`-a` starts or reuses `public.ecr.aws/aws-cli/aws-cli:latest` in one container named
+`ai-kit-aws-ro` shared by every session (and by you), and pre-arms the gate. It
+self-removes after 8h idle. Claude Code and standalone Codex use the same script and
+the same container.
+
+The first agent session to read through the wrapper atomically consumes that pre-arm
+flag and keeps a marker for its own session. It can continue reading, but every new
+session is gated again.
+
+```bash
+bash scripts/agent-aws-cli.sh run rds describe-db-instances --output table   # agents
+docker exec -i ai-kit-aws-ro aws rds describe-db-instances --output table    # you
+```
+
+**The agents never change anything in AWS.** No create, modify, delete, tag, start or
+stop - a hard rule in `CLAUDE.md`. With the MCP gone there is no command allow-list,
+so **IAM is the only enforcement**. Claude Code tiers deny direct `aws`, AWS CLI
+containers and direct access to `ai-kit-aws-ro`. Standalone Codex blocks direct host
+`aws`; its non-yolo profiles also deny the Docker socket, while `yolo` relies on the
+read-only IAM principal and the hard rule. Only the wrapper's `run` subcommand is
+allow-listed in Claude Code, so image downloads still prompt there.
 
 Authentication is a **dedicated read-only IAM user's** access key, stored in
-`~/.claude/mcp-env/.aws.env` (mode 600, outside the kit) - never on the `docker`
-command line. Note that the managed `ReadOnlyAccess` policy still permits
-`secretsmanager:GetSecretValue`, `ssm:GetParameter`, `s3:GetObject` and
-`kms:Decrypt`; deny those explicitly. Full setup and the limitations that matter
-live in **[docs/aws.md](docs/aws.md)**; the environment it reads is described in
-`knowledge/aws-production-deployments.md`.
+`~/.claude/mcp-env/.aws.env` (mode 600, outside the kit) and passed via
+`docker --env-file` - never on a command line. Note that the managed `ReadOnlyAccess`
+policy still permits `secretsmanager:GetSecretValue`, `ssm:GetParameter`,
+`s3:GetObject` and `kms:Decrypt`; deny those explicitly if it matters. Full setup and
+the limitations that matter live in **[docs/aws.md](docs/aws.md)**; the environment it
+reads is described in `knowledge/aws-production-deployments.md`.
 
-Neither flag = `mcpServers.aws` is left exactly as-is on re-runs.
+Neither flag = the container and gate are left exactly as-is on re-runs.
 
 ### 14. OpenAI Codex agents (`--with-codex` / `--without-codex`)
 
@@ -349,12 +381,13 @@ for you to run it in another terminal, continuing once the credentials land - so
 token is stored in this kit**; auth lives in `~/.codex`, which every agent container
 mounts). The server
 exposes `mcp__codex__codex` / `mcp__codex__codex-reply`; Claude fans agents out by
-calling them in one message. Run `/codexmcp` to preflight and for the fan-out + safety
-rules.
+calling them in one message. `codexmcp` is deliberately Claude-only because
+standalone Codex uses native collaboration tools. Run `/codexmcp` from Claude Code
+to preflight and for the fan-out + safety rules.
 
-install.sh pins the agent defaults as `-c` launch overrides - **flagship model
-(`gpt-5.6-sol`) at `xhigh` reasoning effort**, `approval_policy=never` (there is no
-human at the other end of a spawned agent to answer a prompt) - recorded
+install.sh pins general execution to **`gpt-5.6-sol` at `xhigh` reasoning effort**
+and installs a read-only **`gpt-6-astra` at `max`** planner profile.
+`approval_policy=never` is used for unattended agents. The execution defaults are recorded
 (non-secretly) in `generated/.codex.env`, the same file the standalone runner uses. **The container is the safety floor:** an
 agent runs its own shell *outside* Claude's `deny` rules, but only the project dir and
 `~/.codex` are mounted and the container carries **no git credentials**, so a
@@ -366,8 +399,10 @@ write action. Full setup, model/sandbox tuning, and teardown:
 **[docs/codex.md](docs/codex.md)**.
 
 `-x` also wires **Codex compat** so the same instructions and Codex-enabled skills reach Codex:
-`~/.codex/AGENTS.md` and eligible `~/.codex/skills/<name>` entries are symlinked back into this kit
-(manifest `~/.codex/.claude-kit-skills`; `-X` unwires them). An existing
+`~/.codex/AGENTS.md` and eligible entries under both `~/.agents/skills/<name>` and
+`~/.codex/skills/<name>` are symlinked back into this kit (with a manifest beside
+each root; `-X` unwires them). It also links the Astra planner at
+`~/.codex/agents/claude-kit-planner.toml`. An existing
 `agents/openai.yaml` is the Codex opt-in and its generated fields are refreshed from
 frontmatter, including `allow_implicit_invocation: false` mirroring `disable-model-invocation: true`.
 See also [section 19](#19-standalone-codex---codex-installsh--codexsh).
@@ -377,9 +412,10 @@ Neither flag = `mcpServers.codex` is left exactly as-is on re-runs.
 ### 15. Skills auto-invoke toggle (`--skills-auto on|off`)
 
 A kit skill carrying `disable-model-invocation: true` is loaded only when you invoke it
-by name; `false` lets Claude auto-pull it when its description matches the task. `-s on`
-rewrites `true` to `false` across every kit `SKILL.md` (the files are live symlink
-targets - no re-link needed, but skills bind at session start, so restart Claude Code):
+by name; `false` lets either installed client auto-pull it when its description matches
+the task. `-s on` rewrites `true` to `false` across every kit `SKILL.md` and refreshes
+Codex invocation policy (the files are live symlink targets, but skills bind at session
+start, so restart the active client):
 
 ```bash
 bash install.sh -s on  -p standard -yU    # everything auto-invokable
@@ -444,18 +480,20 @@ floors match `syncSkills` - correct links untouched, foreign symlinks skipped wi
 warning, and if both a real dir and a kit dir exist nothing is merged silently. After
 `--fresh` (or on a new machine) the link pass recreates the symlinks from the kit copy.
 
-### 18. MCP logout (`--logout codex|github|atlassian|aws|all`)
+### 18. Credential logout (`--logout codex|github|atlassian|aws|all`)
 
-`bash install.sh -l <mcp>` logs out of an MCP and **exits** - a standalone action that
-runs nothing else, which is why every permission tier always-allows
+`bash install.sh -l <target>` clears that integration's local authentication and
+**exits** - a standalone action that runs nothing else, which is why every permission tier always-allows
 `install.sh -l *` (and the standalone `codex-install.sh -l`): Claude can log you out on
 request, and an allowed `-l` can never be leveraged into a full install, `--fresh`, or
 anything beyond the logout. What it removes:
 
 - **codex** - `~/.codex/auth.json` (the ChatGPT session). The registration stays in
   place; a fresh container `login` brings the tools straight back.
-- **github / atlassian / aws** - the `~/.claude/mcp-env/` env file **and** the
+- **github / atlassian** - the `~/.claude/mcp-env/` env file **and** the
   `~/.claude.json` registration, because that registration embeds the credentials.
+- **aws** - the env file, running CLI container, session gates, and any legacy MCP
+  registration left by an older kit version.
 
 Everything is local-only: each block prints where to revoke the token server-side
 (GitHub token settings, Atlassian API-tokens page, IAM access keys, ChatGPT
@@ -478,10 +516,13 @@ bash codex.sh exec "review the changes"  # normal Codex arguments pass straight 
 It accepts the full installer flag set and implements each capability through Codex's
 own profile, permission, rule, MCP, memory, archive, skill, and TUI mechanisms. It links
 `~/.codex/AGENTS.md` to the kit instructions and each skill carrying
-`agents/openai.yaml` into `~/.agents/skills`.
+`agents/openai.yaml` into both Codex skill roots. Keeping `~/.agents/skills` and
+`~/.codex/skills` synchronized prevents stale skills because current releases scan both.
 The launcher also applies the VS Code keyboard workaround without changing any other
-CLI environment. Usage, the feature table, permission translation, memory preservation,
-Docker limits, browser walker, and verification are in
+CLI environment. Non-trivial planning runs in the read-only Astra/max planner and
+approved implementation returns to the Sol/xhigh main thread. Usage, the feature
+table, permission translation, memory preservation, Docker limits, browser walker,
+and verification are in
 **[docs/codex-standalone.md](docs/codex-standalone.md)**.
 
 ### 20. OpenEyes Chrome walker (`--setup-walker`)

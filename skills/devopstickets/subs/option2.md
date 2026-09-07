@@ -14,5 +14,10 @@ Apply the completeness gate (drop skips and any note whose `confirmed` is empty)
 
 **Write the file:**
 1. `date +%F` for today's date.
-2. With the Write tool, write all notes to `"$HOME/devops-notes-<date>.txt"`. Plain text, note-style (`<Category> - <Subject>` heading, `1.)` steps, no fluff, grep-discoverable); dashes between notes; end each with a `Confirmed:` line (the proof the fix worked) and `Source: https://openeyes.atlassian.net/browse/<KEY>`. Header: state notes were drawn from full comment threads and each carries a confirmation.
+2. With the available filesystem writer, write all notes to
+   `"$HOME/devops-notes-<date>.txt"`. Plain text, note-style (`<Category> -
+   <Subject>` heading, `1.)` steps, no fluff, grep-discoverable); dashes between
+   notes; end each with a `Confirmed:` line (the proof the fix worked) and
+   `Source: https://openeyes.atlassian.net/browse/<KEY>`. Header: state notes
+   were drawn from full comment threads and each carries a confirmation.
 3. In chat, print the file path and a one-line index (`KEY -> title`).

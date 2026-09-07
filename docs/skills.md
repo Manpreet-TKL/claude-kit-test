@@ -1,6 +1,8 @@
-# CLAUDE.md vs SKILL.md
+# Global instructions vs SKILL.md
 
-Two parallel mechanisms inject knowledge into Claude Code. They look similar but behave differently.
+Claude Code and Codex both receive global instructions and on-demand skills.
+The filenames and explicit invocation syntax differ, but the kit keeps one
+shared skill source.
 
 ## `CLAUDE.md` - always-on context
 
@@ -16,7 +18,8 @@ Caveats:
 
 ## `SKILL.md` - invoked on demand
 
-A skill lives at `~/.claude/skills/<name>/SKILL.md`. It has frontmatter:
+A source skill lives at `skills/<name>/SKILL.md` and is linked into each
+eligible client's skill root. It has frontmatter:
 
 ```yaml
 ---
@@ -28,7 +31,8 @@ disable-model-invocation: true   # optional - see below
 
 A SKILL.md is **only** loaded into context when:
 
-1. The user explicitly invokes it (e.g. `/skill-name` or "use the X skill"), **or**
+1. The user explicitly invokes it (`/skill-name` in Claude Code,
+   `$skill-name` in Codex, or "use the X skill"), **or**
 2. The model decides to load it based on the `description` (unless `disable-model-invocation: true`).
 
 Use SKILL.md for:
@@ -37,16 +41,24 @@ Use SKILL.md for:
 - House styles you only want to apply when actually writing that kind of code (e.g. a bash style only when working on a shell script).
 - Module / runbook / mental-model docs that are too long to keep in CLAUDE.md.
 
-## When to set `disable-model-invocation: true`
+## Invocation states
 
-**Setting this flag is the default for a new skill.** Most kit skills set it - they're large, repo-specific, or preflight checks you want to fire deliberately, so you don't want the model auto-pulling them in for unrelated tasks. The user (or an agent that knows the repo) invokes them by name.
+Every new skill states `disable-model-invocation` explicitly. Use `false` when
+the agent may select it from its description and `true` when only an explicit
+invocation should load it. The committed kit currently uses `false` for every
+flagged skill. The `-s on|off` installer switch snapshots and changes these
+values without touching the five deliberate exceptions.
 
 Five skills **omit** the flag and therefore auto-load when their `description` matches the task: **`c-ascii`, `c-frontend-design`, `a-oe-docs`, `c-oe-helm`, `c-oe-ui`**. They're guard-rails / mental models you want applied whenever the model touches that kind of work. For an auto-load skill the `description:` *is* the trigger - write it to fire on the right task and nothing else.
 
+For Codex, `agents/openai.yaml` mirrors `true` as
+`policy.allow_implicit_invocation: false`. The installers generate that policy
+from the shared frontmatter so the two clients do not drift.
+
 ## Two body conventions every kit skill follows
 
-1. **"Context loaded" ack.** The body's first line is *"When loaded as context with no task, reply only `Context loaded.`"* So invoking a skill purely to prime context returns a one-word ack instead of a multi-hundred-token summary. The five preflight skills (`awsmcp`, `codexmcp`, `devopstickets`, `githubmcp`, `jiramcp`) are the deliberate exception - they actually run a check and report its result.
-2. **One-line `description:`.** Keep it <= ~78 chars so the whole thing is readable on one terminal row when you search skills inside Claude.
+1. **"Context loaded" ack.** The body's first line is *"When loaded as context with no task, reply only `Context loaded.`"* So invoking a skill purely to prime context returns a one-word ack instead of a multi-hundred-token summary. The workflow/preflight exceptions (`awscli`, `codexmcp`, `devopstickets`, `githubmcp`, `jiramcp`) actually run a check or workflow and report its result.
+2. **One-line `description:`.** Keep it <= ~78 chars so the whole thing is readable on one terminal row when you search skills in either client.
 
 Keep each `SKILL.md` **under ~2,000 tokens** (~ 8 KB) so loading is cheap; move volatile detail into `subs/*.md` (below). Two skills intentionally exceed this - `create-oe-module` and `c-oe-coding-standards` - because they're reference-dense.
 
@@ -72,6 +84,28 @@ The model is expected to read the SKILL.md fully and then read whichever sub it 
 | Codex | Included only when `agents/openai.yaml` exists. Its generated fields are refreshed from `SKILL.md`; a missing file is never created automatically. |
 
 This makes a skill with no agent metadata Claude-only, a skill with `openai.yaml` available to both agents, and a skill with both `openai.yaml` and the Claude opt-out Codex-only. The Unix installers create links and manifests in C-locale skill-name order; the Windows installer copies skills in name order. This gives each client a deterministic alphabetical source order, although a client UI may apply its own display sort.
+
+Current deliberate client-specific skills:
+
+- `codexmcp` and `oe-probe-chrome` are Claude-only.
+- `oe-probe-codex-chrome` is Codex-only.
+- `codex-swarm`, `codex-grill`, `oe-probe-playwright`, `githubmcp` and
+  `jiramcp` select a compatible transport at runtime and are shared.
+
+## Validation
+
+Normal installer verification runs
+`bash /home/toukan/claude-kit/scripts/validate-skills.sh`. It checks the shared
+frontmatter schema, invocation-policy synchronization, availability metadata,
+and Codex-incompatible tool or model names in every Codex-enabled skill.
+`codex-install.sh` adds `-c|--codex-runtime`, which calls `codex app-server` and
+requires its installed `skills/list` response to contain the expected kit
+skills with no errors. This parser check starts no model turn. The existing
+installer `-n|--no-verify` flag skips both checks.
+The kit does not use the bundled `quick_validate.py` as its install gate because
+that validator rejects the Claude-compatible frontmatter extensions retained
+here. The shared validator checks that combined contract, and the Codex runtime
+check remains authoritative for Codex discovery.
 
 ## Where the skills come from
 

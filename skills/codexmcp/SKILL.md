@@ -1,10 +1,13 @@
 ---
 name: codexmcp
-description: Codex MCP context + gate enable, then fan out agents
+description: Claude-side Codex MCP context + gate enable, then fan out agents
 disable-model-invocation: false
 ---
 
 # Codex agents (OpenAI Codex via MCP)
+
+This is the Claude Code-side MCP route. Standalone Codex uses its native
+collaboration tools and does not load this skill.
 
 Load how the kit's Codex MCP works, make its tools available (enabling the startup
 gate if needed), then delegate work to one or more autonomous Codex coding agents.
@@ -15,8 +18,8 @@ touch `~/.codex/auth.json`.
 The server runs `codex mcp-server` inside a locally-built docker container
 (`claude-kit-codex`, from `~/claude-kit/docker/codex/`; the host `codex` binary is
 the fallback only when Docker is absent) and is registered with its defaults baked in
-(set by `install.sh -x`): the **flagship model (`gpt-5.6-sol`) at `xhigh` reasoning
-effort**, sandboxed,
+(set by `install.sh -x`): the **execution model (`gpt-5.6-sol`) at `xhigh`
+reasoning effort**, sandboxed,
 `approval_policy=never` so agents run unattended. In docker mode the **container is
 the sandbox** - only the project dir and `~/.codex` are mounted; in host mode it's
 codex's own **workspace-write, network-off** sandbox. It exposes two tools:
@@ -117,8 +120,8 @@ form.)
 
 Set by `install.sh -x`, recorded non-secretly in `~/claude-kit/generated/.codex.env`:
 
-- `CODEX_MODEL` - the model id agents run (default `gpt-5.6-sol`). GPT-5.6 family:
-  `gpt-5.6-sol` (flagship - complex, ambiguous, or high-value work), `gpt-5.6-terra`
+- `CODEX_MODEL` - the default implementation model (default `gpt-5.6-sol`). The
+  kit uses `gpt-6-astra` at `max` for planning. GPT-5.6 also offers `gpt-5.6-terra`
   (everyday workhorse), `gpt-5.6-luna` (fast/cheap repeatable tasks).
 - `CODEX_REASONING_EFFORT` - default `xhigh` (the GPT-5.6 family accepts
   low/medium/high/xhigh/max/ultra).

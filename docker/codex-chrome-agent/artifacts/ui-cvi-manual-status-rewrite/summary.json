@@ -1,0 +1,21 @@
+{
+  "initialDetailRequests": 0,
+  "lazyHistory": true,
+  "exactDirectPicker": true,
+  "fuzzyDateRoundTrip": true,
+  "currentProjectionUpdated": true,
+  "reloadRoundTrip": true,
+  "seedRestored": true,
+  "cviRequests": [
+    "GET /api/patients/1/cvi-status/history",
+    "GET /api/patients/1/cvi-status/manual",
+    "PUT /api/patients/1/cvi-status/manual",
+    "GET /api/patients/1/cvi-status/manual",
+    "GET /api/patients/1/cvi-status/history",
+    "GET /api/patients/1/cvi-status/manual",
+    "GET /api/patients/1/cvi-status/history",
+    "PUT /api/patients/1/cvi-status/manual"
+  ],
+  "failedResponses": [],
+  "browserErrors": []
+}

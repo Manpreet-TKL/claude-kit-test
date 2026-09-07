@@ -14,11 +14,20 @@ Fetch the light list with the keyword ANDed in:
 
 ## 2 - Deepen EVERY match (no finder step)
 
-The keyword search already selects the tickets, so unlike options 2/5 there is no Haiku finder - just deep-dive them all. `mkdir -p /tmp/oetriage/deep`, then `jira_get_issue` (Shared B shape) each matched key in waves of ~12, saving each to `/tmp/oetriage/deep/<KEY>.json`.
+The keyword search already selects the tickets, so unlike options 2/5 there is
+no separate finder - just deep-dive them all. `mkdir -p /tmp/oetriage/deep`,
+then `jira_get_issue` (Shared B shape) each matched key in waves of ~12, saving
+each to `/tmp/oetriage/deep/<KEY>.json`.
 
-## 3 - Extract each ticket's fix (multiple agents, parallel Haiku)
+## 3 - Extract each ticket's fix (multiple agents)
 
-Batch the matched keys into groups of **10**; spawn one Haiku agent per batch (`subagent_type: general-purpose`, `model: haiku`, **all in one message** so they run in parallel). Each agent reads ONLY the `/tmp/oetriage/deep/<KEY>.json` files for its batch (local files - no MCP, so it stays token-light) and returns a JSON array, one object per ticket:
+Batch the matched keys into groups of **10**. State the agent count and ask
+once for cost confirmation, then use the current client's native collaboration
+facility to run one self-contained agent per batch in parallel. Use the current
+or inherited model unless the user explicitly approves an override. Each agent
+reads ONLY the `/tmp/oetriage/deep/<KEY>.json` files for its batch (local files
+- no MCP, so it stays token-light) and returns a JSON array, one object per
+ticket:
 
 > You are a ToukanLabs support engineer. For each OpenEyes (PHP/Yii 1.1 ophthalmology EMR) support-ticket JSON, read the comment thread (where the real resolution lives) and summarise the fix that was actually applied. Return `{ "key": "...", "problem": "one line", "fix": "1-2 lines: what was actually done to resolve it", "fix_signature": "a short normalised lowercase tag for the KIND of fix, e.g. 'reindex-worklist', 'restart-mirth', 'sql-null-institution' - tickets fixed the SAME way MUST share the SAME signature", "automatable": true|false, "confirmed": "the comment quote/event proving it worked", "source": "<KEY>" }`. If the ticket has no concrete, confirmed fix (still open, needs-info, or it points to an attachment/log/SQL not included in this JSON), return `{ "key": "...", "skip": true, "reason": "..." }`. Never invent a fix.
 
@@ -31,7 +40,8 @@ In the main loop, group the kept objects into clusters of the SAME underlying fi
 ## 5 - Write the file
 
 1. `date +%F`; sanitise the keyword (lowercase, non-alphanumerics -> `-`) for the filename.
-2. With the Write tool, write to `"$HOME/devops-keyword-<keyword>-<date>.txt"`:
+2. With the available filesystem writer, write to
+   `"$HOME/devops-keyword-<keyword>-<date>.txt"`:
    - **Header:** keyword, filter used, `M` matched / `K` with a confirmed fix / **`unique_fix_count` unique fixes**, today's date; note each ticket's fix carries a confirmation quote.
    - **Recurring fixes first** - per cluster, count-descending: `## <title>  (x<count>)`, the fix summary, an `Automatable: yes/no` line and the `yiic` sketch when yes, then the member ticket links.
    - **Per-ticket appendix:** `<KEY> - <problem>` / `Fix: ...` / `Confirmed: <quote>` / `Source: https://openeyes.atlassian.net/browse/<KEY>`; dashes between entries.

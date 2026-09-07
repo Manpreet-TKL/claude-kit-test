@@ -26,6 +26,10 @@ GNU screen 5 reconnects to an existing session after SSH or terminal loss. Run `
 
 `codex-install.sh` accepts the same feature flags as `install.sh`: `-q`, `-p`, `-m`, `-t`, `-s`, `-d`, `-r`, `-F`, `-n`, `-U`, `-y`, `-j`, `-c`, `-J`, `-g`, `-G`, `-x`, `-X`, `-a`, `-A`, `-w`, and `-l <target>`. Run `bash /home/toukan/claude-kit/codex-install.sh -h` for exact values. The `-x` and `-X` flags are accepted no-ops because this entry point already is the standalone Codex setup.
 
+Normal verification validates the shared skill schema and asks Codex itself to
+discover the installed skill set. `-n|--no-verify` skips those checks along
+with the other post-install verification.
+
 Set the maximum number of concurrent native subagents with `-t <positive integer>`. The installer saves it as `CODEX_AGENT_THREADS` and writes it to the generated Codex profile. For example:
 
 ```bash
@@ -34,6 +38,21 @@ bash /home/toukan/claude-kit/codex-install.sh -t 50 -U -y
 
 Start a new Codex session after changing it. To restore Codex's built-in default, set `CODEX_AGENT_THREADS=` in `generated/.codex.env` and rerun the installer.
 
+The `codex-swarm` skill uses Codex's native multi-agent tools when they are
+available. It does not require Claude Code, a Codex MCP registration, or the
+`generated/mcp-on/codex` startup gate. The MCP route remains a fallback for
+Claude Code sessions. `codex-grill` uses the same native/MCP split. The
+`codexmcp` skill is Claude-only and is not linked into standalone Codex.
+
+The main thread stays on `gpt-5.6-sol` at `xhigh` for implementation. The
+installer links a custom read-only `planner` agent from
+`settings/codex/agents/planner.toml`; non-trivial planning uses
+`gpt-6-astra` at `max`, then returns its plan to the Sol main thread for
+execution. Codex does not currently expose a `plan_mode_model` setting, so the
+custom agent provides the automatic model boundary. The supported native
+`plan_mode_reasoning_effort` setting is also pinned to `max` for direct Plan
+mode work.
+
 If Codex is missing, the installer uses OpenAI's standalone installer. A normal re-run updates Codex. If an existing global npm installation is root-owned, the installer uses `sudo npm install -g @openai/codex`; otherwise it uses `codex update`. Pass `-U` to leave an existing version unchanged; it does not suppress a required first install.
 
 ## Feature mapping
@@ -41,7 +60,7 @@ If Codex is missing, the installer uses OpenAI's standalone installer. A normal 
 | Kit feature | Codex mechanism | Compatibility |
 |---|---|---|
 | Global instructions | `~/.codex/AGENTS.md` links to `claude-md/CLAUDE.md`. | Complete |
-| Skills | Each skill carrying `agents/openai.yaml` links into `~/.agents/skills`; the file also supplies Codex UI metadata. | Complete; Codex availability is explicit, links are created in name order, implicit loading follows each skill's `disable-model-invocation` setting, and `$skill-name` always loads explicitly. |
+| Skills | Each skill carrying `agents/openai.yaml` links into both `~/.agents/skills` and `~/.codex/skills`; the latter also serves the MCP container. | Both roots are synchronized because current Codex releases scan both. Install verification checks schema, policy synchronization, stale client-specific tool names, exact availability, and real `skills/list` discovery. `$skill-name` always loads explicitly. |
 | Four permission tiers | Exported TOML profiles in `settings/codex/permissions/` plus Starlark command rules in `settings/codex/rules/`; `yolo` selects Codex's `:danger-full-access` built-in directly. | Close translation; Codex evaluates permissions and command prefixes differently, so refine these source files as needed. |
 | Session modes | Launcher maps the existing mode names onto Codex approval policy, reviewer, read-only permissions, or the explicit bypass flag. | Complete within Codex's available controls. |
 | Status line | Native `[tui].status_line` configuration in `~/.codex/claude-kit.config.toml`. | Complete; it uses the requested field list and colors. |
@@ -49,14 +68,15 @@ If Codex is missing, the installer uses OpenAI's standalone installer. A normal 
 | Screen resilience | Managed aliases start each CLI inside GNU screen 5 and remain available without nesting from shells already inside screen. | Complete and idempotent |
 | Auto-compaction | `model_auto_compact_token_limit` in the Codex profile. | Native equivalent |
 | Native subagents | `CODEX_AGENT_THREADS` becomes `[agents].max_concurrent_threads_per_session` in the generated profile. | Configurable with `-t`; applies to new sessions. |
+| Planning model | `~/.codex/agents/claude-kit-planner.toml` links to the kit-managed custom agent. | Non-trivial plans use `gpt-6-astra` at `max`; implementation remains in the `gpt-5.6-sol` at `xhigh` main thread. |
 | Session pruning | `-d` locates old rollout files and calls `codex archive`. | Complete |
 | Reset and fresh install | `-r` archives regenerable data; `-F` backs up and restores auth, history, sessions, and memory state. | Complete |
 | Memory | Native Codex memories are enabled. Raw memory remains in `~/.codex/memories/` and `~/.codex/memories_*.sqlite*`. | Preserved by reset/fresh; deliberately never copied into the git repository. |
 | Jira and Confluence | Read-only container MCP registered with `codex mcp add`. Secrets stay in `~/.claude/mcp-env/`. | Complete after machine-local credentials exist; natively disabled until armed for a new session. |
 | GitHub | Read-only container MCP registered with `codex mcp add`. | Complete after machine-local credentials exist; natively disabled until armed for a new session. |
-| AWS | Read-only container MCP registered with `codex mcp add`. Direct `aws` commands are forbidden by Codex rules. | Complete after machine-local credentials exist; natively disabled until armed for a new session. |
-| Browser walker | Separate `codex-chrome` sidecar with Chrome DevTools MCP and Playwright MCP. | Complete setup path and natively disabled MCPs; build and live walk require Docker, the target network, and image downloads. |
-| Logout | `-l codex|github|atlassian|aws|all` removes the selected local credential and MCP registration. | Complete |
+| AWS | Shared official AWS CLI container, reached only through `scripts/agent-aws-cli.sh run`. `-a` starts it and pre-arms one session. | Complete after machine-local credentials exist; the first session to read consumes the gate and new sessions are gated again. |
+| Browser walker | Separate `codex-chrome` sidecar with Chrome DevTools MCP and Playwright MCP. | `oe-probe-codex-chrome` is Codex-only; the Claude-in-Chrome skill is pruned. Build and live walk require Docker, the target network, and image downloads. |
+| Logout | `-l codex|github|atlassian|aws|all` removes the selected local credential. AWS also stops its container, clears its gates, and removes any legacy MCP registration. | Complete |
 
 ## Permissions
 
@@ -73,13 +93,17 @@ settings/codex/rules/trusted.rules
 settings/codex/rules/yolo.rules
 ```
 
-The installer generates `~/.codex/claude-kit.config.toml` from its native base settings and the permission TOML fragments, then links `~/.codex/rules/claude-kit.rules` to the selected rule file. The global instructions, skills, and selected static rules are symlinked back to the kit. The launcher maps the selected model, effort, mode, and permission tier at session start. It also maps the kit's `yolo` tier directly to Codex's `:danger-full-access` built-in because custom profiles cannot extend that built-in, so `codex.sh` remains required. The hard floor forbids `git push`, `git commit`, and direct AWS CLI calls. The `yolo` tier permits Docker access; narrower tiers deny the Docker socket.
+The installer generates `~/.codex/claude-kit.config.toml` from its native base settings and the permission TOML fragments, then links `~/.codex/rules/claude-kit.rules` to the selected rule file. The global instructions, skills, custom planner, and selected static rules are symlinked back to the kit. The launcher maps the selected execution model, effort, mode, and permission tier at session start. It also maps the kit's `yolo` tier directly to Codex's `:danger-full-access` built-in because custom profiles cannot extend that built-in, so `codex.sh` remains required. The hard floor forbids `git push`, `git commit`, and direct AWS CLI calls. The `yolo` tier permits Docker access; narrower tiers deny the Docker socket.
+
+The AWS session gate governs compliant wrapper use rather than isolating AWS
+from a yolo session: direct Docker can bypass the wrapper. The read-only IAM
+principal is the hard boundary.
 
 ## MCP startup gates
 
 Registered MCP servers are stored with `enabled = false`, so a normal Codex startup skips them without producing failed-handshake warnings. Arm one with `touch /home/toukan/claude-kit/generated/mcp-on/<server>`, then start a new Codex session. The launcher enables it for that session only. The first wrapper spawn consumes the flag and opens a 60-second startup grace window for repeated connection attempts.
 
-Codex cannot enable a natively disabled MCP inside an existing TUI session. Exit the current session before arming it, or arm it from another shell and then restart Codex. The supported server names are `atlassian`, `github`, `aws`, `chrome-devtools`, and `playwright`. The `enabled` setting is documented in the [official MCP configuration reference](https://learn.chatgpt.com/docs/extend/mcp?surface=cli#other-configuration-options).
+Codex cannot enable a natively disabled MCP inside an existing TUI session. Exit the current session before arming it, or arm it from another shell and then restart Codex. The supported server names are `atlassian`, `github`, `chrome-devtools`, and `playwright`. AWS is not an MCP and its wrapper gate takes effect immediately. The `enabled` setting is documented in the [official MCP configuration reference](https://learn.chatgpt.com/docs/extend/mcp?surface=cli#other-configuration-options).
 
 ## Docker access and host files
 
@@ -98,9 +122,11 @@ Start a fresh integrated terminal and run `codex`. Confirm Caps Lock, Shift capi
 ## Checks
 
 ```bash
+bash /home/toukan/claude-kit/scripts/validate-skills.sh -c
 codex --strict-config --profile claude-kit --version
 codex execpolicy check --rules ~/.codex/rules/claude-kit.rules -- git push origin main
 readlink -f ~/.codex/AGENTS.md
+readlink -f ~/.codex/agents/claude-kit-planner.toml
 readlink -f ~/.agents/skills/c-claude-kit
 codex sandbox -- /usr/bin/true
 ```

@@ -49,6 +49,17 @@ Bias toward caution over speed; use judgment on trivial tasks.
    container before installing anything on the host, and call it out when an
    install is genuinely unavoidable.
 
+## Codex model routing
+
+- Keep the standalone Codex main thread on `gpt-5.6-sol` at `xhigh` for
+  implementation.
+- For a non-trivial planning phase, use one read-only native `planner` subagent.
+  Its kit-managed profile pins `gpt-6-astra` at `max`. Integrate its plan in the
+  main thread, then execute there so work returns to Sol at `xhigh`.
+- This single planning route is pre-authorized. Do not request a separate model
+  or subagent confirmation for it. Other delegation still follows the normal
+  authorization and cost rules.
+
 ## Output discipline
 
 - No emojis unless asked.

@@ -111,6 +111,10 @@ public function actionIndex()
 
 If the command takes options on the default action (like `DBReportsCommand`), `actionIndex` accepts the flags and falls back to `getHelp()` when required args are missing.
 
+Yii 1.1 resolves `--Option=value` by exact, case-sensitive matching against the selected action's parameter names. Options supplied without an explicit action are parsed against `index`; either document the action as required or normalize option-first invocations deliberately.
+
+When printing help from an action or validation error, surround the help string with a leading and trailing newline so it does not run into adjacent output.
+
 ## Section banners (PHPDoc boxes, this exact form)
 
 ```php
@@ -145,13 +149,21 @@ Anything it prints (other than a comment) is in the wrong half of the file.
 
 ## Method PHPDoc
 
-Every method has a header. Trivial helpers take a one-liner; anything with real parameters takes `@param`/`@return`:
+Every method has an expanded, multi-line header. Never collapse a method header to one line, even for a trivial helper. Put the summary on its own line, leave a blank PHPDoc line before tags, and add `@param`/`@return` where applicable:
 
 ```php
-/** Print a timestamped progress line. */
+/**
+ * Print a timestamped progress line.
+ *
+ * @param string $msg progress message
+ */
 protected function log($msg)
 
-/** @return string the advisory lock name, qualified by staging schema. */
+/**
+ * Return the advisory lock name qualified by staging schema.
+ *
+ * @return string advisory lock name
+ */
 protected function lockName()
 
 /**

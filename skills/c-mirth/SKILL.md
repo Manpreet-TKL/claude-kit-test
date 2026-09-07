@@ -35,4 +35,5 @@ Channel XML committed to git contains only `${VAR}`, never a password. The globa
 - `globalChannelMap` is CLEARED on every (re)deploy - watermarks/seen-sets reset; pollers re-emit everything once.
 - Cumulative channel statistics can't be cleared via REST (the clear endpoints 404).
 - Rhino: wrap JS strings for Java calls; invoke `HttpURLConnection` methods via reflection on the public superclass; Base64 via `java.util.Base64`.
-- Big channel XML chokes the Edit tool - patch with an asserted Python script (count-checked `str.replace`, `.before` backup).
+- Big channel XML chokes direct text edits - patch with an asserted Python
+  script (count-checked `str.replace`, `.before` backup).

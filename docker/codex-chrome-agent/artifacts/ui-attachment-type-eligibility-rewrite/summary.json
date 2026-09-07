@@ -1,0 +1,21 @@
+{
+  "enabledEventOptions": [
+    "Select...",
+    "Clinical Photograph",
+    "Clinical Report",
+    "Other Attachment"
+  ],
+  "disabledEventOptions": [
+    "Select...",
+    "Clinical Report",
+    "Other Attachment"
+  ],
+  "disabledDeviceOptions": [
+    "… select type",
+    "Report",
+    "Other"
+  ],
+  "restored": true,
+  "failedResponses": [],
+  "browserErrors": []
+}

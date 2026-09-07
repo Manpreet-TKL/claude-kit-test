@@ -25,33 +25,54 @@ When loaded as context with no task, reply only `Context loaded.` - and nothing 
 
 OpenEyes is ~14k files; reading them to find the journey is the expensive mistake.
 
-1. **The map - `c-oe-nav`.** Load it with the Skill tool if it isn't in context (same for `c-dblogin`/`c-oe-code` when needed). Its atlas has login, patient search, the Add Event dialog, event views, worklist and admin, plus the event-type -> module table; `subs/page-index.md` (grep, never read) has every one of the 390 pages' exact address. Map the fault's controller/module to the screen that reaches it: a clinical event -> patient > 'Add Event' > that event type; otherwise the main menu or admin.
+1. **The map - `c-oe-nav`.** Load it with the current client's skill
+   invocation when it is not already in context (the same applies to
+   `c-dblogin` and `c-oe-code`). Its atlas has login, patient search, the Add
+   Event dialog, event views, worklist and admin, plus the event-type -> module
+   table; `subs/page-index.md` (grep, never read) has every one of the 390
+   pages' exact address. Map the fault's controller/module to the screen that
+   reaches it: a clinical event -> patient > 'Add Event' > that event type;
+   otherwise the main menu or admin.
 2. **Exact labels - one grep, not a read.** `grep -n "<field words>\|Save\|Add" protected/modules/<Module>/views/**/form_*.php` on the fix branch. Never invent a label.
 3. **Already walked?** `ls ~/claude-kit/skills/c-oe-nav/subs/canned/` - one file per journey, each with a bug ledger. A repeat repro is a replay, not a rediscovery.
 
-Still unknown after that? **Hand the walk to a cheap (Haiku) subagent** and ask only for the quoted labels back. Never spelunk in the main context.
+Still unknown after that? **Hand the walk to a lightweight subagent** and ask
+only for the quoted labels back. Use the current or inherited model unless the
+user explicitly approves an override. Never spelunk in the main context.
 
 ## Cost ladder - climb only as far as you must
 
 | Rung | Cost | Use when |
 |---|---|---|
 | **0. Decode + grep, no browser** | ~0 | The report quotes a support identifier, or names screen + action + expected/actual. **Most reports** - see `subs/logs.md` for `decodesupportid`, which returns file:line *and* the reporter's user/firm/site/institution/patient ids. |
-| **1. Haiku + `journey.mjs`, log-bracketed** | ~3k main / ~30k sub | The click path is derivable offline from the atlas. **Every confirmation replay lives here, always.** `c-oe-nav/subs/probe.md`. |
+| **1. Subagent + `journey.mjs`, log-bracketed** | ~3k main / ~30k sub | The click path is derivable offline from the atlas. **Every confirmation replay lives here, always.** `c-oe-nav/subs/probe.md`. |
 | **2. `oe-probe-playwright`** | same | Rung 1's image has no bundled Puppeteer. Mechanical fallback. |
-| **3. `oe-probe-chrome` skill** | 10-50x (~$5, ~60 turns) | The path *cannot* be derived: gesture-dependent (drag, EyeDraw canvas, hover-only control, autosave modal), the report is too vague to script, a human wants to watch, or a GIF is the evidence. |
+| **3. Interactive Chrome skill** | 10-50x (~$5, ~60 turns) | The path *cannot* be derived: gesture-dependent (drag, EyeDraw canvas, hover-only control, autosave modal), the report is too vague to script, a human wants to watch, or a GIF is the evidence. |
 
 > **Chrome discovers the path. Puppeteer proves it. Confirmation replays never run in Chrome.**
 
 **Say which browser you are driving before you drive it.** Every walk is one of two things and the user should never have to guess which they are paying for:
 
-1. **Claude in Chrome** (`oe-probe-chrome`, the walker sidecar) - **the default**. Announce it in one line before the first drive: *"Walking this in Claude in Chrome"*, plus what it will cost if the walk is more than a couple of stages.
+1. **Interactive Chrome** - use the skill installed for the active client:
+   `oe-probe-chrome` in Claude Code or `oe-probe-codex-chrome` in Codex.
+   Announce the chosen browser in one line before the first drive, plus what it
+   will cost if the walk is more than a couple of stages.
 2. **Puppeteer/Playwright** (`journey.mjs`, `oe-probe-playwright`) - cheaper and scriptable, but blind to gestures, canvas and rich-text/iframe state.
 
 Default to Chrome and **ask before switching to the scripted lane**, naming why (the path is already canned, the predicate is plain DOM text, it is a bulk sweep). Switching the other way - starting scripted and escalating to Chrome because the predicate turned out to be JS or gesture state - is a cost increase: say so and get a yes first.
 
-Enter rung 3 by invoking the **`oe-probe-chrome`** skill, which owns `drive.sh` - never by hand-rolling a `docker exec` into the container. Scope that session to one job (find and narrate the click path), then immediately distil it into `c-oe-nav/subs/canned/<journey>.md` so every later run of the journey is rung 1.
+Enter rung 3 through the installed interactive Chrome skill - never by
+hand-rolling a `docker exec` into either sidecar. Scope that session to one job
+(find and narrate the click path), then immediately distil it into
+`c-oe-nav/subs/canned/<journey>.md` so every later run is rung 1.
 
-**The first drive of a new reproduction is always `./drive.sh -r -t <slug> "<prompt>"`.** `-r` reboots the walker so the browser is genuinely cold - no inherited tabs, drafts, site grants or stale OE session - because a repro that only works from the last walk's leftovers is not a repro. Each drive then copies its screenshots and result out to `~/repro-evidence/<date>-<slug>/` on its own; that folder is what the Evidence block cites. Both rules are stated in full in `oe-probe-chrome`.
+Follow the selected interactive skill's clean-start and evidence procedure. In
+the Claude Code sidecar, the first drive is
+`bash /home/toukan/claude-kit/docker/oe-chrome-agent/drive.sh -r -t <slug> "<prompt>"`; `-r` supplies the cold browser and
+the driver copies evidence to `~/repro-evidence/<date>-<slug>/`. In Codex,
+establish the same clean starting state through the configured browser MCP and
+keep any screenshots outside the kit. A repro that depends on inherited tabs,
+drafts, grants, or a stale session does not count.
 
 ## The rules - what makes steps followable
 
@@ -95,7 +116,7 @@ Blockquote = paste target, plain text = for the human, matching `create-oe-pr`'s
 
 ## Subs
 
-- **`subs/discovery.md`** - the discovery loop, the rung 0-3 decision rule in full, the R1/R2 determinism bar, the write policy, and the two subagent briefs (Haiku bracketed walk; Chrome path-finding).
+- **`subs/discovery.md`** - the discovery loop, the rung 0-3 decision rule in full, the R1/R2 determinism bar, the write policy, and the two subagent briefs (scripted bracketed walk; Chrome path-finding).
 - **`subs/logs.md`** - `decodesupportid`, the verified log inventory per image, the before/after bracket one-liners and their fragilities, the audit bracket, the PII rule and the evidence-bundle layout. **Read this before claiming a walk produced no log signature.**
 - **`subs/env-setup.md`** - the three kinds of environment gap, admin-UI-not-CLI and its one exception, the lever -> admin-route pointers, and how to probe an undocumented admin form.
 - **`subs/edge-cases.md`** - permission-denied tickets, and when steps genuinely can't be clean (no user-observable behaviour, client-only data, intermittent).

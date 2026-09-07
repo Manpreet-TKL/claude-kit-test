@@ -63,8 +63,13 @@ must be last. Run with no flags to see this help, or use -q for saved/defaults.
   -J, --without-atlassian  Remove the Codex Atlassian MCP registration.
   -g, --with-github        Register the read-only containerized GitHub MCP.
   -G, --without-github     Remove the Codex GitHub MCP registration.
-  -a, --with-aws           Register the read-only containerized AWS MCP.
-  -A, --without-aws        Remove the Codex AWS MCP registration.
+  -a, --with-aws           Start the shared read-only AWS CLI container and
+                           pre-arm one agent session. Its first read consumes
+                           the gate, so new sessions are gated again. Not an
+                           MCP - Codex reads AWS with
+                           scripts/agent-aws-cli.sh run <args>, the same script
+                           and container Claude Code uses.
+  -A, --without-aws        Stop the AWS CLI container and clear its gate.
   -x, --with-codex         Accepted no-op: this installer already configures Codex.
   -X, --without-codex      Accepted no-op: standalone Codex wiring remains installed.
   -w, --setup-walker       Build and register the dual-driver Codex Chrome walker.
@@ -163,12 +168,17 @@ codex_env="${generated_dir}/.codex.env"
 codex_home="${HOME}/.codex"
 codex_auth="${codex_home}/auth.json"
 codex_agents_md="${codex_home}/AGENTS.md"
+codex_agents_dir="${codex_home}/agents"
+codex_planner_agent="${codex_agents_dir}/claude-kit-planner.toml"
 codex_profile="${codex_home}/claude-kit.config.toml"
 codex_rules="${codex_home}/rules/claude-kit.rules"
 agents_home="${HOME}/.agents"
 agents_skills_dir="${agents_home}/skills"
 agents_manifest="${agents_home}/.claude-kit-skills"
+codex_skills_dir="${codex_home}/skills"
+codex_skills_manifest="${codex_home}/.claude-kit-skills"
 claude_md_src="${kit_root}/claude-md/CLAUDE.md"
+planner_agent_src="${kit_root}/settings/codex/agents/planner.toml"
 backup_root="${HOME}/.claude-backups"
 mcp_env_dir="${HOME}/.claude/mcp-env"
 atlassian_secrets="${mcp_env_dir}/.atlassian.env"
@@ -190,7 +200,7 @@ case "${SESSION_MODE:-auto}" in default|plan|acceptEdits|auto|dontAsk|bypassPerm
 case "${AGENT_THREADS}" in ''|*[!0-9]*|0) [ -z "${AGENT_THREADS}" ] || { echo "Invalid agent thread limit ... exiting" >&2; exit 1; } ;; esac
 case "${SKILLS_AUTO}" in ''|on|off) ;; *) echo "Invalid skills-auto value ... exiting" >&2; exit 1 ;; esac
 case "${LOGOUT_TARGET}" in ''|codex|github|atlassian|aws|all) ;; *) echo "Invalid logout target ... exiting" >&2; exit 1 ;; esac
-mkdir -p "${generated_dir}" "${codex_home}/rules" "${agents_skills_dir}" "${backup_root}" "${mcp_env_dir}"
+mkdir -p "${generated_dir}" "${codex_home}/rules" "${codex_agents_dir}" "${agents_skills_dir}" "${codex_skills_dir}" "${backup_root}" "${mcp_env_dir}"
 chmod 700 "${codex_home}" "${agents_home}" "${mcp_env_dir}"
 echo "$(codex --version) [OK]"
 echo "Checks complete ..."
@@ -199,6 +209,7 @@ echo "-------------------------------"
 clearMcpGate() {
     local name="${1}"
     rm -f "${generated_dir}/mcp-on/${name}" "${generated_dir}/mcp-on/${name}.win"
+    rm -f "${generated_dir}"/mcp-on/"${name}".session.* 2>/dev/null || true
 }
 
 logoutTarget() {
@@ -207,7 +218,7 @@ logoutTarget() {
         codex) codex logout >/dev/null 2>&1 || true ;;
         github) rm -f "${github_secrets}"; clearMcpGate github; codex mcp remove github >/dev/null 2>&1 || true ;;
         atlassian) rm -f "${atlassian_secrets}"; clearMcpGate atlassian; codex mcp remove atlassian >/dev/null 2>&1 || true ;;
-        aws) rm -f "${aws_secrets}"; clearMcpGate aws; codex mcp remove aws >/dev/null 2>&1 || true ;;
+        aws) rm -f "${aws_secrets}"; clearMcpGate aws; bash "${kit_root}/scripts/agent-aws-cli.sh" down >/dev/null 2>&1 || true; codex mcp remove aws >/dev/null 2>&1 || true ;;
         all) logoutTarget github; logoutTarget atlassian; logoutTarget aws; codex logout >/dev/null 2>&1 || true ;;
     esac
 }
@@ -266,7 +277,7 @@ freshInstall() {
     done
     backupMemories "${archive}"
     rm -rf "${codex_home}" "${agents_home}"
-    mkdir -p "${codex_home}/rules" "${agents_skills_dir}"
+    mkdir -p "${codex_home}/rules" "${codex_agents_dir}" "${agents_skills_dir}" "${codex_skills_dir}"
     for item in auth.json config.toml history.jsonl sessions; do
         [ -e "${archive}/${item}" ] && cp -a "${archive}/${item}" "${codex_home}/"
     done
@@ -310,6 +321,7 @@ writeProfile() {
         echo 'approvals_reviewer = "auto_review"'
         echo 'project_doc_max_bytes = 65536'
         echo 'model_auto_compact_token_limit = 200000'
+        echo 'plan_mode_reasoning_effort = "max"'
         echo ''
         if [ -n "${CODEX_AGENT_THREADS}" ]; then
             echo '[agents]'
@@ -339,6 +351,7 @@ writeProfile() {
 writeAgentsMd() {
     if [ -e "${codex_agents_md}" ] && [ ! -L "${codex_agents_md}" ]; then cp -p "${codex_agents_md}" "${codex_agents_md}.bak"; fi
     ln -sfn "${claude_md_src}" "${codex_agents_md}"
+    ln -sfn "${planner_agent_src}" "${codex_planner_agent}"
 }
 
 registerMcp() {
@@ -353,7 +366,7 @@ registerMcp() {
 
 disableRegisteredMcps() {
     local name
-    for name in atlassian github aws chrome-devtools playwright; do
+    for name in atlassian github chrome-devtools playwright; do
         if codexMcpConfigured "${name}"; then
             setCodexMcpEnabled "${name}" false
         fi
@@ -397,7 +410,7 @@ configureMcpSecrets() {
     if [ "${AWS_MODE}" == "on" ]; then
         [ -f "${aws_secrets}" ] && . "${aws_secrets}"
         aws_key="$(promptValue AWS_ACCESS_KEY_ID "${AWS_ACCESS_KEY_ID:-}")"; aws_secret="$(promptValue AWS_SECRET_ACCESS_KEY "${AWS_SECRET_ACCESS_KEY:-}" 1)"; aws_region="$(promptValue AWS_REGION "${AWS_REGION:-eu-west-2}")"
-        printf 'AWS_ACCESS_KEY_ID=%q\nAWS_SECRET_ACCESS_KEY=%q\nAWS_REGION=%q\n' "${aws_key}" "${aws_secret}" "${aws_region}" > "${aws_secrets}"
+        printf 'AWS_ACCESS_KEY_ID=%s\nAWS_SECRET_ACCESS_KEY=%s\nAWS_REGION=%s\n' "${aws_key}" "${aws_secret}" "${aws_region}" > "${aws_secrets}"
         chmod 600 "${aws_secrets}"
     fi
 }
@@ -408,6 +421,7 @@ applyMcps() {
     [ "${GITHUB_REMOVE}" == "1" ] && codex mcp remove github >/dev/null 2>&1 || true
     [ "${GITHUB_REMOVE}" == "1" ] && clearMcpGate github
     [ "${AWS_REMOVE}" == "1" ] && codex mcp remove aws >/dev/null 2>&1 || true
+    [ "${AWS_REMOVE}" == "1" ] && bash "${kit_root}/scripts/agent-aws-cli.sh" down || true
     [ "${AWS_REMOVE}" == "1" ] && clearMcpGate aws
     if [ "${JIRA_MODE}" == "on" ] || [ "${CONFLUENCE_MODE}" == "on" ]; then
         [ -f "${atlassian_secrets}" ] || { echo "Create ${atlassian_secrets} with the requested Jira/Confluence values first" >&2; return 1; }
@@ -419,7 +433,10 @@ applyMcps() {
     fi
     if [ "${AWS_MODE}" == "on" ]; then
         [ -f "${aws_secrets}" ] || { echo "Create ${aws_secrets} from settings/.aws.env.example first" >&2; return 1; }
-        registerMcp aws "${kit_root}/scripts/codex-mcp-aws.sh"
+        codex mcp remove aws >/dev/null 2>&1 || true
+        bash "${kit_root}/scripts/agent-aws-cli.sh" up || return 1
+        touch "${generated_dir}/mcp-on/aws"
+        echo "  AWS reads: bash ${kit_root}/scripts/agent-aws-cli.sh run <aws arguments> (next session pre-armed; its first read closes the gate to new sessions)"
     fi
 }
 
@@ -454,24 +471,43 @@ updateCodex() {
 }
 
 verifyAll() {
-    local failed=0 name
+    local failed=0 name aws_running
+    bash "${kit_root}/scripts/validate-skills.sh" --codex-runtime || { echo "[FAIL] skill compatibility"; failed=1; }
     codex --strict-config --profile claude-kit --version >/dev/null 2>&1 || { echo "[FAIL] strict config"; failed=1; }
     [ -L "${codex_agents_md}" ] && [ "$(readlink "${codex_agents_md}")" == "${claude_md_src}" ] || { echo "[FAIL] AGENTS.md link"; failed=1; }
-    [ -s "${agents_manifest}" ] || { echo "[FAIL] skills manifest"; failed=1; }
+    [ -L "${codex_planner_agent}" ] && [ "$(readlink "${codex_planner_agent}")" == "${planner_agent_src}" ] || { echo "[FAIL] Astra planner link"; failed=1; }
+    [ -s "${agents_manifest}" ] && [ -s "${codex_skills_manifest}" ] || { echo "[FAIL] skills manifests"; failed=1; }
     [ -L "${codex_rules}" ] && [ "$(readlink "${codex_rules}")" == "${kit_root}/settings/codex/rules/${PERMISSION_TIER}.rules" ] || { echo "[FAIL] active rules link"; failed=1; }
     grep -qF 'alternate_screen = "never"' "${codex_profile}" || { echo "[FAIL] terminal scrollback"; failed=1; }
     grep -qF 'raw_output_mode = false' "${codex_profile}" || { echo "[FAIL] rich output mode"; failed=1; }
     grep -qF 'terminal_title = []' "${codex_profile}" || { echo "[FAIL] terminal title disabled"; failed=1; }
+    grep -qF 'plan_mode_reasoning_effort = "max"' "${codex_profile}" || { echo "[FAIL] plan mode max effort"; failed=1; }
     if [ -n "${CODEX_AGENT_THREADS}" ]; then
         grep -qF "max_concurrent_threads_per_session = ${CODEX_AGENT_THREADS}" "${codex_profile}" || { echo "[FAIL] native subagent limit"; failed=1; }
     fi
-    for name in atlassian github aws chrome-devtools playwright; do
+    for name in atlassian github chrome-devtools playwright; do
         if codexMcpConfigured "${name}" && ! codex mcp get "${name}" --json 2>/dev/null | grep -Eq '"enabled":[[:space:]]*false'; then
             echo "[FAIL] ${name} MCP starts enabled"
             failed=1
         fi
     done
     codex execpolicy check --rules "${codex_rules}" -- git push origin main 2>/dev/null | grep -q forbidden || { echo "[FAIL] git push rule"; failed=1; }
+    aws_running="$(docker ps -q -f 'name=^ai-kit-aws-ro$' 2>/dev/null || true)"
+    if [ "${AWS_MODE}" == "on" ]; then
+        if [ -n "${aws_running}" ] && [ -f "${generated_dir}/mcp-on/aws" ] && ! codexMcpConfigured aws; then
+            echo "[PASS] AWS container running + next-session gate pre-armed"
+        else
+            echo "[FAIL] AWS -a must start the container, pre-arm the gate and remove the legacy MCP"
+            failed=1
+        fi
+    elif [ "${AWS_REMOVE}" == "1" ]; then
+        if [ -z "${aws_running}" ] && [ ! -f "${generated_dir}/mcp-on/aws" ] && [ ! -f "${generated_dir}/mcp-on/aws.win" ] && ! compgen -G "${generated_dir}/mcp-on/aws.session.*" >/dev/null && ! codexMcpConfigured aws; then
+            echo "[PASS] AWS container, gates and legacy MCP removed"
+        else
+            echo "[FAIL] AWS -A left a container, gate or legacy MCP behind"
+            failed=1
+        fi
+    fi
     grep -qsF "alias codex='/usr/local/bin/screen bash ${kit_root}/codex.sh'" "${HOME}/.bash_aliases" || echo "[INFO] run: bash ${kit_root}/scripts/screen5_install.sh"
     command -v bwrap >/dev/null 2>&1 && codex sandbox -- /usr/bin/true >/dev/null 2>&1 || echo "[INFO] run: bash ${kit_root}/scripts/codex_bwrap_install.sh"
     [ "${failed}" -eq 0 ] || return 1
@@ -493,6 +529,7 @@ writeAgentsMd
 applySkillsInvocation
 writeOpenAiSkillMeta
 linkKitSkills "${agents_skills_dir}" "${agents_manifest}" codex
+linkKitSkills "${codex_skills_dir}" "${codex_skills_manifest}" codex
 configureMcpSecrets
 applyMcps
 pruneSessions
@@ -507,6 +544,7 @@ disableRegisteredMcps
 echo "Codex profile: ${codex_profile}"
 echo "Permission tier: ${PERMISSION_TIER}; mode: ${SESSION_MODE}"
 echo "Native subagent limit: ${CODEX_AGENT_THREADS:-Codex default}"
+echo "Model route: planner=gpt-6-astra/max; execution=${CODEX_MODEL:-gpt-5.6-sol}/${CODEX_REASONING_EFFORT:-xhigh}"
 echo "Run: bash ${kit_root}/codex.sh"
 [ "${DO_VERIFY}" == "1" ] && verifyAll
 

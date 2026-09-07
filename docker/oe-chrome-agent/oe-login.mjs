@@ -69,12 +69,26 @@ async function evaluate(expression) {
 }
 
 await send('Page.enable');
-await send('Page.navigate', { url: `${OE_URL}/site/login` });
+await send('Page.navigate', { url: OE_URL });
 await waitLoad();
 await sleep(1500);
 
-if (!(await evaluate("!!document.querySelector('#LoginForm_username')"))) {
+const loginForm = await evaluate(`
+  (() => {
+    if (document.querySelector('#LoginForm_username')) return 'legacy';
+    if (document.querySelector('#username') && document.querySelector('#password')) return 'laravel';
+    return null;
+  })()
+`);
+
+if (!loginForm) {
   const where = await evaluate('location.href');
+  const path = new URL(where).pathname.replace(/\/$/, '');
+  if (path === '/login' || path === '/site/login') {
+    console.error(`no recognised login form at ${where}`);
+    ws.close();
+    process.exit(1);
+  }
   console.log(`no login form at ${where} - assuming already logged in`);
   ws.close();
   process.exit(0);
@@ -83,10 +97,21 @@ if (!(await evaluate("!!document.querySelector('#LoginForm_username')"))) {
 // The institution/site pickers are custom JS; the real inputs are hidden (same trick as
 // c-oe-nav's journey.mjs).
 await evaluate(`
-  document.querySelector('#LoginForm_username').value = ${JSON.stringify(env('OE_USERNAME', 'admin'))};
-  document.querySelector('#LoginForm_password').value = ${JSON.stringify(env('OE_PASSWORD', 'admin'))};
-  const i = document.querySelector('#LoginForm_institution_id'); if (i) i.value = ${JSON.stringify(env('OE_INSTITUTION_ID', '1'))};
-  const s = document.querySelector('#LoginForm_site_id'); if (s) s.value = ${JSON.stringify(env('OE_SITE_ID', '1'))};
+  const setInput = (selector, value) => {
+    const input = document.querySelector(selector);
+    if (!input) return;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    setter.call(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  const legacy = ${JSON.stringify(loginForm)} === 'legacy';
+  setInput(legacy ? '#LoginForm_username' : '#username', ${JSON.stringify(env('OE_USERNAME', 'admin'))});
+  setInput(legacy ? '#LoginForm_password' : '#password', ${JSON.stringify(env('OE_PASSWORD', 'admin'))});
+  if (legacy) {
+    setInput('#LoginForm_institution_id', ${JSON.stringify(env('OE_INSTITUTION_ID', '1'))});
+    setInput('#LoginForm_site_id', ${JSON.stringify(env('OE_SITE_ID', '1'))});
+  }
   document.querySelector('#login_button').click();
 `);
 await waitLoad();
@@ -94,7 +119,8 @@ await sleep(1500);
 
 const finalUrl = await evaluate('location.href');
 ws.close();
-if (finalUrl.includes('/site/login')) {
+const finalPath = new URL(finalUrl).pathname.replace(/\/$/, '');
+if (finalPath === '/login' || finalPath === '/site/login') {
   console.error(`still on ${finalUrl} - check credentials / institution / site ids`);
   process.exit(1);
 }

@@ -1,6 +1,6 @@
 # Shared fetch + deep-dive engine
 
-Used by options 1, 2, 3 and 5. `<filter JQL>` = the JQL where-clause for the chosen filter (see the filter table in `SKILL.md`).
+Used by options 1, 2, 3, 5 and 6. `<filter JQL>` = the JQL where-clause for the chosen filter (see the filter table in `SKILL.md`).
 
 ## Shared A - fetch the ticket LIST (light; works around the payload cap)
 
@@ -20,7 +20,20 @@ Resolutions live in the comments, and a bulk search with comments overflows - so
 
 **Find -> deepen -> write engine** (used by options 2 and 5; target count `N = 10`):
 
-1. **Find (cheap, Haiku).** From the Shared-A light list, spawn parallel haiku finder agents over batches of **20** (`subagent_type: general-purpose`, `model: haiku`, all in one message). Each picks the candidates most likely to carry a *documented, confirmed* resolution - prefer `statusCategory = Done`/resolved and tickets with real back-and-forth - and returns ONLY a JSON array of `{ "key": "...", "reason": "one line" }`, best-first. Merge into one ranked candidate queue.
+Before starting multiple agents, state the agent count and ask once for cost
+confirmation. Use the current client's native collaboration facility. Keep
+prompts self-contained and use the current or inherited model unless the user
+explicitly approves an override.
+
+1. **Find (lightweight).** From the Shared-A light list, spawn parallel finder
+   agents over batches of **20**. Each picks the candidates most likely to
+   carry a *documented, confirmed* resolution - prefer `statusCategory =
+   Done`/resolved and tickets with real back-and-forth - and returns ONLY a
+   JSON array of `{ "key": "...", "reason": "one line" }`, best-first. Merge
+   into one ranked candidate queue.
 2. **Deepen (main loop).** `mkdir -p /tmp/oetriage/deep`. Walk the queue and `jira_get_issue` (above) each candidate, saving the returned JSON to `/tmp/oetriage/deep/<KEY>.json`. Fetch in small waves (~12 at a time) so you only pull what you need to hit `N`.
-3. **Write (cheap, Haiku).** One haiku agent per fetched ticket reads **only** its `/tmp/oetriage/deep/<KEY>.json` (a local file - no MCP, so the agent stays token-light) and returns the note / SQL-extract, OR `{ "skip": true, "reason": "..." }`.
+3. **Write (lightweight).** One agent per fetched ticket reads **only** its
+   `/tmp/oetriage/deep/<KEY>.json` (a local file - no MCP, so the agent stays
+   token-light) and returns the note / SQL-extract, OR
+   `{ "skip": true, "reason": "..." }`.
 4. **Completeness gate.** REJECT any result that refers to content **not actually present** in the fetched ticket - a SQL query, attachment, log, or screenshot it tells you to "see" but that isn't in the comments/description. Drop skips and incompletes. If you have fewer than `N`, pull the next wave from the candidate queue and repeat. Stop at `N` complete results or an exhausted queue (then say how many you got).

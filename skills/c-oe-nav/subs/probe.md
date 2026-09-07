@@ -72,7 +72,9 @@ Volume work (a bug hunt, a broad form sweep) wants several walkers at once. The 
 
 ## Subagent prompt template
 
-Launch with the Agent tool, **model `haiku`** when the journey is known (walk + transcribe), `sonnet` only when the flow itself must be figured out. Paste the relevant atlas lines in - the subagent does not load skills:
+Use the current client's native collaboration facility. The subagent does not
+load skills, so paste in the relevant atlas lines. Use the current or inherited
+model unless the user explicitly approves an override:
 
 ```
 You are probing a running OpenEyes sample instance to capture EXACT frontend

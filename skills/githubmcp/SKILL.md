@@ -19,7 +19,10 @@ Beyond that one `touch`, take no other action: no docker commands, no `install.s
 
 - **Permission denied** -> the `mcp__github` allow rule is missing for this tier - advise `~/claude-kit/install.sh -p <tier> -y` (or adding `mcp__github` to `permissions.allow`).
 - **401 / bad credentials** -> the PAT in `~/.claude/mcp-env/.github.env` is missing, expired, or lacks access - advise minting a fresh fine-grained read-only PAT and re-running `~/claude-kit/install.sh -g -p <tier> -y`.
-- **Reconnect still fails** -> advise restarting Claude Code, touching the flag, and reconnecting in `/mcp` (or touching the flag before launch). The stdio container is launched by Claude Code itself - only the `/mcp` reconnect (or a restart) spawns it.
+- **Reconnect still fails** -> in standalone Codex, advise touching the flag and
+  restarting Codex. In a reconnect-capable client, advise restarting the
+  client, touching the flag, and reconnecting in `/mcp`. Only a fresh Codex
+  session or the client's MCP reconnect starts the stdio container.
 
 ## Project context (the token's visible scope)
 

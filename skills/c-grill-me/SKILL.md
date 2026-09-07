@@ -17,8 +17,10 @@ mattpocock/skills `grilling` (MIT, (c) 2026 Matt Pocock).
 - Walk down each branch of the decision tree, resolving dependencies between
   decisions one by one - settle the decisions later ones hang on first.
 - Ask ONE question at a time and wait for the answer before continuing. Asking
-  multiple questions at once is bewildering. Use AskUserQuestion and make your
-  recommended answer the first option, labelled `(Recommended)`.
+  multiple questions at once is bewildering. Use the client's structured
+  question facility when it is available; otherwise ask one plain-text
+  question with numbered options. Put the recommended answer first and label
+  it `(Recommended)`.
 - If a fact can be found by exploring the environment (filesystem, git, tools),
   look it up rather than asking. The decisions, though, are the user's - put
   each one to them and wait for the answer.

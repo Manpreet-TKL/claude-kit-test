@@ -14,6 +14,39 @@ skillGateValue() {
     sed -n "2,/^---\$/p" "$1" | sed -n 's/^disable-model-invocation: \(true\|false\)$/\1/p' | head -1
 }
 
+# Read one top-level frontmatter scalar. Validation below rejects duplicates;
+# ordinary callers only need the first value.
+skillFrontmatterValue() {
+    local key="$1" file="$2"
+    sed -n "2,/^---\$/p" "${file}" | sed -n "s/^${key}:[[:space:]]*//p" | head -1
+}
+
+skillUnquoteScalar() {
+    local value="$1"
+    case "${value}" in
+        \"*\") value="${value#\"}"; value="${value%\"}" ;;
+        \'*\') value="${value#\'}"; value="${value%\'}" ;;
+    esac
+    printf '%s' "${value}"
+}
+
+renderOpenAiSkillMeta() {
+    local f="$1" dir name desc
+    dir="$(dirname "${f}")"
+    name="$(basename "${dir}")"
+    desc="$(skillUnquoteScalar "$(skillFrontmatterValue description "${f}")")"
+    [ -n "${desc}" ] || desc="${name}"
+    desc="${desc//\\/\\\\}"
+    desc="${desc//\"/\\\"}"
+    echo "interface:"
+    echo "  display_name: \"${name}\""
+    echo "  short_description: \"${desc}\""
+    if [ "$(skillGateValue "${f}")" = "true" ]; then
+        echo "policy:"
+        echo "  allow_implicit_invocation: false"
+    fi
+}
+
 # Rewrite a skill's disable-model-invocation value in place, same frontmatter
 # restriction. The SKILL.md files are live symlink targets, so the change
 # reaches the agent home with no re-link - but skills bind at session start.
@@ -114,29 +147,14 @@ applySkillsInvocation() {
 # run's final frontmatter state.
 writeOpenAiSkillMeta() {
     [ -d "${skills_src_dir}" ] || { echo "  no skills/ dir in kit - skipped"; return 0; }
-    local f dir name desc tmp eligible=0 written=0
+    local f dir tmp eligible=0 written=0
     for f in "${skills_src_dir}"/*/SKILL.md; do
         [ -f "${f}" ] || continue
         dir="$(dirname "${f}")"
         [ -f "${dir}/agents/openai.yaml" ] || continue
         eligible=$((eligible+1))
-        name="$(basename "${dir}")"
-        # description: from the frontmatter only (line 2 up to the closing ---).
-        desc="$(sed -n "2,/^---\$/p" "${f}" | sed -n 's/^description: //p' | head -1)"
-        [ -n "${desc}" ] || desc="${name}"
-        # YAML double-quoted scalar: escape backslashes first, then quotes.
-        desc="${desc//\\/\\\\}"
-        desc="${desc//\"/\\\"}"
         tmp="$(mktemp)"
-        {
-            echo "interface:"
-            echo "  display_name: \"${name}\""
-            echo "  short_description: \"${desc}\""
-            if sed -n "2,/^---\$/p" "${f}" | grep -q '^disable-model-invocation: true$'; then
-                echo "policy:"
-                echo "  allow_implicit_invocation: false"
-            fi
-        } > "${tmp}"
+        renderOpenAiSkillMeta "${f}" > "${tmp}"
         if cmp -s "${tmp}" "${dir}/agents/openai.yaml"; then
             rm -f "${tmp}"
             continue
@@ -153,6 +171,173 @@ writeOpenAiSkillMeta() {
     else
         echo "  generated/updated ${written} agents/openai.yaml file(s)"
     fi
+}
+
+# Validate the kit's deliberately narrow cross-client skill contract. This is
+# stricter than either client alone: source metadata, invocation policy and
+# product availability must agree before an installer reports success.
+validateKitSkills() {
+    [ -d "${skills_src_dir}" ] || { echo "[FAIL] no skills source directory: ${skills_src_dir}" >&2; return 1; }
+    local dir f name front_name desc gate closing unknown expected matches
+    local name_count desc_count gate_count claude_lines errors=0
+
+    while IFS= read -r -d '' dir; do
+        f="${dir}/SKILL.md"
+        name="$(basename "${dir}")"
+        if [ ! -f "${f}" ]; then
+            echo "[FAIL] skills/${name}: missing SKILL.md" >&2
+            errors=$((errors+1))
+            continue
+        fi
+        if [ "$(head -1 "${f}")" != "---" ]; then
+            echo "[FAIL] skills/${name}: frontmatter must start on line 1" >&2
+            errors=$((errors+1))
+            continue
+        fi
+        closing="$(awk 'NR > 1 && $0 == "---" { print NR; exit }' "${f}")"
+        if [ -z "${closing}" ]; then
+            echo "[FAIL] skills/${name}: frontmatter has no closing ---" >&2
+            errors=$((errors+1))
+            continue
+        fi
+
+        name_count="$(sed -n "2,$((closing-1))p" "${f}" | grep -c '^name:' || true)"
+        desc_count="$(sed -n "2,$((closing-1))p" "${f}" | grep -c '^description:' || true)"
+        gate_count="$(sed -n "2,$((closing-1))p" "${f}" | grep -c '^disable-model-invocation:' || true)"
+        [ "${name_count}" -eq 1 ] || { echo "[FAIL] skills/${name}: expected one name field" >&2; errors=$((errors+1)); }
+        [ "${desc_count}" -eq 1 ] || { echo "[FAIL] skills/${name}: expected one description field" >&2; errors=$((errors+1)); }
+
+        front_name="$(skillUnquoteScalar "$(skillFrontmatterValue name "${f}")")"
+        desc="$(skillUnquoteScalar "$(skillFrontmatterValue description "${f}")")"
+        if [ "${front_name}" != "${name}" ]; then
+            echo "[FAIL] skills/${name}: frontmatter name is '${front_name}'" >&2
+            errors=$((errors+1))
+        fi
+        if [[ ! "${front_name}" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || [ "${#front_name}" -gt 64 ]; then
+            echo "[FAIL] skills/${name}: name must be kebab-case and at most 64 characters" >&2
+            errors=$((errors+1))
+        fi
+        if [ -z "${desc}" ] || [ "${#desc}" -gt 1024 ]; then
+            echo "[FAIL] skills/${name}: description must contain 1-1024 characters" >&2
+            errors=$((errors+1))
+        fi
+
+        unknown="$(sed -n "2,$((closing-1))p" "${f}" | sed -n 's/^\([A-Za-z0-9_-]*\):.*/\1/p' | grep -vE '^(name|description|license|allowed-tools|metadata|disable-model-invocation|argument-hint)$' || true)"
+        if [ -n "${unknown}" ]; then
+            echo "[FAIL] skills/${name}: unsupported frontmatter key(s): $(printf '%s' "${unknown}" | tr '\n' ' ')" >&2
+            errors=$((errors+1))
+        fi
+
+        gate="$(skillFrontmatterValue disable-model-invocation "${f}")"
+        case "${name}" in
+            a-oe-docs|c-ascii|c-frontend-design|c-oe-helm|c-oe-ui)
+                if [ "${gate_count}" -ne 0 ]; then
+                    echo "[FAIL] skills/${name}: always-auto skill must omit disable-model-invocation" >&2
+                    errors=$((errors+1))
+                fi
+                ;;
+            *)
+                if [ "${gate_count}" -ne 1 ] || { [ "${gate}" != "true" ] && [ "${gate}" != "false" ]; }; then
+                    echo "[FAIL] skills/${name}: disable-model-invocation must be true or false" >&2
+                    errors=$((errors+1))
+                fi
+                ;;
+        esac
+
+        if [ -f "${dir}/agents/openai.yaml" ]; then
+            expected="$(mktemp)"
+            renderOpenAiSkillMeta "${f}" > "${expected}"
+            if ! cmp -s "${expected}" "${dir}/agents/openai.yaml"; then
+                echo "[FAIL] skills/${name}: agents/openai.yaml is out of sync" >&2
+                errors=$((errors+1))
+            fi
+            rm -f "${expected}"
+        fi
+        if [ -f "${dir}/agents/claude.yaml" ]; then
+            claude_lines="$(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "${dir}/agents/claude.yaml")"
+            if [ "$(printf '%s\n' "${claude_lines}" | wc -l)" -ne 1 ] || ! printf '%s\n' "${claude_lines}" | grep -qE '^enabled:[[:space:]]*(true|false)[[:space:]]*$'; then
+                echo "[FAIL] skills/${name}: agents/claude.yaml accepts only enabled: true|false" >&2
+                errors=$((errors+1))
+            fi
+        fi
+    done < <(find "${skills_src_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | LC_ALL=C sort -z)
+
+    [ ! -f "${skills_src_dir}/codexmcp/agents/openai.yaml" ] || { echo "[FAIL] codexmcp must be Claude-only" >&2; errors=$((errors+1)); }
+    [ ! -f "${skills_src_dir}/oe-probe-chrome/agents/openai.yaml" ] || { echo "[FAIL] oe-probe-chrome must be Claude-only" >&2; errors=$((errors+1)); }
+    if [ ! -f "${skills_src_dir}/oe-probe-codex-chrome/agents/openai.yaml" ] || ! grep -qE '^enabled:[[:space:]]*false[[:space:]]*$' "${skills_src_dir}/oe-probe-codex-chrome/agents/claude.yaml" 2>/dev/null; then
+        echo "[FAIL] oe-probe-codex-chrome must be Codex-only" >&2
+        errors=$((errors+1))
+    fi
+
+    while IFS= read -r -d '' dir; do
+        [ -f "${dir}/agents/openai.yaml" ] || continue
+        name="$(basename "${dir}")"
+        matches="$(grep -RInE --include='*.md' 'multi_agent_v1__|AskUserQuestion|EnterPlanMode|ExitPlanMode|WebFetch|WebSearch|subagent_type|\$ARGUMENTS|Agent tool|Read tool|Write tool|Edit tool|(^|[^[:alnum:]_])(Haiku|Sonnet|Opus)([^[:alnum:]_]|$)' "${dir}" || true)"
+        if [ -n "${matches}" ]; then
+            echo "[FAIL] skills/${name}: Codex-incompatible instruction(s)" >&2
+            printf '%s\n' "${matches}" >&2
+            errors=$((errors+1))
+        fi
+        if [ "${name}" != "codex-swarm" ] && [ "${name}" != "codex-grill" ] && grep -Rqs --include='*.md' 'mcp__codex__' "${dir}"; then
+            echo "[FAIL] skills/${name}: unexpected Claude-side Codex MCP instruction" >&2
+            errors=$((errors+1))
+        fi
+    done < <(find "${skills_src_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | LC_ALL=C sort -z)
+
+    if [ "${errors}" -ne 0 ]; then
+        echo "Skill validation failed with ${errors} error(s)." >&2
+        return 1
+    fi
+    echo "Skill source validation passed."
+}
+
+# Ask the real Codex runtime to parse and list the installed kit skills. This
+# starts app-server only; it does not start a model turn or consume model usage.
+validateCodexSkillDiscovery() {
+    command -v codex >/dev/null 2>&1 || { echo "[FAIL] codex is required for runtime skill validation" >&2; return 1; }
+    command -v jq >/dev/null 2>&1 || { echo "[FAIL] jq is required for runtime skill validation" >&2; return 1; }
+    local init ready request line response="" server_pid expected actual
+    init="$(jq -cn --arg name claude-kit-validator '{method:"initialize",id:1,params:{clientInfo:{name:$name,version:"1"},capabilities:{}}}')"
+    ready='{"method":"initialized","params":{}}'
+    request="$(jq -cn --arg cwd "${kit_root}" '{method:"skills/list",id:2,params:{cwds:[$cwd],forceReload:true}}')"
+
+    coproc CODEX_SKILLS_SERVER { codex app-server 2>/dev/null; }
+    server_pid="${CODEX_SKILLS_SERVER_PID}"
+    printf '%s\n%s\n%s\n' "${init}" "${ready}" "${request}" >&"${CODEX_SKILLS_SERVER[1]}"
+    while IFS= read -r -t 10 line <&"${CODEX_SKILLS_SERVER[0]}"; do
+        if printf '%s' "${line}" | jq -e '.id == 2' >/dev/null 2>&1; then
+            response="${line}"
+            break
+        fi
+    done
+    kill "${server_pid}" >/dev/null 2>&1 || true
+    wait "${server_pid}" >/dev/null 2>&1 || true
+
+    if [ -z "${response}" ]; then
+        echo "[FAIL] Codex app-server did not return skills/list within 10 seconds" >&2
+        return 1
+    fi
+    if ! printf '%s' "${response}" | jq -e '[.result.data[]?.errors[]?] | length == 0' >/dev/null; then
+        echo "[FAIL] Codex reported skill discovery errors:" >&2
+        printf '%s' "${response}" | jq -r '.result.data[]?.errors[]?' >&2
+        return 1
+    fi
+
+    expected="$(mktemp)"
+    actual="$(mktemp)"
+    for dir in "${skills_src_dir}"/*; do
+        [ -f "${dir}/SKILL.md" ] && [ -f "${dir}/agents/openai.yaml" ] || continue
+        basename "${dir}"
+    done | LC_ALL=C sort > "${expected}"
+    printf '%s' "${response}" | jq -r --arg root "${skills_src_dir}/" '.result.data[]?.skills[]? | select((.path // "") | startswith($root)) | .name' | LC_ALL=C sort -u > "${actual}"
+    if ! cmp -s "${expected}" "${actual}"; then
+        echo "[FAIL] Codex discovered a different kit skill set:" >&2
+        diff -u "${expected}" "${actual}" >&2 || true
+        rm -f "${expected}" "${actual}"
+        return 1
+    fi
+    echo "Codex runtime discovered $(wc -l < "${actual}") expected kit skill(s) with no errors."
+    rm -f "${expected}" "${actual}"
 }
 
 # Decide whether a skill is available to a target agent.

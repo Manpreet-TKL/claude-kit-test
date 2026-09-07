@@ -16,5 +16,11 @@ Completeness gate: drop any result with empty `sql` or empty `confirmation`; loo
 
 **Write the file:**
 1. `date +%F` for today's date.
-2. With the Write tool, write to `"$HOME/devops-sql-fixes-<date>.txt"`. Per entry: a `<KEY> - <problem>` heading, the SQL in a fenced ```sql block (verbatim), then `DB:`, `Confirmed: <quote>`, and `Source: https://openeyes.atlassian.net/browse/<KEY>`; dashes between entries. Header: note every entry's SQL is copied verbatim from the ticket and carries proof it worked.
+2. With the available filesystem writer, write to
+   `"$HOME/devops-sql-fixes-<date>.txt"`. Per entry: a `<KEY> - <problem>`
+   heading, the SQL in a fenced ```sql block (verbatim), then `DB:`,
+   `Confirmed: <quote>`, and
+   `Source: https://openeyes.atlassian.net/browse/<KEY>`; dashes between
+   entries. Header: note every entry's SQL is copied verbatim from the ticket
+   and carries proof it worked.
 3. In chat, print the file path and a one-line index (`KEY -> problem`).

@@ -1,6 +1,6 @@
 prefix_rule(pattern = ["git", "push"], decision = "forbidden", justification = "The human pushes.")
 prefix_rule(pattern = ["git", "commit"], decision = "forbidden", justification = "The human commits.")
-prefix_rule(pattern = ["aws"], decision = "forbidden", justification = "AWS access is read-only through the MCP server.")
+prefix_rule(pattern = ["aws"], decision = "forbidden", justification = "Use the gated agent-aws-cli.sh wrapper; AWS writes are prohibited.")
 prefix_rule(pattern = ["npm"], decision = "allow")
 prefix_rule(pattern = ["npx"], decision = "allow")
 prefix_rule(pattern = ["ls"], decision = "allow")

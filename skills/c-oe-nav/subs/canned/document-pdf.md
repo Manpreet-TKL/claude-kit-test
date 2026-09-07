@@ -1,6 +1,6 @@
 # Canned walk - Document event + PDF preview temp-leak (`oe_pdf` stub family)
 
-One-command verification of the PDF-preview temp-leak repro on a sample stack. Everything here ran green on v11.0.18 (snail, 2026-07-03): launch a **Haiku** subagent with the Procedure below pasted in - no need to read `probe.md` or `paths.md` for this walk. Main-context cost ~ this file; subagent cost ~ 35k tokens / 2 driver runs.
+One-command verification of the PDF-preview temp-leak repro on a sample stack. Everything here ran green on v11.0.18 (2026-07-03): launch a lightweight subagent with the Procedure below pasted in - no need to read `probe.md` or `paths.md` for this walk. Main-context cost ~ this file; subagent cost ~ 35k tokens / 2 driver runs.
 
 Parameters: `<web>` = web container (e.g. `snail-web-1`). Sample ids: patient 17891, `context_id=13`, `episode_id=601038`, Document `event_type_id=40` - a stale pair fails fast with HTTP 400 "Episode/Context mismatch"; re-pick via `c-dblogin` only then.
 
