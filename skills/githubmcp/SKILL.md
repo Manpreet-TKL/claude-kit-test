@@ -6,9 +6,9 @@ disable-model-invocation: false
 
 # GitHub MCP (read-only) - context + gate enable
 
-Load how the kit's GitHub MCP works, make its tools available (enabling the startup gate if needed), and load the project context for GitHub work. Everything goes through the `mcp__github__*` MCP tools - never `curl` the GitHub API, never read `~/claude-kit/~/.claude/mcp-env/.github.env`.
+Load how the kit's GitHub MCP works, make its tools available (enabling the startup gate if needed), and load the project context for GitHub work. Use the `mcp__github__*` tools for reads; do not read `~/.claude/mcp-env/.github.env`. Explicit writes follow the rule below through an already authorized route, if available.
 
-The server is registered **read-only** (`GITHUB_READ_ONLY=1`): it exposes only read tools, so creating PRs/branches, pushing, commenting, and merging are impossible by construction. This mirrors the hard rule "never write out to GitHub." The human raises PRs - see the `create-oe-pr` skill; never use `gh` or `git push`/`git commit` to do it for them.
+The server is registered **read-only** (`GITHUB_READ_ONLY=1`): it exposes only read tools, so creating PRs/branches, pushing, commenting, and merging are impossible by construction. GitHub writes need the user's explicit action and target. That exception does not make this MCP writable, authorize new writable credentials, or allow `git push`/`git commit`. Prepare human-run steps when no authorized write route exists; see `create-oe-pr`.
 
 ## Check - tools present, or touch the gate
 

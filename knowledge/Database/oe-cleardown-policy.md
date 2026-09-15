@@ -4,7 +4,7 @@ Design knowledge from building and then multi-versioning `cleardown` - the yiic
 command (`CleardownCommand.php` + one `cleardown.config.<version>.php` per OE
 version) that turns a populated SAMPLE OpenEyes database into a bootable SEED.
 Read before changing any keep/clear decision. The harness, version detection and
-verification side is in `knowledge/oe-cleardown-versions.md`.
+verification side is in `knowledge/Database/oe-cleardown-versions.md`.
 
 Three profiles are served by one policy:
 

@@ -33,20 +33,22 @@ check directly with
 `bash /home/toukan/claude-kit/scripts/validate-skills.sh -c`.
 
 `codex.sh [codex arguments]` passes arguments through to the host CLI, including
-`exec`, and applies the generated profile, model, reasoning, permission tier, and
-approval mode. Codex's bubblewrap sandbox enforces the selected filesystem and
+`exec`, and applies the kit profile, permission tier and approval mode. Before a
+fresh launch it resets only that profile's model and effort keys to the saved kit
+defaults. It does not force model/effort through CLI overrides; explicit caller
+arguments still take precedence. Resume/fork keep native behavior. Codex's bubblewrap sandbox enforces the selected filesystem and
 network boundaries.
 
-The main thread uses `gpt-5.6-sol` at `xhigh` for implementation. Setup also
-links a custom read-only `planner` agent that uses `gpt-6-astra` at `max` for
-non-trivial planning, then hands the plan back to the Sol main thread. Native
-Codex supports `plan_mode_reasoning_effort` but rejects `plan_mode_model`, so
-the custom agent is the model boundary; direct Plan mode effort is pinned to
-`max` as a fallback.
+Fresh kit sessions default to `gpt-6-astra` at `xhigh`, with `model_verbosity = "medium"`.
+Use `/model` to change model and effort during a session. A later fresh kit launch
+restores the kit defaults; `/new` inside a running CLI follows native behavior.
+For substantial mechanical work, suggest Sol or Terra for the user to select.
+The read-only `planner` agent uses Astra at `max` for every non-trivial plan,
+then returns to the main thread. Direct Plan mode defaults to `max` in the profile.
 
-The launcher uses Codex's native footer to show model and reasoning, current
-directory, five-hour limit, and weekly limit. This is a command-line override,
-so user-owned Codex configuration remains untouched.
+The kit profile configures Codex's native footer. The launcher changes only the
+kit profile, leaving other launch methods and managed configuration alone.
+See [standalone controls and override warnings](codex-standalone.md#models-and-controls).
 
 ## Codex as a Claude Code MCP server
 
@@ -73,7 +75,7 @@ Once configured, Claude can:
 - spawn a single Codex agent on a self-contained task, or **several at once** (one per
   module / file / failing test) that run concurrently;
 - continue any agent's thread with `codex-reply` (feed back test output, ask for a fix);
-- have general implementation agents run at **`gpt-5.6-sol` + `xhigh` reasoning
+- have general implementation agents run at **`gpt-6-astra` + `xhigh` reasoning
   effort**, with **`gpt-6-astra` + `max`** available for planning, sandboxed
   (`approval_policy=never`, so unattended). In docker mode the
   **container is the sandbox** - only the project dir, `~/.codex`, and the kit
@@ -137,7 +139,7 @@ agent inherits them:
 
 | Knob | Default | Becomes |
 |---|---|---|
-| `CODEX_MODEL` | `gpt-5.6-sol` (execution) | `-c model="..."` |
+| `CODEX_MODEL` | `gpt-6-astra` (execution) | `-c model="..."` |
 | `CODEX_REASONING_EFFORT` | `xhigh` | `-c model_reasoning_effort="..."` |
 | `CODEX_SANDBOX` | `workspace-write` | host mode only: `-c sandbox_mode="..."` (+ `network_access=false`) |
 | `CODEX_AGENT_THREADS` | Codex default | `-c agents.max_concurrent_threads_per_session=<number>` when set |
@@ -181,13 +183,12 @@ closed` line in the MCP log is the gate wrapper exiting.)
 Edit `generated/.codex.env` and re-apply silently:
 
 ```bash
-./install.sh -x -p standard -y    # re-reads the knobs, re-registers
+bash /home/toukan/claude-kit/install.sh -x -p standard -y
 ```
 
-- **Model.** `gpt-6-astra` is the planning tier for complex decisions and
-  supports `max` effort. `gpt-5.6-sol` at `xhigh` remains the implementation
-  default. The GPT-5.6 family also includes `gpt-5.6-terra` for everyday work
-  and `gpt-5.6-luna` for fast repeatable tasks.
+- **Model.** `gpt-6-astra` at `xhigh` is the default. The separate planner uses
+  Astra at `max`. For substantial mechanical work, suggest `gpt-5.6-sol` or
+  `gpt-5.6-terra` for the user to select. Specialized swarm roles remain explicit.
 - **Reasoning effort.** `xhigh` is the default; the family accepts
   low/medium/high/xhigh/max/ultra.
 - **Sandbox.** Host mode only: keep `workspace-write` (network off) so agents can't
@@ -232,7 +233,7 @@ exactly like the Claude ones), and that metadata carries generated display name,
 `allow_implicit_invocation: false` mirroring `disable-model-invocation: true`). Codex
 agents invoke a skill explicitly with `$skill-name`. The read-only kit mount is what
 lets those symlinks resolve inside the container. Full recipe and rationale:
-`knowledge/codex-compatibility.md`.
+`knowledge/Tooling/codex-compatibility.md`.
 
 Client-specific metadata keeps `codexmcp` and `oe-probe-chrome` out of Codex,
 and keeps `oe-probe-codex-chrome` out of Claude Code. Shared skills describe
@@ -265,7 +266,7 @@ fresh container `login` brings the tools straight back without a re-run.
 `generated/.codex.env` is plain shell and **holds no secret** (auth is in `~/.codex`):
 
 ```bash
-CODEX_MODEL=gpt-5.6-sol
+CODEX_MODEL=gpt-6-astra
 CODEX_REASONING_EFFORT=xhigh
 CODEX_SANDBOX=workspace-write
 CODEX_AGENT_THREADS=
@@ -275,8 +276,8 @@ The planning model is versioned separately in
 `settings/codex/agents/planner.toml` because Codex custom agents, rather than
 the general execution environment, own that override.
 
-It lives in the kit's single `generated/` folder (gitignored wholesale) alongside the
-Atlassian/GitHub creds, so one backup of that folder survives a `git reset --hard`.
+It lives in the kit's `generated/` folder and contains only non-secret settings.
+Integration credentials belong under `~/.claude/mcp-env/`, outside the repository.
 
 ## Troubleshooting
 

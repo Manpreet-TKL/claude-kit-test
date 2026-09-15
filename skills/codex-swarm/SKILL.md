@@ -55,7 +55,7 @@ use a small natural slice count instead of padding the task to 40 agents.
 5. Fan out in waves of about 8-10 agents, or fewer when the configured limit
    is lower. Every prompt must be self-contained and include the exact working
    directory. Tell every agent never to run `git add`, `git commit`, or
-   `git push`; the orchestrator stages and the human commits.
+   `git push`; leave new work unstaged unless asked to stage. The human commits.
    - Native mode: use `spawn_agent` with `fork_turns: "none"` because every
      prompt is self-contained. Keep each agent id, use `followup_task` for
      rework, `wait_agent` only when a result blocks progress, `list_agents` to

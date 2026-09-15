@@ -5,12 +5,20 @@ set -e
 kit_root="$(dirname "$(realpath "$0")")"
 codex_bin="$(command -v codex || true)"
 [ -n "${codex_bin}" ] || { echo "Host Codex is required. Install it outside claude-kit, then run: bash ${kit_root}/codex-install.sh -q" >&2; exit 1; }
-[ -f "${HOME}/.codex/claude-kit.config.toml" ] || { echo "Run: bash ${kit_root}/codex-install.sh -q" >&2; exit 1; }
+codex_profile="${CODEX_HOME:-${HOME}/.codex}/claude-kit.config.toml"
+[ -f "${codex_profile}" ] || { echo "Run: bash ${kit_root}/codex-install.sh -q" >&2; exit 1; }
+requested_model="${CODEX_MODEL:-}"
+requested_effort="${CODEX_REASONING_EFFORT:-}"
 
 # Agent defaults written by codex-install.sh (and shared with install.sh -x).
 if [ -f "${kit_root}/generated/.codex.env" ]; then
     # shellcheck source=/dev/null
     . "${kit_root}/generated/.codex.env"
+fi
+# shellcheck source=/dev/null
+. "${kit_root}/scripts/codex-profile-defaults.sh"
+if codexStartsFreshSession "$@"; then
+    setCodexProfileDefaults "${codex_profile}" "${requested_model:-${CODEX_MODEL:-gpt-6-astra}}" "${requested_effort:-${CODEX_REASONING_EFFORT:-xhigh}}"
 fi
 # shellcheck source=/dev/null
 . "${kit_root}/scripts/codex-mcp-gate.sh"
@@ -40,18 +48,12 @@ case "${CODEX_MODE:-auto}" in
     dontAsk) approval="never" ;;
     bypassPermissions)
         exec "${codex_bin}" --profile claude-kit "${mcp_args[@]}" \
-            -c "model=\"${CODEX_MODEL:-gpt-5.6-sol}\"" \
-            -c "model_reasoning_effort=\"${CODEX_REASONING_EFFORT:-xhigh}\"" \
-            -c 'plan_mode_reasoning_effort="max"' \
             --dangerously-bypass-approvals-and-sandbox "$@"
         ;;
     *) echo "Unknown CODEX_MODE '${CODEX_MODE}'" >&2; exit 1 ;;
 esac
 
 exec "${codex_bin}" --profile claude-kit "${mcp_args[@]}" \
-    -c "model=\"${CODEX_MODEL:-gpt-5.6-sol}\"" \
-    -c "model_reasoning_effort=\"${CODEX_REASONING_EFFORT:-xhigh}\"" \
-    -c 'plan_mode_reasoning_effort="max"' \
     -c "default_permissions=\"${permission}\"" \
     -c "approval_policy=\"${approval}\"" \
     -c "approvals_reviewer=\"${reviewer}\"" "$@"

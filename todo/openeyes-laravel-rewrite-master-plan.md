@@ -1,5 +1,30 @@
 # OpenEyes → Laravel: AI-Authored, Human-Verified Rewrite — Master Plan
 
+## Current workspace locations - confirmed 11 September 2026
+
+Latest porting checkpoint: 15 September 04:53 BST, seventy-seven staged bundles. Strict ledger passes at code 84.3376% (5194.35/6159), overall 76.6908% (10832.57/14125); canonical 14125, mappings 18649, missing 0, pending 1190, unowned 1260, unowned code 0. Net gain 69.68 code equivalents. Bundle76 restores source-operation surgeon routing for optometrist messages: 30 PHP tests/350 assertions and six bounded recipient reads at 1/200 operations plus 1000 mailboxes; already-credited source paths receive zero new score. Bundle77 connects the header demographics popup: 13 PHP tests/185 assertions, 15 client checks, two Vue compilations and five Pint files pass; eight-query budget is constant at 1/1000 contacts. No filesort or temporary tables in the inspected new plans. Dev remains at 483 migrations through000048. Next: connect remaining source header actions to existing authorized popup readers; after next: another missing workflow before scope freeze. CERA/custom demographic fields, full popup geometry, generic raw xAPI, full Form.io, SNOMED tree imports and arbitrary LDAP provider options remain deferred. No final schema/browser/image/load acceptance yet. Nine prior-preview services healthy at04:51BST and three bounded dev services retained; no promotion, deletion, commits, pushes or subagents.
+
+Current execution authority: the user approved execution of the next 48-hour porting-first run on 13 September. Actual start is 2026-09-13 14:27:49 BST; new functional scope freezes at 2026-09-15 08:27:49 BST; finish only at a safe integrated checkpoint at or after 2026-09-15 14:27:49 BST. One agent, no subagents, no commits or pushes. The previous closing Git exception is exhausted. Opening baselines are Laravel `a3df583c1503009c1ac326fbc109feca5ff8311e`, Docker `58877a2a2e95bbde30eae53097776be3c0e89883` and legacy `ad2324084788608246a8250e817198c2f26a4fd6`. Code starts at 5124.67/6159 = 83.2062023055691%; above 90 needs another 418.44 weighted equivalents and is an aim, not a guarantee. Current evidence belongs in `openeyes-rewrite/coverage-48h-20260913-142749`. Sections 26.21 and active 16.145 remain historical evidence for the completed preceding run.
+
+Porting-first execution: follow the approved `coverage-48h-20260911-174239/next-48h-porting-evidence.md` rolling queue and its exact source-path candidates. Select connected missing shared patient/event/authorization consumers, then administration/examination/diagnoses, reports/analytics, surgery/booking/correspondence/therapy, worklist/device consumers and CVI/shared glue. Reorder around narrow evidenced blockers, not business priority. Implement actual behavior before claiming functional credit; review source callers instead of relying on generic framework mappings or stale divergence prose. Preserve short before/after/reason/gap records for later documentation. Batch ordinary tests, broad browser/image checks and finished prose near the end, retaining immediate focused clinical/security/data-integrity proof and bounded query design. Reuse the bounded dev stack and preserve the nine-service preview. Hourly checkpoints include next_item, after_next, blockers and verification_state; the user progress file stays at most ten lines. No new SSO integration/testing, production-scale proof, special-module port, sample work or migration project unless the core queue actually completes. Then the faithful legacy sample and pinned-develop sample customer migration are next.
+
+This location rule overrides every earlier consolidation or dated-folder instruction in this plan. Use `/home/toukan/openeyes-rewrite` for all project work artifacts: run folders, evidence, tools, builds, notes, documentation inputs and scratch files. Do not create another top-level rewrite work folder or recreate `openeyes-rewrite-20260909`.
+
+The user explicitly requires these exceptions to remain outside that folder:
+
+| Item | Required location |
+| --- | --- |
+| Laravel source repository; edit it in place, never create a second active checkout | `/home/toukan/openeyes-laravel` |
+| Docker source repository; edit it in place, never create a second active checkout | `/home/toukan/openeyes-docker` |
+| User-facing hourly progress, at most 10 lines | `/home/toukan/openeyes-rewrite-progress.md` |
+| Second-eye query-plan explanation | `/home/toukan/ready-for-second-eye-query-plan-problem-2026-08-31.md` |
+| Approved private rewrite files | `/home/toukan/.claude/openeyes-rewrite-archive`; existing preview secrets remain in their private runtime location |
+| Shared master/active plans and task list | Existing files in `/home/toukan/claude-kit/todo`; never put secrets or client data in that repository |
+
+All other previously pending moves are approved. The final path-by-path decisions are in `/home/toukan/openeyes-rewrite/coverage-48h-101221/restoration-decisions.tsv`; its `current_path` column is authoritative. Shared repositories, PR history, legacy tools and general documents already restored to their original paths stay there, including `openeyes`, `eyedraw`, `sample`, `pullrequests` and `oe-frontend-tests`. Referencing shared material does not make it rewrite-owned.
+
+Historical move/checksum ledgers remain unchanged. Resolve their old paths through the final location record; do not rerun the retired broad consolidation. Future housekeeping must preserve these exceptions and the live preview.
+
 > **Status:** design & planning document — a blueprint, **not** an instruction to implement. Prepared 2026-07-01, enriched 2026-08-19, consistency-audited 2026-08-20 (v4).
 >
 > **Changelog:**
@@ -2117,15 +2142,15 @@ slice lands on a proven path. §18's milestones carry the same marker.
 ---
 
 ## 14. Reusable local assets (build on, don't reinvent)
-- `/home/toukan/openeyes` — the source of truth (spine models, 732 core + 1,437 module migrations, 19 ADRs).
-- `/home/toukan/oe-frontend-tests/docs/sitemap/sitemap.index.json` — 390-page BSpec seed (62 areas /
+- `/home/toukan/openeyes` - the source of truth (spine models, 732 core + 1,437 module migrations, 19 ADRs).
+- `/home/toukan/oe-frontend-tests/docs/sitemap/sitemap.index.json` - 390-page BSpec seed (62 areas /
   390 pages / 33 admin sections; captured on develop, not v26.0.9 - see §7.9).
-- `/home/toukan/openeyes/playwright/support/pom/**` + `playwright.common.ts` — POMs,
+- `/home/toukan/openeyes/playwright/support/pom/**` + `playwright.common.ts` - POMs,
   settle helpers, TestHelper-API seeding, `workers:1` guard.
 - `~/claude-kit/todo/oe-playwright-harness-plan.md` — runbook/StepLog/version-gate/docgen
   blueprint.
 - `/home/toukan/openeyes/protected/tests/OEDbTestCase.php` (+ ModelTestCase/RestTestCase
-  /WithTransactions) — PHP TDD substrate for approval/DB-delta/calc-vector oracles.
+  /WithTransactions) - PHP TDD substrate for approval/DB-delta/calc-vector oracles.
 - `/home/toukan/oe-deploy` + `/home/toukan/helm/openeyes` — deploy tooling.
 - `<sample>-db-1` (running MariaDB 11.8) + the sample dumps `~/pptest-seed-v26-1-template-config.sql`,
   `~/pptest-dump.sql` and `~/pptest-migrated-develop.sql` — the live characterization/differential target.
@@ -4641,6 +4666,17 @@ and branches as they do today; the production image stays lean and stateless. Wh
 settings cannot be baked into a shared image, and compiling them at boot costs milliseconds while
 keeping one image per release, not per site. Lands in §4.7, §9.1.
 
+**Development and production image parity.** All routine OpenEyes2 development,
+focused tests and feature checks run in the development image. The production or
+live image is an immutable, production-ready cut of the same source and dependencies,
+with its runtime permissions, writable paths, tools and attack surface reduced. At the
+end of a long tranche, not after every feature, build the exact production image and
+rerun the selected application, migration, boot, health, browser and container-security
+gates inside it. Record any behavior that differs from the development image, including
+cache, filesystem, user, permission, extension, environment or startup behavior. An
+unexplained difference is a release blocker. The intended difference is hardening and
+the absence of development tools, never a different application contract.
+
 **Q16. Tenancy - `institution_id` as a normal column; any future shard key is a patient hash.**
 Why: a patient can be seen at more than one institution; sharding by institution would split
 records. Lands in §5, D7.
@@ -6565,7 +6601,7 @@ historical migration, formal OpenAPI, target help and exact visual matching rema
 explicit work.
 
 The AI-friendly recommendation is recorded at
-`/home/toukan/openeyes-laravel-ai-friendly-recommendation.md`. Do not wrap
+`/home/toukan/openeyes-rewrite/documentation-inputs/openeyes-laravel-ai-friendly-recommendation.md`. Do not wrap
 authenticated clinical or administration pages in generic bot-driven HTML to
 Markdown conversion. After functional porting, generate native Markdown and
 `/llms.txt` from the documentation, page and API inventories, publish OpenAPI and
@@ -7088,11 +7124,12 @@ code remain a separate mandatory deployment inventory.
 
 These workstreams are recorded now but do not block rapid functional breadth:
 
-1. Route-driven duration, query, N+1 and memory benchmarking after basic page coverage stabilizes.
-2. Renderer fidelity corpus, capacity tests and independent PDF or PNG engine evaluation.
-3. Paired role-based human UAT using the PageRegister, with side-by-side behavior, output, accessibility, perceived speed, clinical sign-off and divergences recorded.
-4. Exhaustive test hardening, mutation testing, final visual parity and documentation completion.
-5. Refactoring after functional parity and measured load identify the code that needs redesign.
+1. Reconcile the pinned `develop` baseline to the latest final `26.0.x` release after pinned-baseline rewrite closure. Refresh the source refs, freeze the exact end SHA, and account for every intervening commit and changed path in a delta ledger. Classify each change as new behavior, correctness or safety, performance-only, obsolete in the rewrite, or conflicting with an approved OpenEyes2 design. Port every applicable new behavior into the OpenEyes2 master line, record every deliberate non-port with evidence, and do not mechanically copy an old performance implementation when the rewrite already solves the underlying problem differently. Every performance PR in the upstream delta requires an equivalent or stronger OpenEyes2 regression test for its observable behavior, query growth, query plan, memory, or workload cost. Record the source commit or ticket, target evidence, design choice, and lesson learned so later release deltas become faster and more reliable. The gate is exact delta accounting with no unexplained commit, applicable feature, migration, route, configuration change, or performance regression left behind.
+2. Route-driven duration, query, N+1 and memory benchmarking after basic page coverage stabilizes.
+3. Renderer fidelity corpus, capacity tests and independent PDF or PNG engine evaluation.
+4. Paired role-based human UAT using the PageRegister, with side-by-side behavior, output, accessibility, perceived speed, clinical sign-off and divergences recorded.
+5. Exhaustive test hardening, mutation testing, final visual parity and documentation completion.
+6. Refactoring after functional parity and measured load identify the code that needs redesign.
 
 The canonical clinical `/api` remains unversioned. No parallel API family is
 introduced by this correction.
@@ -8585,7 +8622,7 @@ terminal run.
 #### Exceptionally lightweight worklist program
 
 This section incorporates
-`/home/toukan/openeyes-worklist-realtime-scaling-plan.md`; that source remains
+`/home/toukan/openeyes-rewrite/documentation-inputs/openeyes-worklist-realtime-scaling-plan.md`; that source remains
 the detailed authority for the hot-row and publisher corrections and for the
 full load and failure matrix.
 
@@ -9353,6 +9390,43 @@ with priorities, backpressure, rate limits, retries, circuit breakers, dead
 letters, replay, and source health. Proven queue patterns may be backported to
 legacy OpenEyes later as a separate program.
 
+#### Deferred repository identity, branching and release process
+
+Added 8 September 2026; sequencing corrected 9 September. Branch/tag layout is
+now a prerequisite for the next explicitly authorized push, not only far-future
+release work. Repository rename, production release automation and the full
+release runbook remain later work. Local OpenEyes refs checked on 9 September have
+`develop`, `master`, `release/26.0.x` and `v26.*` release tags; refresh actual
+remote refs and review branch bases again before publishing.
+
+1. Eventually rename the Laravel repository to `openeyes2`. Inventory affected
+   remotes, build contexts, automation, package references and documentation
+   before scheduling the rename; do not rename anything during this run.
+2. At the next authorized push, use the current OpenEyes layout in both the
+   application and Docker repositories: `develop` for ongoing integration,
+   `master` for the released line, and `release/28.0.x` as the first planned
+   version release branch, followed by one release branch per supported version
+   line. The first planned final release tag is `v28.0.0`, not a continuation of
+   legacy v26 numbering. Review the exact starting commits and promotion/merge-
+   back paths, preserve the current rewrite branch/history and do not force-move
+   existing published refs. Publishing work to `develop` is not a production
+   release: create the final `v28.0.0` tag only after release acceptance, not merely
+   because a coverage checkpoint or push is complete. Confirm protection and
+   hotfix conventions in the later release runbook. This entry authorizes no
+   branch creation, commit, tag or push in the current run.
+3. Give application and Docker releases one consistent version/tag identity.
+   Plan immutable live/production release images, recorded digests and exact
+   rollback references, with consistent tags across their component images.
+   Never overwrite a published immutable release tag; distinguish any convenient
+   moving channel alias from the immutable release it selects. Keep this aligned
+   with the LTS release-line and resolved-build inventory policy below.
+
+Acceptance later: an agreed release runbook, an end-to-end release rehearsal,
+traceability from source tag to every shipped image digest, and a tested rollback
+to the previous release. No rename, branch, tag, registry or publishing changes
+are part of the current run. The next-push checklist must resolve and record the
+branch layout above before publishing; detailed release design remains deferred.
+
 #### Pinned component lifecycle and end-of-support watch
 
 This is a later release-engineering workstream, not part of the current
@@ -9835,7 +9909,7 @@ by this tranche.
 
 The later global repository rule supersedes the earlier one-off Git override.
 Do not commit or push. Stage the bounded changes in
-`/home/toukan/openeyes-laravel`, `/home/toukan/openeyes-docker`, and Claude-kit,
+the rewrite, container, and shared planning repositories,
 show the diffs, and leave the human to commit and push. Legacy OpenEyes remains
 read-only. There is no force push, amend, hook bypass, hard reset,
 protected-branch write, or pull-request mutation.
@@ -10431,7 +10505,745 @@ resources, or modify the pinned legacy repository.
 
 ---
 
+### 26.16 Functions-first continuation and persistent preview - 2026-09-07
+
+The approved next run prioritizes complete usable legacy workflows, then an
+available verified preview, then roughly 95 percent weighted code porting.
+Its fixed terminal guard is 2026-09-09T09:40:53+01:00, with new functional scope
+frozen by 2026-09-09T07:40:53+01:00 and a safe integrated checkpoint required
+after the time guard. Active plan 16.143 owns the current baseline, queue and
+hourly evidence. Earlier deadlines and completed prerequisites are historical.
+Percentage does not substitute for functionality, safety or release proof.
+
+One persistent localhost-only Laravel preview is protected from test cleanup
+and remains running after the tranche. It uses verified images, dedicated
+synthetic data and volumes, current-date worklist samples, explicit resource
+limits and machine-local secrets. SSH-forwarded frontend/realtime ports are
+8301/8302. Brief manager-owned migration maintenance is approved; retain the
+previous working images and a pre-migration preview backup. Never run destructive
+test commands against preview storage. Stopped obsolete rewrite containers may
+be removed after exact ownership/data checks while retaining all volumes.
+Later volume cleanup requires a restoration inventory and evidence-retention
+approval; no broad prune and no unrelated-environment deletion.
+
+Keep new rewrite artifacts below `/home/toukan/openeyes-rewrite`. The final
+11 September location rule at the top of this plan governs all future runs:
+the Laravel and Docker repositories, progress file and second-eye query note
+stay at their explicit `/home/toukan` locations. Shared repositories, PR history,
+legacy tools and general documents already restored must not be consolidated
+again. Verify any separately approved move by path and checksum or same-filesystem
+atomic-rename identity before removing exact redundant copies or disposable
+artifacts. The shared planning repository, persistent preview volumes,
+machine-local secrets and unrelated projects stay outside the work folder.
+Delete a Docker volume only when exact
+ownership proves it belongs solely to a completed disposable environment and no
+retained restart, migration or preview path uses it. Never use a broad prune.
+
+Reuse completed test-runner, telemetry, outbox and query-protection foundations.
+Runtime authorization still requires closure; offline policy previews do not
+prove clinical request permissions. Preserve all 88 worklist behaviors, but
+defer full realistic scale proof while checking redesign-threatening risks now.
+Keep the patient-summary layout familiar and retain reversible image controls.
+
+The remaining master order is functional closure and simple reusable patterns;
+release-blocking component security closure; eligible unreleased migration
+consolidation and realistic migration rehearsal; large-data profiling and
+automatic query-plan checks; worklist failure/load and renderer capacity/fidelity;
+paired UAT, hardening, accessibility and clinical/visual acceptance; then complete
+documentation once behavior and data-backed performance stabilize. Continue
+recording low-cost major-component security findings during porting, not only at
+the release stage. More detailed dependency/readiness gates in 26.15 still apply.
+
+The 8 September ordinary worklist Did Not Attend correction uses the shared
+appointment-first mutation, durable history/audit/projection/outbox contract and
+bounded pathway presenter. It does not close the whole worklist workstream or
+raise the shared legacy controller score. Specialized DNA hooks, optimistic
+versions, historical reopening and the realistic migrated-data load and failure
+matrix remain in their existing ordered gates.
+
+Its accepted 59f07e2e3ea4 application source has matching web, manager, queue and
+browser images, a 169-test/38,770-assertion focused PHP pack, 55 frontend tests,
+role-image gates and a read-only preview browser pass. Promotion followed a private
+seven-schema backup and added one migration while preserving 20 patients, 59 events
+and one user; all nine bounded preview services are healthy. This is an integrated
+ordinary behavior checkpoint, not completion of worklist parity or scale proof.
+
+The next accepted ordinary worklist behavior removes one requested step through a
+permission-first named API with an exact requested-list stale guard. Its single
+appointment-first transaction records soft deletion, parent status, history,
+clinical audit, compact projection and outbox, while rejecting non-requested and
+Did Not Attend pathways. One 100-click browser action produced one delete write;
+independent database readback proved the exact mutation and protected unrelated,
+clinical and PAS state. The shared WorklistController mapping remains partial, so
+the percentage is unchanged and full worklist scale proof remains later.
+
+Accepted source 6e9de8016e05 has matching development, web, manager, queue and
+browser images. The baked confidence pack passes 112 PHP tests with 3,427
+assertions, 55 frontend tests, Pint, the clean production build and all role-image
+gates. A private seven-schema backup preceded promotion, the nine-service preview
+is healthy, and its zero-write route and dashboard smoke passes. PSD assignment
+cleanup remains deferred because the target has no safe assignment linkage.
+
+The next bounded WL-036 slice adds one ordinary active user-creatable pathway step
+under the complete current-step stale guard and 64-step limit. A completed pathway
+reopens to waiting, while audit, compact projection and outbox commit atomically.
+One 100-click browser burst performs one write and reload proves persistence. The
+step-type picker is a deliberately tiny catalogue: CI permits at most 64 estimated
+rows and detects any larger scan, filesort or temporary table without forcing an
+index. Custom state, insertion position, specialized observers, optimistic versions
+and migrated-data scale remain later parity gates, so the shared controller score
+and coverage do not increase.
+
+Final reconciled source 708309da6398 passes the focused backend, frontend, build,
+image and browser gates plus all 56 ledger tests with 35,390 assertions and an exact
+5,516-file packaged source manifest. Promotion follows a private seven-schema
+backup. The persistent nine-service preview is healthy with its synthetic patients,
+events and migration state retained, and a final read-only route and dashboard
+smoke makes no clinical write. This is a bounded functional checkpoint, not full
+worklist parity or realistic-scale proof.
+
+The next bounded WL-035 slice restores ordinary checkout reversal through the
+same appointment-first aggregate boundary. It resets only the exact completed
+checkout step, returns the pathway to active and checked-in, and commits history,
+clinical audit, a stable typed system event, compact projection and outboxes
+atomically. A 100-click browser burst produces one write and one compact delta.
+Legacy emergency-care HL7 A13 publication remains a separate integration gate:
+do not infer its payload or transport before the authoritative consumer contract
+is ported. Specialized hooks, optimistic versions and migrated-data scale also
+remain open. This adds evidence without raising the shared controller score.
+
+Final reconciled source 439127e4bb76 passes the packaged ledger and all role
+image gates. A private seven-schema backup preceded promotion, and the persistent
+nine-service preview is healthy with its synthetic data and migration state
+unchanged. A read-only browser check sees the checkout-reversal operation and the
+worklist dashboard without a clinical write. This accepts the bounded WL-035
+slice only; it does not close A13, specialized hooks or realistic-scale proof.
+
+The next accepted worklist slice preserves pathway and step comments through
+permission-first named APIs. Current comments are co-located on their owning rows
+for bounded reads; pre-change history and clinical audit remain atomic, and the
+authenticated actor is derived by the server. Repeated saves and empty deletes
+are no-ops. Because comments are absent from the compact dashboard payload, these
+detail-only writes do not rebuild its projection or publish a compact delta.
+
+Accepted source 0157ed5376d4 passes 176 focused PHP tests with 37,290 assertions,
+55 frontend tests, the production build, the exact ledger and all role-image
+gates. The ledger remains exact at 14,125 canonical paths and 18,643 mappings,
+with 77.2979 percent code and 73.2947 percent overall weighted coverage. A private
+seven-schema backup preceded promotion; all nine preview services are healthy at
+333 migrations, and read-only browser verification made no clinical write.
+Legacy comment-table import, exact visual UAT and the full failure/load matrix
+remain later gates, so this does not claim full worklist parity or scale proof.
+
+The next accepted worklist slice implements the ordinary WL-040 started-step
+cancellation action. It is permission-first, actor-bound, exact-step and bounded;
+history, audit, compact projection and outbox effects commit together. The final
+milestone passes 3,837 PHP tests with 100,183 assertions, 55 frontend tests, the
+production build, strict ledger, image, Compose, Helm and Playwright gates. A
+browser harness mismatch found during integration was corrected so protected-file
+and event-image mounts now match the real Compose storage contract. A private
+seven-schema backup preceded promotion and all nine preview services are healthy
+on the accepted images with 333 migration rows. Coverage remains 77.2979 percent
+code and 73.2947 percent overall because this changed an already scored shared
+controller. Prefer the next useful bounded function from a zero-score canonical
+legacy path, while keeping the migration confidence pack proportionate and
+batching the next expensive full milestone.
+
+The later backlog remains intact: standalone legacy UrlBenchmarkCommand-informed
+profiling after realistic data, security proof and links, LTS release-line support
+alerts and resolved artifacts, Puppeteer/Chromium compatibility, optional pooling,
+opt-in external telemetry, protected-file scanning, general admin tooltips,
+compact patient-summary redesign and final volume reclamation. Do not divert
+functional breadth into these unless a demonstrated foundation or safety issue
+requires it. Stage and show diffs; no commits or pushes.
+
+### 26.17 Coverage-first implementation cadence - 2026-09-09
+
+The user-approved 48-hour run used exactly three long-lived Sol xhigh
+implementation workers during its opening parallel phase and prioritizes correct
+ported logic and higher honest code coverage. From
+2026-09-10T14:00:00+01:00, all child lanes are closed and the main gpt-6-astra
+max session is the only implementation, integration and verification lane through
+the fixed tranche terminal checkpoint. No further child agent is started. Active
+plan 16.144 owns the fixed clock from
+2026-09-09T10:12:21+01:00 to 2026-09-11T10:12:21+01:00, the final four-hour
+scope freeze, source baselines and worker queue. Its baseline is 78.2937 percent
+code and 73.7412 percent overall; 80 is the first checkpoint, 85 the working aim,
+and 90 a stretch rather than a guaranteed result or stopping rule.
+
+This correction explicitly supersedes the earlier per-slice migration confidence
+pack and periodic/full percentage-ratchet verification cadence for this run.
+Ordinary low-risk behavior earns implementation credit after exact source review,
+integration and a focused working check. Automated parity and exhaustive tests
+may follow later. Preserve the current scoring and evidence verifier: strict
+reference integrity is not proof of test execution. Record real tests separately
+from pending tests and distinguish newly implemented behavior from retrospective
+evidence reconciliation. No inventory, relabeling, incomplete stub or unsupported
+retirement increases coverage.
+
+Immediate proof remains focused on changed authorization, patient isolation,
+clinical values/calculations, signing, audit/history, irreversible transforms,
+affected schema and materially new high-volume query shapes. Ordinary reuse of
+an existing sound boundary does not require repeating its whole test suite.
+The final batch runs accumulated migration and clean-chain proof, production
+assets, affected image checks, one deterministic full PHP run, relevant frontend
+tests and the maintained Playwright flows plus necessary new interaction checks.
+No midpoint full suite, per-slice image promotion, shuffled duplicate run or
+unchanged renderer rebuild. Attributable failures rerun affected contracts;
+shared changes justify broader verification when needed.
+
+Main owns shared routes, registries, schema ordering, seeds, ledgers and Docker.
+Before the 14:00 transition, workers owned disjoint administration/reference,
+clinical, and PAS/integration bundles; shared/census code followed its actual
+consumer. After the transition, main selects and closes one bounded bundle at a
+time. Rank by attainable coverage gain, dependencies and risk, reusing simple
+existing patterns. Missing authoritative rules block their narrow bundle, not
+the rest of the queue.
+
+The protected preview stays available on the last accepted images until final
+promotion. Keep runtime resource caps, synthetic data isolation, retained volumes,
+hourly ten-line user progress and detailed resumable bundle records. No commits
+or pushes. The later migration/performance, worklist scale, renderer fidelity,
+security, UAT, clinical sign-off and documentation workstreams remain intact.
+
+At the 2026-09-10 17:45 BST checkpoint, the sole Astra lane has accepted B068:
+firm-scoped Examination follow-up correspondence with portable assignments and
+defaults, bounded no-hint serving plans, and source-linked idempotent generation.
+Coverage is 81.5621 percent code and 75.3305 percent overall across the exact
+14125 canonical paths. The lane continues alone to the fixed freeze and terminal
+guards; clean migration, browser, migrated-scale and clinical acceptance remain
+separate final or later gates.
+
+At the 2026-09-11 00:46 BST checkpoint, B081 safely replaces the legacy user-lock
+operator path. An oe-manager command defaults to help, takes only the username as
+an argument, reads both credential values through hidden prompts, applies the
+shared LOCAL policy and writes history, the UserSaved outbox event and a redacted
+manager audit atomically. The unique username lookup remains bounded with 1000
+unrelated users. Unsafe password-preserving unlock and hard-coded credential
+bootstrap behavior are not copied. Persistent failed-attempt state and session
+revocation stay later under DIV-535. Exact accepted coverage is 82.0024 percent
+code and 75.5709 percent overall across 14125 canonical paths.
+
+At the 2026-09-11 01:03 BST checkpoint, B082 restores a bounded terminal
+failed-import retry. The named route requires both administration and import
+authority, scopes the immutable request to the current institution, confirms the
+protected object exists before taking a row lock, and atomically resets delivery
+state only after rechecking the terminal failure. Raw payloads and patient
+identifiers are excluded from the audit. Routine editing, execution logs,
+non-terminal reprocessing and external acceptance remain later under DIV-499.
+Exact accepted coverage is 82.0089 percent code and 75.5737 percent overall
+across 14125 canonical paths.
+
+At the 2026-09-11 01:28 BST checkpoint, B083 replaces the generic Yii HTML
+failure surfaces with query-free Laravel 403, 404, generic 4xx, 500 and generic
+5xx pages. The pages reveal no request or exception details, escape optional
+deployment support details, retain opaque request correlation, and satisfy the
+global page-readiness contract without application JavaScript. The PAS
+merged-record page remains unclaimed until the application has an authoritative
+merged-patient signal. Exact accepted coverage is 82.0576 percent code and
+75.5950 percent overall across 14125 canonical paths.
+
+At the 2026-09-11 01:45 BST checkpoint, B084 restores the complete Therapy
+Application Snellen choice helper as one bounded request-safe service shared by
+intervention presentation and validation. It preserves active source ordering,
+form choices, display-to-base conversion and saved retired values without a
+process-static cache. The serving read remains two queries with 2 and 1000
+unrelated rows and uses no filesort, temporary table or optimizer hint.
+Executable patient-data decision defaults remain deferred under DIV-095. Exact
+accepted coverage is 82.0739 percent code and 75.6021 percent overall across
+14125 canonical paths.
+
+At the 2026-09-11 02:14 BST checkpoint, B085 restores the OESCAPE CVI eye
+indicator only on its replacement Clinical Trends page. It lazily reads the
+single-row current CVI projection, preserves the exact source status-ID eye
+rule, exposes accessible loading and error states, and adds no CVI query to
+ordinary patient headers. The current read is one indexed query without
+filesort, temporary table or optimizer hint. Exact accepted coverage is
+82.0901 percent code and 75.6091 percent overall across 14125 canonical paths.
+The diagnosis report remains deferred until its fuzzy observation-date filter
+has an explicit normalized indexed contract.
+
+At the 2026-09-11 02:36 BST checkpoint, B086 reconciles the legacy Audit Log
+browser with its named, permissioned, current-institution Laravel replacement.
+Search, expandable details and bounded keyset paging remain, while a new client
+guard prevents overlapping automatic refreshes. The safer exact username scope
+and 30-second full refresh deliberately replace broad user autocomplete and the
+five-second incremental animation. Existing small and large fixture proof has
+fixed query growth and a selected index without filesort, temporary table or
+optimizer hint. Exact accepted coverage is 82.1050 percent code and 75.6156
+percent overall across 14125 canonical paths. Browser and migrated-volume
+acceptance remain later under DIV-098.
+
+At the 2026-09-11 02:58 BST checkpoint, B087 restores device-import attempt
+history as bounded structured operational data. Claims record try number,
+timestamps, result and failure code. The current-institution admin page lazily
+loads at most twenty attempts and never receives the legacy free-text log,
+payload fields or worker identity. Expired lease recovery now updates fixed
+groups instead of writing one request at a time, with constant query count at
+one and one hundred expired rows. Exact accepted coverage is 82.1343 percent
+code and 75.6284 percent overall across 14125 canonical paths. Routine and queue
+configuration, migrated-volume proof and external worker acceptance remain
+later under DIV-479.
+
+At the 2026-09-11 03:13 BST checkpoint, B088 restores the unsupported-browser
+login boundary. Internet Explorer GET and POST login requests receive one
+accessible query-free warning before authentication work. Deployments can
+optionally require a bounded literal user-agent token and escaped plain-text
+message. Arbitrary regular expressions and administrator HTML are deliberately
+not executed in the login path. Exact accepted coverage is 82.1741 percent code
+and 75.6457 percent overall across 14125 canonical paths. Browser fleet and
+deployment-specific token acceptance remain later.
+
+At the 2026-09-11 03:31 BST checkpoint, B089 retires one unreachable generated
+Cornea duplicate and two Yii-only test-harness helpers with exact pinned-source
+evidence. No production behavior is invented for a class with no source table,
+registration, view, controller or caller. Laravel and Pest replace the legacy
+fixture and global-fake mechanics. Exact accepted coverage is 82.2228 percent
+code and 75.6670 percent overall across 14125 canonical paths. Broad runtime
+gaps remain in the ordered backlog.
+
+At the 2026-09-11 03:39 BST checkpoint, B090 retires two CVI development-test
+controllers that exposed hard-coded ODT and PDF experiments as administrator
+routes. The target keeps normal protected CVI consent and rendering behavior but
+does not recreate development application-tree writes or patient-shaped example
+responses. Exact accepted coverage is 82.2552 percent code and 75.6811 percent
+overall across 14125 canonical paths. Statutory output fidelity and external
+delivery remain later gates.
+
+At the 2026-09-11 04:01 BST checkpoint, B091 retires the process-global API
+result cache and global plaintext PIN user search. The target uses
+container-scoped request context, explicit bounded patient readers,
+institution-bound authorized identity selection and selected-user one-way PIN
+verification. Exact accepted coverage is 82.2877 percent code and 75.6953
+percent overall across 14125 canonical paths. Broad SSO, analytics, external
+integration and migrated-scale validation remain later gates.
+
+At the 2026-09-11 04:15 BST checkpoint, B092 retires the loopback APC and APCu
+cache-clear HTTP endpoint. The target builds immutable framework configuration
+at the release boundary before traffic and keeps migrations manager-owned. It
+does not rely on a request reaching each persistent worker or permit web-time
+schema discovery. Exact accepted coverage is 82.3039 percent code and 75.7024
+percent overall across 14125 canonical paths. The separate raw idea to verify
+Laravel schema introspection and design migration-driven cache invalidation
+remains a later architecture investigation.
+
+### 26.18 EyeDraw and the version-matched sample package - 2026-09-09
+
+These are separate deployment repositories, not missing directories to recreate
+inside the pinned OpenEyes checkout. Account for them in the mandatory external
+deployment inventory. Their future porting must not inflate the current14125-path
+FileLedger or imply complete-app parity from core-repository coverage alone.
+
+EyeDraw is cloned into every legacy deployment. Classification: integration seam
+now, repository port next tranche. When porting an OpenEyes caller, identify the
+EyeDraw dependency and preserve the contract for saved drawing JSON, doodle names
+and parameters, laterality, editor events, generated descriptions/calculations,
+assets and print/render consumers. Record any unresolved dependency in that
+bundle's existing evidence. Reuse the current bounded, on-demand integration;
+do not fork the drawing engine into each element or treat stored JSON alone as
+proof that the interactive drawing feature is complete.
+
+Planning exceptions approved 2026-09-10: two temporary read-only Astra agents
+prepare separate EyeDraw and sample-repository porting plans now, alongside the
+three continuing Sol implementation workers. Each has no implementation or
+nested delegation authority and finishes after delivering its plan. Both prepare
+prioritized questions for next-tranche planning, separating blocking clinical or
+architecture decisions from later operational preferences. Main integrates their
+findings into this section and the active plan; neither is an ongoing worker.
+
+The plan covers the openeyes2 package/build boundary, compatible application
+release mapping, asset delivery, dependency/security modernization and upgrade
+checks. Implementation remains next tranche. Establish
+a corpus of existing saved drawings and clinical outputs before changing engine
+behavior; interactive, description/calculation and PDF/PNG fidelity have separate
+acceptance gates. This run does not port EyeDraw itself unless the approved core
+porting queue genuinely has no useful unblocked work; one blocked bundle is not
+that trigger. No engine replacement or broad modernization is approved by this
+planning entry.
+
+EyeDraw plan completed 2026-09-10: see the source-backed
+[next-tranche plan and questions](/home/toukan/openeyes-rewrite/coverage-48h-101221/eyedraw-next-tranche-plan.md).
+The temporary planner has finished and will not be reused. Retain the current
+engine and single shared Vue integration, package one immutable external artifact,
+then close lifecycle/unknown-data protection, caller behavior and separate
+document-rendering gates in that order. The plan records 1494 external tracked
+files and exact copied-bundle matches without adding core coverage.
+
+Current caller constraints from inspection: engine loading stops at an unknown
+doodle, and saving emits only known parameters with scale/number normalization.
+Preserve raw historical JSON and report provenance; never treat load/save as a
+lossless round trip. Explicit suppression and empty-tuple semantics must be
+agreed before enabling the deferred PreserFlo carry-forward behavior. Construction
+readiness is not drawing readiness; renderer network/file denial stays intact.
+Version/license metadata conflicts, missing tag/search integration and full
+instance disposal remain next-tranche gates, not broad fixes in this run.
+
+Next-tranche questions are prepared in the plan: deployed revisions/custom
+doodles and corpus owner; suppression scope and event precedence; read-only
+handling of unknown data; authoritative signed text/calculations/artifacts;
+package identity; later visual, performance, accessibility and rollout choices.
+No engine replacement, JSON rewrite, package publication or implementation is
+authorized by completion of the plan.
+
+Sample is also a separate repository, baked into `oe-manager` with a compatible
+matching application version. Classification: package/release and seed seams now,
+implementation in a later tranche before migration/load/UAT data preparation.
+Plan an intentionally different openeyes2 successor, not a literal port of legacy
+dumps and shell scripts. Build on current CSV seeds and the bounded worklist
+factory; the general deterministic story/profile builder does not yet exist.
+The planned pipeline produces reproducible tiny, legacy-like, config-heavy and history-heavy
+data; seeded randomness; optional scale; and current-date worklists/appointments.
+Keep real migration fixtures distinct from generated demo data.
+
+Define a release manifest binding application, manager, schema/seed contract and
+sample package revision. The manager must verify compatibility before any load
+or reset; runtime cloning/downloading of an arbitrary branch is not the contract.
+Evaluate fast reset/reseed on an already compatible schema separately from an
+explicit clean rebuild, avoiding repeated migrations/table rebuilds just to
+restore demo state. Include cache/projection/outbox/queue/file consistency and
+current-date rebasing in the reset acceptance checklist, with bounded bulk work
+and concise aggregate output. Preserve the existing long-migration health and
+single-manager ownership contracts.
+
+Destructive reset is explicitly for identified disposable/demo targets, with
+target validation, clear help/preview and explicit execution authorization; never
+infer that a clinical/customer database may be wiped. Later acceptance measures
+reset time, resource use, reproducibility, version mismatch rejection and usable
+frontend stories. Detailed packaging and branch/tag mechanics remain with the
+already deferred release-process plan. No EyeDraw or sample source is changed now.
+
+Sample plan completed 2026-09-10: see the source-backed
+[next-tranche plan and prioritized questions](/home/toukan/openeyes-rewrite/coverage-48h-101221/sample-next-tranche-plan.md).
+The temporary planner has finished and will not be reused. Its 851 tracked
+external paths, including 27 pre/post-migration scripts and 763 media paths,
+remain separate inventory. Legacy sample packaging silently falls back to master
+on an unavailable ref; the successor must reject incompatible packages instead.
+
+Ordered next-tranche milestones: package/inventory contract; deterministic tiny
+builder; guarded compatible-schema data-only reset; offline manager integration;
+then broader profiles and independent migration/load/UAT acceptance. Reuse the
+existing module loader for a manager/development-only sample module. Application
+owns reference data, clinical/history semantics and narrow import adapters;
+sample owns synthetic scenarios/assets; Docker owns exact offline packaging.
+There is no general Story registry or oe:seed:build implementation to reuse yet.
+
+Architecture constraints for current work: the existing REPLACE/FK-disabled CSV
+loader is not a general reset API; cover all seven schemas, projections, history,
+audit, outbox/replay, scoped caches and files explicitly. One manager replica
+does not supply a cross-process migration/reset exclusion lock. Plan a shared
+maintenance lease, writer/worker drain, recoverable phases and release/dataset
+readiness, retaining the 75-minute migration startup allowance. Destructive
+execution stays restricted to exact authorized disposable targets. No current
+preview reset, dataset generation, volume removal or package implementation is
+authorized by this planning result.
+
+Questions are ready for target authorization, complete reset versus preservation
+of edited demo configuration, module/manifest acceptance, clinical story owners,
+media provenance, backup policy, reset-time target and later workload/retention
+choices. Synthetic sample evidence cannot establish real migration fidelity.
+
+### 26.19 Temporary coverage implementation capacity - 2026-09-10
+
+At the user's request, add two temporary Astra implementation workers alongside
+the three continuing Sol workers. Each gets one source-backed slice sized around
+two hours, with a four-hour maximum from its recorded start, and finishes once
+delivered. B043 is DocMan metadata/output preparation; B044 is the bounded Visual
+Outcome report. Exact file ownership is confirmed before edits. No rolling
+successor queue, nested agents or additional environments. Main owns shared
+schema/routes/ledgers and coordinates focused checks on the existing capped
+runner. The original run's scope freeze and terminal guard stay unchanged.
+This is a run-specific authorization, not a permanent increase in agent count.
+
+Completed at the 2026-09-10 02:00 BST integration boundary: both temporary agents
+finished their single assignments in about one hour and remain inactive.
+B043 delivers opt-in immutable ordinary DocMan XML preparation/download, with
+42 focused cases plus the existing delivery regression and 36 no-sort/no-temp
+plans. B044 delivers bounded distance visual outcomes with 45 tests and seven
+indexed plan checks; no hints or new schema. DIV540-541 retain all partial
+boundaries. Three continuing Sol workers and the original deadline are unchanged.
+
+### 26.20 Terminal integration, preview and workspace checkpoint - 2026-09-11
+
+Accepted coverage is 5069.10/6159 = 82.3039 percent code and 10692.96/14125 =
+75.7024 percent weighted overall. The ledger remains exact at 14125 canonical
+paths and 18648 mappings, with zero missing paths and zero unowned code paths.
+There are 1204 pending-review and 1273 unowned canonical paths. This is legacy
+porting coverage, not runtime test line coverage.
+
+The final immutable-source gate passed 4450 PHP tests with 108113 assertions,
+407 clean migrations, all 89 query-plan budgets, Pint over 3716 PHP files, 114
+JavaScript tests, the production frontend build, dependency audits, eight image
+checks, isolated Compose, Helm and the Playwright browser milestone. Promoting
+the same source repaired an upgrade-only correspondence macro schema omission.
+The retained preview now has 407 migrations and all nine services are healthy.
+
+The completed test stack was removed, its build worker was stopped, and 53
+explicitly allowlisted volumes with zero container references were deleted. No
+broad prune was used. Preview, uncertain and unrelated resources remain intact.
+The workspace was subsequently corrected by the user's final 11 September
+location decision: retained work artifacts live below `/home/toukan/openeyes-rewrite`,
+while source repositories, progress and the query note stay in their four
+explicit top-level locations. The location rule at the top of this plan
+supersedes the earlier consolidation. Private files and the shared planning
+repository remain separate. At this terminal integration checkpoint, Laravel and Docker
+changes are staged with checksummed recovery patches; nothing was committed or
+pushed. Real migrated data, production load, clinical UAT, external integration
+and complete output-fidelity gates remain explicitly unclaimed.
+
+### 26.21 Approved single-agent completion tranche and closed decisions - 2026-09-11
+
+13 September early-close correction: the user permits a safe early finish and wants the next tranche to prioritize missing functionality over repeated tests, detailed documentation and searching for a perfect implementation. Current runtime integration is green; code is 83.2062023055691%, not above 90 percent. Another 418.44 weighted code equivalents are required to exceed 90 at current precision. Preserve the denominator and separate functional gains from evidence reconciliation. The next-work evidence is `/home/toukan/openeyes-rewrite/coverage-48h-20260911-174239/next-48h-porting-evidence.md`, with every remaining code path and target/test/divergence reference in `next-porting-candidates.json`. The final checkpoint in that folder controls current repository and environment state. Older deadline and failure paragraphs below are historical.
+
+For the next tranche, prefer coherent source-backed bundles with real consumers. Reuse simple existing interfaces so queries and views can change after realistic-data testing. Batch ordinary tests, broad browser checks, image checks and final documentation; do not spend the porting window repeatedly proving already-working code. Keep short before/after/reason/gap records now. Narrow authorization, patient isolation, clinical calculation/signing, atomic audit/history and irreversible-transform proof remain immediate. Obvious N+1, unbounded loads, missing serving indexes, dangerous sorts/temporary work, hints, LOCK TABLES and persistent-worker state remain design checks. Production-size performance tuning and full concurrency/fidelity matrices stay later. A narrow blocked rule does not block unrelated features. The existing current-date sample refresh requirement remains later-only and does not replace the faithful legacy sample profile.
+
+13 September 13:22 BST integration: full PHP passes 5323 tests/117588 assertions with no failures, errors or skips. Exact V4 dev/live roles, Compose, renderer and 105 fixture-backed query plans pass. Retained preview is updated, backed up and healthy, with schema/config/read-only browser checks passing and no seed reset or file-volume replacement. Code remains 83.2062023055691%; overall 76.13224778761062%; canonical 14125, mappings 18648, missing 0, pending 1199, unowned code 0. Final disposition remains incomplete on 5880 code paths, with partial logic and missing rationale/status/permanent evidence distinguished in the independent audit. This is not code completion or above 90 percent. Next sample-preservation and operational reconciliation; after-next final records and bounded cleanup. No new functional scope before the earliest safe final at 17:42:39. Sample-date refresh remains later-only. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-1322.md and final-completion-audit.md. Earlier checkpoints are historical.
+
+13 September 11:42 BST scope freeze: no new functional slices; integration and attributable repairs continue through at least 17:42:39. Fresh 440 migrations, tiny seed, seven-schema verification, 10 modules/1100 route contracts, manager schedules, 261 JS tests, frontend build and 33 documentation pages pass. First full PHP batch completed 5315 tests/116581 assertions with 46 failures and three errors, without OOM. Fresh-seed setting omissions and a patient-header query regression are being repaired without relaxed permissions or query budgets; exact-source image rebuild and final suite/browser/live acceptance remain open. Coverage unchanged at code83.2062023055691% and overall76.13224778761062%; canonical14125/mappings18648/missing0/pending1199/unowned1268/unowned-code0; source6644 migrations440. Next verify repaired seeds and affected tests; after-next exact dev/live images, integrated suite and browser checks. Sample-date refresh remains later-only; preview unchanged. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-1142.md. Earlier checkpoints are historical.
+
+13 September 11:10 BST integration: DIV-636 repairs the numeric-ticket route break-glass bypass exposed after correcting the stale fixture. Permission, institution and queue-set checks precede patient resolution; existing ticket write rules remain unchanged. Related48PHP416assertions and3Pint pass, with4 indexed reads at1/1000tickets and no checked sort/temp; disabled mode adds0reads. All70 ledger tests/34885assertions now pass after evidence-backed snapshot, controller-owner and divergence-register reconciliation, without changing coverage points or the immutable baseline. Code83.2062023055691%, overall76.13224778761062%, canonical14125/mappings18648/missing0/pending1199/unowned1268/unowned-code0; source6644 migrations440. Strict/schema/databaseguard3403files pass. Next fresh seven-schema migration/tiny seed; after-next fullsuite/frontend/affectedbrowser/immutableimage checks and attributable repairs through at least17:42. Prior narrow feature deferrals and final acceptance remain open; the ticket bypass and broad ledger failures are closed. Sample date refresh remains later-only; preview unchanged. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-1110.md. Earlier checkpoints are historical.
+
+13 September 10:40 BST integration: DIV-635 ports the default-off correspondence clinic-date default from the latest created Examination in the current episode and institution, preserving saved values. Code83.2062023055691% and overall76.13224778761062% are unchanged; canonical14125/mappings18648/missing0/pending1199/unowned1268/unowned-code0; source6643 migrations440. Final24PHP360assertions,2JS,5Pint,Vue,source/strict/databaseguard3403files pass; disabled0queries and enabled2queries at1/1000rows, indexed without checked sort/temp/hints. Source clinic_date is labelled Visit Date; separate existing target fields remain pending explicit form/import reconciliation. The broader BreakGlassTest ticket fixture omits required expected_queue_id and remains an integration failure to investigate, not an authorization change. Next bounded core behavior before11:42, then final integration through at least17:42. Fresh-schema/full-suite/browser/live-image and prior narrow blockers remain open. Sample date refresh already planned later; preview unchanged. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-1040.md. Earlier checkpoints are historical.
+
+13 September 10:10 BST integration: DIV-634 restores source patient identifier status icons using normalized configuration and a bounded status/icon join. Number copying and the patient-summary layout remain unchanged. Code 83.2062023055691% (5124.67/6159), overall 76.13224778761062%; canonical 14125/mappings 18648/missing 0/pending 1199/unowned 1268/unowned-code 0; source 6636, migrations 439. Final 41 PHP tests/3120 assertions, 12 JS, five PHP style checks, two Vue compiles, source/strict/schema/database guard (3400 files) pass. The original eight-query header budget passes at small/100-row fixtures, with indexed plans and no checked sort/temp. Full popup/banner placement, generic icon administration and historical import remain partial. Next remaining source-backed core behavior; final integration starts after 11:42 and continues through at least 17:42. Earlier narrow deferrals and full-suite/fresh-schema/browser/live-image gates remain. Today's sample refresh stays later-only; preview unchanged. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-1010.md. Earlier checkpoints are historical.
+
+13 September 09:40 BST integration: DIV-633 template inheritance now serves API creation, preset append and PAS bulk creation through one bounded resolver. Recorded choices survive replay; saved retired references and active-only explicit new selections are distinguished. Code83.20019483682415% (5124.30/6159), overall76.12184070796461%; canonical14125/mappings18648/missing0/pending1200/unowned1269/unowned-code0; source6632 migrations438. PathwayTypeStep100to85 corrects unsupported generic-default credit while the VF view80to85 records inheritance. Pathway/PAS162PHP1641assertions and finalconfig/manifest/policy34PHP3208assertions plus3JS6Pint2Vue/source/strict/databaseguard3398files pass. Two and64mixed steps use7 bounded indexed reads without sort/temp/hints; no new DDL or dashboard query. Next remaining source-backed core behavior; final integration remains scheduled after11:42 through17:42. Non-VF template state/status source import exact popup and prior narrow deferrals plus fullsuite/freshschema/browser/liveimage remain open. Today's sample refresh stays later-only; preview unchanged. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0940.md. Earlier checkpoints are historical.
+
+13 September 09:15 BST integration: DIV-633 adds visual-field worklist catalogue administration and patient step configuration with source laterality, optional SITA, institution ownership, retained snapshots and lifecycle/revision guards. Code83.2018184770255% (5124.40/6159), overall76.12254867256637%; canonical14125/mappings18648/missing0/pending1200/unowned1269/unowned-code0; source6630 migrations438. An unsupported orphan preset-option mapping is corrected45 to0 with explicit retirement evidence and no denominator change. The first join failed the filesort/temp-table gate; indexed mapping IDs plus bounded neighbouring batches now pass in at most4 constant queries at1/1001 rows, with no hints or routine refresh lookups. Pathway144PHP1423assertions, visual-field/config/manifest/policy33PHP3695assertions,3JS, style/Vue/source/strict/current-schema/databaseguard3396files pass. Next inspect preconfigured pathway-template inheritance; after-next remaining porting and scheduled final integration. Source state import and exact popup/template parity remain partial; all prior deferrals and final fresh-schema/full-suite/browser/live-image gates remain. Today's sample refresh stays later-only. Preview unchanged; no new containers or data deletion. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0915.md. Earlier checkpoints are historical.
+
+13 September 08:30 BST integration: event/element custom guidance is functional with original HTML retained, safe edit-only display, owner uniqueness, history/audit and revision guards. The rich-editor toolbar and exact geometry remain incomplete; prior generic-shell credit is corrected. Code83.1881798993343% (5123.56/6159), overall76.11058407079646%; canonical14125/mappings18648/missing0/pending1201/unowned1270/unowned-code0; source6612 migrations437. Expanded guidance53PHP3388assertions and final NHS/policy/guidance70PHP381assertions pass, with style/Vue/source/strict/current-schema/databaseguard3384files. Guidance uses1 indexed query at small/1000 fixtures; no checked sort/temp or changed event-page budgets. The earlier NHS packet's forbidden database enums are replaced by VARCHAR/CHECK, preserving values and repairing four bounded synthetic tables without deletion. Next source visual-field worklist preset/configuration workflow inspection; after-next scheduled final integration. Prior narrow deferrals and fresh-schema/full-suite/browser/live-image gates remain. Today's sample refresh remains later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0830.md`. Earlier checkpoints are historical.
+
+13 September 07:58 BST integration: site-logo direct image fallback and read-only profile institutions are functional. Code83.18915408345511% (5123.62/6159), overall76.11100884955752%; canonical14125/mappings18648/missing0/pending1201/unowned1270/unowned-code0; source6604 migrations436. Logo28PHP2911assertions and profile26PHP2896assertions plus style/Vue/strict/source/databaseguard3379files pass; logo2queries and profile1/page<=10 stay bounded at small/1000 fixtures with indexed no-sort/no-temp plans. Current event/element guidance is preparation only: sanitizer dependency/policy/test are unstaged, no consumer or DDL yet, no coverage credit. Next integrate guidance; after-next remaining porting then scheduled final gates. Specialized visual-field worklist presets need their full configuration/state workflow, not isolated catalogue credit. Prior narrow deferrals and final gates remain; no new SSO acceptance claimed. Today's sample refresh is recorded below as later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0758.md`. Earlier checkpoints are historical.
+
+13 September 07:00 BST integration: assessment reset and shared Device Information/linked OCT measurement confirmation are functional. Source scalar labels are corrected without data changes or coverage gain. Fresh-entry review preserves existing device metadata and atomic history/audit/CST projections; older OCT callers retain their parent-version contract. Code83.18330897873031% (5123.26/6159), overall76.10846017699114%; canonical14125/mappings18648/missing0/pending1201/unowned1270/unowned-code0; source6600 migrations436. Final affected99PHP912assertions;10JS;3Vue;style/source21checks/strict/databaseguard3378files and diff checks pass. Initial2queries and context request<=40 remain bounded at small/1000 fixtures; no checked sort/temp/hints. Measurement-only save loads no graph. Next remaining source-backed core gaps; after-next scheduled integration. Historical negative measurements require explicit import reconciliation; exact layout/import/sign-off and prior narrow blockers plus final fresh-schema/full-suite/browser/live-image gates remain. Today's sample refresh stays later-only; preview and bounded containers unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0700.md`. Earlier checkpoints are historical.
+
+13 September 06:08 BST integration: profile settings now share a response-local batch and the original10-query gate passes. Conflict merge requests are editable with status/log/patients preserved and owner-bound remembered list mode. Device Information configured findings now use the shared OCT state/context and normal clinical transaction; cross-editor stale writes and either-eye errors roll back together; scalar/ABAC values are unchanged. Multiple applied specialties are preserved. Unsupported trait/template credit is corrected: code83.16268874817341% (5121.99/6159), overall76.09946902654868%; canonical14125/mappings18648/missing0/pending1201/unowned1270/unowned-code0; source6598 migrations436. Assessment60PHP556assertions; permission/manifest36PHP2961assertions;6JS2Vue10PHPstyle;strict/source/databaseguard3377files pass. Initial2queries and context request<=40 remain bounded at small/1000 fixtures with indexed no-sort/no-temp plans. Next source reset action then another bounded source-backed gap; after-next scheduled integration. Scalar/confirmation controls, Lite, CXL and prior narrow blockers remain, as do final fresh-schema/full-suite/browser/live-image gates. Today's sample refresh stays later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0608.md`. Earlier checkpoints are historical.
+
+13 September 05:20 BST integration: DIV-630 adds the authorized session desktop viewport override with safe PUT, initial/navigation state and single-flight menu action. Actual OE Lite layouts remain unported; seven source mappings now distinguish them honestly. Code83.1660983925962% (5122.20/6159), overall76.10095575221239%; canonical14125/mappings18648/missing0/pending1201/unowned1270/unowned-code0; source6597 migrations436. Focused13PHP102assertions and7JS plus style/Vue/strict/source/databaseguard3377files pass; warm PUT has0SELECTs with small/1000-row fixtures. Related profile budget reports12 instead of10 queries at both sizes; attribution open and budget unchanged. CXL archive-VA/import/export lifecycle and generic assessment editor remain narrow deferrals. Next diagnose profile budget then remaining bounded source-backed functionality; after-next final integration. Fresh-schema/full-suite/browser/live-image and separate SSO/load gates remain. Today's sample refresh is already recorded below and remains later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0520.md`. Earlier checkpoints are historical.
+
+13 September 04:21 BST integration: DIV-629 implements separate generic device metadata with 26 raw fields, source manual/imported semantics, immutable display, on-demand details and default-off patient-bound viewer actions. Code 83.1915895437571% (5123.77/6159); overall 76.11738053097345%; canonical 14125/mappings 18648/missing 0/pending 1201/unowned 1270/unowned-code 0; source 6589; migrations 436. Four corrected metadata rows now have partial evidence, not restored full-credit claims. Focused 23 PHP/209 assertions, related 79/3228, 7 JS, style/Vue, strict/source and database guard 3374 files pass. One indexed metadata read at 1/1001 rows; whole warm requests stay within 40 configuration/clinical queries without growth or checked sort/temp/full-scan. Import must preserve all raw values/history and resolve duplicates losslessly before uniqueness. No files or preview changed. Next remaining generic event/assessment behavior inspection; after-next remaining porting and final integration. External ingestion/native-client/import and prior narrow blockers remain; final fresh-schema/full-suite/browser/live-image/SSO/load gates are separate. Today's sample refresh remains later-only. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0421.md`. Earlier checkpoints are historical.
+
+13 September 03:47 BST integration: DIV-627 restores the source Biometry Open In Forum document action without additional page-load SQL or storage changes. DIV-628 removes four unsupported full-coverage mappings: generic device provenance is not OCT assessment. Code is now 83.1347621367105% (5120.27/6159), overall 76.09260176991151%; canonical 14125/mappings 18648/missing 0/pending 1201/unowned 1270/unowned-code 0; source 6578; migrations 435. The lower percentage is an accounting correction, not removed functionality. Focused 76 PHP/2997 assertions and related 59/810, 15 JS, style/Vue, strict/source and database guard 3368 files pass. One stale Biometry input-list expectation was updated. Next source-preserving generic device metadata and its actual consumers, with a full schema packet before import; no native device parser or Windows client activation is implied. Earlier narrow blockers and final integration gates remain. Today's sample refresh stays later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0347.md`. Earlier checkpoints are historical.
+
+13 September 03:27 BST integration: DIV-626 restores default-off FORUM/IMAGEnet patient tracking and explicit launcher requests, sharing the configured raw identifier lookup with CITO. No polling, arbitrary command or server-side process execution; current patient/context/configuration are rechecked. Code 83.19889592466309%; overall 76.12056637168142%; canonical 14125/mappings 18648/missing 0/pending 1201/unowned 1270/unowned-code 0; source 6569; migrations 435. Related 56 PHP tests/2918 assertions, 14 JS, ten style checks, Vue, strict/source and database guard 3365 files pass. Identifier reads remain within six queries for small/large fixtures with no checked full scan, sort or temporary table. The installed Windows launcher needs independent security/version/browser acceptance before enablement. Next inspect the source Biometry FORUM document action; after-next other source-backed porting and final integration. Earlier narrow blockers and final full-suite/fresh-schema/browser/live-image/SSO/load gates remain open. Today's sample refresh remains later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0327.md`. Earlier checkpoints are historical.
+
+13 September 02:49 BST integration: DIV-624 adds explicit generic event-worklist context; DIV-625 restores Examination checkout-on-save and both source default-on settings. Clinical saving survives unavailable checkout with visible recovery. Code 83.17161876928073%; overall 76.10442477876106%; canonical 14125/mappings 18648/missing 0/pending 1201/unowned 1270/unowned-code 0; source 6560; migrations 434. Related 199 PHP tests/4479 assertions, 7 JS, eight style checks, Vue, strict/source and database guard (3360 files) pass. Six stale manifest expectations now reflect existing clinical permission, without changing authority. Eligibility is bounded within nine warm-context queries; larger checked plans avoid full scan/sort/temp without hints. Settings migration is metadata-only. Next shared runtime gaps, starting with desktop tracking source review; after-next remaining porting and final integration. Prior narrow blockers, specialized event linkage/import and final fresh-schema/full-suite/browser/live-image/SSO/load gates remain open. Other broader ledger failures are not yet recounted. Today's sample date refresh remains later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0249.md`. Earlier checkpoints are historical.
+
+13 September 02:08 BST integration: DIV-622 reconciles two retired Further Findings templates with their existing successor; this is not new runtime. DIV-623 restores on-demand AIS details on worklist, waiting-list and theatre-diary pages, with patient-isolated requests and no additional row reads. Four source rows remain partial at 90 percent; final popup geometry/import are not claimed. Code 83.16577366455594%; overall 76.09550442477875%; canonical 14125, mappings 18648, missing 0, pending 1201, unowned 1270, unowned-code 0; source 6550, migrations 433. Focused AIS/flags/worklist 22 PHP tests/373 assertions, booking 3/311, 9 JS, four PHP style checks and source/retirement 4/1167 pass. Strict ledger and database guard (3356 files) pass; AIS retains three bounded queries. Next explicit event-worklist context and Examination checkout-on-save; after-next remaining porting and final reconciliation. One stale obsolete-count test is repaired; other broader ledger failures remain, with their remaining total not rerun. Prior narrow blockers and final fresh-schema/full-suite/browser/live-image/SSO/load gates remain open. Today's demo refresh is already recorded below as later-only; preview unchanged. Evidence: active 16.145 and `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0208.md`. Earlier checkpoints are historical.
+
+13 September 01:22 BST integration: DIV-621 restores prescription-triggered risk-history change events in the signing transaction, sharing batched mappings with editor advice. Source comment errors are recorded and fixed; label/import residuals remain explicit. IOP validation and sidebar patient-isolation repairs receive no coverage credit. Code 83.12079883097906%; overall 76.07589380530972%; canonical 14125, mappings 18648, missing 0, pending 1201, unowned 1270, unowned-code 0; source 6546, migrations 433. Related clinical 52 tests/1255 assertions and final expanded risk 11/91 pass; IOP 29/280 and sidebar 12 JS plus 4 PHP/33 pass. Strict/source/style/database guard (3356 files) pass. Risk mapping is 3 queries for 1/100 medicines; finalisation has no SELECT growth for 1/100 risks within its 50 clinical/configuration read budget. Next remaining source-backed Examination/core functionality and retired-feature successors; after-next final reconciliation. Prior narrow blockers and 14 broader ledger failures remain open. Full-suite/fresh-schema/browser/live-image/SSO/load gates remain separate. Today's sample refresh remains later-only; preview unchanged. Evidence: active 16.145 and `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0122.md`. Earlier checkpoints are historical.
+
+13 September 00:34 BST integration: DIV-617 restores default-off on-demand identifier history; DIV-618 restores legacy spacing masks and255-character configuration without altering raw patient numbers; DIV-619 exposes older episode pages in the familiar table. Code83.11430427017373%; overall76.07306194690265%; canonical14125 mappings18648 missing0 pending1201 unowned1270 unowned-code0; source6539 migrations433. History23PHP303assertions16JS; spacing77PHP919assertions; episodes26PHP310assertions4JS; style/Vue/strict/source21checks/databaseguard3354files pass. History and episode continuation stay2queries at1/1001rows with indexed plans; formatting adds0SQL at1/100values. New identifier index/column changes must consolidate into initial schema packets before bulk load; ambiguous source numeric masks need the recorded import transform. Next source-backed shared clinical/core functionality; after-next final reconciliation. Prior narrow blockers and14broader ledger failures remain open. Fullsuite/freshschema/browser/liveimage/SSO/load deferred; today's sample refresh stays later-only. Evidence: active16.145 and `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0034.md`. Earlier checkpoints below are historical.
+
+12 September 23:40 BST integration: DIV-613 scopes patient-day checklist reads/writes and restores current-section reset; DIV-614 adds explicit server-revision newest-definition replacement with clinical history and batched section reads. DIV-615 batches manual identifier reservations while retaining uniqueness and ownership guards. DIV-616 restores header usage/copy settings, excludes retired identifiers and ignores cancelled alert/CVI completions. Code83.09969150836174%; overall76.0578407079646%; canonical14125 mappings18648 missing0 pending1202 unowned1271 unowned-code0; source6524 migrations431. Checklist60tests1086assertions/12JS; identifier84tests693assertions; header29tests385assertions/10JS pass. Style/Vue/strict/source21checks/databaseguard3347files pass. Manual reservation reads1 at1/20types; checklist section reads bounded at1/20types; header reads fixed at1/100identifiers. Settings installation is metadata-only with no DDL. Next remaining patient-header identifier details and other source-backed functionality; after-next final reconciliation. Prior narrow blockers and14broader ledger failures remain open; fullsuite/freshschema/browser/liveimage/SSO/load deferred. Today's sample refresh remains later-only. Evidence: active16.145 and `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-2340.md`.
+
+12 September 22:42 BST integration: DIV-610 adds gene reference metadata through configuration, imports and bounded admin reads, with narrow clinical projections. DIV-611 ports numbered checklist question progress into standalone and patient-day consumers. DIV-612 corrects hidden conditional required-answer validation while retaining saved policy and hidden values; wider FormIO remains partial. Code83.08329274232831%; overall76.04254867256637%; canonical14125 mappings18648 missing0 pending1203 unowned1272 unowned-code0; source6511 migrations430. Genetics30tests320assertions; conditional workflows80tests1195assertions;11JS; style/Vue/strict/source21checks/databaseguard3345files pass. Gene reads stay2 queries without sort/temp; conditional evaluation is0SQL at1/100fields. Grouped gene DDL requires fresh-schema execution at final integration. Next checklist autosave scope safety and remaining source-backed functionality; after-next final reconciliation. Gene paged admin and prior narrow blockers plus14broader ledger failures remain open. Fullsuite/browser/freshschema/liveimage/SSO/load deferred; today's sample refresh remains later-only. Evidence: active16.145 and `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-2242.md`.
+
+12 September21:42 BST integration: DIV-608 safely serializes attachment polling and isolates the selected source without changing files/APIs or raising scores. DIV-609 restores advisory family variant-syntax checks behind an explicitly approved optional provider, with unchanged saving and no assumed Mutalyzer3 grammar equivalence. The saved family page's unsupported query-builder calls are corrected. Code83.07030362071765%;overall76.0368849557522%;canonical14125 mappings18648 missing0 pending1203 unowned1272 unowned-code0;source6503 migrations429. Genetics55tests3092assertions plus6JS and attachments23PHP276assertions plus11JS pass; strict/source/style/Vue and databaseguard3344files pass. Provider uses0SQL at1/100calls. Next source-backed gene metadata and shared core/clinical behavior; then remaining porting and final reconciliation. External-provider approval/live, prior narrow clinical/integration/migration blockers and14broader ledger failures remain open. Fullsuite/browser/freshschema/liveimage/SSO/load gates are deferred. Today sample refresh stays later-only and preview is unchanged. Evidence: active16.145 and `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-2142.md`.
+
+12 September 20:45 BST integration: DIV-607 ports the environment-configured CITO contextual launcher using the source multipart token/JSON OTP protocol and raw configured launcher identifier. It preserves login-only authority with patient/break-glass checks; adds bounded transport and private audit; uses one in-flight window and a per-user limiter. The launcher setting reuses the git-seeded settings family. CITO DB transport settings/admin/import/live acceptance remain partial; HIE is still unported and its source credential-bearing audit is recorded for separate security review. Code83.05812631920767%;overall76.03157522123894%;canonical14125 mappings18648 missing0 pending1203 unowned1272 unowned-code0;source6490 migrations429. Focused49tests2849assertions plus4JS/2Vue/10Pint/strict/source/databaseguard3340files pass. Identifier queries remain4 for1/100rows with no sort/temp in the checked plan. Next shared core/clinical workflow; final load/browser/external/SSO/live-image gates and14prior broader ledger failures remain open. Today's sample refresh stays later-only. Evidence: active16.145 and `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-2045.md`.
+
+12 September 20:05 BST integration: DIV-606 adds owned queued service follow-up charts, bounded patient windows and current-window CSV. Source examination/ticket date arithmetic, week-zero differences and latest-event suppression are preserved; referral state leakage is corrected. Code83.04757265789901%;overall76.02697345132744%;canonical14125 mappings18648 missing0 pending1203 unowned1272 unowned-code0;source6479 migrations429. Focused54tests4068assertions,17PHPstyle checks,Vue,strict/source and databaseguard3334files pass. Batch queries remain fixed at1/50patients within8; patient windows fixed at1/100records within18; checked indexed streams avoid sort/temp. VF/full patient CSV/geometry/import/snapshot-load proof remain partial. Next source-backed shared core/clinical behavior, then remaining functional porting and scheduled reconciliation. Earlier narrow blockers and14broader ledger failures remain open. The sample refresh request stays later-only and preview is unchanged. Evidence: active16.145 and `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-2005.md`.
+
+12 September 19:07 BST integration: DIV-605 adds actual bounded therapy decision branching to clinical recording, saved views and generation payloads. Server-derived compliance preserves saved policy and hidden answers; VA and clinical default functions remain explicitly partial. Code83.02808897548303%;overall76.01847787610619%;canonical14125 mappings18648 missing0 pending1203 unowned1272 unowned-code0;source6466 migrations428. Therapy62tests1290assertions,627actual pinned-browser comparisons,5JS,8Pint,Vue compile,strict/source and databaseguard3325files pass. No new database query or DDL;7/128node configuration counts remain fixed within25SELECTs. Next source-backed shared core/clinical workflow, then remaining functional porting and final reconciliation. All previous narrow blockers and14broader ledger failures remain open; final full-suite/browser/fresh-schema/live-image/fidelity/migrated-load gates are deferred. Today sample refresh remains later-only; preview unchanged. Evidence: active16.145 and `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-1907.md`.
+
+12 September GP import clarification: replace the legacy HTML/ZIP discovery with supported NHS DSE report profiles and direct local/downloaded CSV input. The old command already parses CSV, so the main speed improvement is bounded validation/staging, batch key resolution and changed-only atomic writes, not merely removing ZIP. Preserve identity, roles, historical links, local overrides and audit/history; keep download completion separate from import completion. Unknown headers/status values or suspicious source coverage must fail safely, never mass-deactivate missing practitioners. NHS reports now use full-word status values and different publication coverage, so a URL-only repair is unsafe. Add deterministic source-contract/failure fixtures and a separate read-only source freshness/schema monitor. DIV-593 membership is now integrated; DIV-594 implements the first reviewed GP/practice profile with full-stream validation and bounded changed-only apply. Live NHS body/header/download validation, source-age monitoring, remaining regional and membership/commissioning feeds and national-load proof remain open. Source identities are explicit; do not impose global natural-code uniqueness on legacy duplicates or claim source-specific uniqueness protects unrelated writers. Standalone legacy guidance is at `knowledge/oe-hscic-gp-import-modernisation.md`; only synthetic fixtures have been imported.
+
+Execute the approved plan, not another planning interview. One agent works for 48 hours from 2026-09-11T17:42:39+01:00, with a six-hour integration window starting 2026-09-13T11:42:39+01:00. The durable goal may complete only at a safe integrated checkpoint at or after 2026-09-13T17:42:39+01:00. Keep useful work moving when another item is blocked. External availability cannot be guaranteed; hourly on-disk records make interruption resumable. Do not spawn subagents or carry forward an earlier Git-write override.
+
+Prioritize correct functional porting toward above 90 percent, ideally complete code, without unsupported credit or a reduced denominator. Start at 5069.10/6159 = 82.303945445689235 percent code and 10692.96/14125 = 75.7024 percent weighted overall. The ledger has 14125 canonical paths and 18648 mappings. Exceeding 90 percent requires at least 474.01 additional code equivalents; reaching 100 requires 1089.90. Report new behavior separately from accounting corrections. Every omitted or partial source path needs its actual purpose/callers, replacement or missing behavior, a path-specific reason, evidence and a next owner/action. The planning audit found 3111 canonical code rows with blank disposition reasons, including 2329 incomplete rows and 782 fully credited rows; these figures are not new implementation progress.
+
+The following closed decisions override conflicting earlier proposals:
+
+| Decision | Approved direction |
+| --- | --- |
+| 1-2: execution and staffing | Start on explicit execution, now given; one agent, no subagents. |
+| 3: SSO | Include full SSO functionality now; new SSO tests and connection to the user's test identity provider belong to a later tranche. Keep unverified SSO disabled in the retained preview. |
+| 4: decisions | Choose and record ordinary divergences. Ask only when a wrong choice would likely require rewriting 20 or more files. Never invent a missing clinical rule. |
+| 5: permissions | The standard application's permissions are final; do not invent customer-specific permission policy. |
+| 6: special modules | Finish core first, then supply all special modules in an additional image derived from the live image, with explicit enablement. Keep module/data-dictionary seams ready now. |
+| 7-8: worklists | Default to ten selected clinics, configurable with a warning tooltip. Preserve access to many appointments using bounded loading, not silent truncation. Enforce permission revocation at the server within 60 seconds, including clients that ignore renewal. |
+| 9-10: parity | Queue expensive exports. All existing features matter; rarity or business preference is not a retirement reason. |
+| 11-15: EyeDraw | Retain the JavaScript drawing engine and build an extractable Laravel adapter. This does not promise a cheap PHP engine rewrite. Match module release tags; defer customer custom configuration explicitly. Preserve legacy drawing-history and conflicting-saved-value behavior. |
+| 16: outputs | Preserve retained PDFs and event images. |
+| 17-19: ingestion | Plan one future `openeyes-device-ingestion` repository for the new app only. Support at least the working legacy device formats, with extension points for newer formats and the user's independent test tool. |
+| 20-22: routines and placement | Use version-controlled routines and parameters, preserving current standard routines. Queue idle polling must be extremely cheap and non-locking; bounded claiming stays fenced. Prefer remote workers without clinical database credentials. |
+| 23-26: sample ownership | Later create `/home/toukan/openeyes-rewrite/openeyes-sample` as a plain folder, without Git initialization until the user creates the repository. Existing TKL-owned synthetic data may be ported. Prefer readable, split data files; large CSVs are acceptable and LFS is available later if needed. A configurable, replaceable production template must contain no demo clinical data or demo credentials. |
+| 27: large sample | Generate a durable large baseline, support small idempotent correction packs, and keep full regeneration efficient. Do not force a large rebuild for every small correction. |
+| 28-31: migration target | Plan for 330 GB including all data and assets, with 30 million or more events. Aim for one to two hours from production shutdown, including backup, using adjacent target schemas when suitable. Benchmark average 8 CPU/32 GB single-host and split 4 CPU/16 GB app plus 4 CPU/16 GB database setups; offer a longer-downtime path where temporary capacity is unavailable. This is a measured ambition, not a promise. |
+| 32-34: clinical cutover | Preserve all clinical data, including drafts, unsigned and in-progress work, irrespective of schema category. Preserve existing historical-event behavior. There is no reverse-migration product: use go/no-go before new writes, then forward recovery after cutover. Do not reinterpret this as permission to omit backup or data validation. |
+| 35-37: interfaces | Mirth handles inbound buffering/replay. Add lightweight schema anomaly detection later; the user uses a detailed comparison tool for exceptions. Inventory external SQL consumers and retain workload-user/replica seams for future efficient read-only MCP, PowerBI, Qlik or SQL Server access. |
+| 38-40: releases and dependencies | Freeze ordinary upstream features around three months before the planned Q2 2028 launch, with safety/security changes assessed separately. Use current components for now. Dependency support reporting is a script or Artisan-generated Markdown report, not a new frontend. Human-controlled review/publishing; no automatic remote writes. |
+
+Architecture now remains narrowly focused on decisions that would otherwise force a large rewrite: standard authorization, secure SSO integration, worklist grant expiry without a global hot row, the EyeDraw adapter, extremely cheap device-queue polling, stable workload connections, schema/import contracts and release/module identities. Worklist design must retain all 88 parity items and the existing partitioned publisher corrections. Full scale/failure testing is later; check catastrophic architectural bottlenecks now, not exhaustive concurrency proof.
+
+Keep patient-summary layout and clinically meaningful information where legacy users expect them. Do not open further patient-summary optimization in this tranche. Existing opt-in event-image bounded loading stays off by default; the global generation suspension must retain access to existing images. Fix only the requested header notification placement/size and legacy menu ordering using existing OpenEyes patterns.
+
+Ordinary tests may wait for the consolidated integration window. Apply immediate narrow proof to changed authorization, patient isolation, clinical calculations, signing/audit/history, irreversible transforms and risky high-volume query shapes. The explicit SSO testing deferral is recorded separately and is not evidence of verified SSO. No new Cypress tests. No repeated full image, browser or full-suite checks on each ordinary port. Use the dev image for implementation; run an infrequent final immutable-live comparison and record any difference before promotion. Preserve the existing preview while testing elsewhere with bounded resources.
+
+Future work is ordered as follows; do not turn these into this tranche's breadth blockers:
+
+1. Finish source-faithful core behavior at pinned legacy `ad2324084788608246a8250e817198c2f26a4fd6`, keeping before/after/reason and lessons in existing feature records.
+2. Integrate special modules, packaged EyeDraw, device-ingestion workers and real SSO verification after core contracts are stable. Finish the upstream feature delta to the selected latest v27.1.x source before final cutover rehearsal; account for performance PRs through equivalent-or-better regression evidence rather than copying obsolete Yii fixes.
+3. Stabilize storage and consolidate unreleased migrations touching the same tables before the first large import where safe. Do not rewrite deployed migration history. Review again at rewrite completion for repeated table rebuilds, explicit DDL cost and non-live manager-only execution.
+4. Build sample profiles and the Laravel-coordinated, set-based, resumable migration pipeline. Use minimal login, production template, current-date demo, large synthetic and `legacy` profiles with reproducible versioned inputs; keep large assets out of web images and bake matching sample data only into manager images.
+5. Rehearse representative 330 GB migration with fast and constrained profiles, measuring backup, read/write IO, index build, validation and cutover independently. Parallel work is bounded by real IO capacity, not PHP worker count. Avoid a mandatory third-party ETL dependency and do not promise one-hour IO feasibility before measurement.
+6. Use migrated large data for page/query profiling and full load/failure testing, renderer fidelity/capacity, query-shape changes, optional pooling and workload isolation. A standalone old-app `UrlBenchmarkCommand` is not a repository dependency. Build new-app benchmarking on the surface manifest and fixture registry.
+7. Complete penetration testing, clinical UAT, retraining analysis, security evidence with links, documentation, final visual parity and release hardening. No claim that all queries are free of temporary work, that all feature documents/sample stories are complete, or that production scale is proven merely from tiny fixtures.
+
+#### Later sample profile named `legacy` - explicit user addition
+
+Execution-priority update from the user on 11 September: if all core OpenEyes features finish porting, the next priorities are first creating this `legacy` sample database and then treating a legacy sample instance as a customer migrating into the rewrite. Do not wait for unreleased v27.0.0 or v27.1.x for that first rehearsal: both source app and migration contract use pinned develop `ad2324084788608246a8250e817198c2f26a4fd6`, with an explicitly pinned matching sample input. This conditional work is authorized after functional completeness, not merely after crossing a percentage. It takes precedence over the general later-work ordering above. The eventual latest-v27.1.x customer migration contract remains separate future delta work. The current run's scope freeze and safe verification window still apply; record the next-tranche item if completion occurs too late to start it safely.
+
+Use the single name `legacy`, replacing earlier proposed names `sample-legacy` or `legacy-like`. After storage stabilizes, port the synthetic sample database from the matching legacy OpenEyes branch/release, pinning both app and sample commits. Preserve patients, events, configuration, original dates, drawings and retained outputs closely enough for side-by-side frontend comparison. Do not silently regenerate an approximate lookalike or rebase dates; current-date demonstration is a separate profile. Record unavoidable target-schema or behavior differences. Implement later, not during this code-porting tranche.
+
+#### IOP instrument scope and migration follow-up - 13 September
+
+Related pre-load configuration follow-up discovered13September: the target IOP
+catalogue still lacks the source's institution memberships and shared-editor
+rules. Coordinate portable membership administration and institution-aware
+manual/history/Phasing/injection/device/API consumers; use mapped import
+context rather than a web session. Preserve saved instrument snapshots and
+approved permissions. Name matching is not sufficient to merge same-named
+instruments with different scales or scope. Include mapping, indexes and
+conflict reporting in the initial schema packet before customer loading.
+DIV-023 records the exact boundary. A separate repeated-validation SELECT
+repair is complete with1query at1/100readings; this does not close membership
+parity or increase coverage.
+
+#### Desktop integration closure - 13 September
+
+DIV-626 implements the application
+adapter for default-off FORUM/IMAGEnet patient tracking. Before production
+enablement, review the installed desktop launcher's command parsing and version
+compatibility, including command capitalization, unsafe argument handling and
+browser external-protocol prompts. The published batch implementation is an
+external security boundary; application-side input validation cannot protect
+protocol calls made by other websites. Keep native-client review, real Windows
+acceptance, custom deployments and SOP/document consumers explicit in the
+integration closure queue. Current code uses no polling and no server-side
+process launch. This is separate from device-result ingestion.
+
+#### Current-date sample worklists and date refresh - explicit user clarification, 12 September
+
+Later sample work must include useful clinics and appointments for today, plus a
+configurable nearby date window. The existing reference is
+`/home/toukan/sample/sql/demo/post-migrate/45-GenerateDemoWorklists.sh`; review its
+behaviour when implementing, but reuse the new bounded worklist factory rather
+than requiring operators to edit SQL or run the old Bash script.
+
+Provide a manager command to generate or refresh only the current-date demo
+worklist stories on an existing sample database, without rebuilding its schema
+or regenerating a large dataset. Support an explicit anchor date and deployment
+timezone; today is an operator convenience, while a fixed date makes tests
+reproducible. Default to help/preview and require explicit execution. Repeating
+the same refresh must not accumulate duplicate clinics or appointments.
+
+Use seed-owned identities and relative-date inputs. Keep clinic recurrence,
+sessions, appointments and maintained worklist projections consistent through
+bounded application-owned work, with concise aggregate output. Do not blanket
+shift every date in the database or alter signed clinical records. Accept only
+an explicitly identified disposable/demo target; never customer/production data.
+Keep the faithful `legacy` profile's original dates unchanged; a separately named
+demo copy can receive current-date stories without changing the comparison source.
+
+Acceptance later: today's clinics are visible with usable appointments after
+both initial generation and refresh; a repeat run is idempotent; timezone and
+date-boundary cases work; unrelated sample history and retained files are
+unchanged; large static sample data need no rebuild. This is a planned capability,
+not authorization to refresh the running preview or modify sample data now.
+
+#### Unique-code allocation - explicit user correction, 12 September
+
+Architecture now: adopt the user's preferred option 3 from `knowledge/oe-18464-unique-code-concurrency-and-solutions.md`, subject to a reviewed FF1 implementation and coordinated legacy cutover. Hard gates are the exact existing six-character alphabet and printed Operation Note wrapper, preserved old assignments, an actual unique index, no explicit table locks/global named lock/shared allocation counter, and local calculation without a free-code lookup. Ordinary row/index/FK locks remain part of atomic clinical saves and must be measured and bounded; do not promise lock-free saves.
+
+Reserve all retained legacy code values, including unused pool rows, in a fixed exclusion artifact. At 350,000 distinct values this leaves 1,544,454,416 event-ID positions from 34^6; capacity uses the global event high-water mark, not assigned-code count. Keep the packed artifact local and immutable, use a dedicated fixed key rather than APP_KEY, and reject configuration drift, out-of-range IDs and arbitrary new legacy imports. Operation Note and CVI need one shared uniqueness authority and allocator; separate per-module unique indexes are insufficient. Preserve historical lookup and wrapper/check-digit rules. Retire all old issuers coherently, preserve audit/history and transaction atomicity, and test event-first repair with busy-event deferral and unrelated-event progress. No homemade crypto or silent random fallback.
+
+Current HMAC/retry and CVI random candidate calculation are not option 3 and remain implementation debt. DIV-586 now implements one shared registry with actual UNIQUE(code)/UNIQUE(event_id) and composite module ownership foreign keys. Existing module ids and printed codes remain unchanged; registry/mapping/audit writes are atomic; no availability SELECT or common allocation gate. Focused checks pass55tests1375assertions, and a separate multi-connection probe observed an FK-blocked allocation while an unrelated mapping committed in5.265ms. This is not a production latency or full-save concurrency guarantee. Three older portal-subset complete rows are corrected to partial90, not awarded new coverage.
+
+The isolated arithmetic rank prototype passed32,795checks with350,000exclusions in1,400,000bytes and at most19probes; it is not full allocator/security/concurrency proof. The PHP FFXRadix candidate uses floating-point arithmetic and another candidate labels itself alpha; neither has been adopted. FF1 selection, immutable key/exclusion deployment, automatic cataract save wiring/new-issuance eligibility, non-event consumers, full-save conflict recovery and event-first repair remain open. Existing CVI root lock ordering is not silently redesigned by the registry change. Do not lock missing mapping gaps or treat event-owner conflicts as candidate collisions. Detailed decision and acceptance: `/home/toukan/openeyes-rewrite/coverage-48h-20260911-174239/unique-code-option-3-decision.md`. Continue other functional porting while the narrow crypto dependency gate is unresolved.
+
+#### Filesystem migration compatibility - explicit user correction, 12 September
+
+Architecture now: keep existing protected files and event-image bytes, filenames and directory trees readable in place. Some deployments have millions of files and terabytes of data. No mandatory copy, rename, re-encode, regeneration, recursive ownership change, read-through copying or whole-tree hashing in the cutover or ordinary request path. Existing local/bind-backed volumes are a supported production backend, including an immutable web root with separately mounted durable data. This supersedes the object-storage-only requirement in 4.7, the mandatory blob transfer in L2.7 and earlier cutover rows that required S3/MinIO synchronization. Object storage remains an optional separately measured deployment/migration choice, not a prerequisite.
+
+The inspected `oed/templates/web.yml` template at `2b20ffff559d83cdcfc42d716e66a883dc9717c4` mounts `oe-protected-files` at `/protected/files` and `oe-protected-event-images` at `/protected/event_images`; host directory variables are `PROTECTED_FILES` and `PROTECTED_EVENT_IMAGES`. There is no `/home/toukan/oe-deploy` checkout in this workspace. The rewrite already uses these container paths, but its Compose names are different; preserve/reuse the actual named volume or bind source through an explicit deployment overlay rather than accidentally creating empty replacement volumes. Do not modify the shared deployment template or customer mounts in this tranche.
+
+Protected-file storage already supports disk plus relative object key and the legacy UID-derived three-level layout. Import metadata to those existing keys without invoking upload/promotion writers. Before bulk import, resolve mandatory SHA-256 fields with an explicit unknown/unverified state and resumable offline verification; do not invent checksums or require reading terabytes within the downtime target. Preserve old file ids, ownership and non-event/shared-file consumers through a reviewed mapping contract, not forced duplication into event-owned records.
+
+Legacy event images require a retained-output reference adapter: use recorded file_name, event, eye, page, document number, source revision and MIME. Do not feed historical JPEG/WebP files into the new PNG-only hash-key renderer or treat every old image as missing and regenerate it. Retained outputs survive generation suspension and cleanup, and must never masquerade as a current revision after edits. Source BLOB/base64 leftovers are a separate inventory/conversion path; existing filesystem objects stay untouched. New outputs use non-overwriting versioned destinations, optionally a separate writable disk beside read-only retained volumes.
+
+Measure request metadata operations, bytes read, peak memory, time to first byte and occupied PHP workers. Priorities: stream without whole-file buffering; avoid per-image filesystem existence/hash scans on list pages; cache immutable derivatives with proper source revision and authority; consider internal authenticated Caddy file delivery and byte ranges before adopting it. Account for slower network filesystems and shared storage across nodes, legacy UID/GID/ACL access, missing files, symlink traversal, browser cache revocation and multi-page/eye semantics. No public symlinks or unauthenticated static paths. Current artifact lookup rehashes complete files and the new protected-file endpoint uses no-store where an older attachment endpoint cached for a year; these are explicit performance review items, not measured regressions or permission to weaken security.
+
+Implement compatibility before the first legacy sample/customer migration and before changing filesystem consumers that would constrain it. Full terabyte copying/verification and serving capacity tests remain later, with backup/restore IO budgeted separately. Detailed evidence and ordered acceptance: `/home/toukan/openeyes-rewrite/coverage-48h-20260911-174239/legacy-files-in-place.md`.
+
+#### Forbidden table-lock source guard - explicit user addition, 12 September
+
+Add `table_lock` to the existing DatabaseCodePolicy and oe:database-code:verify command. Reject executable LOCK TABLES patterns in first-party PHP/SQL/shell sources, including core and module migrations; no exception-register waiver. Keep PHP documentation comments and test assertions outside executable-source matches. CI runs the verifier before migrations; it is currently manual-dispatch only, so do not claim an automatic PR gate until existing CI enablement work is completed. Preserve ordinary row/FK locks and filesystem locks. Additional anti-patterns later extend this mechanism, with tests and a clear statement that static scanning cannot prove arbitrary dynamically constructed SQL safe.
+
+#### Post-rewrite retrospective - explicit user addition
+
+After functional rewriting finishes, create a distinct document about difficulties, mistakes, rework, successful approaches, tooling, sequencing, tests and coverage accounting, ending with a practical playbook for doing this project again better. Capture short evidence in current feature/divergence/learning records now, without writing the retrospective yet. Add migration and load-testing lessons when known. This is separate from the client migration guide and the far-future ideas register.
+
+Retain the current frontend name OpenEyes; consider the official `openeyes2` rename later. Future branch/tag layout follows master, develop and release branches starting at v28, with matching module tags and immutable image identities, but this run creates no Git refs. Dependency reporting later tracks preferred LTS release lines, actual locked package/image versions, purpose, ownership, support dates and an offline API snapshot. Minor release preferences do not weaken exact Puppeteer/Chromium compatibility or immutable build reproducibility. Future security scanning, admin tooltips, optional telemetry module and other tertiary work remain ordered backlog items rather than current feature work.
+
 ## 27. Divergence register - how OpenEyes worked, how it works now, and why
+
+Copied docblocks and unrelated text matches never earn source-porting credit.
+When discovered, withdraw their score, preserve genuine mappings, and keep one
+canonical row for the actual source purpose. A reference to an existing file
+or divergence document is not by itself evidence of implemented behavior.
+Record the correction separately from new porting gain; add this semantic
+false-positive class to later ledger/CI hardening. DIV543 records the first
+bounded correction found during the current run, without refactoring the app.
+
+### 27.1 Capture now, publish the openeyes2 guide later - 2026-09-09
+
+Porting correct, reachable code remains the priority. Do not write the guide,
+backfill every old record, build a documentation generator or add documentation
+approval gates during the coverage-first run. Capture facts briefly in existing
+bundle evidence and `docs/divergence/` entries while the source reasoning is fresh;
+use references instead of duplicating an explanation. Each changed feature records:
+
+- Feature/operation and pinned legacy source; what worked before and what works now.
+- Why the design was chosen, why any divergence was necessary, and alternatives
+  rejected when that decision was material. Mark proposals separately from shipped facts.
+- Whether it is unchanged parity, an approved correction, an extension or genuinely new.
+- Client migration/configuration/data impact, defaults and opt-in controls, and
+  affected roles/screens needing retraining. Explicit `none` or `unknown` is valid.
+- Parity evidence already obtained, known gaps, pending checks and any clinical
+  approval required. A porting percentage is not proof of functional equivalence.
+
+After functional porting and data-migration/performance stabilization, assemble the
+client-facing move-to-openeyes2 guide from these records. Its chapters must explain
+architecture decisions (including seven schemas and workload-specific database
+users, their trade-offs and default shared-connection behavior), deliberate
+divergences, new features, developer consistency rules, client migration cautions,
+parity assurance and a role/screen retraining matrix. Validate the guide against
+the accepted release, migration rehearsals, source comparisons, output checks,
+paired UAT and clinical sign-off; do not promise an absolute absence of bugs.
+Keep the full documentation module and polished training material in their existing
+later phase, after behavior has stabilized.
+
+The consistency chapter must preserve the existing query-budget, small/large N+1,
+index-plan and no-hint rules, including automatic detection and review of
+`Creating sort index`, filesort and temporary tables. Record measured plans and
+any justified, bounded exception rather than claiming all query plans are optimal.
+It must also cover no `foreach` in migration files, set-based data changes, concise
+aggregate migration output (a few lines, never one per affected row), and commands
+defaulting to help with short/extended help where useful. Audit existing migration
+and command compliance during stabilization/consolidation; do not silently change
+scheduled execution. Update callers to explicit execution together with any help
+default change. The older exceptional-migration wording below does not permit a
+`foreach` exemption or disguising row-by-row work in a helper.
+
+Park clearly missing feature suggestions and greenfield ideas in an eventual
+application-repo register at `docs/future-ideas.md`, with the observed need,
+suggestion, evidence, likely benefit and prerequisites. During this run a short
+note in existing bundle evidence is enough; consolidate it later. These are ideas,
+not approved scope or coverage credit: no design or implementation starts until
+all other approved rewrite, migration, performance, security, release, UAT and
+documentation work is complete and the user chooses the next work. An actual
+parity defect or safety issue stays in its normal workstream, not this parking list.
 
 The Laravel OpenEyes replaces an application that clinicians, integrators and deployers know by its exact behaviour, quirks included, so "it is imperative that changes in design decisions (how the laravel openeyes will be different) is well documented and the old openeyes is well referenced in how it used to work and how it works now." This section is that mechanism: one register of every deliberate departure from v26.0.9, each entry describing in plain words how the legacy app behaved on one side and what the new code does on the other, with the rule or decision that justified it and the reasoning behind it (§26 Q21). Everything downstream - the §7.6 per-module pages, the §8 release notes, the in-app "previously" callouts - is generated from it; legacy behaviour is described here once and referenced everywhere else.
 

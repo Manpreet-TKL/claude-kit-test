@@ -23,7 +23,9 @@ it, so edits are live and every change is revertable).
    deploy-quirk memories about one stack). Keep the `description:` line sharp
    - recall keys off it - and keep `[[links]]` intact after renames.
 4. Archive, do not carry: resolved incidents and finished projects move to
-   `~/claude-kit/knowledge/<topic>.md`, trimmed to the durable lesson
+   `~/claude-kit/knowledge/<category>/<topic>.md`, trimmed to the durable lesson
+   (choose Database, Openeyes, Infrastructure, Tooling or Process from
+   `knowledge/README.md`; extend the existing topic when present)
    (pointers to runbook `.md` files survive as references). Delete the memory
    file afterwards.
 5. Rewrite MEMORY.md - one line per surviving memory, matching the files

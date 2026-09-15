@@ -15,6 +15,14 @@ isolation trait, attribute style) stay in `c-oe-coding-standards` #68-77; this s
 practice that satisfies them. Add a test whenever it is possible - "pure refactor" and
 "behaviour-preserving" changes still get tests when the touched methods are testable.
 
+## Test environment
+
+For a code change, load `c-oe-deploy` and create a fresh instance dedicated to that
+change after checking CPU load, available RAM and disk headroom. Include the actual
+local changes. Presume existing environments are in use; do not reuse or alter
+them without explicit instruction. Tear down your one-off instance after testing,
+including on failure, and verify cleanup as described in `c-oe-deploy`.
+
 ## Only the dev container can run tests
 
 The dev web image (`oe-web-dev`) carries the dev Composer packages including PHPUnit; the live-tag

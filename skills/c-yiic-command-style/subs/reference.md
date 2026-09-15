@@ -1,6 +1,6 @@
 # yiic command style - verbatim blocks
 
-## File header (AGPL + author tag - copy from MirthCommand.php)
+## File header (AGPL + author and purpose tag - copy from MirthCommand.php)
 
 Two variants. Use the OpenEyes one for anything destined for the public codebase; use the Toukan Labs one for commands that stay in the private TKL toolkit.
 
@@ -26,6 +26,8 @@ Two variants. Use the OpenEyes one for anything destined for the public codebase
 
 /**
  * Created by Manpreet Singh <manpreet.singh@toukanlabs.com>.
+ *
+ * <Brief description of what this command is used for.>
  */
 class FooCommand extends CConsoleCommand
 {
@@ -65,6 +67,8 @@ For commands that are not part of - and must never be contributed to - the publi
 
 /**
  * Created by Manpreet Singh <manpreet.singh@toukanlabs.com>.
+ *
+ * <Brief description of what this command is used for.>
  */
 class FooCommand extends CConsoleCommand
 {
@@ -72,15 +76,27 @@ class FooCommand extends CConsoleCommand
 
 ## getName / getHelp / actionIndex
 
+Keep `getHelp()` at 50 output lines or fewer. If full usage needs more room, use `getHelp()` for a short action list and common uses, or just the main uses when the list is large. End with `yiic <name> --longHelp=1`. Put flag details, examples and prominently boxed `WARNING` text in a separate full-help method under FUNCTIONS. `actionIndex($longHelp = false)` selects the full help when the flag is set. If there is no long help, `actionIndex()` simply prints `getHelp()`.
+
 ```php
+/**
+ * Return the command description.
+ *
+ * @return string command description
+ */
 public function getName()
 {
     return 'Mirth command to administrate the Mirth database';
 }
 
+/**
+ * Return short help with common uses.
+ *
+ * @return string short help
+ */
 public function getHelp()
 {
-    return <<<EOH
+    $help = <<<EOH
         ----------------------------------------------------------------------------
         <Name> Command
         ----------------------------------------------------------------------------
@@ -99,19 +115,26 @@ public function getHelp()
                       Examples:
                                yiic <name> dosomething --flag=foo
 
-        ----------------------------------------------------------------------------
+        For options and warnings: yiic <name> --longHelp=1
     EOH;
+
+    return "\n" . $help . "\n";
 }
 
-public function actionIndex()
+/**
+ * Show short or full help.
+ *
+ * @param bool $longHelp show full help when true
+ */
+public function actionIndex($longHelp = false)
 {
-    echo $this->getHelp();
+    echo $longHelp ? $this->getLongHelp() : $this->getHelp();
 }
 ```
 
-If the command takes options on the default action (like `DBReportsCommand`), `actionIndex` accepts the flags and falls back to `getHelp()` when required args are missing.
+With no action, Yii's `CConsoleCommand::run()` selects its default `index` action. Keep `actionIndex()` responsible for printing `getHelp()` and returning success when no arguments are supplied. An overridden `run()` must delegate empty arguments to `parent::run()`; document this dispatch in the override. If the command takes options on the default action (like `DBReportsCommand`), `actionIndex()` accepts the flags and falls back to help on missing required args.
 
-Yii 1.1 resolves `--Option=value` by exact, case-sensitive matching against the selected action's parameter names. Options supplied without an explicit action are parsed against `index`; either document the action as required or normalize option-first invocations deliberately.
+Yii 1.1 resolves `--Option=value` by exact, case-sensitive matching against the selected action's parameter names. Options supplied without an explicit action are parsed against `index`; `--longHelp=1` can show full help without an action. For a potentially dangerous action, require its explicit name and at least one flag before doing work. The action name alone prints only short help and returns nonzero. Do not normalize flag-only calls into that action; show short help and return nonzero instead.
 
 When printing help from an action or validation error, surround the help string with a leading and trailing newline so it does not run into adjacent output.
 
@@ -126,7 +149,7 @@ When printing help from an action or validation error, surround the help string 
 
 /**
  * ****************************************************************************
- * ************************* HELPER FUNCTIONS *********************************
+ * ******************************* FUNCTIONS *********************************
  * ****************************************************************************
  */
 
@@ -139,7 +162,7 @@ When printing help from an action or validation error, surround the help string 
 
 SCHEMA DESCRIPTIONS holds `public static $tables` / `$columns` / `$contentTypes`-style lookup arrays.
 
-The three banners partition the class exhaustively, in that order. HELPER FUNCTIONS takes everything that is not an `action*` - including a worker written for a single action and Yii overrides such as `missingAction()` - and ACTIONS runs from its banner to the closing brace with only `action*` methods in it. A quick check on a finished command:
+The three banners partition the class exhaustively, in that order. FUNCTIONS takes everything that is not an `action*` - including a worker written for a single action, full-help methods and Yii overrides such as `run()` or `missingAction()` - and ACTIONS runs from its banner to the closing brace with only `action*` methods in it. A quick check on a finished command:
 
 ```
 grep -n 'function ' <Name>Command.php | awk -F: -v b=<banner line> '$1>b' | grep -v 'function action'

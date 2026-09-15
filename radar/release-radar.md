@@ -1,226 +1,501 @@
 # Release radar
 
-Dated digests of upstream releases for the products tracked in
-`skills/release-radar/subs/sources.md`. Written by the `release-radar` skill, newest
-run first. One `## YYYY-MM-DD` heading per sweep; the topmost one is what the skill's
-one-month gate reads. Never rewrite an older run.
+Last attempted: 2026-09-12 (Europe/London).
+Selected evidence: 67 verified entries; 27 pending checks across 22 products.
 
-## 2026-08-02
+This is one continuing section per product. Newer items go above older ones.
+`Verified` counts selected entries backed by the linked, direct vendor page;
+it does not count every line or release reviewed. `Pending` counts unresolved
+checks, including incomplete release-series coverage. `Verified through: not
+established` means the date range has not been fully enumerated; it is not a
+claim that no relevant releases occurred. Old run-by-run output is preserved
+[verbatim](release-radar-legacy-2026.md).
 
-Forced run one week after the last sweep. First sweep for products 12-19 (floor
-2026-02-02); products 4-11 report the week since 2026-07-26 only.
+## MariaDB Server
 
-### MariaDB Server (everything above 11.8)
-- Now: 11.8.8 LTS is your line; 12.0.2 -> 12.3.2 stable rolling, 13.0.1 RC (2026-05-29), 13.1.0 preview (2026-06-19).
-- 12.0 - SYS_REFCURSOR cursor type plus max_open_cursors; passphrase-protected encryption keys.
-- 12.1 - associative arrays (`DECLARE TYPE .. TABLE OF .. INDEX BY`); caching_sha2_password plugin for MySQL client compatibility.
-- 12.1 - segmented Aria key cache (`aria_pagecache_segments`, up to 128); faster vector distance via extrapolation.
-- 12.2 (2026-02-12) - more optimizer hints, join optimizer infers distinct GROUP BY columns in derived tables, JSON 32-level depth limit removed.
-- 12.3 (2026-05-29) - stable, but feature text is on neither source page; carried unlisted again this run.
-- Upgrade read: rolling releases are 1-year support, not LTS - moving off 11.8 means re-upgrading yearly until the next LTS.
+Checked on: 2026-09-12. Window: above deployed 11.8 LTS through 2026-09-12.
+Verified through: not established. Evidence: 6 verified; 1 pending (full
+11.8-to-current release series still needs enumeration).
 
-### PHP (8.4 and above)
-- Now: 8.4.24 (2026-07-30), 8.5.8 (2026-07-02).
-- 8.5 - pipe operator `|>` for function chaining; `clone()` as a function with clone-with support.
-- 8.5 - `#[NoDiscard]` attribute flags return values that must not be ignored; `void` cast to discard deliberately.
-- 8.5 - new Uri extension with RFC 3986 and WHATWG parsers; `get_error_handler()` / `get_exception_handler()`.
-- Gotcha: OPcache is no longer optional in 8.5 - it is a required core component.
-- Gotcha: deprecated in 8.5 - non-numeric string increment, the backtick operator, and the `(boolean)`/`(integer)`/`(double)`/`(binary)` cast spellings.
+- **2026-08-24, 12.3.3 - replication upgrade check.** MariaDB says upgrading a
+  replica to 12.3.2 can lose `master_use_gtid`; 12.3.3 fixes the behavior, but
+  the setting must be reapplied. Check replica configuration before an OpenEyes
+  database upgrade. [12.3 changes](https://mariadb.com/docs/release-notes/community-server/12.3/mariadb-12.3-changes-and-improvements).
+- **2026-08-24, 12.3.3 - record-growing UPDATE option.** Setting
+  `innodb_index_shrink=OFF` can reduce B-tree latch upgrades when an UPDATE
+  grows a record, at the cost of sparser pages. Test only a representative
+  OpenEyes write workload with such updates; it is unrelated to ordinary row
+  lock contention and has no measured gain here.
+  [12.3 changes](https://mariadb.com/docs/release-notes/community-server/12.3/mariadb-12.3-changes-and-improvements).
+- **2026-05-28, 12.3.2 LTS GA - candidate query improvements.** Indexed virtual
+  columns can assist `GROUP BY`/`ORDER BY`, and reverse-ordered scans gain rowid
+  filtering and index condition pushdown. Test large clinical lists and
+  derived-field sort queries against the OpenEyes schema; a benefit is possible,
+  not measured. [12.3.2 release](https://mariadb.com/docs/release-notes/community-server/12.3/12.3.2),
+  [12.3 changes](https://mariadb.com/docs/release-notes/community-server/12.3/mariadb-12.3-changes-and-improvements).
+- **2026-05-28, 12.3.2 LTS GA - metadata-lock scalability.** MariaDB lists
+  MDL scalability improvements. Benchmark concurrent OpenEyes schema
+  introspection and DDL-heavy maintenance before assuming they help normal
+  clinical writes; metadata locks and row locks are different bottlenecks.
+  [12.3 changes](https://mariadb.com/docs/release-notes/community-server/12.3/mariadb-12.3-changes-and-improvements).
+- **2026-05-28, 12.3.2 LTS GA - compatibility audit.** `CONVERSION` and `TO_DATE`
+  became reserved, while `big_tables`, `large_page_size` and `storage_engine`
+  were removed. Search SQL and server configuration before moving beyond 11.8.
+  [12.3 changes](https://mariadb.com/docs/release-notes/community-server/12.3/mariadb-12.3-changes-and-improvements).
+- **2026-05-28, 12.3.2 LTS GA - systemd option deprecation.**
+  `MYSQLD_OPTS` is deprecated for MariaDB service units. Move any OpenEyes
+  database settings supplied there into configuration files before its removal.
+  [12.3.2 release](https://mariadb.com/docs/release-notes/community-server/12.3/12.3.2).
 
-### Portainer CE (everything above 2.39 LTS)
-- Now: 2.41.0 STS (2026-04-30) is newest; 2.39.5 (2026-07-14) is still the newest LTS - there is no LTS above 2.39 yet.
-- 2.40 (2026-03-26) - Kompose migration of Docker Compose workloads to Kubernetes; Helm Go SDK on v4.
-- 2.40 - `--remove-orphans` on Compose stack deploys; `--security-opt` on container create.
-- 2.41 (2026-04-30) - GitOps Workflows sidebar page listing every workflow across environments with status summaries.
-- 2.41 - Git-backed Kubernetes manifests editable after deployment, plus a Redeploy button; Helm chart edge stacks from repos or Git with custom namespaces.
-- 2.41 - TUI apps work in the web console and kubectl shell; image pruning from the Images list.
+## PHP
 
-### Chrome for Testing (floor 152.0.7973.0)
-- Watching linux-arm64: still none - platforms remain linux64, mac-arm64/x64, win32/64 on every channel.
-- Now: Stable 151.0.7922.71, Beta 152.0.7977.8, Dev 153.0.7979.3, Canary 153.0.7986.0.
-- Otherwise no change - Dev/Canary rolled to 153 with no capability changes on the page.
+Checked on: 2026-09-12. Window: deployed 8.4 to 2026-09-12.
+Verified through: not established. Evidence: 2 verified; 1 pending (8.5
+maintenance and migration series not fully enumerated).
 
-### Claude Code (floor 2.1.220)
-- Now: 2.1.220 (2026-07-25) is still the latest release.
-- no change
+- **2025-11-20, PHP 8.5 - incompatible behavior.** OPcache is built in, so
+  loading `opcache.so` explicitly warns; PDO fetch constants also changed.
+  Audit container INI files and database test coverage before an 8.5 image
+  switch. [8.5 incompatible changes](https://www.php.net/manual/en/migration85.incompatible.php).
+- **2025-11-20, PHP 8.5 - optional language tools.** The pipe operator,
+  `#[NoDiscard]` and the URI extension are available. These are code-maintenance
+  opportunities, not a reason alone to upgrade OpenEyes.
+  [8.5 release](https://www.php.net/releases/8.5/en.php).
 
-### Ubuntu Server LTS (floor 24.04.4)
-- Now: 24.04.4, GA kernel 6.8; 24.04.5 not yet published.
-- The notes' known-issues section now references an HWE 6.17 kernel (6.17.0-14.14) - last sweep the HWE stack was 6.14.
+## Portainer CE
 
-### Google Workspace
-- Meet homepage hub (announced 2026-07-21) began rolling out 2026-07-27 [via search].
-- Meet hardware user feedback now lands in the Admin console, with context-tailored response options [via search].
-- Still not seen: system-audio sharing in screen share.
+Checked on: 2026-09-12. Window: above 2.39 LTS to 2026-09-12.
+Verified through: not established. Evidence: 1 verified; 1 pending (intermediate
+CE releases not exhaustively reviewed).
 
-### AWS (OpenEyes-relevant)
-- EKS Provisioned Control Plane: HPA sync concurrency raised up to 40x the Kubernetes default (2026-07-28).
-- EKS OIDC discovery endpoint reachable over PrivateLink at no additional cost (2026-07-27).
-- EC2 Auto Scaling instance refresh now usable as a CloudFormation update policy (2026-07-29).
-- Cost: RDS for Oracle Reserved Instances on R8i/M8i, up to 53% vs on-demand (2026-07-31).
-- Cost: Bedrock price cuts - OpenAI GPT-5.6 Luna up to 80% cheaper, Terra 20% (2026-07-30).
+- **2026-08-27, 2.45.0 LTS - operational upgrade candidate.** The CE LTS
+  rollup includes Kubernetes node-drain agent failover and native Kubernetes
+  write APIs. Check whether those improve the OpenEyes cluster-admin workflow
+  before upgrading; the release also records environment-specific limitations.
+  [2.45.0 release](https://github.com/portainer/portainer/releases/tag/2.45.0).
 
-### VS Code (non-AI, floor 1.117.0)
-- Now: 1.131 (2026-07-29).
-- Terminal: new setting to disable the resize dimensions overlay; live updates use non-interrupting ARIA status announcements.
-- Perf: Python extension defers Conda discovery, consolidates environment scans, and Pylance reuses the last-known interpreter during refresh.
-- Another thin non-AI release - nothing in editor, debugging or remote this month.
+## Chrome for Testing
 
-### SkySQL (officially supported)
-- Now: unchanged - 11.4.5/10.11.11/10.6.20/10.5.25 stable, 11.6.2 vector preview, 11.7.1 RC.
-- no change - still a full LTS line behind the MariaDB you run.
+Checked on: 2026-09-12. Window: 152 onward to 2026-09-12.
+Verified through: not established. Evidence: 2 verified; 2 pending (release
+series incomplete; capture resource impact needs a web-container benchmark).
 
-### GCP (processors and services)
-- No new processor generation this period.
-- Confidential VMs: 255+ vCPUs on AMD SEV C3D/C4D instances (2026-07-29).
-- Cloud SQL for MySQL: zero-downtime CMEK re-encryption (2026-07-29).
-- Cloud Load Balancing: global external passthrough Network Load Balancer in preview (2026-07-31).
+- **2026-09-08, Chrome 153 - XML parsing path changed.** The Rust XML parser is
+  used for `DOMParser`, `responseXML` and external SVG. Test any OpenEyes
+  document or image flow using those APIs before advancing the test browser.
+  [Chrome 153 notes](https://developer.chrome.com/release-notes/153).
+- **2026-08-25, Chrome 152 - XSLT removal approaches.** XSLT has a deprecation
+  trial; Chrome plans removal in 158. Check OpenEyes and test fixtures for
+  `XSLTProcessor` or browser-side XSLT and migrate any use before that version.
+  [Chrome 152 notes](https://developer.chrome.com/release-notes/152),
+  [XSLT plan](https://developer.chrome.com/docs/web-platform/deprecating-xslt).
 
-### Docker Compose (first sweep, floor 2026-02-02)
-- Now: 5.3.1 (2026-07-07).
-- 5.3.0 (2026-07-02) - native init containers (pre-start init containers).
-- 5.2.0 (2026-06-23) - new reconciliation algorithm between observed and expected state.
-- 5.2.0 - `rawsetenv` message type for provider plugins.
-- 5.1.4 (2026-05-20) - stop lifecycle hook for external providers.
+Pending: No official Chrome 152-153 note establishes a lighter screen-capture
+mode. Benchmark headless Chrome and screencast options in the web container
+before claiming CPU or memory savings.
 
-### Kubernetes (first sweep, floor 2026-02-02)
-- Now: 1.36 "Haru" (2026-04-22) is current; 1.35 (2025-12-17) and 1.34 in support.
-- 1.36 - user namespaces GA.
-- 1.36 - fine-grained kubelet API authorization GA.
-- 1.36 - volume group snapshots GA.
-- 1.36 - deprecation: Service externalIPs deprecated and headed for removal.
+## Claude Code
 
-### Helm (first sweep, floor 2026-02-02)
-- Now: 4.2.3 and 3.21.3 (both 2026-07-09); release notes flag v3 as approaching end-of-life.
-- 4.2.0 (2026-05-14) - `mustToToml` template function.
-- 4.2.0 - `--dry-run=server` now respects `generateName:` in manifests.
-- 4.2.0 - deprecates `--hide-notes` and `--render-subchart-notes`.
+Checked on: 2026-09-12. Window: 2.1.220 onward to 2026-09-12.
+Verified through: not established. Evidence: 1 verified; 1 pending (intermediate
+tags have not all been read).
 
-### Traefik (first sweep, floor 2026-02-02)
-- Now: 3.7.10 / 3.6.25 / 2.11.54 (all 2026-07-31).
-- First sweep truncated: the releases page only reaches early July and every visible release on all three lines is bug/CVE fixes; 3.7.0's feature notes fall off the page.
-- Nothing visible touching the Docker provider or its API-version handling.
+- **2026-09-11, 2.1.269 - plugin evaluation.** `claude plugin eval` can produce
+  scored JSON and HTML output. Useful for checking skill or plugin behavior
+  during kit changes, if the local workflow uses plugins.
+  [2.1.269 release](https://github.com/anthropics/claude-code/releases/tag/v2.1.269).
 
-### Docker Engine (first sweep, floor 2026-02-02)
-- Now: 29.7.1 (2026-07-31), Engine API v1.52.
-- 29.3.0 (2026-03-05) - minimum API version lowered from v1.44 back to v1.40.
-- 29.5.0 - `docker image load`/`save` support multiple platform selection.
-- 29.6.0 (2026-06-18) - new Engine API v1.52: per-device blkio via container update, `GET /images/{name}/attestations`.
-- 29.6.0 - deprecation warning for container links on the default bridge.
-- 29.7.0 (2026-07-30) - `image` mount type leaves experimental; new `default-stop-timeout` daemon option.
+## Ubuntu Server LTS
 
-### Node.js (first sweep, floor 2026-02-02)
-- Now: 24.18.1 LTS (2026-07-29).
-- Watching (puppeteer unzip regression): 24.17.0 (2026-06-18) and 24.18.x shipped, but no extraction/unzip fix is named in their notes - verify by test before lifting the 24.15 pin.
-- 24.18.0 (2026-06-23) - TurboSHAKE and KangarooTwelve in Web Crypto.
-- 24.18.0 - `http` writeInformation for arbitrary 1xx status codes.
+Checked on: 2026-09-12. Window: deployed 24.04 LTS to next LTS, 26.04.
+Verified through: not established. Evidence: 4 verified; 1 pending (26.04
+point-release changes and image-specific upgrade tests still need review).
 
-### Playwright (first sweep, floor 2026-02-02)
-- Now: 1.62 (the release-notes page carries no dates; 1.57-1.62 taken as the floor window from cadence).
-- 1.57 - switched from Chromium to Chrome for Testing builds (headed `chrome`, headless `chrome-headless-shell`); removed `page.accessibility`.
-- 1.58 - Timeline tab in merged HTML reports; removed `_react`/`_vue` and `:light` selectors and the `devtools` option.
-- 1.59 - screencast API with action annotations; `browser.bind()` shares launched browsers with the CLI and other instances.
-- 1.61 - virtual WebAuthn passkeys via the Credentials API; WebStorage API for local/sessionStorage.
-- 1.62 - `AbortSignal` cancellation and isolated retries; headless clipboard isolated from the OS; Debian 11 dropped.
+- **2026-04-23, 26.04 LTS - runtime jump.** The next OpenEyes deployment target
+  moves the distro PHP package to 8.5 and OpenSSH to 10.2p1. Test image builds,
+  PHP extensions and SSH automation against 26.04 before changing the base.
+  [24.04-to-26.04 summary](https://documentation.ubuntu.com/release-notes/26.04/summary-for-lts-users/).
+- **2026-04-23, 26.04 LTS - Apache and TLS defaults.** Apache's
+  `MemoryDenyWriteExecute=yes` service setting conflicts with mod-php JIT, and
+  TLS 1.0/1.1 support is disabled. Check any Apache-based sidecar and legacy
+  integration; PHP-FPM is the recommended route for JIT.
+  [26.04 changes](https://documentation.ubuntu.com/release-notes/26.04/changes-since-previous-interim/).
+- **2026-04-23, 26.04 LTS - command and policy changes.** `sudo-rs` and Rust
+  coreutils become defaults, with additional AppArmor profiles. Test deployment
+  scripts and container startup rather than assuming command flags and sandbox
+  permissions are identical to 24.04.
+  [24.04-to-26.04 summary](https://documentation.ubuntu.com/release-notes/26.04/summary-for-lts-users/).
+- **2026-04-23, 26.04 LTS - older AWS instance families lose support.**
+  Ubuntu lists M1-M4, C1/C3/C4, R3/R4, I2/G3 and P2/P3/P3dn as unsupported.
+  Check the deployment inventory before selecting a 26.04 AMI in London.
+  [24.04-to-26.04 summary](https://documentation.ubuntu.com/release-notes/26.04/summary-for-lts-users/).
 
-### BridgeLink (first sweep, floor 2026-02-02)
-- Now: v26.6.0 (2026-07-22); versioning jumped 4.6.1 -> 26.3.0 (calendar-style) this spring.
-- 26.3.0 (2026-04-07) - Jetty 9.4 -> 12.0, Java 17+ required; SMTP OAuth 2.0 client-credentials auth; Version History merged into core.
-- 26.3.1 (2026-05-15) - refuses to start as root/Administrator; keystore default-password detection; hardened password policy on by default.
-- 26.6.0 (2026-07-22) - WebAdmin browser-based administration console; plugin UI endpoints for declarative plugin interfaces.
-- 26.6.0 - MySQL table-case migration for case-sensitive servers; opt-in channel context in server logs.
+## Google Workspace
 
-### Source drift this run
-- MariaDB primary is an index page with no version or feature text - the series list came from the fallback (mariadb.org all-releases); 12.3/13.x feature text is on neither page.
-- Google Workspace primary rate-limited (`google.com/sorry`) and the fallback blog is undated - the two dated bullets are [via search].
-- Playwright's release-notes page carries no dates; the floor window is inferred from release cadence.
-- Traefik's releases page depth (~10 entries) hides everything before early July - 3.7.0's feature notes are unreachable from the source of record.
-- Claude Code's releases page reports 2.1.220 (2026-07-25) as latest - an unusually quiet week, taken at face value.
+Checked on: 2026-09-12. Window: 2026-07-26 to 2026-09-12.
+Verified through: not established. Evidence: 1 verified; 1 pending (dated
+Workspace posts in the interval are not fully enumerated).
 
-## 2026-07-26
+- **2026-09-08 - persistent Google Chat drafts.** Unsent drafts resume across
+  devices; web rollout began 2026-09-08 for rapid-release domains and is
+  scheduled from 2026-09-22 for scheduled-release domains. Useful for interrupted
+  support handoffs, subject to the domain's rollout track.
+  [Workspace update](https://workspaceupdates.googleblog.com/2026/09/pick-up-where-you-left-off-with-persistent-drafts-in-Google-Chat.html).
 
-First sweep. Cumulative products list everything above their floor.
+## AWS
 
-### MariaDB Server (everything above 11.8)
-- Now: 11.8.8 LTS is your line; 12.0 -> 12.3 are GA rolling releases, 13.0 is RC (2026-05-29).
-- 12.0 - SYS_REFCURSOR cursor type plus max_open_cursors; passphrase-protected encryption keys.
-- 12.1 - associative arrays (`DECLARE TYPE .. TABLE OF .. INDEX BY`); caching_sha2_password plugin for MySQL client compatibility.
-- 12.1 - segmented Aria key cache (`aria_pagecache_segments`, up to 128); faster vector distance via extrapolation.
-- 12.2 (2026-02-12) - more optimizer hints, join optimizer infers distinct GROUP BY columns in derived tables, JSON 32-level depth limit removed.
-- Upgrade read: rolling releases are 1-year support, not LTS - moving off 11.8 means re-upgrading yearly until the next LTS.
+Checked on: 2026-09-12. Window: one-time 2026-01-01 to 2026-09-12 backfill.
+Verified through: not established. Evidence: 5 verified; 2 pending (monthly
+London service announcements not fully enumerated; S3 Files region unresolved).
 
-### PHP (8.4 and above)
-- Now: 8.4.23 (2026-07-03), 8.5.8 (2026-07-02).
-- 8.5 - pipe operator `|>` for function chaining; `clone()` as a function with clone-with support.
-- 8.5 - `#[NoDiscard]` attribute flags return values that must not be ignored; `void` cast to discard deliberately.
-- 8.5 - new Uri extension with RFC 3986 and WHATWG parsers; `get_error_handler()` / `get_exception_handler()`.
-- Gotcha: OPcache is no longer optional in 8.5 - it is a required core component.
-- Gotcha: deprecated in 8.5 - non-numeric string increment, the backtick operator, and the `(boolean)`/`(integer)`/`(double)`/`(binary)` cast spellings.
+- **2026-09-08, London - S3 Object Lock variable retention.** The new
+  variable-retention and event-hold options are available in all AWS regions.
+  Possible fit for backup retention policies; test legal-hold and deletion
+  semantics before changing existing OpenEyes backups.
+  [AWS announcement](https://aws.amazon.com/about-aws/whats-new/2026/09/amazon-s3-object-lock-variable-retention/).
+- **2026-08-19, London - fourth Availability Zone.** `eu-west-2d` expands the
+  region's placement choices. Review whether database, application and load
+  balancer topology can use another zone; it does not itself make a deployment
+  multi-AZ. [AWS announcement](https://aws.amazon.com/about-aws/whats-new/2026/08/aws-new-availability-zone-europe/).
+- **2026-05-26, London - RDS ENA Express for Multi-AZ replication.** RDS for
+  MariaDB and MySQL can use the new network path for replication in London at
+  no additional feature charge. Possible benefit for OpenEyes failover lag;
+  benchmark replica lag and check instance eligibility before changing RDS
+  configuration.
+  [AWS announcement](https://aws.amazon.com/about-aws/whats-new/2026/05/amazon-rds-ena-express-multiAZ/).
+- **2026-04-23, London - five more S3 checksum algorithms.** AWS says the
+  algorithms are available in all regions. Candidate for stronger integrity
+  checks on protected-file or backup uploads, after checking SDK support and
+  existing checksum handling.
+  [AWS announcement](https://aws.amazon.com/about-aws/whats-new/2026/04/s3-five-additional-checksum-algorithms/).
+- **2026-03-12, London - EC2 M8i and M8i-flex.** Both families launched in
+  `eu-west-2`. Benchmark representative OpenEyes web and database workloads
+  against the currently deployed class before treating vendor price/performance
+  figures as savings.
+  [AWS announcement](https://aws.amazon.com/about-aws/whats-new/2026/03/amazon-ec2-m8i-m8i-flex-additional-regions/).
 
-### Portainer CE (everything above 2.39 LTS)
-- Now: 2.41.0 STS (2026-04-30) is newest; 2.39.5 (2026-07-14) is still the newest LTS - there is no LTS above 2.39 yet.
-- GitOps Workflows sidebar page listing every workflow across environments with status summaries.
-- Git-backed Kubernetes manifests editable after deployment, plus a Redeploy button to pull and redeploy.
-- Helm chart edge stacks deployable from Helm repos or Git, with custom namespace support; Helm Go SDK on v4.
-- Kompose migration of Docker Compose workloads to Kubernetes; image pruning from the Images list.
-- TUI apps work in the web console and kubectl shell, with terminal resize handling.
-- `--remove-orphans` on Compose stack deploys; `--security-opt` on container create.
+London unverified: **2026-04-07, S3 Files** exposes S3 buckets as shared file
+systems, potentially useful for protected files and file-based tools. The launch
+names 34 regions but does not name London. AWS also documents an extra
+high-performance storage tier and asynchronous writes back to S3; availability,
+cost and consistency must be checked before proposing it for OpenEyes.
+[Launch](https://aws.amazon.com/about-aws/whats-new/2026/04/amazon-s3-files/),
+[performance details](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-files-performance.html).
 
-### Chrome for Testing (floor 152.0.7973.0)
-- linux-arm64: still no builds. The CfT tracker issue is closed "not planned" and points at upstream crbug.com/374811603.
-- Upstream: Google announced Chrome for ARM64 Linux rolling out in Q2 2026 - not yet reflected in CfT downloads.
-- Now: Stable and Beta on 151.0.7922.47, Dev 152.0.7967.2, Canary 152.0.7973.0. Your floor is the Canary build.
+## VS Code
 
-### Claude Code (floor 2.1.220)
-- 2.1.220 - Opus 5 default with a 1M context window.
-- 2.1.219 - dynamic workflow size guidelines (small/medium/large); nested subagent forwarding in stream-json.
-- 2.1.218 - `/code-review` runs as a background subagent; screen reader mode.
-- 2.1.212 - `/fork` copies a conversation into a background session; `/resume` picker; MCP calls auto-background after 2 minutes.
-- 2.1.198 - subagents run in the background by default; Claude in Chrome GA; `Notification` hook for agents.
-- 2.1.186 - `claude mcp login` / `logout` CLI commands.
+Checked on: 2026-09-12. Window: 1.117 to 1.137.
+Verified through: not established. Evidence: 0 verified; 1 pending (monthly
+non-AI feature and deprecation notes need a full read; no unverified claim
+carried forward).
 
-### Ubuntu Server LTS (floor 24.04.4)
-- Now: 24.04.4 (2026-02-12), HWE stack on kernel 6.14 (GA kernel remains 6.8).
-- Archive versions still as shipped at 24.04: python 3.12 default, php 8.3.6, docker 24.0.7, clamav 1.0.0 LTS.
-- 24.04.4 itself is hardware enablement only - USB-C daisy-chain kernel crash, Intel MIPI camera detection, WiFi firmware.
-- GNU screen 5 is not called out anywhere in the noble notes, so `scripts/screen5_install.sh` is still the route (not confirmed by the page, inferred from its absence).
+## SkySQL
 
-### Google Workspace
-- Meet (2026-07-22) - notes, transcripts and recordings auto-file into a Google Meet folder with per-meeting subfolders, and attendees now get shortcuts in their own Drive, not just the host.
-- Meet (2026-07-21) - rebuilt web homepage as a hub for meeting notes and attachments.
-- Calendar (2026-07-23) - delegate icons in guest lists across event details, full-screen create and side-by-side scheduling.
-- Sheets (2026-07-22) - improved combo chart support for multi-series visualisations.
-- Classroom (2026-07-21) - role-based homepages for teachers, students and admins from 2026-07-27; collapsible modules.
-- Not seen this run: system-audio sharing in screen share.
+Checked on: 2026-09-12. Window: 2026-07-26 to 2026-09-12.
+Verified through: not established. Evidence: 0 verified; 1 pending (the official
+supported-version list is undated and cannot prove when support changed).
 
-### AWS (OpenEyes-relevant)
-- NLB Listener Rules for custom traffic routing (2026-07-22), at no additional charge - routing logic that was ALB-only.
-- ALB access logs can now be delivered to CloudWatch Logs (2026-07-23).
-- ECS Service Connect zone-aware routing (2026-07-23) - keeps traffic in-AZ, cuts cross-AZ data charges.
-- ECS Action Logs for deployment and orchestration visibility (2026-07-21).
-- EKS supports EFA and placement groups on Auto Mode and Karpenter (2026-07-22).
-- Cost/perf: M8a on 5th Gen AMD EPYC Turin, +30% vs M7a; M8id on custom Intel Xeon 6, +43% vs M6id; I8ge on Graviton4, +60% compute vs Graviton2 (all 2026-07-22/23).
-- RDS for MySQL 9.7 available in the Database Preview Environment (2026-07-23).
+## GCP
 
-### VS Code (non-AI, floor 1.117.0)
-- Now: 1.130 (2026-07-22).
-- Terminal: clickable file links in git diffs - `i/` and `w/` mnemonic prefixes are stripped so files open.
-- Engineering: the codebase now compiles with released TypeScript 7, and the extension matches.
-- Thin run: 1.130 has almost nothing non-AI. No editor, debugging, remote or performance work in this release - the changelog is overwhelmingly agents and chat.
+Checked on: 2026-09-12. Window: dated 2026 updates to 2026-09-12.
+Verified through: not established. Evidence: 1 verified; 2 pending (London
+service announcements not fully enumerated; CSEK end dates disagree).
 
-### SkySQL (officially supported)
-- Server versions offered: MariaDB 11.4.5, 10.11.11, 10.6.20, 10.5.25 stable; 11.6.2 vector preview; 11.7.1 RC.
-- Nothing at 11.8 or above - SkySQL is a full LTS line behind the MariaDB you run.
-- No public changelog exists, so "newly supported" can only be read off the server-versions doc. Treat this section as low-signal until a changelog appears.
+- **2026-07-20, Compute Engine CSEK deprecation - London applies.** New
+  customer-supplied encryption key use is deprecated globally, including
+  `europe-west2`. Check whether any OpenEyes disk or image automation uses CSEK
+  before planning a migration. The official pages disagree on its final removal
+  date, so that deadline remains pending.
+  [Compute CSEK notice](https://docs.cloud.google.com/compute/docs/deprecations/csek-deprecation-in-compute-engine),
+  [deprecation table](https://docs.cloud.google.com/compute/docs/deprecations).
 
-### GCP (processors and services)
-- No new processor generation this period - no Axion or next-gen Intel/AMD machine family announced in June-July 2026.
-- Compute Engine (2026-07-16) - Hyperdisk Balanced HA on C4 up to 1,600 MiB/s, from 600 MiB/s on c4-standard-16.
-- Artifact Registry (2026-07-24) - connector repositories GA: proxy an upstream registry with no caching.
-- Cloud Router BGP named sets GA (2026-07-23); Firestore Security Rules editable in the console (2026-07-20).
-- Cloud SQL for MySQL moved 8.4.8 -> 8.4.10 (2026-07-16).
-- Deprecation worth diarising: customer-supplied encryption keys (CSEK) for disks, snapshots and images are disabled 2027-07-20.
+## Docker Compose
 
-### Source drift this run
-- MariaDB `kb/en/release-notes/` and `mariadb.org/mariadb/all-releases/` both carry version lists but no feature text; series features came from the per-series "Changes & Improvements" docs found by search.
-- Google Workspace Updates blog rate-limited an earlier fetch this session (`google.com/sorry` redirect); it answered on retry.
+Checked on: 2026-09-12. Window: 2026-02-02 to 2026-09-12, plus one-time
+historical Kubernetes-like capability inventory. Verified through: not
+established. Evidence: 5 verified; 1 pending (remaining release tags in the
+window still need review).
+
+- **2026-09-03, v5.5.1 - lifecycle-hook output.** Hook output is exposed in
+  Compose logs, helping diagnose startup and shutdown hooks in development
+  stacks. Check the current hook use before changing stack files.
+  [v5.5.1 release](https://github.com/docker/compose/releases/tag/v5.5.1).
+- **2026-07-02, v5.3.0 - init containers.** Compose gained init-container
+  support. This can move one-shot preparation out of a long-running OpenEyes
+  service, but test ordering and failure behavior in the actual stack.
+  [v5.3.0 release](https://github.com/docker/compose/releases/tag/v5.3.0).
+- **Historical, reviewed 2026-09-12 - startup ordering.** Compose already
+  supports `service_healthy` and `service_completed_successfully` dependencies.
+  Use health checks and completed jobs where readiness matters; plain startup
+  order alone does not prove MariaDB is ready.
+  [startup-order guide](https://docs.docker.com/compose/how-tos/startup-order/).
+- **Historical, reviewed 2026-09-12 - resource controls.** Service definitions
+  support CPU and memory limits; deploy resources also describe reservations.
+  Test the local Compose implementation before treating reservations like
+  Kubernetes scheduler guarantees.
+  [Compose service reference](https://docs.docker.com/reference/compose-file/services/),
+  [deploy reference](https://docs.docker.com/reference/compose-file/deploy/).
+- **Historical, reviewed 2026-09-12 - rollout limit.** `docker compose up`
+  recreates changed containers. The deploy specification describes
+  `update_config` and `rollback_config` for Swarm, so do not assume a local
+  Compose stack has Kubernetes-style rolling updates or rollback.
+  [Compose up](https://docs.docker.com/reference/cli/docker/compose/up/),
+  [deploy reference](https://docs.docker.com/reference/compose-file/deploy/).
+
+## Kubernetes
+
+Checked on: 2026-09-12. Window: 2026-02-02 to 1.37.
+Verified through: not established. Evidence: 4 verified; 1 pending (1.36
+migration items still need a full read).
+
+- **2026-08-26, 1.37 - kube-dns deprecated.** Kubernetes expects no new
+  kube-dns packages after 1.40. Check cluster DNS add-ons and plan a CoreDNS
+  migration if any OpenEyes cluster still uses kube-dns.
+  [1.37 release](https://kubernetes.io/blog/2026/08/26/kubernetes-v1-37-release/).
+- **2026-08-26, 1.37 - kube-proxy IPVS mode deprecated.** The vendor expects
+  IPVS to be disabled by default in 1.40 and removed in 1.43. Check
+  `KubeProxyConfiguration` before planning a cluster upgrade; the dates are
+  roadmap targets, not completed removals.
+  [1.37 release](https://kubernetes.io/blog/2026/08/26/kubernetes-v1-37-release/).
+- **2026-08-26, 1.37 - kubelet cgroup v1 warning.** The fail-by-default
+  setting began in 1.35 and remains in 1.37. Kubelet fails on cgroup v1
+  hosts unless explicitly overridden; removal is planned. Check node OS
+  and runtime cgroup mode before an OpenEyes cluster upgrade.
+  [1.37 release](https://kubernetes.io/blog/2026/08/26/kubernetes-v1-37-release/).
+- **2026-08-26, 1.37 - built-in storage migration.**
+  StorageVersionMigration is GA and enabled by default. Review storage API
+  migration effects on existing OpenEyes resources during the upgrade rehearsal.
+  [1.37 release](https://kubernetes.io/blog/2026/08/26/kubernetes-v1-37-release/).
+
+## Helm
+
+Checked on: 2026-09-12. Window: 2026-02-02 to 2026-09-12.
+Verified through: not established. Evidence: 3 verified; 1 pending (4.x minor
+release and chart migration notes need a full read).
+
+- **2026-09-09, 4.3.0 - reproducible chart archives.** Helm honors
+  `SOURCE_DATE_EPOCH` when packaging charts. Test whether this removes
+  timestamp-only differences from OpenEyes chart artifacts in CI.
+  [4.3.0 release](https://github.com/helm/helm/releases/tag/v4.3.0).
+- **2026-09-09, 4.3.0 - rollback reason.** `helm rollback --description`
+  records why a rollback was made. Add a short reason to the deployment
+  runbook if Helm 4 is adopted.
+  [4.3.0 release](https://github.com/helm/helm/releases/tag/v4.3.0).
+- **2026-05-14, 4.2.0 - CLI flag deprecations.** `--hide-notes` and
+  `--render-subchart-notes` are deprecated. Check deployment scripts before a
+  Helm 4 upgrade; chart authors also gain `mustToToml`.
+  [4.2.0 release](https://github.com/helm/helm/releases/tag/v4.2.0).
+
+## Traefik
+
+Checked on: 2026-09-12. Window: 3.3 inclusive to 2026-09-12.
+Verified through: not established. Evidence: 5 verified; 1 pending (each 3.3+
+minor migration and patch series still needs a complete pass).
+
+- **2026-09-04, 3.7.13 - h2c backend behavior.** Traefik no longer forwards
+  `Upgrade: h2c` and `HTTP2-Settings` headers. Set an explicit h2c backend
+  scheme where required, then test proxy-to-service traffic before upgrading.
+  [3.7.13 release](https://github.com/traefik/traefik/releases/tag/v3.7.13).
+- **2026-09-12 support check - 3.3 and 3.6 support ended.** The vendor lists
+  3.3 with neither active nor security support, and 3.6 security support ended
+  2026-08-16. A deployed 3.3/3.6 should be scheduled for a supported 3.7
+  migration, with routing tests.
+  [support lifecycle](https://doc.traefik.io/traefik/deprecation/releases/).
+- **2026-01-14, 3.6.7 - encoded-path policy changed again.** Versions
+  3.6.4-3.6.6 rejected several encoded path characters by default with HTTP
+  400; 3.6.7 restored the earlier permissive default and makes the restriction
+  opt-in. Test escaped OpenEyes URLs and set an explicit policy before changing
+  versions. [3.6.7 release](https://github.com/traefik/traefik/releases/tag/v3.6.7),
+  [migration guide](https://doc.traefik.io/traefik/migrate/v3/).
+- **2025-05-27, 3.4.1 - encoded path handling.** Reserved encoded path
+  characters remain encoded for route matching. Test OpenEyes routes with
+  escaped path characters when moving from 3.3.
+  [3.4.1 release](https://github.com/traefik/traefik/releases/tag/v3.4.1),
+  [v3 migration guide](https://doc.traefik.io/traefik/migrate/v3/).
+- **2025-04-18, 3.3.6 - request paths are cleaned before routing.**
+  `/../`, `/./` and duplicate slashes are collapsed before matching and
+  forwarding. Check any OpenEyes route or integration that relies on literal
+  path segments when upgrading within 3.3 or beyond.
+  [3.3.6 release](https://github.com/traefik/traefik/releases/tag/v3.3.6).
+
+## Docker Engine
+
+Checked on: 2026-09-12. Window: 2026-02-02 to 2026-09-12.
+Verified through: not established. Evidence: 3 verified; 2 pending (29.x
+release and deprecation series incomplete; current API documentation conflicts).
+
+- **2026-09-03, 29.8.0 - container umask.** `HostConfig.Umask` and
+  `docker run --umask` can set the default file-creation mask. Test protected
+  file permissions in OpenEyes containers before relying on it.
+  [Engine 29 notes](https://docs.docker.com/engine/release-notes/29/).
+- **2026-06-18, 29.6.0 - API 1.55 and live resource update.** The API matrix
+  lists 1.55 for 29.6, and `POST /containers/{id}/update` gains per-device
+  block-I/O settings. Check client negotiation and whether in-place resource
+  adjustment helps a container with variable storage load.
+  [Engine 29 notes](https://docs.docker.com/engine/release-notes/29/),
+  [API matrix](https://docs.docker.com/reference/api/engine/).
+- **2025-11-10, 29.0 baseline - API 1.52.** The previous digest placed this
+  API number under 29.6.0. Pin compatibility checks to the daemon/API table,
+  not a later maintenance release.
+  [Engine 29 notes](https://docs.docker.com/engine/release-notes/29/),
+  [API version table](https://docs.docker.com/reference/api/engine/).
+
+Pending: Docker's current API reference shows Engine 29.8 as 1.55 in its
+matrix but 1.56 in its command-output example. Do not publish a 29.8 API
+bump until the official history resolves this discrepancy.
+[API reference](https://docs.docker.com/reference/api/engine/).
+
+## Node.js
+
+Checked on: 2026-09-12. Window: Node 24 LTS through 24.21.0.
+Verified through: not established. Evidence: 0 verified; 2 pending (the Node
+24 maintenance series is incomplete; the Puppeteer unzip regression has no
+verified fix in the OpenEyes image, so test before unpinning 24.15).
+
+## Playwright
+
+Checked on: 2026-09-12. Window: 2026-02-02 to 2026-09-12.
+Verified through: not established. Evidence: 4 verified; 2 pending
+(intervening minor releases; screen-capture resource measurements).
+
+- **2026-09-04, 1.63 - named test locks.** Tests sharing a lock cannot run
+  concurrently across files or workers, while other tests stay parallel.
+  Use this for OpenEyes browser tests that mutate the same shared setting
+  or account instead of serializing the entire suite.
+  [1.63.0 release](https://github.com/microsoft/playwright/releases/tag/v1.63.0).
+- **2026-09-04, 1.63 - selective trace snapshots.** Trace configuration can
+  independently enable DOM, ARIA and screen snapshots. Compare trace size and
+  troubleshooting value before reducing screen snapshots in the test container.
+  [1.63.0 release](https://github.com/microsoft/playwright/releases/tag/v1.63.0).
+- **2026-07-24, 1.62 - WebP screenshots.** WebP output may reduce screenshot
+  artifact size, with lossy quality where acceptable. Compare bytes and CPU
+  in the web container before adopting it for OpenEyes captures.
+  [1.62.0 release](https://github.com/microsoft/playwright/releases/tag/v1.62.0).
+- **2026-04-01, 1.59 - live screencast frames.** `page.screencast` streams
+  JPEG frames with size and quality controls. Test whether a small frame stream
+  can replace repeated full screenshots in the OpenEyes screen-capture path;
+  memory and CPU savings are unmeasured.
+  [1.59.0 release](https://github.com/microsoft/playwright/releases/tag/v1.59.0),
+  [screencast API](https://github.com/microsoft/playwright/blob/main/docs/src/api/class-screencast.md).
+
+## BridgeLink
+
+Checked on: 2026-09-12. Window: 2026-02-02 to 2026-09-12.
+Verified through: not established. Evidence: 2 verified; 1 pending (remaining
+release tags and deployment migration notes need review).
+
+- **2026-07-22, 26.6.0 - MySQL migration and web admin.** First startup on
+  Linux can rename mixed-case MySQL tables; WebAdmin requires a server at least
+  26.3.0. Rehearse database upgrade and backup/restore before a BridgeLink
+  container jump. [26.6.0 release](https://github.com/Innovar-Healthcare/BridgeLink/releases/tag/v26.6.0).
+- **2026-05-15, 26.3.1 - privileged startup blocked by default.** Running as
+  root or Administrator now refuses startup unless `server.allowRoot=true` is
+  set. Prefer an unprivileged runtime and test volume permissions before
+  upgrading the integration container.
+  [26.3.1 release](https://github.com/Innovar-Healthcare/BridgeLink/releases/tag/v26.3.1).
+
+## Codex
+
+Checked on: 2026-09-12. Window: 2026-08-02 to 2026-09-12.
+Verified through: not established. Evidence: 4 verified; 1 pending (all CLI
+releases and model-availability notes in the window need enumeration).
+
+- **2026-09-09, CLI 0.154.0 - `codex mcp-server` removed.** The kit's
+  `install.sh -x` bridge still launches that command, and its container
+  installs the latest CLI without a version pin. Rebuilding that image with
+  0.154.0 or newer can break the bridge; retain a known-working image until
+  the launcher is migrated and tested.
+  [0.154.0 release](https://github.com/openai/codex/releases/tag/rust-v0.154.0),
+  [kit launcher](../install.sh),
+  [CLI image](../docker/codex/Dockerfile).
+- **2026-09-09, CLI 0.154.0 - GPT-6-Astra model picker.** The model catalog
+  exposes GPT-6-Astra in supported configurations. Check account and provider
+  availability before changing the kit's pinned implementation model.
+  [0.154.0 release](https://github.com/openai/codex/releases/tag/rust-v0.154.0).
+- **2026-09-03, CLI 0.153.0 - experimental context token budget.** Eligible
+  ChatGPT accounts can set an experimental context budget. It is a control,
+  not evidence of lower token consumption; measure a repeatable task before
+  changing defaults.
+  [0.153.0 release](https://github.com/openai/codex/releases/tag/rust-v0.153.0).
+- **2026-09-01, CLI 0.152.0 - MCP output cap.** `output_token_limit` can bound
+  returned MCP tool content. Candidate for reducing noisy tool responses in the
+  kit, subject to preserving needed evidence.
+  [0.152.0 release](https://github.com/openai/codex/releases/tag/rust-v0.152.0).
+
+## Keeper
+
+Checked on: 2026-09-12. Window: one-time 2026-01-01 to 2026-09-12 backfill.
+Verified through: not established. Evidence: 8 verified; 1 pending (official
+product-specific 2026 release history still needs enumeration).
+
+- **2026-08-24 - KeeperDB multi-connection queries.** KeeperDB 2.5 can open
+  several databases at once and run the same query across selected connections
+  of one engine type. This could speed OpenEyes schema checks across sites;
+  confirm the connection set before running any query against multiple databases.
+  [KeeperDB 2.5 notes](https://docs.keeper.io/release-notes/desktop/keeperdb/keeperdb-2.5.0).
+- **2026-08-24 - hardware-key passkey login.** Web Vault 18.6 adds FIDO2
+  roaming authenticators for passkey sign-in. Check browser extension and admin
+  policy compatibility before proposing a sign-in change.
+  [Vault 18.6 notes](https://docs.keeper.io/release-notes/desktop/web-vault-+-desktop-app/vault-release-18.6.0).
+- **2026-08-14 - Secrets Manager CLI 1.5 breaking change.** AWS syncs using
+  `--record` or `--folder` now require `--prefix`; Linux release tarballs now
+  carry an architecture suffix. Audit automation before upgrading. The same
+  release fixes an AWS secret-name authorization gap and arm64 init-container
+  binaries.
+  [Secrets Manager CLI 1.5 notes](https://docs.keeper.io/release-notes/enterprise/keeper-secrets-manager/2026/secrets-manager-cli-1.5.0).
+- **2026-06-04 - time-bound PAM approval workflows.** Keeper describes
+  approval-based privileged sessions. Relevant if shared operational access
+  should expire automatically; check plan and policy availability before
+  changing an access process.
+  [Keeper update](https://www.keepersecurity.com/blog/2026/06/04/whats-new-with-keeper-june-2026/).
+- **2026-06-04 - KeeperDB for audited database sessions.** Keeper describes
+  browser or desktop database access with credentials kept off the endpoint,
+  session recording and MySQL/MariaDB support. Assess the product and license
+  before using it for OpenEyes database administration.
+  [Keeper update](https://www.keepersecurity.com/blog/2026/06/04/whats-new-with-keeper-june-2026/).
+- **2026-06-04 - Vault and browser workflow changes.** Web Vault biometric
+  passkeys and browser extension Verify Mode can reduce repeat sign-ins and
+  warn on pasted credentials at suspicious sites. Confirm client support and
+  admin policy before rollout.
+  [Keeper update](https://www.keepersecurity.com/blog/2026/06/04/whats-new-with-keeper-june-2026/).
+- **2026-02-04 - Gateway high availability.** Multiple Keeper Gateway
+  instances can share a configuration and distribute PAM sessions. Relevant
+  if database or server access depends on one Gateway; test failure behavior
+  before treating it as HA.
+  [Keeper update](https://www.keepersecurity.com/blog/2026/02/04/whats-new-with-keeper-february-2026/).
+- **2026-02-04 - Commander SuperShell.** Commander 17.2.2 or newer adds a
+  terminal vault browser with search and TOTP countdowns. Candidate for
+  container-based operations without opening a desktop Vault window.
+  [Keeper update](https://www.keepersecurity.com/blog/2026/02/04/whats-new-with-keeper-february-2026/).
+
+## Jira Cloud
+
+Checked on: 2026-09-12. Window: one-time 2026-01-01 to 2026-09-12 backfill.
+Verified through: 2026-09-12. Evidence: 6 verified; 0 pending (the official
+2026 monthly announcement archive was reviewed through this date).
+
+- **2026-07-27 - individual capacity planning.** Premium and Enterprise
+  planning can allocate work across spaces and account for leave. Useful for
+  cross-team delivery planning if the site has the required plan.
+  [Jira announcement](https://jirareleases.atlassian.com/announcements/individual-capacity-planning-is-here).
+- **2026-07-27 - formula fields.** Calculated fields can be used in Jira work views,
+  JQL, dashboards and automation, potentially replacing exported tracking
+  spreadsheets. Verify rollout and plan eligibility before changing reports.
+  [Jira announcement](https://jirareleases.atlassian.com/announcements/stop-exporting-and-start-calculating-in-jira).
+- **2026-07-27 - unified List and All Work view.** The merged List supports JQL,
+  parent-child hierarchy, inline edits and saved team configurations. Try it for
+  release triage before maintaining separate spreadsheet or board views.
+  [Jira announcement](https://jirareleases.atlassian.com/announcements/a-more-powerful-list-view-for-the-way-your-team-actually-works).
+- **2026-07-27 - faster team-managed software boards.** Atlassian reports a
+  22% faster load and adds inline editing, swimlanes and saved views. Check
+  whether the board changes simplify standups on an OpenEyes project.
+  [Jira announcement](https://jirareleases.atlassian.com/announcements/a-faster-more-flexible-board-for-software-teams-1).
+- **2026-04-27 - free guest access.** Eligible paid Jira plans include
+  single-space guest access for external collaborators. Check entitlement and
+  space permissions before inviting vendors to an OpenEyes delivery project.
+  [Jira announcement](https://jirareleases.atlassian.com/announcements/bring-external-collaborators-into-jira-without-adding-seats).
+- **2026-02-20 - structured approvals.** Jira Cloud Premium and Enterprise
+  can add auditable approval steps to team-managed and company-managed
+  workflows. A candidate for deployment or change approval where those
+  decisions currently live only in comments.
+  [Jira announcement](https://jirareleases.atlassian.com/announcements/approvals-that-keep-work-moving).

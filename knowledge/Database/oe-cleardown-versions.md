@@ -3,7 +3,7 @@
 The harness half of the cleardown work - how to know which OE version a database
 is, how to rebuild each version, and how to verify a seed without fooling
 yourself. The keep/clear policy itself is in
-`knowledge/oe-cleardown-policy.md`. Most of this generalises to any
+`knowledge/Database/oe-cleardown-policy.md`. Most of this generalises to any
 multi-version OE job, not just cleardown.
 
 Supported set: `release/10.0.x` (v10), `release/11.0.x` (v11),

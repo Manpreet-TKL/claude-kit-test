@@ -13,11 +13,12 @@ shape: **plan -> question -> divide -> verify**.
 
 ## 1. Plan before writing
 
-In standalone Codex, keep the main thread on `gpt-5.6-sol` at `xhigh`. For a
+In standalone Codex, default the main thread to `gpt-6-astra` at `xhigh`. For a
 non-trivial plan, spawn one read-only `planner` agent, pinned by the kit to
 `gpt-6-astra` at `max`, and integrate its result in the main thread. This one
 planner is pre-authorized by the kit's global model route. After approval,
-execute in the Sol main thread. For a trivial plan or when that custom agent is
+execute in the main thread. For substantial mechanical work, suggest Sol or Terra
+for the user to select; do not switch or spawn cheap workers automatically. For a trivial plan or when that custom agent is
 unavailable, plan read-only in the current thread.
 
 In other clients, use the available native planning mode or work read-only and
@@ -27,7 +28,8 @@ approves the implementation plan.
 ## 2. Ask up to 10 clarifying questions
 
 Explore the real environment first. Then ask only the load-bearing questions
-whose answers would change the design, capped at 10. Use the client's
+whose answers would change the design, capped at 10. After a long explanation,
+add brief context and the decision needed before asking. Use the client's
 structured question facility when available; otherwise ask one concise
 numbered question at a time. A bad question costs the user a click; a missing
 question costs them a re-do.

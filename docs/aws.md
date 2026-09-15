@@ -89,7 +89,7 @@ Any AWS CLI read: "which RDS instances are within 10% of their allocated storage
 "what does this security group actually allow", "which resources have no Project
 tag", "how many deadlocks did that instance log yesterday" - the same questions the
 DevOps notes answer by clicking through the console, without the clicking. See
-`knowledge/aws-production-deployments.md` for the environment shape those questions
+`knowledge/Infrastructure/aws-production-deployments.md` for the environment shape those questions
 are usually about.
 
 Agents read with:

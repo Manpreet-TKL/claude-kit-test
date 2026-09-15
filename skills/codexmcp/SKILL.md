@@ -18,7 +18,7 @@ touch `~/.codex/auth.json`.
 The server runs `codex mcp-server` inside a locally-built docker container
 (`claude-kit-codex`, from `~/claude-kit/docker/codex/`; the host `codex` binary is
 the fallback only when Docker is absent) and is registered with its defaults baked in
-(set by `install.sh -x`): the **execution model (`gpt-5.6-sol`) at `xhigh`
+(set by `install.sh -x`): the **execution model (`gpt-6-astra`) at `xhigh`
 reasoning effort**, sandboxed,
 `approval_policy=never` so agents run unattended. In docker mode the **container is
 the sandbox** - only the project dir and `~/.codex` are mounted; in host mode it's
@@ -120,7 +120,7 @@ form.)
 
 Set by `install.sh -x`, recorded non-secretly in `~/claude-kit/generated/.codex.env`:
 
-- `CODEX_MODEL` - the default implementation model (default `gpt-5.6-sol`). The
+- `CODEX_MODEL` - the default implementation model (default `gpt-6-astra`). The
   kit uses `gpt-6-astra` at `max` for planning. GPT-5.6 also offers `gpt-5.6-terra`
   (everyday workhorse), `gpt-5.6-luna` (fast/cheap repeatable tasks).
 - `CODEX_REASONING_EFFORT` - default `xhigh` (the GPT-5.6 family accepts

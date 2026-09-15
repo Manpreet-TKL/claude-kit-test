@@ -288,7 +288,7 @@ freshInstall() {
 writeCodexEnv() {
     local model effort tier mode threads
     [ -f "${codex_env}" ] && . "${codex_env}"
-    model="${CODEX_MODEL:-gpt-5.6-sol}"
+    model="${CODEX_MODEL:-gpt-6-astra}"
     effort="${CODEX_REASONING_EFFORT:-xhigh}"
     tier="${PERMISSION_TIER:-${CODEX_PERMISSION_TIER:-standard}}"
     mode="${SESSION_MODE:-${CODEX_MODE:-auto}}"
@@ -311,11 +311,16 @@ writeCodexEnv() {
     PERMISSION_TIER="${tier}"
     SESSION_MODE="${mode}"
     CODEX_AGENT_THREADS="${threads}"
+    CODEX_MODEL="${model}"
+    CODEX_REASONING_EFFORT="${effort}"
 }
 
 writeProfile() {
     local file
     {
+        echo "model = \"${CODEX_MODEL}\""
+        echo "model_reasoning_effort = \"${CODEX_REASONING_EFFORT}\""
+        echo 'model_verbosity = "medium"'
         echo 'default_permissions = "standard"'
         echo 'approval_policy = "on-request"'
         echo 'approvals_reviewer = "auto_review"'
@@ -471,9 +476,14 @@ updateCodex() {
 }
 
 verifyAll() {
-    local failed=0 name aws_running
+    local failed=0 name aws_running config_check
     bash "${kit_root}/scripts/validate-skills.sh" --codex-runtime || { echo "[FAIL] skill compatibility"; failed=1; }
-    codex --strict-config --profile claude-kit --version >/dev/null 2>&1 || { echo "[FAIL] strict config"; failed=1; }
+    config_check="$(mktemp -d)"
+    if ! cp "${codex_profile}" "${config_check}/config.toml" || ! CODEX_HOME="${config_check}" codex --strict-config app-server --stdio </dev/null >/dev/null 2>&1; then
+        echo "[FAIL] strict config"
+        failed=1
+    fi
+    rm -rf "${config_check}"
     [ -L "${codex_agents_md}" ] && [ "$(readlink "${codex_agents_md}")" == "${claude_md_src}" ] || { echo "[FAIL] AGENTS.md link"; failed=1; }
     [ -L "${codex_planner_agent}" ] && [ "$(readlink "${codex_planner_agent}")" == "${planner_agent_src}" ] || { echo "[FAIL] Astra planner link"; failed=1; }
     [ -s "${agents_manifest}" ] && [ -s "${codex_skills_manifest}" ] || { echo "[FAIL] skills manifests"; failed=1; }
@@ -544,7 +554,7 @@ disableRegisteredMcps
 echo "Codex profile: ${codex_profile}"
 echo "Permission tier: ${PERMISSION_TIER}; mode: ${SESSION_MODE}"
 echo "Native subagent limit: ${CODEX_AGENT_THREADS:-Codex default}"
-echo "Model route: planner=gpt-6-astra/max; execution=${CODEX_MODEL:-gpt-5.6-sol}/${CODEX_REASONING_EFFORT:-xhigh}"
+echo "Model route: planner=gpt-6-astra/max; execution=${CODEX_MODEL:-gpt-6-astra}/${CODEX_REASONING_EFFORT:-xhigh}"
 echo "Run: bash ${kit_root}/codex.sh"
 [ "${DO_VERIFY}" == "1" ] && verifyAll
 

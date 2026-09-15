@@ -120,9 +120,9 @@ by editing this file. The file is never touched by `--without-github` - only a m
 
 ## Why read-only
 
-The user's hard rule is "never write out to GitHub." Rather than relying only on a
-permission `deny` list (which would have to enumerate every write tool), the strongest
-guarantee is to make the server itself read-only: with `GITHUB_READ_ONLY=1` the write
-tools never exist in the session, so there is nothing to deny and nothing to slip
-through. The bare `-e VAR` docker args mean the token lives only in the `env` block,
-never on the `docker` command line.
+GitHub is read-only by default. A write requires the user to name the action and
+target explicitly; this never authorizes commits, pushes or replacing read-only
+credentials. The kit MCP remains read-only: `GITHUB_READ_ONLY=1` removes write
+tools, and its token has read-only permissions. If no existing authorized route
+can perform an explicitly requested write, provide the steps for the human.
+The bare `-e VAR` Docker args keep the token off the Docker command line.

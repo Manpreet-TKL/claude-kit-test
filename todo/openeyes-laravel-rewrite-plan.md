@@ -1,5 +1,30 @@
 # OpenEyes → Laravel rewrite plan
 
+## Current workspace locations - confirmed 11 September 2026
+
+Latest integrated checkpoint: 15 September 04:53 BST, seventy-seven staged bundles. Strict ledger passes at code 84.3376% (5194.35/6159), overall 76.6908% (10832.57/14125); canonical 14125, mappings 18649, missing 0, pending 1190, unowned 1260, unowned code 0. Net gain 69.68 code equivalents. Bundle76 restores source-operation surgeon routing for optometrist messages: 30 PHP tests/350 assertions and six bounded recipient reads at 1/200 operations plus 1000 mailboxes; already-credited source paths receive zero new score. Bundle77 connects the header demographics popup: 13 PHP tests/185 assertions, 15 client checks, two Vue compilations and five Pint files pass; eight-query budget is constant at 1/1000 contacts. No filesort or temporary tables in the inspected new plans. Dev remains at 483 migrations through000048. Next: connect remaining source header actions to existing authorized popup readers; after next: another missing workflow before scope freeze. CERA/custom demographic fields, full popup geometry, generic raw xAPI, full Form.io, SNOMED tree imports and arbitrary LDAP provider options remain deferred. No final schema/browser/image/load acceptance yet. Nine prior-preview services healthy at04:51BST and three bounded dev services retained; no promotion, deletion, commits, pushes or subagents.
+
+Current run: approved execution began 2026-09-13 14:27:49 BST. New functional scope freezes 2026-09-15 08:27:49 BST; finish at the first safe integrated checkpoint at or after 2026-09-15 14:27:49 BST. One agent, no subagents, no commits or pushes. The previous one-off Git exception is exhausted. Baselines: Laravel `a3df583c1503009c1ac326fbc109feca5ff8311e`, Docker `58877a2a2e95bbde30eae53097776be3c0e89883`, pinned legacy `ad2324084788608246a8250e817198c2f26a4fd6`. Starting weighted code is 5124.67/6159 = 83.2062023055691%; above 90 needs another 418.44 equivalents. Current run evidence is `openeyes-rewrite/coverage-48h-20260913-142749`; preceding section 16.145 and master 26.21 are historical, not active deadline authority.
+
+Execution queue: use `coverage-48h-20260911-174239/next-48h-porting-evidence.md` and `next-porting-candidates.json`. First hour checks baseline and selects coherent missing runtime consumers; approximately T+1 to T+42 prioritizes functional porting; T+42 to T+48 is consolidated integration and attributable repairs. Shared patient/event/permission behavior comes first, then administration/examination/diagnoses, reports/search/analytics, surgery/booking/correspondence/therapy, worklist/application-side devices and CVI/shared glue. This is a rolling queue: record a narrow missing rule and move to an unblocked family. Do not repeatedly refine already-working behavior for tiny ledger gains. Ordinary tests, browser/full-suite/image checks and polished documentation batch at the end; changed clinical/signing/authorization/isolation/history/irreversible boundaries retain immediate narrow tests. Use existing simple interfaces, bounded/indexed reads and explicit no-hints/no-LOCK-TABLES policy. Highest score per unique pinned path controls progress; inventory and documentation earn no code credit. Keep concise source/target/divergence/gap evidence and hourly resumable checkpoints with next_item, after_next, blockers and verification_state. Preserve preview, retained volumes, top-level exceptions and unrelated staged kit changes. Faithful legacy sample and pinned-develop sample customer migration follow only actual core completion.
+
+This location rule overrides every earlier consolidation or dated-folder instruction in this plan. Use `/home/toukan/openeyes-rewrite` for all project work artifacts: run folders, evidence, tools, builds, notes, documentation inputs and scratch files. Do not create another top-level rewrite work folder or recreate `openeyes-rewrite-20260909`.
+
+The user explicitly requires these exceptions to remain outside that folder:
+
+| Item | Required location |
+| --- | --- |
+| Laravel source repository; edit it in place, never create a second active checkout | `/home/toukan/openeyes-laravel` |
+| Docker source repository; edit it in place, never create a second active checkout | `/home/toukan/openeyes-docker` |
+| User-facing hourly progress, at most 10 lines | `/home/toukan/openeyes-rewrite-progress.md` |
+| Second-eye query-plan explanation | `/home/toukan/ready-for-second-eye-query-plan-problem-2026-08-31.md` |
+| Approved private rewrite files | `/home/toukan/.claude/openeyes-rewrite-archive`; existing preview secrets remain in their private runtime location |
+| Shared master/active plans and task list | Existing files in `/home/toukan/claude-kit/todo`; never put secrets or client data in that repository |
+
+All other previously pending moves are approved. The final path-by-path decisions are in `/home/toukan/openeyes-rewrite/coverage-48h-101221/restoration-decisions.tsv`; its `current_path` column is authoritative. Shared repositories, PR history, legacy tools and general documents already restored to their original paths stay there, including `openeyes`, `eyedraw`, `sample`, `pullrequests` and `oe-frontend-tests`. Referencing shared material does not make it rewrite-owned.
+
+Historical move/checksum ledgers remain unchanged. Resolve their old paths through the final location record; do not rerun the retired broad consolidation. Future housekeeping must preserve these exceptions and the live preview.
+
 Draft v0.6, 2026-08-16 (v0.6 adds R54–R56: reference-data release pipeline, sample-database profiles incl. legacy-equivalent and story-driven large history, and a blast-radius/impact map; v0.5 added R50–R53: output-equivalence corpus, concurrency/load test plan with scenarios, high-speed parallel cutover, three-majors-a-year adaptability; v0.4 added R47–R49: frontend-first after discovery with an identical login page confirmed by an early visual walk, a completeness rule, and configuration visibility/secrets handling; v0.3 added R44–R46: chunked delivery around usage-limit resets, a feature register proving every function and its tests, and use of the OpenEyes layout repos in discovery; v0.2 added R33–R43: construction record, DevOps notes, schema tamper checks, fast/secure/multi-arch builds, separate Docker repo + VM install, pattern lint, anonymisation labels on models, early login milestone, test determinism). Target: Yii 1.1 OpenEyes (~14k code files, ~2,500 tables, ~17k columns) → Laravel 13 on PHP 8.4, MariaDB 11.8 LTS, identical frontend, drop-in containers.
 
 How to read: sections 1–3 are decisions; sections 4–9 are phases in execution order (Phase 0 → 5); section 10 is the token plan; 11–13 are quality/docs/governance; 14 is sequencing and risks; appendices hold the rule sets. Anything marked *spike* is a decision that needs a measured experiment before it is final. Anything marked *guess* is a number to be replaced by pilot data.
@@ -2102,7 +2127,7 @@ and online migration plan.
   operation budgets for event and patient timelines, patient search, pharmacy,
   injection prescriptions, operation-booking waiting work, and the ready for
   second eye report. The post-full-suite evidence is
-  `/home/toukan/openeyes-query-plan-evidence-clean-20260831/query-plan-after-full.json`
+  `/home/toukan/openeyes-rewrite/prior-runs/openeyes-query-plan-evidence-clean-20260831/query-plan-after-full.json`
   with SHA-256 `4125a1bf1ac92df426aa5d08d280d4d01aaa81ee33603b53b14de3005d247094`.
   All seven plans report `filesort=false`, `temporary_table=false`, and bounded
   estimated rows. The evidence contains no SQL or bindings.
@@ -2386,7 +2411,7 @@ and online migration plan.
 ### 16.16 Hourly checkpoint - 2026-08-31 22:28 BST
 
 - Current problem and acceptance condition: pause further worklist implementation
-  and incorporate `/home/toukan/openeyes-worklist-realtime-scaling-plan.md` as an
+  and incorporate `/home/toukan/openeyes-rewrite/documentation-inputs/openeyes-worklist-realtime-scaling-plan.md` as an
   architecture correction. The plans must support thousands of simultaneously
   open dashboards with different configurations and sustained appointment update
   rates well above hundreds per minute, without a shared database hot row,
@@ -9103,6 +9128,3910 @@ staging and owned resource cleanup. External checkpoint-0900.json records source
 and harness identities, verification state, next work, deferrals and resource
 ownership. Coverage remains 73.2152 percent overall and 77.1463 percent code.
 Continue to the first safe verified checkpoint; no new functional scope opens.
+
+Final verification closed at 09:31 BST on 7 September. The corrected immutable
+application passes both full PHP runs: 403 files, 3,072 tests and 88,100 assertions
+per pass, with zero failures, errors or skips. Ordinary order has no seed in any
+shard; the second pass uses fresh seven-schema and Redis fixtures, a shuffled
+file manifest and master seed 2026090704. The independent evidence checker proves
+identical test cases and source hashes, different execution orders and unchanged
+database settings. All seven browser scenarios pass with zero retries. The
+318-migration, schema, 53-query-budget, static, 50-JavaScript-test, frontend build,
+image, Compose and Helm gates also pass against the corrected source.
+
+Final application identity remains 316b6124 and Docker context identity remains
+0c1c3596. Product patches are staged with no unstaged tracked changes: 232 Laravel
+files and 11 Docker files. The packaged hourly ledger remains frozen at its
+07:17 image boundary; subsequent checkpoints are recorded here and externally.
+Ordinary and shuffled PHP peaks are 280,014,848 and 312,721,408 bytes. Database
+peaks are 1,882,165,248 and 1,845,760,000 bytes, below its two-GiB cap, with zero
+OOM or limit events in either final pass. The owned database, Redis and builder
+are stopped; their completed test containers are removed. Database volume,
+builder cache, scanner cache and evidence are retained. Unrelated services and
+staged changes are untouched. No commit or push was made.
+
+The time and integration guards are satisfied. Coverage closes honestly at
+73.2152 percent overall and 77.1463 percent code across 14,125 canonical paths;
+this is weighted source accounting, not full application equivalence or test
+line coverage. The next functional item is profile/context closure: preferred
+firms separate from grants, direct firm and service rights, institution-auth
+selection, and provider-owned profile identity/PIN/password behavior. After-next
+continue the ordered patient lifecycle and event draft/signing parity queue.
+Do not divert the next tranche into more endurance runs. Historical migration,
+realistic-scale performance, external integrations, security, renderer fidelity,
+paired UAT and clinical sign-off remain explicit later gates. Current acceptance
+is recorded in external integration-state.json and final-outbox-evidence-comparison.json;
+older successful and failed runs remain retained with their original identities.
+
+### 16.143 Active functions-first continuation - 2026-09-07 to 2026-09-09
+
+Approved 7 September. This section supersedes earlier run deadlines and stale
+opening prerequisites, but preserves their uncompleted functional and release
+requirements. The agreed clock started at 2026-09-07T09:40:53+01:00. Do not
+complete, hand off, or voluntarily idle before 2026-09-09T09:40:53+01:00. Finish
+only at the first safe integrated checkpoint at or after that time. Freeze new
+functional scope by 2026-09-09T07:40:53+01:00, earlier if measured verification
+duration requires it. A durable goal was created at implementation start.
+
+Priority is usable legacy functionality first, a persistent verified frontend
+preview second, and roughly 95 percent weighted legacy-code porting third.
+Neither 95 percent nor any lower staircase checkpoint ends the run early.
+Report an honest lower percentage if functional closure takes longer. This is
+not PHPUnit line coverage and inventory/relabeling does not earn credit.
+
+The 8 September request for the future `openeyes2` rename and the current
+OpenEyes-style `master`/`develop`/`release/28.0.x`, release tags and consistent
+immutable production-image releases is recorded in the master plan under
+"Deferred repository identity, branching and release process". It is independent
+later work, to be planned in the release-engineering tranche after functional
+and migration/performance stabilization. Do not implement it in this run.
+
+Frozen opening identities: legacy ad2324084788608246a8250e817198c2f26a4fd6;
+Laravel HEAD 1ad12cba8bb7a138346d90918b0ac2d1d2624a3c with source digest
+316b6124039f550af776ead0182cb57e28d495f510783166135c6d3e7f217ff0;
+Docker HEAD 67cfbca98a63d176af739686992e4aa0b303604d with context digest
+0c1c3596ea19efc4828311bfe9b96b55301b92b2cd9168627a17302e2c4f05b7.
+Preserve the 232 staged Laravel files, 11 staged Docker files, unrelated kit
+changes and the untracked empty worker file. Baseline coverage is 77.1463 percent
+code and 73.2152 percent overall over 14,125 canonical paths and 18,643 mappings.
+The code denominator is 6,159; 95 percent needs 1,099.61 additional equivalents.
+
+#### Opening resource cleanup and permanent preview
+
+Inventory each exact container ID, ownership, image, mounts and writable-layer
+changes. There are 46 obsolete rewrite candidates among 56 stopped containers.
+Archive any unique writable data or relevant failure evidence before removal.
+Remove only confirmed obsolete rewrite containers without deleting named or
+anonymous volumes. Preserve unrelated environments and support services. Keep
+the current reusable test database, Redis and bounded builder stopped when idle.
+Never use broad prune. Record retained-volume ownership and restoration mapping;
+volume deletion is a later task after evidence-retention approval.
+
+Create one persistent oe-laravel-preview Compose environment from the existing
+Laravel stack, not an old test database or the legacy deployment template.
+It contains web, manager, database, Redis, ordinary queue, worklist queue,
+Reverb and renderer. Bind frontend localhost:8301 and realtime localhost:8302
+for SSH forwarding. Keep debug off, secrets outside the kit in machine-local
+secret files, outbound delivery disabled or local-only, and all data synthetic.
+Use dedicated persistent volumes and the existing current-date worklist factory.
+Never run destructive tests, test seeds or test cache resets on preview state.
+
+Promote verified images and production frontend assets after completed workflow
+checks, not live half-edited source. Retain the previous images and pre-migration
+preview backup. Brief signposted maintenance for manager-owned schema changes
+is approved; retain the long-migration healthcheck. Keep preview running between
+sessions and after this run, with protected ownership labels and restart policy.
+Use explicit per-service caps with combined preview memory below eight GiB;
+serialize heavyweight builds/test batches and retain four GiB of host headroom.
+Acceptance: login, patient summary, current-date worklist, realtime and supported
+rendering work; restart recovery and isolation from test runs are proved.
+
+#### Ordered functional queue
+
+1. Authorization, context and patient access: runtime clinical permissions,
+   institution/firm selection, union of assignments and explicit firm/service
+   rights, preferred firms kept separate from grants, profile/account lifecycle,
+   patient identity/search/PAS and event draft/signing behavior.
+2. Administration, files and integrations: real configuration consumers,
+   protected attachments, device intake, webhook payload/delivery consumers,
+   correspondence and event-image workflows using the existing outbox.
+3. Worklist and dependants: reconcile all 88 behaviors with existing code, then
+   close configuration, appointment updates, ticketing, next steps and outcomes.
+   Preserve lightweight projections and bounded publisher/subscriber contracts.
+   Only redesign-threatening concurrency proof belongs now; full scale is later.
+4. Examination and patient summary: medication consumers, diagnoses, recording,
+   history, vision/refraction, IOP and OCT. Keep familiar summary placement,
+   apply relevant medication PR evidence, progressive images off by default,
+   and generation suppression serving existing images without new rendering.
+5. Remaining clinical workflows: therapy, operation booking/notes, consent, CVI,
+   correspondence/DocMan, prescription consumers, biometry, injections, messaging,
+   request forms, checklists, device usage and event export.
+6. Remaining reachable specialist/shared behavior, supplied NOD replacement
+   outside the denominator, and GP download with verified current contracts.
+
+Use PageRegister and source/divergence evidence to take the first incomplete
+coherent workflow in each group. Reconcile working code before reimplementing it.
+A service or API stub alone is not complete: real entrypoint, authorization,
+persistence, ordinary transitions and downstream consumers must work. Record
+narrow missing authoritative rules with evidence and a resume trigger, then
+advance to another unblocked behavior without guessing or stopping the run.
+
+#### Proof, cadence and handoff
+
+Each closed workflow gets a representative parity test, caller coverage,
+authorization/validation/clinical invariants, small/large query-growth proof,
+relevant query-plan and schema/import checks, and one affected zero-retry
+Playwright workflow. Stronger immediate proof remains mandatory for calculations,
+signing, authorization and irreversible transforms. No Cypress or optimizer hints.
+Reuse named surfaces, canonical /api, readiness, bounded telemetry, caching
+contracts and isolated rendering; do not rebuild completed test infrastructure.
+
+Write hourly external checkpoints with current problem, acceptance, completed
+evidence, current work, next_item, after_next, blockers, coverage, verification
+state and resource ownership. Integrate around hours 12, 24 and 36 without
+pausing for approval. Run full ordinary PHP at the midpoint and the independent
+ordinary/shuffled pair at final freeze. Rebuild affected images only and bind
+evidence to exact source and image identities. Final proof includes strict
+ledger, relevant clean seven-schema migration and seed, frontend tests/build,
+affected Playwright and changed container/renderer gates. No repeated endurance
+runs merely to occupy time or increase accounting.
+
+At the terminal boundary reconcile source, functionality, divergences and tests;
+stage and show task diffs without committing or pushing. Stop disposable tests
+and builder, leave the verified preview running, and record access, revision,
+remaining defects and the next ordered item. Existing security image findings
+remain an open release gate; the restricted synthetic preview is not release
+readiness. Later ordering and deferred user requirements remain in master 26.16.
+
+Opening checkpoint 2026-09-07 10:02 BST: baseline identities reverified, prior
+goal confirmed complete, new fixed-deadline goal active. No product code changed
+and no containers removed yet. Current work is exact cleanup inventory and
+preview provisioning; next_item is preview acceptance, after_next is
+profile/context/runtime authorization closure. Verification state is the prior
+exact integrated baseline; this tranche has not yet earned coverage credit.
+
+Checkpoint 2026-09-07 10:47 BST: removed 46 confirmed obsolete rewrite containers
+after private writable-data/log retention; all 155 old volumes remain. The nine
+protected preview services are healthy with a combined 7.3125 GiB ceiling and
+six separate volumes. Login, messages, nine deferred patient-summary panels,
+current clinics and live row updates passed the corrected-driver browser walk.
+A controlled appointment change arrived without snapshot reload or patient
+summary reads; its original time was restored through the audited writer.
+Database/cache restart preserved all data counts and a Redis persistence marker.
+PDF and PNG passed separately. A real Chromium timer invocation defect was fixed
+with before/after regression proof, 51 passing Node tests, a production build
+and web image verification. Earlier attributable browser failures remain in the
+external evidence directory. Preview access is recorded in
+`/home/toukan/.claude/openeyes-rewrite-archive/access-notes/openeyes-preview-access.txt`; only synthetic data is permitted.
+Current work is profile firm preferences, reusing the canonical access predicate
+without turning preferences into grants. Next is the missing identity-provider
+and runtime authorization foundation, then patient lifecycle and event signing.
+Coverage remains 77.1463 percent code, 73.2152 percent overall, 14,125 canonical
+paths and 18,643 mappings; no new coverage credit is claimed for this checkpoint.
+The deadline and freeze are unchanged. Full PHP is not rerun for browser-only
+changes; image security findings remain release-open. No commit or push.
+
+Checkpoint 2026-09-07 11:02 BST: the owner-bound firm preference workflow is
+implemented and its expanded 104-test, 38,442-assertion confidence batch passes.
+The editor and context shell use seven queries at small and 1,000-firm sizes.
+A matching index alone did not remove the joined query's sort; one bounded
+configuration read followed by indexed firm keyset pages removes filesort and
+temporary tables without hints. All 56 query budgets and the zero-query surface
+manifest pass. Current work is the single browser smoke and clean-chain proof;
+next_item is exact-image reconciliation and bounded ledger evidence, after_next
+is the identity-provider/runtime authorization foundation. Coverage is unchanged
+until those gates close. The protected preview remains on its verified image.
+The test DB, Redis, temporary web and capped builder are active only for this
+slice. No broad blocker; full PHP remains scheduled for the midpoint. External
+checkpoint-1102.json records source identity and all failed/passed evidence.
+
+Checkpoint 2026-09-07 11:30 BST: firm preferences are integrated and the preview
+has been promoted after a private database backup and brief manager-owned
+maintenance. All nine services are healthy. Synthetic counts remain 20 patients,
+913 appointments, 242 worklist instances and one user; no seed was repeated.
+The final baked-image batch passed 78 tests and 35,792 assertions. Clean seven-
+schema migration, tiny seed, rollback/reapply and schema verification passed
+with 319 migrations. All 51 Node tests, web/manager image verifiers and the
+Playwright/Chromium compatibility probe pass. The isolated write-flow browser
+smoke passed once and restored preferences; the promoted-preview read-only walk
+also passed once with zero page, console, HTTP or request errors.
+Coverage is 77.16090274395194 percent code and 73.22789380530973 percent overall;
+14,125 canonical paths, 18,643 mappings and 1,217 pending reviews are unchanged.
+Only the verified UserFirm storage and fixture paths earn new credit. Provider
+permissions, recent-firm grouping and remaining presentation behavior stay open.
+The exact source is eea906421a8eae131b9803faa72129dacd6e42970b826dd006f5a731f3fdfe6f;
+web image starts 9ac61919937a and manager aa283aedd703. Unchanged queue, Reverb and
+renderer roles deliberately retain their previously verified images.
+Current work is the source-backed authorization/context foundation: independent
+firm/service grants and institution credential eligibility must remain distinct
+from profile preferences. Next is their bounded runtime/admin consumer; after-
+next is patient identity/search/PAS and event draft/signing. Multi-institution
+provider login remains a separate coordinated schema/session/membership gate,
+not a permission inferred from a preferred firm. No broad blocker, no commit or
+push, and the fixed deadline and freeze are unchanged. External checkpoint-
+1130.json records evidence identities, residual scope and resource ownership.
+
+Checkpoint 2026-09-07 12:18 BST: independent firm and service grants are integrated
+with their authorized administration and real context-picker consumers. The
+assignment/direct/service union uses unique-key joins; preferences remain
+non-authoritative. The initial packet includes history twins, foreign keys,
+unique grant pairs and the admin firm keyset index. A clean seven-schema chain
+passed all 320 migrations, tiny seed, 27 tests/442 assertions, rollback/reapply
+and schema verification. The final baked-image batch passed 136 tests/38,700
+assertions; all 51 frontend unit tests, 61 query budgets, production frontend
+build and web/manager/browser image checks pass. Small and 1,000-firm reads use
+nine fixed editor, shell and restricted-picker queries without filesort,
+temporary tables or optimizer hints. The earlier materialized subquery failure,
+browser picker-reopen assumption and stale ledger cohort failure are retained.
+The corrected isolated write browser passed once and restored all original
+grants; the promoted-preview read-only walk passed once with no permission
+changes or errors. A private backup and prior images are retained. All nine
+preview services are healthy; temporary web/browser helpers were removed and
+the test DB, Redis and builder are stopped while idle. No volume was removed.
+Coverage is 77.16333820425393 percent code and 73.22895575221239 percent overall,
+with 14,125 canonical paths, 18,643 mappings and 1,217 pending reviews. The old
+UserFirmRights assignment-only mapping was corrected down from 100 to 90;
+UserServiceRights rises from 65 to 90 only for verified stored grant behavior.
+Current source is 6986525f452803a058a5c676de94877982ab9d680821b825ba4245ab44a360f0;
+preview web starts f3def5c236ba and manager 77b12f6cf8af. Other roles retain their
+previously verified images. Next is bounded local patient-search pagination:
+the current page cannot reach matches after the first 50. Existing first-name
+and date-of-birth search is already implemented and must not be re-ported.
+After-next remains patient identity/PAS and event draft/signing caller gaps.
+PAS language/interpreter/large-print data belongs to source-backed change events
+and separate API/manual entries, not flattened demographics; its ownership and
+preservation contract must be established before acceptance. Provider login and
+full historical import remain narrow deferrals. No broad blocker, no commit or
+push. The fixed deadline and freeze are unchanged. External checkpoint-1218.json
+records exact identities, completed evidence, next work and verification state.
+
+Checkpoint 2026-09-07 12:57 BST: local patient search now has bounded Previous
+and Next pages, accurate per-page messaging and authenticated context-bound
+cursors. Existing first-name, surname, date-of-birth and configured identifier
+search remain; retired identifiers are no longer displayed. First-page API
+fields remain compatible with added pagination metadata. No count or offset
+query is introduced. The production name query is now the registered query,
+including live episode/event institution access. A one-row scalar membership
+probe avoids the observed large-fixture EXISTS materialization without hints.
+This trades materialization for indexed correlated probes; realistic sparse-
+access and history-heavy distributions must still compare examined rows, database
+time and temporary-table counters before declaring scale acceptance.
+The baked batch passes 105 tests/38,490 assertions, all 51 frontend unit tests,
+61 query budgets, strict ledger, production build and three image checks.
+Both the isolated write-assisted browser walk and read-only preview check pass
+once with zero errors or OOM events. Three synthetic records exist only in the
+disposable test namespace. Preview counts remain 20 patients and 320 migrations.
+A private backup and prior images are retained; all nine services are healthy.
+The temporary web was removed after log retention, and test DB, Redis and builder
+are stopped while idle. No volumes were deleted.
+Coverage is 77.16496184445528 percent code and 73.22966371681416 percent overall,
+with 14,125 canonical paths, 18,643 mappings and 1,217 pending reviews. Only the
+verified results view earns 0.10 new code equivalent. The patient-search feature
+summary now reflects its actual 182-path cohort, not the stale 62-path subset;
+this accounting correction is not new functional credit. Source is
+26b56ae58a88c68770c04c2f8e14f465fd5e604a917843ce34155fdb3ed155ae;
+preview web starts 9d3c7c0ee2ad and manager 756fd8e6a2b6. Other roles retain their
+accepted images. Next is source-backed local patient registration and identity
+allocation: preserve local-versus-PAS ownership, configured identifier/status
+requirements, source-specific validation and protected referral documents.
+Automatic identifiers need a transactional allocator, not the legacy scan and
+maximum calculated before save. Duplicate-name warnings must move the existing
+database routine into visible application code without unbounded candidate
+scans. Complete the bounded-context schema packet before loading data. After-next
+is remaining patient identity/PAS and event draft/signing callers. Provider
+login, historical import and realistic-volume scale remain narrow deferrals.
+No broad blocker, no commit or push. Deadline and freeze are unchanged. External
+checkpoint-1257.json records identities, verification state and the next items.
+
+Checkpoint 2026-09-07 13:52 BST: local patient registration is implemented in
+working source, not yet accepted or promoted. The new schema packet ran as 321
+migrations in seven separate synthetic schemas; an invalid seed-setting scope
+was corrected and the seed/schema checks then passed. Create/edit, local
+ownership, source-specific validation, configured identifiers, protected referral
+Documents, actor-bound creation replay and optimistic edit conflicts are wired.
+Duplicate warnings inspect same-DOB keyset batches, disclose only institution-
+owned patients and explicitly flag unexamined candidates. The legacy stored
+Levenshtein routine is not recreated. GP/practice/user searches are institution-
+scoped and paged. Numeric identifiers use an indexed row projection maintained
+by PHP, reserve retired numbers and fail closed before an incomplete import is
+rebuilt. No optimizer hints or database business automation were introduced.
+The expanded functional/query-plan pack passes 29 tests and 371 assertions;
+70 named query-plan statements pass. Small/large reads remain fixed at four
+queries, and create/edit page query counts stay fixed below their budget of 35.
+The 51 frontend unit tests and production build pass. Earlier route-default,
+boolean death-date validation, seed-scope and fixture failures are retained.
+Next: finish downgrade/reapply, exact-image confidence and no-retry browser
+proof, then reconcile evidence before preview promotion. Additional Australian
+practitioner associations and historical referral linkage remain explicit gaps.
+The legacy local-patient cache listener does not prove inbound PAS APIs should
+reject local updates; establish that contract separately. After-next remains
+identity/PAS and event draft/signing callers. Coverage remains 77.1650 percent
+code and 73.2297 percent overall with no unfinished-registration credit. The
+protected preview remains on the accepted patient-search images with 20 patients;
+bounded test services are running only for current verification. No volumes,
+commits or pushes. The fixed deadline and scope freeze are unchanged. External
+checkpoint-1352.json records continuation details and verification boundaries.
+
+Checkpoint 2026-09-07 14:42 BST: the selected local patient registration workflow
+is accepted and promoted. The final baked confidence pack passes 156 tests and
+36,378 assertions, strict source accounting, 70 query-plan budgets, and the web
+and manager image checks. All 51 frontend unit tests and the production build
+pass. Clean seven-schema migration, tiny seed, schema verification and guarded
+downgrade/reapply evidence is retained. The zero-retry browser create/edit flow
+saved a protected referral PDF and kept 100 rapid save clicks to one request.
+An initial readonly binding defect was reproduced and corrected. Stale ledger
+test counts were corrected after the nine path-specific evidence updates; their
+failure log remains. No application failure remains in this focused batch.
+The preview was backed up privately and migrated by the manager in maintenance;
+only the new registration configuration and synthetic administrator capability
+were added. All 20 existing patients are unchanged. The final read-only browser
+check made no registration writes, and all nine services are healthy. The exact
+source digest is bc5a34d32686dd8fedb1915b238886b523d84e27c6331d8c55c1d40e1a9c9bbc;
+web image starts 49686f899236 and manager 5e49b99b8fc4. The completed isolated web
+was removed after storage/log retention, and the idle builder was stopped.
+Volumes and previous images are retained. Code coverage is 77.2586 percent and
+overall 73.2705 percent across 14,125 canonical paths and 18,643 mappings, with
+zero missing paths and 1,217 pending reviews. The nine revised rows stay partial.
+Next: source-backed event draft lifecycle and save/recovery callers. After-next:
+administration, file and integration consumers from the ordered queue. Local
+inbound PAS ownership, historical registration imports and additional Australian
+practitioner associations remain explicit narrow deferrals; no clinical rule is
+guessed. Full realistic load, full UAT, backup restore drill and image-security
+release findings remain open. All 290 Laravel task/inherited files are staged,
+with zero tracked unstaged changes and the empty worker file preserved. No
+commit or push. The fixed deadline and scope freeze remain unchanged. External
+checkpoint-1442.json contains exact identities and continuation evidence.
+
+Checkpoint 2026-09-07 15:41 BST: examination draft lifecycle is implemented but
+not yet accepted or promoted. The focused pack passes 52 tests and 570 assertions;
+corrected baked confidence, strict ledger, image and manager checks pass. The
+24-hour expiry, setting, owner/revision boundaries, atomic clinical-save cleanup,
+last-modifier soft-delete cleanup and bounded manager purge use existing storage.
+The 70 global query-plan budgets remain; draft owner/event operations are checked
+against populated small/large fixtures rather than weakening empty-table plans.
+The first browser exposed a historical seed event without an institution snapshot;
+the second setup was rejected with stale CSRF419 before draft or clinical writes.
+Both failures remain. The smoke and draft component now use the current session
+cookie; rebuild and zero-retry browser acceptance are next. No draft coverage
+credit is added: code77.2586 percent, overall73.2705 percent, canonical14,125,
+missing0, pending1,217. Preview stays on accepted registration images with its
+20patients preserved. The failed first web was archived and removed; all volumes
+remain. After-next is a source-backed profile/signing or administration/file
+consumer. Full draft discovery and newer-clinical-record warnings remain separate
+gaps. No commit or push; deadline and scope freeze unchanged. External
+checkpoint-1541.json records resumable state and exact prior image identities.
+
+Checkpoint 2026-09-07 15:53 BST: selected examination restore-point lifecycle is
+accepted and promoted. Final exact-image proof passes106PHP tests38,285assertions,
+strict ledger,51frontend tests, production build and web/manager verifiers. The
+expanded141-test PHP proof remains for unchanged backend behavior. Browser proof
+passes1event-create,2draft saves,1clinical Save and1discard;100first clicks issue
+onePUT. The prior seed-context, CSRF and nested-Inertia-response deadlock failures
+remain recorded. Save now uses its ordinary redirect response, removing the
+redundant event reload. Preview is backed up privately, all20patients preserved,
+manager setting/schedule/schema checks pass without DDL, and read-only browser
+regression is green with9healthyservices. Accepted source starts c6b1eb1429eb,
+web9a97e700ea91, manager9b6cc1c1cb7c. Later evidence-only ledger and PageRegister
+edits are not claimed baked. Coverage remains77.2586percent code and73.2705overall,
+no draft credit. All301Laravel and16Docker changes are staged; the earlier11Docker
+count omitted five preview additions and is corrected here. Completed test web
+and browser helpers are removed with private storage/log retention; builder is
+stopped and all volumes remain. Next is missing profile PIN controls and custody
+checks, preserving working prescription consumers. After-next: explicit synthetic
+event-context repair and ordinary administration/file/integration consumers.
+Historical event context must never be guessed from the current user session.
+Draft discovery/newer-record warnings remain narrow gaps. Deadline/freeze remain;
+no commit or push. External checkpoint-1553.json records exact evidence and backup.
+
+Checkpoint 2026-09-07 16:26 BST: hash-only local-account PIN controls are accepted
+under My profile, retaining the existing canonical API and signing consumers.
+Active self-only authorization, locked current-password confirmation, atomic
+configuration credential/audit writes and five-attempt per-user rate limiting
+pass155baked tests/39,564assertions. Strict ledger and51frontend tests pass;
+production and manager image checks pass. The first browser passed with two
+endpoint cancellations; consuming and validating success responses removed both.
+Changed-source browser passes once with100clicks producing one request per action,
+no clinical writes, errors, cancellations or OOM. Preview read-only check passes,
+all20patients59events321migrations remain and all9services are healthy. Accepted
+source7d2e430d3405, webf842c9832218, managercf2e201b54b5. Three source rows and
+profile PageRegister entries now point to actual PIN proof; coverage stays
+77.2586percent code/73.2705overall. Yearly regeneration quota and SSO ownership
+remain narrow DIV-355 gaps. Both completed PIN test web containers and browser
+helpers are removed after private retention; builder stopped, all volumes kept.
+There are307staged Laravel and16Docker files, with separate in-progress tiny
+fixture/test changes not claimed part of the accepted images. Current work is
+explicit synthetic context for59tiny events: the missing-snapshot test failed
+before the fixture correction and now passes3541assertions. Fresh manager-owned
+seven-schema migration/tiny load and authorization regressions are running only
+in oe_event_context_20260907 schemas. No preview reseed, historical context
+guessing, permission bypass, schema change or coverage credit. Next finish this
+fixture repair safely; after-next ordinary administration/files/integrations.
+Hourly evidence checkpoint-1626.json preserves the fixed deadline and freeze.
+
+Checkpoint 2026-09-07 16:48 BST: explicit context for all59 tiny synthetic events
+is accepted. Fresh321 migrations and tiny load on seven isolated schemas pass,
+with29 tests/5065 assertions and57 source-accounting tests/38931 assertions.
+The maintenance-only repair helper proves null-only eligibility, atomic history
+and audit, conflict rejection, rollback and idempotency. After a fresh private
+backup, preview manager2e60f01799a5 was promoted and59 eligible snapshots repaired;
+no reseed, clinical element change or DDL. Webf842c9832218 remains unchanged.
+The isolated restore/discard workflow passes once. Preview Edit/recovery passes
+once with exactly one existing personal-hotlist activity POST and zero event,
+draft or clinical writes; this is explicitly not wholly read-only. No browser
+errors or OOM; navigation-read cancellations and both corrected-driver failures
+are retained. All20 patients,59 events,321 migrations and nine healthy preview
+services remain. Source inventory5439;310 Laravel files and16 Docker files staged,
+no tracked unstaged changes. Coverage77.2586percent code/73.2705overall unchanged.
+Finished isolated web storage/logs are retained before removal; all volumes kept.
+Group2 review confirms basic protected attachments, device intake and webhook
+outbox/delivery already work. Binary document rotation/composition and device
+execution contracts remain narrow evidence-dependent gaps, not assumed complete.
+Next reconcile the88 worklist behaviors and choose the first bounded missing
+appointment/pathway interaction; after-next ordinary recording and summary
+consumers. No new runtime scope was opened during the fixture correction.
+Deadline and scope freeze remain unchanged; no commit or push.
+
+Checkpoint 2026-09-07 17:28 BST: ordinary Next Steps status integration is
+accepted and promoted. The existing step endpoint now derives the parent state
+and updates only its linked appointment projection and compact outbox inside
+the clinical transaction, using appointment-first locking. Active worklist
+capability, current institution, child ownership, source watermarks, history,
+audit, rollback and repeat-request idempotency are covered. No DDL, new cache,
+optimizer hint, clinic count-shard write or patient-history expansion. Small
+and large fixtures have fixed query growth; three focused point-query plans
+pass without filesort/temp. The70 global tiny plan budgets are unchanged.
+Baked137 PHP tests/38771 assertions,51 frontend tests, strict accounting,
+production build and web/manager image checks pass. The browser proves three
+100-click transitions, three compact deltas and persisted reload state. Its
+first final assertion used lowercase innerText against capitalized display;
+that failure and four cancelled hotlist navigation reads remain recorded.
+The corrected driver passes once, with no browser errors or OOM. Websocket
+transport and the full worklist scale matrix are not claimed by this slice.
+Preview was privately backed up and promoted without migration/reseed; all20
+patients59 events321 migrations remain. Navigation regression passes, all9
+services are healthy, and completed isolated web/browser helpers are removed
+after retention. Builder stopped; all volumes retained. Accepted source starts
+292548fea164, web a65ecd08baeb, manager e7a2f6093e38. Later register/divergence
+evidence edits are not claimed baked. Inventory5442;318 Laravel and16 Docker
+files staged with0 tracked unstaged. Coverage remains77.2586percent code and
+73.2705overall, with14125 canonical/18643 mappings/0 missing/1217 pending.
+All88 worklist IDs remain. WL-037 correctly targets one visit, not a clinic;
+WL-052 creates a manual list, not a patient appointment. Their source-backed
+acceptance descriptions are corrected, not marked complete. Current/next item:
+ordinary Add steps projection integration. After-next: attendance and other
+source-backed worklist interactions, then ordinary recording/summary consumers.
+Specialized steps, optimistic versions, local/PAS ownership, active-pathway
+conflicts and full worklist parity remain explicit gaps. No broad blocker,
+commit or push. Deadline/freeze unchanged; checkpoint-1728.json is resumable.
+
+Checkpoint 2026-09-07 17:58 BST: ordinary preset append is accepted and promoted.
+The existing Add steps action now shares appointment-first locking and atomic
+projection/outbox updates with step changes. Presets are active, preset-only
+and institution-scoped; existing steps and parent status are preserved.
+The browser submits its expected step IDs, so stale repeat submissions receive
+409. Callers omitting that optional field are not claimed idempotent. Selected
+insertion positions, specialized configuration/hooks and pathways beyond the
+temporary64-live-step editor limit remain explicit WL-037/DIV-300 gaps.
+No schema change, new cache, optimizer hint or coverage credit. Focused60 tests
+3040 assertions, staged104 tests35927 assertions, baked132 tests38678 assertions,
+51 frontend tests, strict ledger, production build and image checks pass.
+The isolated browser proves100 rapid clicks create one preset append, one
+compact delta and four persisted steps. Browser navigation regression passes
+after private backup and promotion, with20 patients59 events321 migrations and
+all9 preview services healthy. Browser errors/OOM are zero; cancelled hotlist
+reads are recorded, not hidden. Completed helpers are privately retained then
+removed; builder stopped and all volumes kept. Accepted application source
+1af05eadb09d, web29332628f749, managera7a8984b7054; later acceptance prose is not
+claimed baked. Inventory5444;321 Laravel and16 Docker files staged. Coverage
+remains77.2586percent code/73.2705overall,14125 canonical/18643 mappings/0missing/
+1217pending. PAS source confirms omitted assignee preserves owner while an
+explicit assignee can replace or clear it. A possible derived-field replay
+hash churn remains an unproven follow-up, not a claimed defect. Next attendance
+projection integration with legacy checkout semantics checked first; after-next
+other ordinary worklist interactions and recording/summary consumers. No broad
+blocker, commit or push. Deadline/freeze unchanged; checkpoint-1758.json records
+identities and the verification boundary.
+
+Checkpoint 2026-09-07 18:18 BST: ordinary attendance is accepted and promoted.
+Source correction: check-in derives active/waiting/done from remaining steps;
+checkout completes its discharge step and marks discharged, not completion of
+unrelated work. The existing durable PathwayCheckedOut event joins history,
+audit and compact worklist projection in the clinical transaction. Repeat
+actions preserve timestamps/actors without duplicate events; unauthorized,
+missing-step and failed-write paths are covered. The type-filtered attendance
+lookup failed its filesort gate. One ordered response collection now replaces
+that lookup, with LIMIT65 and explicit rejection beyond the temporary64-step
+editor bound. No hint, schema change, new cache or global plan-budget credit.
+110 focused tests3387 assertions,166 staged tests38777 assertions,187 baked
+tests39103 assertions and51 frontend tests pass, as do strict accounting and
+both image verifiers. Browser200clicks produce2attendance PUTs and2compact
+deltas, preserve unrelated steps and reload discharged. The backed-up preview
+navigation passes;9healthy services retain20patients59events321migrations.
+No browser/HTTP/OOM errors;4isolated and2preview hotlist GET cancellations are
+recorded. Finished helpers removed after private retention; builder stopped;
+all161volumes kept. Accepted sourcecc1cdfc67455, webbd60b1481d60,
+manager8e817c20fff9; inventory5446. Later acceptance prose is not claimed baked.
+324Laravel and16Docker files staged; one new PAS characterization test remains
+unstaged for the next item. Coverage unchanged77.2586percent code/73.2705overall,
+14125canonical/18643mappings/0missing/1217pending; all88 worklist IDs retained.
+Next: ordinary owner assignment. Its two-case regression now proves an equal
+source-hash shortcut incorrectly skips explicit PAS assign/clear after a local
+owner change. Preserve omitted-owner and sequenced-source semantics while
+fixing that narrow rule, then expose bounded owner editing. After-next other
+ordinary worklist interactions and recording/summary consumers. Undo checkout
+also has a legacy emergency-care HL7_A13 effect and remains a separate gate.
+No broad blocker, commit or push. Deadline/freeze unchanged. Resumable record:
+checkpoint-1818.json; next hourly checkpoint due19:18BST.
+
+Checkpoint 2026-09-07 18:43 BST: ordinary owner assignment is accepted and
+promoted. A source-backed PAS defect first fails two cases: identical explicit
+unsequenced assignment/clear was skipped after a local owner change. The fix
+preserves explicit intent without altering omitted fields or sequenced replay
+rules. Local assignment uses the appointment-first transaction, stale-owner
+conflicts, history/audit and one compact projection; source intake and clinic
+counts remain unchanged. Active institution-scoped user lookup reuses existing
+indexes and encrypted keyset cursors with25choices, not a full user preload.
+68focused tests768assertions and152staged/baked tests39684assertions each pass,
+alongside51frontend tests, strict accounting and both image verifiers. Three
+fixture-specific plans prove bounded owner/step reads; global70budgets unchanged.
+The one-shot browser100clicks produce1assignment1lookup1delta and persisted
+reload, preserving unrelated steps. Backed-up preview navigation passes with
+no clinical writes;9healthyservices retain20patients59events321migrations.
+No browser/HTTP/OOM errors;4isolated and2preview hotlist GET cancellations kept.
+Finished helpers removed after private evidence retention; builder stopped and
+all161volumes kept. Accepted sourcef72118f8d12e, web7484be502ec9,
+manager4efd284cbf4e; inventory5450. Later acceptance prose is not claimed baked.
+333Laravel and16Docker files staged; empty worker preserved; no commit/push.
+Coverage unchanged77.2586percent code/73.2705overall,14125canonical/18643mappings/
+0missing/1217pending. All88 worklist IDs retained; WL041 remains required for
+remaining behavior. Next one bounded on-demand dashboard pathway panel reusing
+the ordinary controls, without loading an examination or patient history;
+after-next ordinary recording and summary consumers. Local removal, pathway
+instantiation,64-step bound, deployed integrations and full scale remain gates.
+No broad blocker. Deadline/freeze unchanged; checkpoint-1843.json records the
+resumable boundary, next hourly checkpoint due19:43BST.
+
+Checkpoint 2026-09-07 19:22 BST: direct worklist pathway details are accepted
+and promoted. One exact authorized appointment is read only when opened;
+the dashboard and Examination reuse the ordinary panel. A shared preset picker
+merges two indexed scoped50-choice pages without step payloads. Clean322
+migrations/tinyseed/schema verification pass, as do index rollback/reapply,
+194staged and194baked tests40282assertions each,53frontend tests, strict ledger
+and both image verifiers. The isolated browser100clicks produce one owner
+write and automatic compact delta, no eager detail/history or action-triggered
+snapshot, restored focus and persisted reload. Shared Examination and backed-up
+preview navigation also pass. Preview9healthy services preserve20patients,
+59events and1user with322migrations; index application29.51ms on tiny data.
+No browser/HTTP/OOM errors; two hotlist GET cancellations per browser retained.
+Finished helpers removed after private evidence retention; builder stopped;
+all161volumes kept. Accepted sourceaeea784ced8b, web55caf7e46779,
+manager02c25a4c174f; inventory5456. Later acceptance prose is not claimed baked.
+342Laravel and16Docker files staged; empty worker preserved; no commit/push.
+Coverage unchanged77.2586percent code/73.2705overall,14125canonical/18643mappings/
+0missing/1217pending. All88 worklist IDs remain governed. Next ordinary Family
+History previous-default/source-retirement review, then remaining recording
+and summary consumers; integrated checkpoint around21:40BST. Further Findings
+leftover views are not proof of a current workflow: pinned2023retirement and
+2024History conversion were found and must be reconciled before any port.
+No broad blocker. Deadline/freeze unchanged; checkpoint-1922.json is resumable,
+next hourly checkpoint due20:22BST.
+
+20:06 BST resumable checkpoint: Family History previous defaults are implemented
+but not yet accepted or promoted. Scoped chronology/provenance, independent
+retired snapshots, stale-copy checks and bounded entry/config reads pass 21
+tests with 266 assertions. Joined and EXISTS query shapes failed the strict
+sort/temp-table gate; an indexed root plus scalar unique-parent check passes
+without hints or waivers. Two reads cover one or 100 entries with 1,000 earlier
+histories. Migration rollback, authoritative backfill and reapply pass; a clean
+seven-schema install passes 323 migrations, tiny seed and 26 tests with 288
+assertions. The first candidate passes 127 staged and 127 baked tests with
+36,279 assertions, 53 frontend tests and strict ledger verification.
+
+Real save-control review found unchanged copied defaults were not marked dirty.
+The narrow UI correction is staged and rebuilding at source 1477c1c39427.
+Browser preparation is complete; no browser acceptance is claimed. Next finish
+corrected images and baked gates, run one unchanged-copy/edit/reload workflow,
+then back up and promote only if green. After that continue ordinary recording
+and summary consumers, with hour-12 integration around 21:40 BST. The existing
+Family Social tile displays saved history but its complete shared contract and
+historical transforms remain unclaimed. Future context/import writers must
+maintain chronology transactionally; changed parent context fails closed.
+
+Preview remains nine healthy services on accepted dashboard source aeea784ced8b,
+with 20 patients, 59 events and 322 migrations. Builder is bounded at 1 GiB;
+no isolated app/browser is running yet. All 161 volumes remain. There are 351
+Laravel and 16 Docker staged files, inventory 5,459; no commit/push. Coverage is
+unchanged at 77.2586 percent code and 73.2705 overall, 14,125 canonical paths,
+18,643 mappings, zero missing and 1,217 pending review. No broad blocker;
+checkpoint-2006.json records identities and evidence. Next checkpoint by
+21:06 BST; the agreed deadline and scope freeze are unchanged.
+
+20:28 BST accepted checkpoint: Family History defaults now pass the actual
+unchanged-copy/save/reload/independent-edit workflow. The first browser exposed
+an edit-mode integration defect after its first successful save; that failure
+is retained. The corrected candidate passed once on fresh synthetic events,
+with exactly two Family History saves, unchanged source, no unexpected writes
+or browser errors and 386 MiB peak browser memory. A separate SQL regression
+caught Laravel's per-parent eager window query; both previous and saved-current
+reads now use two queries at one/100 entries and reject that query shape.
+
+The corrected baked source c28c8229a7e1 passes 127 PHP tests with 36,290
+assertions, 53 frontend tests, strict ledger and both image verifiers. Preview
+was backed up before manager-owned migration323, then schema-verified and
+returned live. All20patients59events remain. Web e6c4c1db7db4 and manager
+45629b18867c are accepted; nine services are healthy and the separate preview
+navigation/recovery-ready browser passed without clinical writes. The backup
+has seven schemas,1322tables and SHA256 db94074d6fd8fbc1079483cc88f7b2f38c7827a6740502e1c663e718ca62f3ea;
+restoration is not claimed. Both isolated app webs were privately archived
+before removal. Browser helpers are removed, builder stopped, all161volumes
+retained. Seven canonical Family History rows were reconciled without score
+increase. Coverage remains77.2586percent code/73.2705overall;351Laravel and
+16Docker files are staged, no commit/push. Post-acceptance documentation/ledger
+source ed1f4b09c370 differs from the accepted image only in those records.
+
+Next connect the ordinary History Previous Management panel to existing
+bounded management readers, including source selection, laterality and plans;
+check repeated child hydration in the reusable reader. Then continue History
+copy/projection consumers or the next ordinary recording gap. Hour12 integration
+is still around21:40BST. Complete Family/Social contracts, historical transforms,
+all88worklist gates, full-scale/security/UAT and midpoint/final suites remain
+open. checkpoint-2028.json holds exact evidence; next hourly by21:28BST.
+
+21:08 BST accepted checkpoint: History Previous Management now shows the earlier
+live same-patient/institution preferred-service summary, with fallback, recorded
+author, selected eyes and existing plans. Shared management history repeated
+plan reads were reproduced at 3 queries for one result and 32 for 30; both now
+use two. Preferred/fallback reads remain at two/three for one and 1000 roots,
+with strict no-sort/no-temp plans and no hints. Ordinary views defer editing
+configuration, while prescription redirects preserve their eager edit path.
+
+The first browser stopped at a mistaken lazy-request assumption; its failure
+is retained. The corrected immutable candidate passed once with one lazy read,
+both-eye content, escaped text, unchanged History and patient-summary rows, and
+zero clinical writes. Baked source 179cbc75b098 passes 120 PHP tests with 36,226
+assertions, 55 frontend tests, strict ledger and both image checks. Preview web
+bf4c6ca77bd1 and manager d520eaa64259 are accepted after backup, schema check and
+one separate navigation/recovery-ready browser. Nine services are healthy;
+20 patients, 59 events and 323 migrations are unchanged. Both isolated History
+webs were archived before removal; browser helpers removed, builder stopped,
+all 161 volumes retained. Three canonical History rows were reconciled without
+score increase. Coverage stays 77.2586 percent code and 73.2705 overall, with
+14,125 canonical paths, zero missing and 1,217 pending review. Laravel has 361
+staged files, Docker 16; no commit/push. The post-acceptance source 62085a9823a8
+differs only in documentation/ledger records. checkpoint-2108.json holds evidence.
+
+Next port the missing whiteboard consumer of configured numeric lab results,
+with bounded ordered pages and access to older results. Then integrate around
+hour 12 at 21:40 BST and continue remaining booking risk or ordinary clinical
+consumers. Whole-file scores on broad legacy controllers/APIs are not proof
+that every method is complete; preserve method-level gaps independently of the
+established percentage. All prior clinical, scale, security and UAT deferrals
+remain open. Next hourly checkpoint by 22:08 BST; deadline and freeze unchanged.
+
+21:41 BST hour-12 integration: the ordinary numeric lab-result whiteboard
+consumer is accepted. Current display configuration, retired visible types,
+recorded labels, zero values, units and comments are preserved. Twenty newest
+results have explicit keyset access to older rows. One query handles small and
+1000-row histories, with live same-patient/institution parent checks. Strict
+initial and continuation plans reject sort, temporary tables and full scans
+without hints. The mixed-type secondary index is manager-owned; seven clean
+schemas, all 324 migrations, tiny seed and row-preserving rollback/reapply pass.
+
+Exact source 60d4b6b5b218 passes 120 PHP tests/38,696 assertions, 55 frontend
+tests and both image verifiers. One isolated browser proves 20/40/43 results,
+one request from 100 rapid clicks, escaping and no clinical writes. Preview web
+57712b51c561 and manager 6b194debd59b are accepted after backup and migration,
+with 20 patients, 59 events and nine healthy services. The first preview smoke
+hit a response-header versus DOM-render timing race. Its failure is retained;
+the corrected external driver checks the body and visible controls and passes
+once without product changes or clinical/draft writes. Lab web writable state
+was archived privately before removal. Builder and browser helpers are stopped
+or removed; all 161 volumes and unrelated deployments remain untouched.
+
+The hour-12 affected-workflow integration passes 237 tests/2,166 assertions.
+The exact-image census validates 1,695 actions in 286 controllers, including
+1,667 reachable actions. Neither census nor broad full-score controller/API
+paths prove every function is complete. Remaining shared method gaps stay
+explicit, and the established denominator is not silently changed. Three
+canonical whiteboard rows were reconciled without score increase: code stays
+77.2586 percent, overall 73.2705 percent, 14,125 canonical paths, zero missing,
+1,217 pending review. Laravel has 370 staged files and Docker 16; no commit/push.
+Post-acceptance source 0a83f7f9dba9 differs only in documentation/ledger records.
+
+Next connect medication-specific whiteboard status, comments, dates and INR
+through the existing risk projection and a bounded authoritative result read.
+Then address procedure-required risk configuration or the next unblocked
+ordinary clinical function. Diabetes-set equivalence, sparse-visible-history
+scale proof, consent, biometry and exact geometry remain open. All previous
+clinical, 88-item worklist, security, migration and UAT gates remain. Full
+ordinary PHP is due at midpoint; final ordinary and shuffled suites remain
+independent gates. checkpoint-2141.json holds evidence and identities; next
+hourly checkpoint by 22:41 BST. Deadline and scope freeze are unchanged.
+
+22:05 BST accepted checkpoint: anticoagulant present/unchecked warnings and
+alpha-blocker details now use the latest complete assessment, stable codes,
+recorded comments and dates. Positive anticoagulants adds at most one latest-INR
+query, independent of general laboratory display settings. Zero values are
+preserved. No medication-list inference or duplicate anticoagulant warning is
+introduced. Missing assessments remain unchecked even with no relevant risks.
+
+Exact source 255d65634cb4 passes 134 PHP tests/36,346 assertions, 55 frontend
+tests, strict ledger and both image verifiers. Small/large INR queries remain
+1/1 and the complete fixture 4/4, under the five-query ceiling. An overly strict
+single-index-name assertion failed on an all-INR fixture; both suitable existing
+ordered indexes are now recognized without relaxing sort/temp/scan/cost gates.
+No DDL, hints or cache. One isolated browser proves warnings, dates, latest zero
+INR, escaped notes, count, reload and separate unchecked state with no clinical
+writes. Preview web a173535236a9 and manager 1046e98c3bb2 are accepted after a
+seven-schema backup, schema/count checks and separate recovery-ready browser.
+All 20 patients, 59 events and 324 migrations remain; nine services healthy.
+The temporary web's writable state was archived before removal, helpers removed,
+builder stopped, all 161 volumes retained. Three canonical whiteboard rows were
+reconciled without score increase: code77.2586 percent, overall73.2705 percent,
+14,125 canonical, zero missing,1,217 pending review. Laravel372 and Docker16 files
+staged; no commit/push. Post-acceptance document/ledger source81728778785f.
+
+Next port procedure-risk assignment configuration and the required absent/
+unchecked whiteboard prompts. A complete normalized configuration schema packet
+is recorded in procedure-required-risks-packet.txt before loading data. Reuse
+the admin family, history and current risk projection patterns, with bounded
+exact-procedure admin search and no per-risk queries. Then review diabetes-set
+equivalence or move to another unblocked ordinary clinical consumer. Consent,
+biometry, exact geometry and all prior clinical/scale/security/UAT gates remain
+open. checkpoint-2205.json holds evidence; next hourly by23:05BST. Full ordinary
+PHP is due at midpoint; deadline, scope freeze and final gates remain unchanged.
+
+#### 22:40 checkpoint - procedure-required whiteboard risks accepted
+
+The missing normalized procedure-risk association, portable admin/API and real
+booking consumer are accepted. Exact-procedure search retains context after
+save. Reference validation, pair uniqueness, both foreign keys, versioned updates
+and no-op imports are verified. Current complete assessment supplies required
+absent/unchecked prompts without clinical inference or duplicate positives.
+Retired vocabulary remains visible; retired assignments stop prompting.
+
+Source30c7ec4fc4a5 passes158PHP tests/39,700assertions,55frontend tests and both
+image verifiers. Query counts remain admin4/4,requirements2/2,unchanged import3/3;
+50selected procedures and50unchanged imported rows do not introduce N+1 reads.
+Exact scoped plans have no filesort/temp/full-scan/estimate violation or hints.
+All325migrations and tiny seed completed in fresh seven-schema fixtures. Later
+schema verification hit the isolated testDB2GiB cgroup cap after accumulated
+test activity. Only that DB was restarted, at the same cap; schema verification
+and55tests then passed. Keep this recovery evidence, not an uninterrupted-pass
+claim. Check DB memory before future heavy batches and restart only at a safe
+boundary with no active dependent job. Preview and host did not OOM. An existing
+authentication test leaves one synthetic event; empty-table rollback/reapply
+preserved the measured20patients60events baseline without deleting it.
+
+One isolated browser adds and retires requirements, checks all states, escaping,
+defaults and search retention: three config saves, no clinical writes or errors.
+Preview web03362c1dbaba and manager15451bc44f46 are accepted after a retained
+seven-schema backup,325schema/count verification and separate navigation smoke.
+All20patients59events remain and nine services are healthy. Temporary web state
+was privately archived before removal; helpers removed,builder stopped,all161
+volumes retained. The association model and schema alone gain credit; broader
+whiteboard/controller scores stay unchanged. Code77.2749percent,overall73.2847,
+14,125canonical,zero missing,1,217pending,407zero-score code,538deferred code.
+Fifty-six ledger tests and strict verification pass after the two stale cohort
+assertions were corrected. Post-acceptance evidence/test sourcee9b032ff1870;
+Laravel380 and Docker16files staged, no commit/push.
+
+Next trace legacy diabetes root concepts plus descendants against the current
+configured type1/type2 set; do not assume equivalent clinical classification.
+If authoritative taxonomy mapping is unavailable, record that narrow gap and
+advance to linked whiteboard consent or another unblocked clinical consumer.
+All prior migration/security/scale/UAT gates remain. checkpoint-2240.json records
+the evidence; next hourly by23:40BST. Midpoint/full and final gates are unchanged.
+
+#### 23:16 checkpoint - linked consent whiteboard accepted
+
+The ordinary linked consent document now opens from its booking whiteboard and
+returns to the overview. It uses the existing unique live association, never
+arbitrary latest patient consent. Permission, patient, institution, booking
+reference, event type and live-parent checks precede display. Draft/withdrawn
+states remain explicit; bounded document overflow is rejected. The existing
+document/signature path is reused with readiness v1 and no-store responses.
+No schema change, cache or dashboard-triggered rendering was introduced.
+
+Runtime sourcef5db6ec21c74 passes165PHPtests/39,260assertions,55frontendtests,
+strict ledger and both image gates. Lookup queries remain2/2 with1,000unrelated
+forms; full document queries remain constant and below40. Exact point plans
+have no sort/temp/scan/estimate violation or hints. Production telemetry on the
+synthetic browser fixture observes23total queries per document and16MiB request
+peak; this is not realistic-scale proof. One zero-retry browser verifies draft,
+withdrawn, copied procedure, both returns and absent unlinked control, with no
+clinical/render writes, errors or cancellations. Peak browser memory352MiB.
+
+Preview webd4bacdc9a906 and manager5c121524632f are promoted after a retained
+seven-schema/1,324table backup. All20patients59events1user325migrations remain.
+Nine services are healthy and separate recovery/navigation smoke passes with
+no clinical/draft/config writes. Two cancelled hotlist reads are retained as
+evidence. Disposable web writable state was archived before removal; helpers
+removed,builder stopped,all161volumes retained. Current docs/ledger source344980cffbac;
+four canonical paths reconciled without score inflation. A wording regression
+was corrected while retaining the existing safety proof;97tests/35,937assertions
+and strict verification pass. Laravel386 and Docker16files staged;no commit/push.
+
+Diabetes is narrowly deferred: the legacy ancestry and confirmed/side-aware
+diagnosis rules differ from the configured target concepts and its acceptance
+of unconfirmed/provisional/differential states. DIV-366 records the prerequisite
+for a versioned taxonomy/import map and per-consumer clinical proof. Do not
+silently reuse it for the whiteboard. Next trace the final legacy biometry view
+and current measurement/selection projection, separately from report attachments.
+After-next close the authoritative bounded consumer or another unblocked
+ordinary clinical function. Multipage consent image fidelity and prior release
+gates remain. Coverage stays77.2749percent code/73.2847overall with14,125canonical
+and zero missing paths. checkpoint-2316.json is resumable; next hourly by00:16BST.
+The fixed deadline, scope freeze, midpoint/full and final gates are unchanged.
+
+#### 00:07 checkpoint on 8 September - numeric biometry accepted
+
+The shared Operation Note/whiteboard projection now uses immutable raw
+measurement chronology, matching the final legacy database view. Acquisition,
+claim and later lens decisions remain separate clocks. Latest eligible data
+with a calculation is selected before the booking eye; no older-eye fallback
+or fabricated zero. Lens, axial length, anterior chamber depth, target and
+predicted refraction are escaped recorded values, with the strict greater-than
+0.5D warning. As-of notes exclude future events, decisions and signatures.
+
+The root chronology/index and history column have a complete maintenance schema
+packet and two unique per-eye backfill joins. Clean326migrations/tiny seed and
+populated history/backfill/rollback/reapply/schema checks pass. An initial DB
+socket-readiness failure happened before schema creation; the helper now checks
+actual SQL readiness. No clinical values or history timestamps are rewritten.
+Consolidate before first real import; no live DDL or online rollout is claimed.
+
+Runtime1e6dfc1f9fc9 passes168PHPtests/37,024assertions,55frontendtests,strict
+ledger and image gates. Shared reads stay8/8 with1,000older roots and1,000decision
+versions, whole-page queries stay bounded, and actual plans pass no-sort/no-temp
+gates without hints. One browser verifies all ordinary numeric states without
+clinical/render writes. Preview webdf4371c5bc1f and managerc02866dc402a retain
+20patients59events1user326migrations after backup. Nine services and a separate
+preview navigation smoke pass. Temporary web storage/logs/inspection are archived
+before removal; builder stopped, all161volumes retained. Post-acceptance source
+9e35cb334790 passes115reconciliation tests/36,102assertions and strict ledger.
+Laravel398 and Docker16files staged, no tracked unstaged changes or commit/push.
+
+No coverage increase is claimed: code77.2749percent, overall73.2847percent,
+14,125canonical,zero missing,1,217pending. Report source selection and imported
+binary attachments are distinct unfinished functions; do not replace them with
+generated calculation output. Next record that exact dual-source contract and
+close the next authoritative document consumer. After-next continue ordinary
+clinical behavior; full ordinary PHP remains due at hour24. Diabetes, exact
+output, real-data scale, all88worklist items and prior release gates remain.
+checkpoint-0007.json is resumable; next hourly by01:07BST. The fixed deadline
+and scope freeze remain unchanged.
+
+#### 01:07 checkpoint on 8 September - request-form context verification
+
+Document subtype search is repaired with literal-zero, retired-code and bounded
+cross-schema lookup proof. Request forms now have all four legacy context
+dimensions, portable validated assignments, candidate-bounded25-row search and
+cursor paging, saved-form continuity and explicit empty-page continuation.
+Three queries stay constant with1,000extra assigned forms; actual plans avoid
+filesort and temporary tables without hints. Clean327migrations, tiny seed,
+history and rollback/reapply checks pass in isolated schemas. No preview reseed.
+
+The initial immutable image passed111PHPtests/38,395assertions,55frontendtests,
+strict ledger and image checks. The first browser then found a real missing
+new-event form default before any clinical save. A failing regression now
+passes with the correction;30focused tests/380assertions pass. Corrected source
+38ab0e4a625e is rebuilt for development/production; manager, final baked batch
+and explicitly separate corrected-browser acceptance are in progress. This is
+not an accepted preview yet. The failed web's writable state was archived and
+verified before removal; all161volumes and the existing preview are retained.
+
+Preview remains nine healthy services,20patients59events1user326migrations.
+Laravel416 and Docker16files are staged; no tracked unstaged edits or commit/push.
+Coverage remains77.2749percent code/73.2847overall,14,125canonical,zero missing,
+1,217pending. Next finish the exact-image and browser gates, back up and promote
+through the manager, then verify the preview separately. After-next reconcile
+source evidence and continue ordinary request-form consumers. The worklist
+must use recording context, not assume episode-service subspecialty equivalence.
+Original biometry attachments, diabetes taxonomy, scale/security/UAT and all88
+worklist gates remain. checkpoint-0107.json records the resumable state; next
+hourly by02:07BST. The fixed deadline, scope freeze and hour24 suite are unchanged.
+
+#### 01:21 checkpoint on 8 September - request-form selector accepted
+
+Source38ab0e4a625e passes127PHPtests/38,477assertions,55frontendtests,strict
+ledger and image gates. Browser acceptance is explicitly split. After the real
+new-event default fix, a driver incorrectly targeted hidden local Save; it was
+corrected to shared Confirm & Save. One batch save then persisted after paging,
+exclusion and search checks, but an exact-text assertion mismatched the combined
+label-and-answer paragraph. A separate read-only browser proves visible saved
+values and the latest API. All three failed attempts remain recorded; this is
+not a single uninterrupted end-to-end pass and no repeat clinical save occurred.
+
+Preview is backed up and promoted through manager327migrations without reseed.
+All20patients59events1user remain; nine services and a separate navigation/recovery
+browser pass. Temporary web80872ec9fae8 state was archived and checked before
+removal. Builder stopped, browser helpers removed,all161volumes retained. Four
+canonical paths are reconciled without score inflation;79tests/35,701assertions
+and strict evidence pass. Current evidence source2a4d8bf181e2; Laravel416 and
+Docker16files staged,no commit/push. Code77.2749percent/overall73.2847 unchanged.
+
+Next close category selection using its existing bounded API predicate; retain
+search and cursor context. After-next establish the exact recording-context
+worklist projection and generation contract, not episode-service shortcuts.
+All prior clinical/import/security/scale gates remain. checkpoint-0121.json
+contains exact identities and resumable state; next hourly by02:21BST. Fixed
+deadline, scope freeze and hour24 ordinary suite remain unchanged.
+
+#### 01:54 checkpoint on 8 September - request-form categories accepted
+
+Source4ceef5189af6 adds context-eligible category search,25-row forward pages and
+retained selected/applied filters. The one-query reader stays1/1with25and1025
+categories, with indexed root ordering and no sort/temp/hints. Clean328schema
+and populated rollback/reapply pass; rollback explicitly restores the FK support
+index MariaDB removes when the new covering index replaces it. Immutable gates
+pass101PHPtests/38,293assertions,55frontendtests and both image checks. The first
+browser failed because its expected count omitted a matching uncategorized form;
+only the driver was corrected. One fresh browser passes all category, wildcard,
+continuation and retained-selection checks without clinical writes. Failed
+evidence remains. Three canonical rows reconcile without score increases;
+56ledger tests/35,390assertions and strict evidence pass.
+
+Preview manager328migration/schema and separate browser navigation pass after a
+seven-schema1,330table private backup. All20patients59events1user remain. Current
+webd8d3302e1308/manager2de07a2a5335 are healthy; isolated category web391a11422c1b
+was privately archived and checked before removal. Builder stopped, all161volumes
+retained, no preview reseed. Runtime stays on the accepted category snapshot.
+
+Current source work repairs the existing automated request adapter: four new
+regressions first proved missing creation permission/deceased-patient checks,
+arbitrary legacy episode reuse and missing manifest authorization. Shared guards,
+PatientEpisodes and EventContextSnapshot now pass43focused tests/438assertions,
+including distinct recording/service firms, selected-subspecialty episode creation,
+actual changed-context retry and invalid-answer rollback. This has no new schema
+or browser screen and awaits integration; no extra legacy caller is claimed.
+
+Next complete the ordinary request-form worklist's recording-context filtering,
+service-context display, cursor validation and retained filters after the source/
+schema packet. The appointment dashboard's88behavioral gates remain separate.
+After-next resume remaining source-backed ordinary consumers, leaving missing
+clinical taxonomy/original report binaries deferred. checkpoint-0154.json records
+exact state; next hourly by02:54BST. Code77.2749percent/overall73.2847 unchanged.
+The fixed48-hour deadline, freeze and hour24 ordinary suite remain unchanged.
+
+#### 02:42 checkpoint on 8 September - request-form worklist accepted
+
+Recording-firm institution/subspecialty predicates now remain distinct from
+recorded event institution/service labels. One normalized config lookup resolves
+firm IDs; the narrow clinical page requires a live parent and omits large payloads.
+The page and API require an explicit worklist capability plus active per-form
+assignment. Existing users default denied; deployment permission mapping remains
+mandatory. Query counts stay 9/9 or 10/10 with 1,000 additional rows and actual
+root plans have no filesort/temp or hints. Clean 329 migrations/tiny seed and
+populated rollback/reapply preserve unrelated values and unknown history context.
+
+The first browser found correct result filters but stale visible controls after
+Next: equal preserved Inertia props did not trigger the watcher. Explicit onSuccess
+filter synchronization fixes it. Corrected immutable source a78e48e3a838 passes
+137 PHP tests/38,701 assertions, 55 frontend tests, strict ledger and image gates.
+The unchanged driver passes once in a fresh browser, including non-overlapping
+pages, visible/applied filters, remembered session/date filters, reset and empty
+choices. Only login writes; the failed attempt remains recorded. Six canonical
+rows reconcile without added score; 56 ledger tests/35,390 assertions pass.
+
+Preview migration/schema/counts and separate browser pass after a private
+seven-schema/1,330-table backup. All 20 patients, 59 events and one user remain.
+Only the synthetic administrator receives the new capability. Web1ae157d1b7a8
+and manager6ed6316bcc72 are healthy; the existing generation guard/context repair
+is included. Both temporary worklist webs were archived and removed, builder
+stopped, all 161 volumes retained. The dedicated worklist fixture has 93 events
+and must not be initialized again. Source inventory now has 5,490 paths.
+
+Next is architecture-now shared element-edit authorization. Source inspection
+found missing common pending-delete, deceased-patient and legacy-episode checks
+in the shared single/batch/delete actions and their page controls. Establish one
+small capability/safety guard with transaction recheck and strong no-write proof,
+keeping existing signing checks. After-next close calendar-age locking and the
+request-form administrator exception against exact module contracts, then resume
+ordinary consumers. No age exception is guessed or equated with worklist access.
+event-edit-source-contract.txt records the source evidence; implementation has
+not started. Historical request-form version families/imports remain a separate
+gate. checkpoint-0242.json records identities and next work. Coverage remains
+77.2749 percent code and 73.2847 overall; next hourly checkpoint by03:42BST.
+The 9 September deadline, freeze and hour24 ordinary suite remain unchanged.
+
+#### 03:31 checkpoint on 8 September - shared event-edit boundary accepted
+
+Shared single, batch and delete element routes now require can_edit_events before
+binding or validation, with active actor/current institution and matching page
+controls. Pending deletion, deceased patients and imported legacy episodes cannot
+be edited through these routes. Patient, episode and event are locked parent-first
+and rechecked inside the clinical transaction. Loaded decisions use zero queries
+at 1,000 iterations; three primary-key lock plans have no filesort/temp or hints.
+Existing signing checks remain; this does not prove concurrent signing/deletion.
+
+Clean 330 migrations/tiny seed and populated permission rollback/reapply preserve
+unrelated current/history data. Existing users default denied. Immutable source
+a82e0e5b7c9d passes 184 PHP tests/40,680 assertions, 55 frontend tests, strict ledger
+and image gates. The first browser completed one clinical save and protected-state
+checks but failed its final allowlist on existing private hotlist activity. Keep
+that failure; no clinical retry was made. Separate read-only browser and database
+proof confirm one save, one preimage, one audit and unchanged protected histories.
+
+The backed-up preview has 330 migrations, 20 patients, 59 events and one user,
+without reseeding. Only the synthetic administrator receives the permission.
+Web7f47ef4f841f and managerf69a0829882f pass the separate preview browser and all
+nine services are healthy. Temporary event-edit web e67f1ff02b9d was archived
+with verified storage tar before removal; builder stopped and 161 volumes kept.
+Three canonical mappings reconcile without added credit; 56 ledger tests/35,390
+assertions and strict evidence pass. Source inventory is 5,493 paths. Reconciled
+source4c92c1d10755 differs from runtime only by evidence/documentation changes.
+
+Next apply the same reviewed boundary to ordinary IOP and retinoscopy APIs:
+their direct element writes currently bypass the shared HTML controller. Preserve
+semantic validation, responses, audit and lifecycle events. After-next review
+remaining direct callers and signed deletion, then calendar-age and explicit
+request-form administrator exceptions. No importer or module exception is
+mechanically guessed. event-edit-api-source-contract.txt records the census;
+next API implementation has not started. checkpoint-0331.json is the exact
+resume record. Coverage remains 77.2749 percent code/73.2847 overall. Next hourly
+checkpoint by04:31BST; the fixed deadline, scope freeze and hour24 suite remain.
+
+#### 03:57 checkpoint on 8 September - ordinary API edit follow-through accepted
+
+IOP and retinoscopy upsert/delete now use the same explicit edit permission and
+fresh parent-state checks as shared editing. Their read APIs remain independent.
+Create-status and delete-root lookups happen after parent locking. Calculation,
+history, versioning, reactivation, audit and lifecycle regressions pass. Update
+budgets remain 35/35 IOP and 24/24 retinoscopy with 1,000 additional events.
+An initial invalid retinoscopy test fixture was corrected using its real writer;
+valid pre-change tests then reproduced the missing 403 boundary. Logs are retained.
+
+Immutable sourceda72360bdd97 passes174PHP/39,637assertions,55frontend,strict ledger
+and image gates. One signed-in browser makes exactly two CSRF-protected API writes
+and verifies values/calculations after reload; this does not claim UI Save testing.
+Read-only database proof confirms one API save audit each and protected histories
+unchanged. Three canonical and four surface rows reconcile without score changes;
+56ledger tests/35,390assertions and strict evidence pass. Reconciled source12baf45797ed.
+
+Backed-up preview web44c4c910ffbd/manager940763f0a417 stays at330migrations with all
+20patients59events and passes the separate recovery browser. No reseed, new DDL or
+grant. Nine services healthy. Temporary API web7ece82c5faf6 archived and removed,
+builder stopped,161volumes retained. Source inventory remains5,493paths.
+
+Next close the signed-element deletion state race: check fresh locked roots and
+signing rules inside shared/prescription HTTP deletion, with deterministic stale
+read tests and bounded two-session proof. The66caller census identifies an
+internal companion-prescription retirement with its own locked final-state guard;
+do not apply editor read-only rules indiscriminately to that legitimate workflow.
+No signing fix is implemented yet. After-next IOP History append/generation
+authority and provenance, then remaining direct callers and calendar-age/module
+exceptions. event-signing-deletion-source-contract.txt records the evidence/design.
+checkpoint-0357.json is the resume record. Next hourly by04:57BST. Coverage stays
+77.2749percent code/73.2847overall; the fixed deadline, freeze and hour24 suite remain.
+
+#### 04:32 checkpoint on 8 September - signing-state deletion accepted
+
+Shared deletion and the prescription API now refresh and lock the element root
+inside their transaction, then repeat the existing signing rule. Shared405 and
+API409 remain; a concurrently removed root is an idempotent no-op. The sole
+non-HTTP softDelete caller, generated Medication Management draft retirement,
+keeps its own existing locked final-state guard. No blanket editor-only policy
+was added to the base deletion method. No schema or permission expansion.
+
+Valid before-change fixtures reproduced three signing-state failures while
+ordinary draft deletion passed. Focused106PHP/2337assertions and the additional
+36PHP/2095assertions pass. Independent sessions exercise both root-lock orders
+using the actual prescription finalizer, deliberate one-second1205timeouts and
+fresh after-commit decisions. Denial changes no state. This is not HTTP load or
+complete consent-signing concurrency proof. Fresh prescription reads remain4/4
+queries at1/50items, indexed without sort/temp/hints. The plan-test operation ID
+was corrected to the real route and now checks that it exists.
+
+Immutable source5966e855c213 passes199PHP/42,196assertions,55frontend,strict ledger
+and both image gates. Two mistyped ledger invocations did not run and are retained;
+the declared command and option passed separately. One no-retry browser sees the
+signed prescription, receives exactly409/405for its two delete attempts and
+reloads the unchanged complete API payload. The first database fingerprint
+included login: read-only follow-up proves exactly one expected login outbox
+occurrence explains the full difference, with every other captured field unchanged.
+Three canonical rows receive evidence, not score. Reconciled69PHP/37,034assertions
+and strict evidence pass; reconciled source031fa735f886,5,494source paths.
+
+Backed-up preview web094e73bb841e/manager15300fcebf3a passes330schema/counts and a
+separate recovery browser. All20patients59events remain, no reseed. Nine services
+healthy; temporary signing webf68de14fdc5d privately archived, including tmpfs,
+then removed. Builder stopped and161volumes retained. Two dedicated signing
+fixtures remain in the isolated64-event namespace. Laravel440staged files and
+Docker16staged files, no tracked unstaged changes or commit/push.
+
+Next IOP History append/generation: enforce the reviewed parent-edit boundary,
+preserve one generated examination per historical date and append-only readings,
+and establish complete creation context/provenance from pinned caller evidence.
+Do not invent a clinical permission or silently change site/firm semantics.
+After-next remaining ordinary direct callers and age/module exceptions, then the
+next unblocked functional census items. checkpoint-0432.json records details;
+next hourly by05:32BST. The fixed deadline/freeze and09:40midpoint full suite remain.
+Coverage stays77.2749percent code/73.2847overall; all88worklist scale gates remain.
+
+#### 05:05 checkpoint on 8 September - IOP History boundary and context accepted
+
+IOP History append and marker deletion now require the shared edit permission
+and fresh locked parent state before validation or writes. Generated events use
+the current recording context and preserve the source service firm, following
+the pinned constructor and save caller. They remain ordinary user-entered events
+with existing audit provenance. Date grouping, today's append and retained facts
+after marker deletion remain. No new clinical permission or schema was invented.
+
+Instrument validation and snapshots reuse one active lookup: one query for one
+or100entries. The write stays34/34queries with1000unrelatedevents; next-sequence
+reads use two indexed one-row per-eye lookups without sort/temp/hints.95focused
+PHP1483assertions and immutable180PHP41008assertions,55frontend,strict ledger and
+both image gates pass. One no-retry global UI Save creates both-eye readings on
+one historical event; reload, view and database proof confirm exact new context
+and unchanged earlier clinical facts. Removed-current-root append and the sequence
+ceiling remain narrow unresolved cases, not silently changed behavior.
+
+Five canonical and two PageRegister rows reconcile without score;156PHP39285
+assertions and strict evidence pass. Reconciled source5ef1f93fcc5c; runtime
+0af1c03bb953, inventory5494paths. Backed-up preview webc9a77fac707e and
+managerf43dbbbbedbf passes330schema/counts and separate recovery browser, with
+all20patients59events retained. Nine services healthy. Isolated IOP webff66207e9796
+privately archived, including tmpfs, then removed; builder stopped,161volumes
+retained. Laravel444staged files, Docker16, no tracked unstaged changes or push.
+
+Next complete the pinned ordinary editing calendar-day/module exception contract
+without weakening signing or patient safety, then remaining direct callers and
+the next unblocked functional census workflow. Source review confirms calendar
+days, administrator/installation bypass and seven module canUpdate overrides;
+none is claimed implemented by this checkpoint. checkpoint-0505.json is the
+resume record; next hourly by06:05BST. Fixed deadline/freeze,09:40midpoint ordinary
+suite, unchanged77.2749percent code/73.2847overall and all88scale gates remain.
+
+#### 06:04 checkpoint on 8 September - ordinary calendar locking integrated
+
+Ordinary editing now follows creation-calendar midnight plus configured complete
+days, with fresh clock checks under parent locks and request-scoped settings.
+The explicit default-denied age override does not grant ordinary editing or
+bypass patient/signing safety. Current/history permission migration331 passes
+clean schema/tiny seed and populated down/up. Real administrator imports remain
+reviewed work; only the synthetic seed actor is automatically granted.
+
+The first browser made one permitted history save, then failed on missing
+read-only VA/IOP display configuration. Failure evidence is retained; the locked
+clinical record was unchanged. Saved elements now retain their display metadata
+without mutation URLs or empty editors. Corrected immutable234PHP40864assertions,
+55frontend,strict ledger and both image gates pass. A separate read-only browser
+verifies exact saved VA/IOP values and laterality, the locked Edit control, and the
+previous save without another clinical write or browser error. Age settings use
+2queries at1/1000decisions; locked displays stay within90queries with bounded
+growth at1000extraevents. No score credit, hints or runtime schema discovery.
+
+Four canonical rows,11surface mappings andAUTH010 are reconciled. Runtime source
+ed3288aa1a01; prose-reconciled e30ede120a68; source inventory5497. Private seven-schema
+backup preceded preview web8b3fbeab46dd and manager38204311332c promotion.331schema,
+20patients59events1user and9healthyservices pass; final preview navigation was
+accepted at06:05BST with no errors or clinical/draft/config saves. Both isolated test web workers were privately
+archived including tmpfs and removed; builder stopped and all161volumes retained.
+
+Next close state-specific module editing and remaining direct callers.
+Correspondence generation-complete is not
+delivery-sent: review the exact milestone before mapping its lock. Booking,
+consent,CVI and request-form windows remain distinct. After-next the next unblocked
+functional census workflow. checkpoint-0604.json is the resume record; next hourly
+by07:04BST. Ordinary full PHP remains due09:40BST; the old test namespaces require
+the new migration/grant first. Fixed deadline/freeze,77.2749percent code coverage
+and all88scale gates remain.449Laravel/16Docker files staged; no commit or push.
+
+#### 06:44 checkpoint on 8 September - document edit and primary-form correction
+
+The previous calendar packet incorrectly exempted Document as OphGeneric.
+Pinned source identifies OphCoDocument separately, with no canUpdate override;
+ordinary age therefore applies. Device Information and Visual Fields retain the
+generic exemption. The correction is recorded without rewriting the prior
+checkpoint or adding coverage. Document multipart upsert/delete now declare the
+shared edit capability before binding, validate fresh writable parent state under
+locks, and resolve the current attachment state inside the transaction. Rejected
+writes leave files, clinical data, audit and history unchanged. Locked documents
+remain readable/downloadable; both Edit controls honor the server decision.
+
+First browser passed locked-file checks but exposed a blank Document form after
+entering Edit. No upload or save occurred. The legacy initial migration marks the
+Document element required/default, so it now participates in the existing primary
+form list. Separate corrected-image browser passed one PDF upload, reload and
+locked-file preservation with zero page/console/HTTP errors. Database evidence
+records exactly one save audit and an unchanged protected clinical hash. Preserve
+the original failed run separately. Source191PHP3164assertions and immutable189PHP
+3144assertions pass, plus55frontend,strict ledger and both image gates. The two
+metadata cases excluded from the older baked test file pass against corrected
+source with complete nullable clinic snapshots. Document update queries remain
+within90 with at most2growth at1000extra documents and no root sort/temp/hints.
+
+Preview accepted at06:44BST: runtime source7fd2f0821c80, web2ab0c6e81811,
+manager07bf3e620eec; reconciled test/evidence source88c5b1713078. Fresh private
+seven-schema1330table backup preceded promotion. All20patients59events1user and
+331migrations remain; nine services healthy. Separate preview navigation passed
+with no clinical/draft/config saves or errors. Temporary document web workers and
+browser helpers are removed; builder stopped; all161volumes retained.
+
+Archive correction: docker cp in this environment read underlying image storage,
+not the live tmpfs. Earlier such archives are not live-tmpfs restoration proof.
+Future retirement must archive with tar executed inside the running container,
+check expected protected objects and checksums before stopping, and retain failed
+archive evidence. The document fixture was transferred this way and verified
+before and after its single upload. Database and persistent volumes were retained.
+
+Registration test schemas are now331 with20patients81events and an explicit
+synthetic age override; the earlier59event assumption was stale and was rejected
+before any grant. Its failed pre-grant tests remain recorded. Event-age browser
+schemas retain61events and a nonprivileged actor. Use a clean isolated tiny fixture
+in the existing bounded database for the midpoint ordinary full suite at09:40BST;
+do not reseed preview or either retained browser fixture.
+
+Next review ordinary laboratory/genetics event direct writers and default form
+activation as a coherent group. After-next close the next unblocked functional
+consumer. Correspondence generation-complete still lacks an authoritative target
+milestone and must not be equated with delivery-sent; booking/consent/CVI/request
+form module windows, real administrator import and runtime authorization remain
+explicit gates. checkpoint-0644.json is the resume record; next hourly by07:44BST.
+Source inventory5498, canonical14125/mappings18643, no missing paths; code77.2749
+percent/overall73.2847 unchanged.452Laravel/16Docker files staged; no commit/push.
+Fixed deadline/freeze and all88worklist scale gates remain.
+
+#### 07:40 checkpoint on 8 September - laboratory and genetics editing
+
+Nine direct mutation surfaces now enforce ordinary editing permission and current
+institution before binding, then recheck freshly locked patient/episode/event and
+current roots before semantic resolution. Genetics also uses can_edit_genetics in
+direct/shared writers and page controls. This is the existing compatibility gate,
+not equivalence to three separate legacy role graphs. DNA replacement now retains
+its version token after withdrawal. Required/default primary forms activate, and
+read-only shared components suppress their inner Edit controls.
+
+The first browser saved Lab Results, then stopped on a user-label selector error.
+The next saved DNA Sample, then exposed a real empty optional date SQL failure in
+combined Save. Both failures remain. Local typed-field normalization preserves
+zero and exact clinical text; four reproducer/regression cases pass. The corrected
+image saved Genetic Results and DNA Extraction once each, reloaded, reread the
+earlier saves without repeating them and rechecked all three locked displays.
+Final database proof has exactly four save audits and the unchanged protected
+baseline. This is separated corrected-run acceptance, not one uninterrupted pass.
+
+319 source and immutable PHP tests/6939 assertions,55 frontend tests, strict
+ledger and both image gates pass. Four update budgets stay within100queries and
+two-query growth at500extra records, with indexed locked roots and no sort/temp
+or hints. Caching none; no schema change or coverage credit.
+
+Preview source d26df39887ae, web76ce90c1566f and managerd7d202af328e are accepted
+after a private7schema1330table backup and separate navigation check. All20patients,
+59events,1user and331migrations remain; nine services healthy. Two laboratory web
+workers were archived using live storage tar and removed;161volumes retained and
+builder stopped. Reconciled source c8447a214051 differs only by evidence updates.
+463Laravel files staged40258insertions8196deletions;16Docker unchanged staged;
+empty untracked worker preserved; no commit/push. Coverage remains77.2749percent
+code/73.2847overall, canonical14125/mappings18643, source inventory5499.
+
+Fresh oe_midpoint_20260908 seven-schema migration and tiny seed passed through
+the manager image:331migrations,1330tables,20patients59events1user. The initial
+web-role schedule preflight failed before DDL; that failure is retained. Full
+ordinary PHP remains due09:40BST via run-midpoint-full.sh with the then-current
+verified image, prepared schemas, Redis10/11 and existing bounded chunk runner.
+Do not reseed preview or retained browser fixtures. Full-suite proof is not yet
+claimed. Checkpoint-0740.json records exact identities and the resume command.
+
+Next review genetics generation for stale parent/patient/episode decisions inside
+creation transactions; do not confuse child creation with editing an old sample.
+After-next ordinary Phasing mutations and primary form. Full role graph/import,
+correspondence generation milestone, module-state windows and all88worklist
+scale gates remain open. Next hourly by08:40BST; fixed deadline/freeze unchanged.
+
+#### 08:22 checkpoint on 8 September - generation lifecycle
+
+Laboratory and genetics generation now authorizes before validation, rechecks
+locked patient state and uses the shared selected-context ordinary episode
+resolver with complete context snapshots. Generic child and DNA extraction
+creation recheck the locked patient, episode, parent and child type; parent routes
+participate in break-glass. Old saved samples may create new children without an
+edit-age override. Pending deletion is an explicit current safety boundary, not a
+claim that all separate legacy role rules have been proved. Ordinary event
+creation also uses the shared fresh-patient gate and deterministic locked episode
+resolver. No schema change, clinical calculation change or coverage credit.
+
+231 immutable PHP tests/5673assertions,55frontend tests, strict ledger and both
+image gates pass. Each generation stays within100queries and two-query growth
+with500unrelated closed episodes. Existing indexes serve the shared episode read
+without filesort/temp/hints; cachingnone. One no-retry isolated browser created,
+saved and reloaded a child extraction from an old sample; exactly one creation
+and one save, and every protected earlier clinical record remained unchanged.
+
+Preview web75495bb79bec and manager2f365efc9000 use runtime source5881b0e363c9.
+Private seven-schema backup retained, no DDL/reseed, all20patients59events1user
+and331migrations remain. Separate navigation passed with zero clinical/draft/
+configuration writes and browser/HTTP errors, peak421498880bytes and noOOM.
+Nine services healthy. Temporary web storage archived from the live namespace
+before removal; browser helpers removed, builder stopped,161volumes retained.
+Accepted evidence source925428f68f18 differs only by reconciliation.470Laravel
+and16Docker files staged; empty untracked worker preserved; no commit/push.
+Canonical14125/mappings18643, inventory5500, coverage77.2749percent code and
+73.2847overall unchanged. checkpoint-0822.json is the resumable record.
+
+Current/next: ordinary Phasing direct-edit guards and required primary form.
+The new test is not yet accepted:14failures and2passes reproduce missing guards,
+with three failures attributable to the planned Request signature transition.
+Keep automated Phasing reconciliation authorization separate; do not guess an
+ordinary edit-age rule for integrations. After-next full ordinary PHP due
+09:40:53BST using the current verified image and prepared midpoint fixture, then
+the next source-backed functional consumer. Full authorization/import, module
+state windows, realistic data and all88worklist scale gates remain open.
+Next hourly by09:22BST; fixed deadline/freeze unchanged.
+
+#### 09:01 checkpoint on 8 September - usable Phasing recording
+
+Ordinary Phasing direct mutations now authorize before validation and recheck
+locked patient, episode, event and element state. The required primary form is
+active in Edit, read-only displays stay readable, and recorded instrument meanings
+survive rename or retirement without permitting retired instruments on new eyes.
+Pressure calculations, exact clinical text and event-age policy remain intact.
+
+The browser exposed a real form defect: an empty unexamined-side readings list
+was rejected by an unconditional minimum-length rule. Four regression failures
+reproduce both eye positions across API and combined-form submission. Removing
+the redundant minimum preserves the shared conditional requirements, including
+rejection of empty recorded series and readings on an unexamined side.
+
+Corrected immutable verification passes182PHP4799assertions,55frontend tests,
+strict ledger and both image gates. One UI save/reload preserves zero and the
+one-sided series; the old locked record and protected clinical baseline remain
+unchanged. Two prior driver failures and one rejected submission remain failed
+in the evidence. The npm script-name error is also retained; its separate correct
+frontend command passes. No failed run is relabeled as a pass.
+
+Preview webaa9a75d75299 and manager055e11a7711c use runtime source53ad1b6968ef.
+The private seven-schema backup is retained; no new DDL/reseed. All20patients,
+59events and331migrations remain. Separate clinically read-only navigation passes,
+with zero browser/HTTP errors, peak341168128bytes and noOOM. Nine services healthy;
+both temporary workers archived from live storage and removed, browser helpers
+removed, builder stopped,161volumes retained. Reconciled source7a8d68e3d3c0;
+476Laravel and16Docker files staged, empty untracked worker preserved, no commit
+or push. Canonical14125/mappings18643/inventory5501 and77.2749percent code/
+73.2847overall coverage are unchanged. checkpoint-0901.json is the resume record.
+
+Next: ordinary Laser and intravitreal injection write guards and read-only
+components, preserving injection immutability, plan reversal and warning/signing
+rules. Their preliminary source review is complete; no new implementation yet.
+After-next: full ordinary PHP at09:40:53BST using the latest verified image and
+the prepared isolated midpoint fixture, then the next source-backed consumer.
+No broad blocker. Full role/import, module-state, realistic-data,88worklist scale
+and release gates remain open. Next hourly by10:01BST; deadline/freeze unchanged.
+
+#### 09:36 checkpoint on 8 September - ordinary treatment write boundaries
+
+Laser and intravitreal injection direct writes now require ordinary edit
+permission/current institution before binding and validation, then recheck fresh
+locked parents and roots. Read-only components are guarded. Saved injection
+immutability, measurements, warnings, signing, plan reversal and independent
+patient-day checklist/import policies are unchanged. No schema or score change.
+
+Immutable verification passes147PHP4853assertions,55frontend tests, strict
+ledger and both image gates. Page/create/delete queries stay below100 with at
+most2growth for500extra roots; locked-root plans use existing indexes without
+filesort/temp/hints. One Laser edit and one not-today injection save/reload
+preserve the protected clinical baseline. The selected GP-letter default
+creates one unsigned/unsent draft. Two driver assertion failures remain failed
+evidence; corrected-label readback passes without repeating either save.
+
+Backed-up preview webbf6a760259ba and manager0f60b4757a0f use runtime source
+b45a5d167313. Separate preview navigation passes with zero clinical writes or
+browser errors;20patients59events331migrations and9healthy services remain.
+Temporary web live storage archived and container removed; browser helpers
+removed,builder stopped,161volumes retained. Reconciled source1c3d78f779a5;
+482Laravel/16Docker files staged. Canonical14125/mappings18643/inventory5502,
+77.2749percent code/73.2847overall coverage. No commits or pushes.
+
+Resume record: checkpoint-0936.json. Next: ordinary midpoint full PHP at or after
+09:40:53BST using immutable development1cda3bdbbb2d/sourceb45a5d167313 and the
+reverified isolated331migration tiny fixture; it has not started yet. After-next:
+Facial Injection ordinary writes and caller-evidenced dependent consumers,
+preserving unit calculations and geometry data; then operation-note ordinary
+write review alongside existing module ownership. No broad blocker. Full role
+graph, module-state, fidelity, realistic-data and release gates remain open.
+Next hourly by10:36BST; final deadline/freeze unchanged.
+
+At 09:45:43BST the ordinary midpoint full PHP run started against the completed
+treatment development image/source above, using the isolated midpoint schemas
+and sequential bounded chunks. Evidence: midpoint-full.log and midpoint-pest/.
+The new Facial Injection source work is not part of that immutable snapshot.
+Completion and failures will be recorded when the run finishes.
+
+At 10:02:28BST the midpoint run finished all six sequential chunks: 434 files,
+3696 tests, 98948 assertions, 3691 passed, five failed, zero errors or skips.
+The immutable treatment snapshot remains the identity of that failed run; its
+failed containers and reports are retained. Failures identify a stale CSRF
+contract assertion, six unreleased migrations violating the no-loop policy,
+the Cover Test cold-page query budget, a stale source-inventory identity, and
+the scheduler count after draft pruning was added. Do not relabel that run green.
+
+Focused repairs preserve the existing query budgets and migration policy. The
+event page now reuses freshly authorized patient/episode records within the
+request, with a regression proving the next request checks changed ownership.
+Cover Test and break-glass pass24tests296assertions on the correct registration
+fixture. The initial age-fixture Cover Test failures remain recorded: that actor
+intentionally cannot edit old events. Facial Injection authorization and query
+checks pass after equalizing the prior-treatment branch in the small/large
+fixtures. Clean seven-schema equivalence and immutable/browser acceptance of
+these repairs are still in progress, not accepted preview changes.
+
+The clean corrected migrations and tiny seed pass schema verification. The
+retained age fixture had different user-column ordering, so a separate pristine
+reference was migrated from the original immutable treatment image. Strict
+comparison now passes all1330tables, preserving column order, types, defaults,
+indexes and constraints; only schema prefixes and next auto-increment values
+are normalized. Schema hash6b42db7e9989330ac9aa146a3d8db3733dfad99e1713c37aaf75bbaeb5ef355b.
+
+At10:22:15BST the isolated test database hit its2GiB memory limit during the
+first pristine comparison. The failed comparison and interrupted focused run
+remain retained. Same-volume/same-cap recovery preserved all data; preview's
+nine services stayed healthy. Test-only table_open_cache512 and key_buffer_size16MiB
+now supplement the existing512MiB InnoDB buffer; table_definition_cache400 and
+Aria128MiB remain unchanged. The attempted live Aria change was rejected as
+read-only and is recorded, not retried. Reapply the external cache helper after
+a test database restart. The recovered strict comparison passes with zero new
+OOM events and approximately1GiB current test-database memory. Accumulated
+metadata/cache pressure is a hypothesis, not a completed allocation profile.
+Independent focused acceptance continues in midpoint-facial-recovered-focused.log;
+the original full run remains failed. No production cache changes or volume
+deletion, and no new coverage credit.
+
+#### 10:35 checkpoint on 8 September - midpoint repairs and Facial Injection
+
+Checkpoint-1035.json records the original five-failure full run and its focused
+repairs without relabeling that run. Corrected migrations match a pristine
+immutable reference across all1330tables. Baked238PHP37663assertions,55frontend,
+strict ledger and both image gates pass on source1da45280573c. New development
+28fc55dbf145, webd36f02b0ce5d and managerf4cce6969292 share that source.
+
+Facial Injection ordinary writes now have permission-first fresh locked parent
+and root checks, unchanged unit calculations and geometry, and guarded read-only
+forms. The single browser workflow and preview acceptance are still pending.
+The existing preview stays9healthy on its accepted treatment images. A fresh
+private7schema backup is verified; builder is stopped. All161volumes retained.
+The recovered test database remains capped at2GiB/no-swap; the cache-helper and
+interrupted-check evidence above make the recovery resumable.
+
+Next: finish the single browser save/readback, reconcile zero-score-change
+evidence, promote verified images and run an independent read-only preview
+smoke, then archive/remove the temporary web. After-next: caller-evidenced
+Facial fia/fit correspondence consumers, then ordinary operation-note writes
+without replacing module ownership. No broad blocker. Coverage77.2749percent
+code/73.2847overall; canonical14125/mappings18643/inventory5503. Laravel486 and
+Docker16 files staged, no commits/pushes. Next hourly by11:35BST; deadline and
+scope freeze unchanged. The requested future release-process work stays deferred.
+
+#### 10:47 integration acceptance on 8 September - Facial Injection preview
+
+The single Facial browser save passed and independent database readback confirms
+the changed batch, unchanged units/laterality/geometry, the locked record and
+the protected clinical baseline. One clinical POST, no retry, no browser/HTTP
+errors and no OOM. Separate read-only preview navigation passed after promotion:
+web d36f02b0ce5d, manager f4cce6969292, runtime source 1da45280573c.
+The retained seven-schema backup preceded promotion; no reseed or new DDL.
+All nine preview services are healthy with 20 patients, 59 events, one user and
+331 migrations. Preview smoke made no clinical, draft or configuration writes.
+
+The exact temporary Facial web was removed after private live-storage/log
+archival. Browser helpers are removed, builder stopped and all 161 volumes
+retained. FileLedger/PageRegister evidence is reconciled and strict verification
+passes without score changes. Reconciled source d0baa4fb2a4b differs from baked
+runtime only by evidence CSVs; do not confuse the two identities.
+
+Evidence: facial-edit-browser-runtime.json, facial-edit-browser-after.log,
+facial-preview-browser-runtime.json, facial-preview-up.log,
+facial-reconciled-ledger.log and facial-web-archive.log in the external run folder.
+Original midpoint full-suite failures remain recorded, with focused repairs only.
+Next: Facial fia/fit correspondence consumers, then ordinary operation-note write
+boundaries. Existing letters are plain text: do not silently enable arbitrary
+HTML while porting the legacy table/list/string output contract. Next hourly
+checkpoint remains due by 11:35 BST; the durable deadline is unchanged.
+
+#### 11:26 checkpoint on 8 September - Facial correspondence and Operation Note
+
+Facial fia/fit now provide latest recorded treatment values, ordered batches and
+injections, NHS dates, source numeric display and totals, escaped table/list/
+string output and plain-text insertion in a correspondence draft. Each read uses
+two queries with 150 older treatments and 100 current injections, with no
+filesort, temporary table, cache or hints. Immutable verification passes 148 PHP
+tests/38,829 assertions, 55 frontend tests, Pint, production build, strict ledger
+and web/manager image gates. Registry has 71 query-plan operations.
+
+One isolated browser inserted both findings, saved once and reloaded an unsigned
+draft. Its final exact-body assertion failed because the existing letter-save
+contract trims one trailing space. Preserve that original failure and the first
+readback failure; no clinical save was repeated. Independent database readback
+proves exact trimmed content, one save and unchanged Facial/protected clinical
+data. A separate read-only browser proves the displayed text matches that saved
+checksum, without clinical writes or errors. This is not a relabeled all-green
+original browser run. Generic embedded macro expansion, rich text, PDF/PNG output
+fidelity and remaining DIV-292 consumers remain deferred.
+
+A private seven-schema backup preceded promotion. Preview web 7c3521318589,
+manager 99d562725273 and source 2caeb392599f are accepted with nine healthy
+services, 20 patients, 59 events and 331 migrations. Separate read-only preview
+navigation passes with no clinical/configuration/draft writes or browser errors.
+Both temporary correspondence helpers were removed after private storage/log
+archival; all 161 volumes and original failure evidence remain. Builder stopped.
+Four canonical shortcode/test mappings and four secondary mappings now carry
+accurate bounded evidence without raising their scores; one named API surface
+was added. Coverage stays 77.2748822860854 percent code and 73.28467256637168
+percent overall, with 14,125 canonical paths and 18,643 mappings. Reconciled
+source 7f4a5cd529ea preceded subsequent Operation Note work; runtime identity is
+unchanged by evidence-only CSV reconciliation.
+
+Current work: Operation Note direct mutation access, preserving module ownership
+and its procedure/booking behavior. The first regression reproduced eight
+failures; the initial permission-first/fresh-locked correction passes 49 tests/
+1,192 assertions. Next: stale-parent/institution and rollback checks, query-growth
+comparison, then immutable verification and an isolated browser before preview
+promotion. After-next: the next caller-evidenced ordinary clinical consumer or
+mutation gap. Module-specific signing rules are not guessed. Original midpoint
+full-suite five failures remain recorded, with focused repairs only. No new DDL,
+no commits/pushes. External checkpoint-1126.json records resumable state; next
+hourly checkpoint is due by 12:26 BST. The fixed deadline and freeze remain.
+
+#### 12:00 integration acceptance on 8 September - Operation Note
+
+Direct Operation Note updates and deletions now enforce editing permission
+before binding/validation and recheck fresh locked patient, episode, event and
+institution state. Module ownership, clinical rules, optimistic versioning,
+booking restoration, audit and outbox remain intact. Read-only forms expose no
+save action. Ordinary configuration choices now use one bounded projected read,
+preserving retained inactive selections and ordering. The locked aggregate is
+reused during validation. Small/large fixtures show no N+1 growth within named
+page/update/delete/create budgets of 90/100/60/120 queries. The isolated browser
+page used 74 queries. No hints, cache or DDL were introduced; the small
+configuration sort remains an explicit later migrated-data profiling gate.
+
+Exact-source and immutable checks both pass 193 PHP tests/40,644 assertions;
+55 frontend tests, Pint, production build, both image gates and reconciled
+strict-evidence ledger pass. One isolated browser changed comments and saved
+once, then reloaded; locked notes stayed read-only. Independent database checks
+prove one save, unchanged non-comment note content and unchanged protected
+clinical data. A private seven-schema backup preceded preview promotion.
+
+Preview web e60a3f2e3359, manager 4e51e07678d7 and runtime source 1c9a3cff7b1a
+are accepted: nine healthy services, 20 patients, 59 events, one user and 331
+migrations. Separate read-only browser navigation passes without clinical,
+configuration or draft writes and without browser/server errors. Temporary web
+storage/logs were archived before removal; both browser helpers are removed,
+builder stopped and all 161 volumes retained. No commits/pushes.
+
+Evidence-only reconciliation gives source 23b6dd9013f1; do not confuse it with
+the baked runtime identity. Inventory is 5,507 tracked files. Laravel 503 and
+Docker 16 files are staged. Coverage remains 77.2748822860854 percent code and
+73.28467256637168 percent overall over 14,125 canonical paths/18,643 mappings.
+The original midpoint full-suite five failures remain recorded, with focused
+repairs only. Evidence is operation-note-*.log and the two browser-runtime JSON
+records in the external run folder. Next: select the next source/caller-evidenced
+incomplete clinical consumer, without re-porting working calculations for score.
+The next hourly checkpoint remains due by 12:26 BST; deadline/freeze unchanged.
+
+#### 12:32 integration acceptance on 8 September - requested-step reorder
+
+The canonical order API and shared dashboard/Examination panel now swap adjacent
+requested steps in the existing appointment-first transaction. Complete expected
+requested IDs reject stale membership, status or order. Started/completed steps,
+parent state, attendance, owner and PAS intake remain unchanged. Two history
+records, clinical audit and the exact projection/outbox share the transaction.
+Small/64-step and 1,000 unrelated-appointment fixtures have equal query counts
+within 40; the ordered read has no filesort, temporary table or hint. No DDL or
+cache was added. The existing 64-step limit fails explicitly without truncation.
+
+Immutable source a8f9890fd748 passes 173 PHP tests/39,093 assertions, 55 frontend
+tests, production build and both image gates. The first Node directory invocation
+failed before executing tests; its corrected glob invocation passed. The first
+reconciled ledger invocation used the wrong command namespace; the corrected
+oe:porting-ledger:verify --strict-evidence passes. Original invocation failures
+remain in the evidence folder. One browser attempt turns 100 clicks into one
+write and one compact delta, with no action-triggered full snapshot or history
+read; reload preserves order and fixed-step content. Independent database
+readback proves one audit, two histories and one outbox/projection increment,
+with protected clinical and PAS checksums unchanged. Websocket/load not claimed.
+
+A private seven-schema/1,330-table backup preceded promotion. Preview web
+a75be2de2fa1 and manager ac8aa8ee7ea0 are nine healthy services with 20 patients,
+59 events, one user and 331 migrations. One read-only preview smoke passes with
+no clinical/configuration/draft writes and no errors; two cancelled hotlist reads
+remain recorded. Temporary web storage/logs were archived before removal; both
+browser helpers are removed, builder stopped and all 161 volumes retained.
+
+The single canonical WorklistController mapping keeps its existing 85 score;
+no extra mapping was invented. WL-039 remains required for active hold resets,
+draft/pre-instantiation behavior, exact UI and migrated-data/full scale. Coverage
+is unchanged at 77.2748822860854 percent code and 73.28467256637168 overall, with
+14,125 canonical paths, 18,643 mappings and zero missing paths. Inventory is
+5,508 files; evidence-only reconciled source is 4140594ce52b. Laravel 504 and
+Docker 16 files are staged. No commits/pushes. Original midpoint full-suite five
+failures remain historical, repaired in focused checks only.
+
+External checkpoint-1226.json records the hourly boundary; this acceptance
+closes its pending integration. Next: source-backed ordinary Undo Check-in.
+Checkout reversal's PAS A13 contract remains separate and must not be guessed.
+After next: the next incomplete caller-evidenced clinical/worklist consumer.
+Next hourly checkpoint is due by 13:26 BST; deadline and freeze are unchanged.
+
+#### 13:05 integration acceptance on 8 September - Undo Check-in and tool cleanup
+
+The source-backed Undo Check-in action now runs through the shared
+appointment-first pathway transaction. It accepts only Check-in steps which are
+completed or already requested, refuses a pathway with a completed Checkout,
+clears all six step time and actor fields, derives attendance from any other
+completed Check-in, preserves the pathway start time, and emits versioned
+history and a clinical audit. The generic step-reset route delegates to the
+same guard. Capability, patient, institution, pathway and step ownership checks
+precede binding or mutation. Repeated requests are a no-op rather than a second
+clinical transition.
+
+Small, 64-step and 1,000 unrelated-appointment fixtures have equal query counts
+within 40; 65 steps fail explicitly. The ordered read has no filesort,
+temporary table or hint. Exact source checks pass 106 PHP tests/3,468
+assertions; the source-ledger pack passes 56/35,390; the immutable pack passes
+189/39,265; 55 frontend tests, Pint, production build, both image gates and the
+strict ledger pass. One browser attempt turns 100 clicks into one write and one
+compact delta. Independent database readback proves the exact field resets,
+one audit, one step history and one parent history, with unchanged fixed-step,
+protected clinical, PAS, projection and outbox data.
+
+A private seven-schema/1,330-table backup preceded promotion. Preview web
+01a070947d9b and manager d1a17a1f9773 are nine healthy services with 20
+patients, 59 events, one user and 331 migrations. A separate read-only preview
+smoke passes without clinical, configuration or draft writes. Temporary web
+storage/logs were archived before removal; both browser helpers are removed,
+builder stopped and all 161 volumes retained. Baked runtime source is
+4db93f71eeec; evidence-only reconciled source is now
+680303f67302e384229374e3720c67ff6f091ab6a26aaf02441572bcd701ca46.
+
+Fifteen loose project tools were moved from /home/toukan into
+/home/toukan/openeyes-rewrite/supporting-work/tools/openeyes-rewrite-tools: 12 browser MJS files and three related PHP
+helpers. Nothing was deleted. A relocation manifest records every old and new
+path, unchanged SHA-256 and mode; container syntax checks pass for all 15 and
+the home directory has no top-level MJS file. Current FileLedger and
+PageRegister references use the new folder and strict evidence passes. The
+hashed opening-baseline JSON remains unchanged as an immutable historical
+record. The standalone legacy UrlBenchmarkCommand and unrelated files were not
+moved. The first strict-ledger container invocation incorrectly supplied one
+quoted command name and failed before Artisan ran; the corrected split-argument
+invocation passes and both records are retained.
+
+This earlier bounded-folder arrangement is superseded by the final 11 September
+location rule at the top of this plan. New run folders, reusable tools and slice
+evidence nest under `/home/toukan/openeyes-rewrite`; the four explicit exceptions
+and already-restored shared material stay at their approved locations. Preserve
+unique recovery and failure evidence; there is no broad deletion authority.
+
+Coverage remains 77.2748822860854 percent code and 73.28467256637168 percent
+overall over 14,125 canonical paths and 18,643 mappings. Inventory is 5,509
+files. Laravel 505 and Docker 16 files are staged, with no commit or push. The
+original midpoint full-suite five failures and Facial whitespace assertion
+remain historical failures with narrower independent proof, not relabelled
+passes. Next: inspect and close the next source-backed ordinary pathway action.
+After next: the next incomplete caller-evidenced clinical/worklist consumer.
+The next formal hourly checkpoint is due by 13:26 BST; deadline and freeze are
+unchanged.
+
+#### 14:28 checkpoint on 8 September - ordinary Did Not Attend accepted
+
+The selected requested Check-in step can now be marked Did Not Attend through
+one permission-first named API. The shared appointment-first transaction records
+completed Check-in, discharged/done pathway state, not-arrived attendance, a
+durable DNA flag, history, clinical audit, compact projection and outbox. It then
+returns the authorized manual DNA event handoff. Repetition is a no-op. Attendance,
+generic step, preset and reorder writes are blocked while DNA is active. Explicit
+Undo Check-in clears DNA and restores the state derived from the remaining steps.
+
+The 64-step guard fails without truncation. Small and 64-step fixtures with 1,000
+unrelated appointments use 28 and 27 queries and retain indexed plans without
+filesort, temporary tables, cache or optimizer hints. The complete focused file
+passes 88 tests with 772 assertions after a fresh-detail regression exposed and
+corrected the bounded presenter omitting did_not_attend. The reconciled source
+passes 56 ledger tests with 35,390 assertions and strict evidence verification.
+
+One isolated 100-click browser attempt made exactly one DNA request and one event
+creation. Its runner then reported a false negative because it expected an
+optional hotlist write which this event flow does not perform. The action was not
+replayed. Independent database readback proves exact event, audit, step history,
+parent history, projection and outbox changes while protected clinical, PAS source
+and earlier events remain stable. A later zero-write browser readback on the
+corrected production image proves DNA after a fresh detail read, exposes Undo and
+disables incompatible controls.
+
+WL-032, WL-033, the named page/API surface and data dictionary are reconciled.
+The single canonical WorklistController mapping retains its partial score of 85,
+so coverage remains 77.2748822860854 percent code and 73.28467256637168 percent
+overall over 14,125 canonical paths and 18,643 mappings. Inventory is 5,511 files.
+
+Accepted source 59f07e2e3ea4 and container source 9f70395b94e2 produce exact
+development f4368d7ae9b3, web 67119060121b, manager b6625fe61ce7, queue
+03122bae5d92 and browser e025cb082e0e images. The baked confidence pack passes
+169 PHP tests with 38,770 assertions, the frontend passes 55 tests, Pint passes
+the eight affected PHP files and all five role/compatibility image gates pass in
+bounded containers. A private seven-schema/1,330-table backup was taken before
+promotion. The preview now runs the accepted web, manager and both queue workers,
+has 20 patients, 59 events, one user and 332 migrations, and all nine bounded
+services are healthy. Its read-only browser smoke made zero event writes and no
+retry; one expected private hotlist activity write occurred. The isolated DNA
+web was archived and removed while every fixture volume was retained.
+
+Specialized DNA hooks, historical reopening, optimistic versions, all 88 worklist
+parity items and migrated-data scale remain open. The next source-faithful behavior
+can now start. External checkpoint-1428.json remains the last formal hourly record;
+the next checkpoint is due by 15:28 BST.
+
+#### 15:42 checkpoint on 8 September - ordinary requested-step deletion accepted
+
+One requested pathway step can now be removed through the named, permission-first
+API. The request supplies the exact visible requested-step IDs as a stale-list
+guard and is capped at 64. The appointment-first transaction soft-deletes only the
+selected requested step, derives the parent state, and records one history row,
+clinical audit, compact projection and outbox. It rejects Did Not Attend pathways,
+non-requested steps, stale lists and cross-context access without a partial write.
+
+The focused deletion pack passes 7 tests with 57 assertions, the full next-steps
+pack passes 95 tests with 829 assertions, and the baked confidence pack passes 112
+tests with 3,427 assertions. The frontend passes 55 tests, the clean production
+build and Pint pass, and all role-image gates share source 6e9de8016e05 and Docker
+source 9f70395b94e2. Query growth, indexed plans, rollback and protected-row
+invariants are covered without optimizer hints.
+
+One isolated 100-click browser action made exactly one delete write. Independent
+database readback proves the selected step is deleted, its three siblings and
+protected clinical/PAS state are unchanged, and projection and outbox versions each
+advance once. The action persisted after reload, restored focus and used no retry.
+The isolated web was archived and removed with all volumes retained.
+
+A private seven-schema/1,330-table backup preceded promotion. The persistent
+preview now runs the accepted web, manager and queue images; all nine bounded
+services are healthy. A zero-write route-manifest and dashboard browser smoke
+passes. PSD assignment cleanup is deferred because the target has no safe legacy
+assignment linkage.
+
+WL-038 and its page/API/ledger evidence are reconciled. The shared canonical
+WorklistController row retains score 85, so coverage remains 77.2748822860854
+percent code and 73.28467256637168 percent overall over 14,125 canonical paths and
+18,643 mappings. The next work is the next source-backed ordinary pathway action,
+then the next incomplete caller-evidenced clinical/worklist consumer. External
+checkpoint-1528.json is the latest immutable hourly record; checkpoint-1628.json is
+due by 16:28 BST.
+
+#### 16:52 checkpoint on 8 September - ordinary single-step append accepted
+
+The ordinary part of WL-036 now appends one active user-creatable pathway step
+through named permission-first APIs. The complete current step ID list is the stale
+guard, at most 64 active steps are allowed, a completed pathway reopens to waiting,
+and history, audit, compact projection and outbox are atomic. Custom step state,
+positional insertion, observers and optimistic versions remain explicitly open.
+
+The confidence pack passes 122 PHP tests with 1,202 assertions, 55 frontend tests,
+the clean 869-module build and every image role gate. A no-retry browser proof sends
+100 rapid clicks but performs one append write; reload and independent database
+comparison prove the exact step, one audit, one projection revision and one outbox
+change. The globally registered picker plan caps the tolerated tiny catalogue scan
+and sort at 64 estimated rows, so growth fails CI without an optimizer hint.
+
+Final reconciled source 708309da6398 has a 5,516-file packaged source manifest and
+passes all 56 ledger tests with 35,390 assertions. Coverage stays 77.2748822860854
+percent code and 73.28467256637168 percent overall over 14,125 canonical paths and
+18,643 mappings. A private seven-schema/1,330-table backup with SHA256
+bfd5e527a4f7 precedes promotion. All nine preview services are healthy on web
+92e403c1be5c, manager 86430f2fe5ea and queue 16f9fa9e8806, retaining 20 patients,
+59 events, one user and 332 migrations. The final read-only route and dashboard
+browser smoke passes with no clinical write or retry. The next item is the next
+source-backed ordinary pathway action. No commit or push was made.
+
+#### 17:33 checkpoint on 8 September - ordinary checkout reversal integrated
+
+The ordinary WL-035 Undo check out action is now a named permission-first API.
+It locks the appointment, pathway and at most 65 ordered steps, requires the
+exact completed checkout step, clears its times and actors, and restores the
+pathway from discharged/checked-out to active/checked-in. Repetition is a no-op.
+Step and pathway history, clinical audit, typed system event, compact projection
+and both outboxes share one transaction.
+
+The baked focused pack passes 164 PHP tests with 1,394 assertions and all 55
+frontend tests pass. Small and 64-step fixtures with 1,000 unrelated appointments
+have fixed query growth and retain the indexed ordered read without filesort,
+temporary table or optimizer hint. One production-image browser proof sent 100
+rapid clicks but made one POST and one compact delta, loaded no patient history,
+made no unrelated write, and persisted after reload. Independent database proof
+records exactly one allowed history, audit, event, outbox and projection change
+while protected clinical and PAS source hashes remain unchanged.
+
+WL-035, PageRegister, API coverage, feature progress and both existing
+WorklistController ledger mappings are reconciled without changing either score.
+Coverage remains 77.2748822860854 percent code and 73.28467256637168 percent
+overall over 14,125 canonical paths and 18,643 mappings. The packaged source
+inventory is 5,517 files. Final reconciled image and ledger gates, private preview
+backup and promotion remain current work. Legacy emergency-care HL7 A13
+publication is deferred until its authoritative integration contract is ported;
+specialized hooks, optimistic versions and migrated-data scale remain later gates.
+The isolated worker is privately archived and removed with every volume retained.
+External checkpoint-1733.json is the hourly record; next checkpoint is due by
+18:28 BST. No commit or push was made.
+
+#### 17:46 integration checkpoint on 8 September - checkout reversal promoted
+
+Reconciled source 439127e4bb76 passes strict FileLedger verification and all 56
+packaged ledger tests with 35,390 assertions. The production, development,
+manager, manager-development, queue, queue-development and browser-test images
+share that exact source digest. Their web, manager, queue, development-boundary
+and Playwright 1.58.2 with Chromium 145.0.7632.6 gates pass.
+
+A private seven-schema/1,330-table backup with SHA256 de0ccf767884 was verified
+before promotion. All nine persistent preview services are healthy on web
+c9f6abde3f18, manager f9c956df3ec4 and queue 94d23d9a3fe8. The database retains
+20 patients, 59 events, one user and 332 migrations. A final read-only browser
+check finds the new operation and loads the worklist dashboard with no clinical
+write or retry. All 161 volumes remain retained. The next item is the next
+smallest caller-proven pathway action; no commit or push was made.
+
+#### 18:53 integration checkpoint on 8 September - pathway comments promoted
+
+WL-042 and WL-043 now preserve current pathway and step comments as bounded,
+escaped, authenticated worklist detail. The current values are co-located on the
+pathway and step rows, while every change records pre-change history and clinical
+audit in one transaction. Same-value saves and empty deletes are no-ops. These
+detail-only writes deliberately do not rebuild the compact projection or publish
+an outbox delta.
+
+Final source 0157ed5376d4 has a 5,521-file packaged manifest and passes 176 PHP
+tests with 37,290 assertions, all 55 frontend tests, the production build, strict
+FileLedger verification and every role-image gate. The ledger remains exact at
+14,125 canonical paths and 18,643 mappings; coverage is 77.2979 percent code and
+73.2947 percent overall. One no-retry browser proof made exactly two saves and one
+step deletion from 300 rapid clicks; independent readback proved the expected
+history and audit only, with no compact outbox change or sensitive telemetry.
+
+A verified private seven-schema/1,330-table backup with SHA256 8fd4acbb745d
+preceded promotion. All nine persistent preview services are healthy on the
+accepted web, manager, queue and realtime images, with 20 patients, 59 events and
+333 migrations retained. A final read-only browser check sees both comment
+operations and writes nothing. The isolated worker was archived privately and
+removed with all volumes retained. Legacy comment-table import, exact visual UAT,
+the full failure/load matrix and A13 publication remain later gates. Next is the
+smallest remaining caller-proven pathway action; no commit or push was made.
+
+#### 21:03 integration checkpoint on 8 September - started-step cancellation promoted
+
+WL-040 now cancels only the exact selected step when it is started by the
+authenticated actor. It returns that step to requested, clears start and
+completion actors and times, and keeps the pathway active when another step is
+started or waiting otherwise. Authorization runs before binding. Repetition,
+another user's started step and a non-started step are bounded no-ops; DNA is
+rejected. History, audit, projection and outbox changes share one transaction.
+
+The corrected milestone passes all 3,837 deterministic PHP tests with 100,183
+assertions, all 55 frontend tests, the 869-module production build, strict ledger,
+query-plan, image, Compose, Helm and Playwright gates. The browser run sends 100
+rapid clicks but makes one POST and one compact delta, with independent database
+readback. The first browser rerun exposed a test harness omission: protected file
+and event-image storage were not mounted writable. The harness now matches the
+real Compose storage contract and statically verifies both mounts.
+
+A private seven-schema/1,330-table backup with SHA256 74a82aea44e5 preceded
+promotion. All nine persistent preview services are healthy on web 45b90aaa2842,
+manager 418eb2128a1a, queue f2a639c10f03 and reverb 1a15b0f07f2d. The preview
+retains 20 patients, 59 events, one user and 333 migration rows, and exposes the
+named cancel-started operation. The failed one-off milestone web container was
+privately archived and removed; its data volumes and test evidence were retained.
+Coverage remains 77.2979 percent code and 73.2947 percent overall because the
+shared legacy WorklistController path already had the higher score. The next slice
+must be a useful bounded legacy function that adds a new canonical-path score.
+Automatic event-exit linkage, migrated-data scale, UAT and clinical sign-off remain
+later gates. No commit or push was made.
+
+### 16.144 Active coverage-first three-worker run - 2026-09-09 to 2026-09-11
+
+Documentation capture clarification (2026-09-09): follow master section 27.1.
+Add brief before/after/reason, new-versus-parity, client impact/retraining and
+verified-versus-pending evidence to existing bundle records. Note future ideas
+there for later repository consolidation; do not author the guide, backfill all
+records or implement suggestions now. Porting percentage remains the priority.
+Record migration no-foreach/concise-output and default-help command compliance
+for the later consolidation audit without breaking existing scheduled callers.
+
+External repository clarification (2026-09-09): master26.18 records EyeDraw and
+the manager-baked, version-matched sample successor. Current core ports must
+capture their real EyeDraw calling/JSON/clinical-output dependencies and retain
+the existing integration boundary. Actual EyeDraw repository porting is next
+tranche unless the entire useful core queue is exhausted. Plan the substantially
+redesigned sample package around current CSV seeds and the worklist factory, with
+the general deterministic story/profile builder still to implement, current-date
+demo data and fast safe reset/reseed on a compatible schema. Its application/
+manager/schema/package compatibility and isolated destructive-reset gates are
+foundations to respect now, not new implementation scope in this run. Track both
+repositories separately from the pinned core coverage denominator.
+
+External planning exceptions (2026-09-10): the user authorizes two temporary
+read-only Astra agents to inspect EyeDraw and sample separately and deliver their
+porting plans now. The three Sol implementation workers continue unchanged.
+Each planner must finish after delivery, must not delegate or implement, and must
+prepare prioritized questions for the next tranche. Main records the plans and
+any architecture-now caller/compatibility constraints; actual engine/package
+implementation remains deferred under master26.18.
+
+EyeDraw planning completed 2026-09-10: the temporary planner has finished. Its
+[plan and prioritized next-tranche questions](/home/toukan/openeyes-rewrite/coverage-48h-101221/eyedraw-next-tranche-plan.md)
+are incorporated in master26.18. Retain the engine/shared host; preserve raw
+historical JSON and provenance; keep unknown-class and suppression semantics
+explicit. Lifecycle, tag/search, offline packaging and separate PNG/PDF gates
+remain next-tranche work. The sample planner has also finished; its
+[plan and prioritized questions](/home/toukan/openeyes-rewrite/coverage-48h-101221/sample-next-tranche-plan.md)
+is incorporated in master26.18. Neither planner is reused, neither external
+inventory changes the core coverage denominator, and implementation stays later.
+
+Temporary implementation exception (2026-09-10): two additional Astra workers
+each receive one port sized for about two hours, with a four-hour maximum from
+their recorded start. B043 covers source-backed DocMan metadata/output
+preparation; B044 covers the bounded Visual Outcome report. Each reserves exact
+files with main before editing, stops opening scope after three hours, and
+finishes after its bundle instead of joining the ongoing queue. Existing three
+Sol workers continue. Main retains shared integration, the single capped runner
+and serialized database checks. No extra containers, broad suites, production
+transmissions, preview changes or nested delegation. This explicit exception
+supersedes the original three-only wording below for these temporary tasks.
+
+Single-agent transition (2026-09-10): all subagent lanes stop opening work early
+enough to reach a safe documented handoff by 2026-09-10T14:00:00+01:00. At that
+time any remaining subagent is interrupted after its current safe boundary and
+is not replaced. From 14:00 until the fixed tranche terminal checkpoint, only
+the main conversation implements, integrates and verifies work, using
+gpt-6-astra at max reasoning. No planner, reviewer or implementation child is
+started during that period. Model selection for the main conversation is a
+client-controlled transition; preserve a resumable 14:00 checkpoint if the
+client needs to switch it manually. This changes worker concurrency only. It
+does not change the 06:12 scope freeze, 10:12 terminal guard, acceptance gates,
+runner serialization, repository rules or allowed scope.
+
+Next-push clarification (2026-09-09): the master branch/release entry now requires
+OpenEyes-style `develop`, `master` and per-version release branches at the next
+explicitly authorized application/Docker push, starting with `release/28.0.x` and
+the future final tag `v28.0.0`. Recheck actual refs and agree preserved-history
+branch bases first. A development push does not authorize or imply the final
+release tag. Rename and full release automation stay later; no Git mutation or
+push is authorized by this planning request or added to this porting run.
+
+Approved implementation starts at 2026-09-09T10:12:21+01:00. The fixed
+terminal guard is 2026-09-11T10:12:21+01:00. Do not complete, hand off or
+voluntarily idle before that guard; finish at the first safe integrated
+checkpoint at or after it. Freeze new functional scope at
+2026-09-11T06:12:21+01:00, earlier only if measured final verification needs
+more time. A durable goal records this clock. Earlier runs are historical.
+
+Priority is correct, safe, usable ported logic and higher weighted legacy-code
+coverage. Three long-lived gpt-5.6-sol xhigh implementation workers were
+authorized only for the opening parallel phase, with the main agent coordinating
+integration. From 2026-09-10T14:00:00+01:00 the main gpt-6-astra max session is
+the sole lane through the terminal checkpoint. No nested or new delegation.
+80 percent is the first checkpoint, 85 the working aim and 90 a stretch.
+Targets are neither guaranteed nor reasons to stop early or repeat a full suite.
+
+Opening source: legacy ad2324084788608246a8250e817198c2f26a4fd6;
+Laravel HEAD 1ad12cba8bb7a138346d90918b0ac2d1d2624a3c with context digest
+a0c3e33c025617cd545e2c08ba8ae25cb223e411ab696aec79c1ab61749added;
+Docker HEAD 67cfbca98a63d176af739686992e4aa0b303604d with context digest
+eacc0e89df42ec246c2c059f22b1fe7ab3b3a8a9ed3fc1578829e34e2f1212c3.
+Preserve the 657 staged Laravel and 17 staged Docker files and all unrelated
+work, including the untracked public/frankenphp-worker.php. Opening code
+coverage is 4822.11 equivalents across 6159 paths, or 78.29371651242084
+percent. Overall is 10415.94 across 14125 canonical paths, or 73.74116814159292
+percent. There are 18643 mappings, 341 zero-score code paths and 470 deferred
+code paths. 80, 85 and 90 percent require 105.09, 413.04 and 720.99 additional
+code equivalents respectively. Inventory and score relabeling earn no credit.
+
+#### Ownership and rolling queue
+
+| Worker | First bundle | Ordered successors |
+|---|---|---|
+| Sol 1 | Address administration and commissioning-body catalogues, types, services and assignments | Patient/contact administration, configuration consumers, ordinary profile/account configuration |
+| Sol 2 | Required-diagnosis response states, history and carry-forward | Personal event templates, remaining diagnoses/examination and ordinary CVI/therapy/surgery behavior; preserve the Further Findings retirement/import path instead of recreating its archived editor |
+| Sol 3 | PAS configuration, assignments, remapping and ingestion consumers | Supported PAS resources, webhook/xAPI consumers, protected-file/device administration with authoritative callers |
+
+Assign legacy Laravel/shared/API census paths to their actual consuming bundle.
+Reference data belongs to its producing lane; PAS and other integration adapters
+belong to Sol 3. Workers reserve exact source and target files before editing,
+keep one active bundle and two successors, and preserve everyone else's changes.
+Main owns routes, shared providers/registries/global authorization, schema and
+migration ordering, shared seeds, canonical ledgers, divergence IDs and Docker.
+Workers submit fragments for these files instead of competing edits.
+
+Main integrates approximately every two hours against a frozen accepted-index
+snapshot, with no more than three completed bundles waiting. Re-rank every four
+hours by evidenced additional equivalents per worker-hour, dependency and risk.
+Initial investigation is limited to 30 minutes; unresolved clinical/interface
+contracts after one hour are documented with evidence and a resume trigger while
+the worker takes the next unblocked bundle. Do not guess to improve the score.
+
+#### Verification cadence supersedes earlier per-slice gates
+
+The user explicitly accepts ordinary low-risk coverage after source review,
+integration and a focused working check, with automated tests recorded for later.
+Keep the score formula and strict evidence verifier unchanged; neither proves
+test execution. Each mapping identifies exact source/target symbols, real
+callers, completed and remaining behavior, and actual checks. Separate new-code
+gains from reconciliation of previously implemented behavior. No fake test IDs,
+generic ledger tests offered as behavior proof, or automatic score increases.
+
+Do not run image checks/builds, full E2E, complete test packs or dependency audits
+per bundle, per percentage point, at midpoint, or every six hours. These run in
+one final batch. Immediate work is source/diff review, syntax/binding checks and
+the minimum actual request/consumer check. Changed authorization, patient
+isolation, audit/history, signing, clinical calculations or irreversible
+transforms require narrow immediate proof. Reusing a proved shared boundary
+does not trigger its entire test pack. Affected schema checks and materially
+new high-volume query boundedness/plan checks remain proportionate early gates.
+
+Hours 0-1 record baseline, ownership and final-command readiness without rerunning
+the previous green milestone. Hours 1-44 prioritize implementation. Hours 44-48
+freeze and integrate: reconcile exact ledgers/manifests, verify accumulated
+tail migrations and one clean seven-schema migration/tiny seed, build frontend
+and affected images once, run the existing deterministic Pest suite, relevant
+frontend tests and maintained Playwright plus required new interaction checks.
+No shuffled duplicate suite. Fix attributable failures and rerun affected checks;
+broaden only when a repair changes shared behavior. Continue beyond the deadline
+if required repairs are still needed for a safe checkpoint.
+
+#### Runtime, records and finish
+
+Use one disposable development/testing environment separate from the persistent
+nine-service preview. Serialize database-mutating and heavyweight checks; keep
+resource caps and at least four GiB host memory headroom. Preview remains on its
+accepted baked images until final backup, migration and smoke-gated promotion.
+No development test writes or destructive checks target preview storage.
+
+Preserve normalized schema packets, bounded queries, stable owned operations,
+canonical /api, validation, readiness, patient-summary layout, clinical audit
+and isolated renderer architecture. No optimizer hints, database business
+automation, runtime DDL, Cypress or speculative frameworks. Broad migrated-data
+load, output fidelity, full UAT, clinical sign-off and documentation completion
+remain later gates; their absence is not hidden by a porting percentage.
+
+Hourly user progress stays at
+/home/toukan/openeyes-rewrite-progress.md, maximum
+ten lines. Detailed ownership, bundle evidence, blockers, next_item, after_next
+and deferred tests use the existing dated run folder under coverage-48h-101221.
+No new top-level run folders. At finish report actual coverage and new behavior,
+verification and missing tests, stage/show task diffs, leave preview available,
+and stop only owned disposable containers while preserving volumes. As the last
+run task, retain unique restart evidence, next-tranche plans and documentation
+inputs below `/home/toukan/openeyes-rewrite`, following the final location rule
+at the top of this plan. The active Laravel and Docker repositories, progress
+file and second-eye query note remain at their four explicit top-level paths.
+Do not relocate shared or uncertain material just because the rewrite uses it.
+Any separately approved cleanup verifies paths and checksums or atomic-rename
+identity first. The shared planning repository, preview volumes, private files
+and unrelated projects remain outside. Delete only volumes proven to belong solely
+to completed disposable environments; retain uncertain, preview and restart
+volumes. No broad prune, commit or push is authorized.
+
+#### First implementation checkpoint - 2026-09-09 11:12 BST
+
+Code coverage is 4860.40 / 6159 = 78.9154 percent; overall is 10455.23 / 14125
+= 74.0193 percent. The first three bundles add 38.29 code equivalents and one
+non-code configuration equivalent. Canonical paths and mapping count are unchanged;
+strict source/evidence integrity passes. New source-class or inventory credit is zero.
+
+Commissioning catalogues and assignment services, mandatory diagnosis responses,
+and fixed PAS policies/XML remapping are integrated with explicit partial scores.
+Focused checks passed; eight commissioning prefix query plans over 1000-row catalogues
+use range indexes without filesort or temporary tables. Full/browser tests remain
+deferred. The preview stays unchanged and the isolated three-container runner is capped.
+
+Next are PAS V1 intake, ethnic hierarchy and personal event templates, followed by
+known-flag AIS mutations and account/profile administration. General Contact address
+editing must wait for a retained multi-address collection and coordinated snapshot
+writer contract; do not introduce another flat-only editor. Further Findings appears
+retired in the pinned migrations: verify preserved History text before any retirement
+accounting, and do not resurrect an unreachable legacy element. Keep retirement
+reconciliation distinct from new implementation gains.
+
+#### Second implementation checkpoint - 2026-09-09 12:12 BST
+
+Strict ledger integrity passes at 79.0369 percent code and 74.0822 percent overall:
+4867.88 code equivalents and 10464.11 total, across unchanged 6159 code and 14125
+canonical paths. This is +45.77 code equivalents since opening. PAS V1, AIS mutation,
+ethnic hierarchy and account administration are integrated with partial scores and
+focused proof. Existing-account credentials remain read-only until provider ownership
+is explicit. Configuration page/API/CLI audit is now atomic with its configuration
+transaction. No credentials enter account audit records.
+
+Personal event templates remain uncredited while their duplicate-history correction
+is rechecked; JavaScript pagination and stale-response checks pass. Contact identity
+administration and standalone GP/practice endpoints are delivered for integration.
+Next are contact-location links, source-backed Further Findings retirement evidence
+and ordinary examination/integration gaps. No postal collection, provider lifecycle
+or unsupported clinical rule is guessed. All preview services are healthy, with about
+17 GiB host memory available. Full suites, image and browser checks stay in the final
+window. The detailed resumable record is in the existing coverage-48h-101221 run folder.
+
+#### Third implementation checkpoint - 2026-09-09 13:05 BST
+
+Strict ledger integrity passes at 79.1984 percent code and 74.1548 percent overall:
+4877.83 code and 10474.36 total equivalents across unchanged 6159 code and 14125
+canonical paths. This is 55.72 additional code equivalents since opening. Mapping
+rows are 18647 after retaining four secondary personal-template ownership mappings;
+those mappings add no global coverage. Personal templates now pass 89 focused
+assertions and five JS checks after removing duplicate history and guarding competing
+saves. Contact identity/locations and standalone GP/practice writes are integrated
+with bounded indexed reads. Explicit no-history diagnosis confirmations retain the
+familiar nil marker and pass 199 assertions across 14 affected tests. Queued device
+reports pass 19 tests with 211 assertions including actual after-commit enqueue failure,
+durable retries and stale-token protection. Broad browser/image/full-suite checks
+remain deferred, not reopened at this percentage checkpoint.
+
+B010 now coordinates contact-address collection and all six existing writer families
+before enabling routes. Unsupported multi-address clear rejects atomically; complete
+PAS list/type parity remains separate. B011 ports source-backed previous/relevant
+Therapy Application interventions with exact saved clinical snapshots. Packet 036
+is reserved and 037 is staged but not applied. Source server date-order validation
+and UI-only today limit remain distinct. The next four-hour rerank prioritizes larger
+missing therapy, administration and supported xAPI workflows over low-return helper
+increments. All preview services remain healthy and available memory is about 17.9 GiB;
+no OOM or preview mutation is reported. Hourly records continue in the existing folder.
+
+#### Fourth implementation checkpoint - 2026-09-09 14:05 BST
+
+Strict coverage is 79.4157 percent code and 74.2530 percent overall: 4891.21 code
+and 10488.24 total equivalents over unchanged 6159 code and 14125 canonical paths.
+The run has added 69.10 code equivalents. Mapping rows remain 18647, with zero
+missing or unowned code paths; 5718 tracked target paths are inventoried. Contact
+address collections now converge all six manual/PAS writers with complete history
+images. Repeatable per-eye therapy interventions retain immutable clinical choices,
+ordered dates and soft-retired history. Device administration combines safe upload
+and an institution-scoped status page under both administration and import grants.
+
+B010 passes six focused tests with 141 assertions; B011 passes its 86-assertion
+lifecycle case plus eight existing tests. Shared schema/bootstrap checks pass 30
+assertions. B003f passes three tests with 86 assertions after correcting ULID audit
+storage. Address reads stay at four queries; therapy reads at three; device reads
+at two. Actual large-fixture plans are indexed without sort/temp operations. No
+index hints or browser/full-suite claims are introduced. Packets036-038 are applied
+only in the disposable runtime. The preview remains unchanged and healthy, with
+about 17.2 GiB host memory available. New guide writing remains deferred; capture
+only brief legacy/new/reason/client-impact evidence during functional porting.
+
+Current work is B012 therapy funding/deviation/urgency rules, B013 safe patient
+merge-request administration without irreversible execution, and B003g PAS known
+accessibility fields. Packets039-040 await integration proof. The next rerank selects
+larger supported administration, clinical and active integration caller cohorts.
+Final browser, full suite, image and realistic migration/load gates remain separate.
+
+#### Fifth implementation checkpoint - 2026-09-09 15:07 BST
+
+Strict coverage is 79.8394 percent code and 74.4760 percent overall: 4917.31 code
+and 10519.73 total equivalents over unchanged 6159 code and 14125 canonical paths.
+The run has added 95.20 code equivalents. Mapping rows remain18647; pending1214,
+unowned1284, unowned code0 and reviewed placeholders0. B012/B013/B003g/B014/B003h/
+B015/B018 are accepted: therapy exceptional pathways and recipient selection,
+merge-request administration and PAS intake without execution, PAS accessibility,
+data-source provenance and the supported form-definition builder. Focused safety,
+history, schema, Vue and indexed fixed-growth read checks pass. No mail delivery,
+irreversible merge or full browser/migration acceptance is claimed.
+
+Current work is immutable v2 therapy output snapshots, authenticated CVI patient
+signature intake and supported shortcode discovery. The analytics entry page has
+passed focused permission checks and Vue compilation; query evidence and credit
+remain pending. Biometry administration was found already covered and not recounted.
+The preview stays unchanged; host available memory is about16.6GiB. Packets039-044
+and046 are applied only in the disposable runtime;045 remains reserved. Next rerank
+is18:12BST. Documentation capture stays brief; guide writing and broad final gates
+remain deferred. Detailed restart evidence is checkpoint-1507.txt in the existing
+run folder; the next short user progress record is due16:07BST.
+
+#### Sixth implementation checkpoint - 2026-09-09 16:07 BST
+
+Strict coverage is79.9674 percent code and74.5318 percent overall:4925.19 code
+and10527.61 total equivalents over unchanged6159 code and14125 canonical paths.
+The run has added103.08 code equivalents;18647 mappings,1214 pending,1284 unowned,
+zero missing paths, unowned code or reviewed placeholders. B016/B003i/B019/B020/
+B021 are accepted: immutable therapy text/HTML artifacts, root-first CVI external
+PNG signature intake, analytics entry, current shortcodes and initial deprivation
+import with AMD demographics. Focused clinical/history/auth/schema and indexed new
+read checks pass. Larger AMD fixtures expose existing cohort filesort/temp work,
+also present before B021; record it for performance closure without hints and do
+not claim a clean full-query plan or submission-ready export.
+
+Next are imported therapy delivery history (packet048), legacy Patient/Document
+API compatibility (packet049 reserved) and the practice commissioning-body summary.
+Imported historical report status/date follows; no live delivery state is inferred.
+Packet047 is applied in the disposable runtime;048 is prepared but not applied.
+The preview remains healthy and unchanged; about16.6GiB memory is available.
+Detailed evidence is checkpoint-1607.txt in the existing run folder. Broad tests,
+images, browser and real migration/load gates remain deferred; capture brief feature
+facts only. Next hourly record17:07BST; next queue rerank18:12BST.
+
+#### Seventh implementation checkpoint - 2026-09-09 17:07 BST
+
+Strict accepted coverage is80.0313 percent code and74.5674 percent overall:
+4929.13/6159 code and10532.65/14125 total equivalents, a107.02 code gain since
+opening. The first80 milestone is reached without changing the denominator;
+18647 mappings,1214 pending and1284 unowned canonical paths remain, with zero
+missing paths, unowned code or reviewed placeholders. B017/B024/B022/B003j are
+accepted: imported therapy delivery history, practice commissioning summary,
+imported report status/date and legacy Patient/Document API operations. Focused
+history, authorization, storage, CSRF, query-budget and indexed plan checks pass.
+Document title/ownership queries required a scalar correlated lookup correction
+to prevent optimizer materialization and sorting;12 plans now pass at2/100 matches
+plus10000 unrelated rows without hints. Report reads no longer hydrate all old
+generation payloads. These are bounded fixture results, not production-load proof.
+
+Current work is B023 saved treatment output snapshots and versioned v3 artifacts
+(packet050 prepared, not applied), B026 streaming PCR report (packet051 reserved)
+and actual inbound/integration workflow gaps. Unused EyeDraw shims, conflicting
+leaflet file identifiers, ambiguous scalar V1 GP mapping and IOP global mapping
+changes receive no credit and remain deferred. Packets048/049 are applied in the
+disposable runtime. Preview remains healthy and unchanged with about15.9GiB memory
+available. See checkpoint-1707.txt and coverage-1658.json in the existing run folder.
+Next hourly18:07BST; queue rerank18:12BST. Documentation is brief capture only;
+full suites, images, browser, migration-scale and UAT gates remain later work.
+
+#### Eighth implementation checkpoint - 2026-09-09 18:07 BST
+
+Strict accepted coverage is80.0986 percent code and74.5967 percent overall:
+4933.27/6159 code and10536.79/14125 total equivalents, a111.16 code gain since
+opening. Canonical14125, mappings18647, pending1214 and unowned1284 are unchanged;
+missing paths, unowned code and reviewed placeholders remain zero. B023 treatment
+output snapshots/v3 artifacts and B026 scoped PCR reporting are accepted under
+DIV-516/517. Together their focused tests pass25cases347assertions, with schema
+checks and indexed bounded reads. All398 fixed PCR curve points and both dynamic
+endpoints match the source. Shared analytics scores are deliberately conservative;
+multi-report PDF and unrelated chart branches remain unported. The source sub-1
+risk guard remains visible and quarantined pending clinical approval.
+
+Current work is B027 lazy Medical Retina history, B003m bounded read-only Mirth
+monitoring and B028 cataract complication reporting with authorized drill-down.
+Packets050-053 are applied only in the disposable runtime. Monitor credentials
+remain separate and disabled by default; synthetic secret-loader/config checks and
+six named report/monitor manifest surfaces pass with zero manifest queries. No real
+external system was contacted. Monitor UI stale-response guards are being repaired
+before acceptance. Static migration loops in025/027/035 were expanded without
+changing their operations; token-policy and formatting checks pass, while clean-chain
+execution remains final-batch work. These preparations add no coverage credit.
+
+The unchanged preview remains healthy; about15.1GiB memory is available. See
+checkpoint-1807.txt and coverage-1807.json in the existing run folder. Next hourly
+19:07BST; queue rerank18:12BST. Keep porting first, capture brief before/after/why
+facts in existing records, and leave full documentation and broad gates deferred.
+
+#### Ninth implementation checkpoint - 2026-09-09 19:07 BST
+
+Strict accepted coverage is 80.1940 percent code and 74.6437 percent overall:
+4939.15/6159 code and 10543.42/14125 total equivalents, a 117.04 code gain since
+opening. There are 14125 canonical paths and 18647 mappings; missing paths,
+unowned code and reviewed placeholders remain zero. Pending review is 1213.
+B003m read-only integration monitoring, B027 Medical Retina history and B028
+cataract complication reporting are accepted under DIV-518/519/520. Their focused
+checks pass 20 tests/327 assertions and 23 representative indexed plans without
+filesort/temp. The CSV text guard has 13 additional unit assertions. Browser,
+output fidelity, real-data acceptance and the full suite remain deferred.
+
+Current work is B003n inbound contact replacement, B030 operation lists and B031
+external surgical-history facts in the existing editor/view. Packets 054-056 are
+applied only in the disposable runtime. Main-owned address batch and explicit
+webhook-label seams still await their contact-write caller proof. B029 cancellation
+is deferred without credit: the source also preserves orphaned bookings in doubt,
+which lacks a safe target equivalent. Existing IVT delete lock-order debt is
+recorded, not misrepresented as a shipped cancellation regression.
+
+All nine preview services remain healthy on unchanged images; about 14.2 GiB
+memory is available. Next integrate the contact writer, then the two report/history
+bundles and larger source-backed gaps. See checkpoint-1907.txt and coverage-1907.json
+in the existing run folder. Next hourly 20:07 BST and queue rerank 22:12 BST.
+Porting remains first; documentation is brief capture only, with broad gates at the end.
+
+#### Tenth implementation checkpoint - 2026-09-09 20:07 BST
+
+Strict accepted coverage is 80.2432 percent code and 74.6651 percent overall:
+4942.18/6159 code and 10546.45/14125 total equivalents, a 120.07 code gain since
+opening. Canonical14125/mappings18647/missing0/pending1213 are unchanged.
+B003n contact replacement, B030 chronological operations reports and B031 external
+surgical-history facts are accepted under DIV-522/523/521. Their focused checks
+pass 20 tests/241 assertions and 21 representative indexed no-sort/no-temp plans.
+B030 and B028 now reject excessive JSON bytes before hydration; the unused
+experimental055 index was removed only from unreleased source and the disposable
+database, with no row data deleted. No new coverage is claimed for that correction.
+
+B003o contact locations pass eight tests/118 assertions and six indexed plans;
+source accounting is next and has no extra credit in this checkpoint. The initial
+fixture/order failures remain recorded. B033 EROD rules and their booking consumer,
+and B034 the A&E patient report, are active. Packets057/058 pass18schema checks;
+report authority defaults false and no existing account was granted access.
+B032 medication-risk automation is deferred without credit pending combined
+lock/projection/import closure. The lock risk is inferred from source, not a
+reproduced deadlock. Assessment configuration needs its complete active consumer.
+
+All nine preview services remain healthy on unchanged images; about13.5GiB is
+available. See checkpoint-2007.txt and coverage-2007.json in the existing run folder.
+Next hourly21:07BST and rerank22:12BST. Porting stays first, brief capture only;
+full tests, images, browser acceptance and documentation remain deferred.
+
+#### Eleventh implementation checkpoint - 2026-09-09 21:10 BST
+
+Strict accepted coverage is 80.3575 percent code and 74.7162 percent overall:
+4949.22/6159 code and 10553.66/14125 total equivalents, a 127.11 code gain since
+opening. Canonical14125/mappings18647/missing0/pending1213 are unchanged.
+B003o contact locations, B003p xAPI postal-address collections, B033 EROD rules
+and B034 A&E patient reports are accepted under DIV524-527. Focused checks pass
+55 tests/1127 assertions with indexed, no-sort/no-temp representative read plans.
+Initial failures and subsequent corrections remain recorded separately.
+
+EROD now uses one bounded UNION ALL of indexed first-session-per-firm branches;
+A&E reports bound recorded event roots before current related-record hydration.
+Neither uses index hints. Historic firm-remapping differences, broader clinical
+acceptance and realistic concurrency remain explicit later gates.
+B003q PAS contact collections and B035 admission-letter contact rules are next;
+the clinical worker is tracing a larger ordinary aggregate. Packet060 is applied
+and passes five schema checks but does not earn standalone feature credit.
+
+All nine unchanged preview services are healthy; about11.7GiB is available.
+See checkpoint-2107.txt and coverage-2107.json in the existing run folder.
+Next hourly22:07BST and rerank22:12BST. EyeDraw/sample successor implementation
+stays next-tranche; the next separately authorized push must resolve the planned
+develop/master/release/28.0.x layout. No branch, tag, commit or push is authorized.
+Full tests, images, browser acceptance and documentation remain deferred.
+
+#### Twelfth implementation checkpoint - 2026-09-09 22:06 BST
+
+Strict accepted coverage is 80.4597 percent code and 74.7610 percent overall:
+4955.51/6159 code and 10559.99/14125 total equivalents, a 133.40 code gain since
+opening. Canonical14125/mappings18647/missing0/pending1213 are unchanged.
+B003q PAS contact addresses, B035 admission-letter contact rules and B037
+waiting-list contact rules are accepted under DIV528-530. The corrected PAS/
+booking pack passes66 tests/1109 assertions; the waiting-list/booking pack
+passes27 tests/652 assertions. These overlap and are not additive unique totals.
+
+PAS locks exact sorted primary keys after bounded identity discovery/rechecks.
+Letter trees use bounded PHP sorting. Seven PAS, twelve admission-rule and
+twelve waiting-list plans have no filesort/temp or index hints. Small rule-table
+scans remain explicit optimizer choices; larger representative reads are indexed.
+Packet061 passes six checks; packet062 and six exact warning types pass ten,
+but packet062 alone earns no feature credit. Initial failures are retained.
+
+B036 Glaucoma trends and B039 admission warnings are active. Next: integrate
+those consumers, correct the mandatory-diagnosis urgency/interaction gap in
+B038, and review the native LDAP login foundation before implementation.
+After next: coordinate B040 Assessment configuration, typed import identity,
+state logic and real OCT/device editor together. Source examples establish the
+clinical rules; unknown imported branches remain preserved and read-only.
+Configuration alone is not a completed feature. Existing narrow deferrals remain.
+
+All nine unchanged preview services are healthy; about11GiB is available.
+See checkpoint-2207.txt and coverage-2207.json in the existing run folder.
+Next hourly23:07BST and rerank22:12BST. Broad test/image/browser checks remain
+the final integration batch; no branch, tag, commit or push is authorized.
+
+#### Thirteenth implementation checkpoint - 2026-09-09 23:07 BST
+
+Strict accepted coverage is 80.5868 percent code and 74.8164 percent overall:
+4963.34/6159 code equivalents and 10567.82/14125 overall. Canonical14125,
+mappings18647, missing0, pending1213 and unowned-code0 remain unchanged.
+B036 Glaucoma trends adds4.42 code equivalents, B039 admission warnings3.00,
+and B038 mandatory-diagnosis controls0.41. No schema-only or Cypress credit.
+
+B036 passes17 focused tests/2660 assertions, six JavaScript checks, two Vue
+compilations and16 actual indexed plans without filesort/temp. GL-first scalar
+membership IDs replace the materialized semijoin. Packet066 adds both serving
+indexes together; the original5000 OEScape-only nonmatches and101 matches pass.
+No hints or rule-model hydration. Explicit bounded/unsupported clinical cases
+remain under DIV531; ordinary patient-summary layout stays unchanged.
+B039 passes36 tests/3159 assertions, nine plans, five zero-query surfaces and
+Vue/Pint. B038 passes four JavaScript checks and three staged Vue compilations.
+Browser, visual and clinical acceptance remain pending under DIV532-533.
+
+Next: integrate frozen native LDAP login and its actual account consumer.
+Packet064 passes23 schema/negative-routing checks; real TLS-directory and image
+proof remain the final batch. LDAP is default-off with no local fallback.
+After next: join B040 Assessment graph/identity/state/editor and OCT/device
+consumers. Packet065 passes40 checks across10 config/history tables;170 exact
+source-backed seed rows are supplied. Configuration alone earns no credit.
+
+All nine unchanged preview services are healthy; about9.5GiB remains available.
+See checkpoint-2307.txt and coverage-2307.json in the existing run folder.
+Next hourly00:07BST and rerank02:12BST. The22:12rerank is recorded. Full tests,
+images and browsers remain final gates. No branch, tag, commit or push occurs.
+
+#### Fourteenth implementation checkpoint - 2026-09-10 00:07 BST
+
+Strict accepted coverage is 80.6506 percent code and 74.8450 percent overall:
+4967.27/6159 code equivalents and 10571.85/14125 overall, up 145.16 code equivalents
+since opening. Canonical 14125/mappings 18647/missing 0/pending 1213/unowned-code 0
+remain unchanged. B003r LDAP orchestration adds 3.02 code; B003s local password
+changing adds 0.91 code and 0.10 test equivalents under DIV534-535.
+
+LDAP has injected-transport and actual administration authority proof, five
+indexed lookup plans, bounded catalogue searches and explicit no-local-fallback
+accounts. Native TLS-directory/image proof remains a final gate with no added
+native-helper coverage. Password replacement passes the combined 49-test pack
+and final 12 tests/109 assertions, including exact spaces, no flashed credentials,
+separate limiter buckets and atomic history/audit/UserSaved rollback. Its writer
+stays at 13 total queries/6 SELECTs/3 primary-key locks at 2 versus 10000 unrelated accounts;
+the Profile visibility flag adds zero queries. Browser/lifecycle gates remain.
+
+B040 Assessment graph/codec is staged with 170 exact source seeds, no-op import
+history preservation and 5000 total/500 per-type portable bounds. Clinical activation
+awaits correction of raw JSON bypass, once-only frozen prior state, preservation
+of retired/unknown saved fields and source-derived change/progression rules.
+No schema or patient-first lock redesign was identified. Configuration alone
+receives no coverage. B041 operation-name administration and its real admission
+letter consumer are next; packet 068 passes seven schema checks without bootstrap.
+
+All nine unchanged preview services are healthy; about 8.8 GiB is available.
+See checkpoint-0007.txt and coverage-0007.json in the existing run folder.
+Next hourly 01:07 BST and rerank 02:12 BST. Exactly three implementation workers
+continue. Full tests, images and browser acceptance stay in the final batch.
+The next separately authorized push retains the develop/master/release28.0.x
+layout and future v28.0.0 release gate. No branch, tag, commit or push is authorized.
+
+#### Fifteenth implementation checkpoint - 2026-09-10 01:07 BST
+
+Strict accepted coverage is 80.8664 percent code and 74.9390 percent overall:
+4980.56/6159 and 10585.14/14125. B040 jointly adds12.43 code equivalents and B041
+adds0.86, without configuration-only credit or denominator changes. The14125
+canonical paths,18647 mappings,zero missing paths and1213 pending rows remain.
+
+B040 final graph/codec19tests94assertions and clinical10tests74assertions pass;
+existing OCT checks, four JS/four Vue checks and focused formatting also pass.
+The context reader stays at six queries for101 and5000 source rows. Graph reads
+stay at ten. Actual indexed plans avoid filesort/temp. Historical identity,
+unknown branches, frozen prior state and raw/internal-write guards are explicit;
+full UI, imports, browser/output fidelity and clinical sign-off remain later.
+B041 preserves exact/fallback/default operation names with3page/2resolver reads.
+
+B003t PAS CommissioningBody passes its initial18test2666assertion pack and ten
+packet069 checks. Create/update reads stay11/12 at10000 unrelated mappings;
+final locked reference-code revalidation is awaiting staged rerun. B042 GP/practice
+associations and temporary B043 DocMan/B044 Visual Outcome are implementing,
+with no score yet. Packets070/071 are staged but not applied. Main owns shared
+integration and one capped runner; no additional environments are introduced.
+
+Both external planning agents finished. EyeDraw/sample plans and prioritized
+questions are linked in master26.18 and kept outside core coverage. Temporary
+implementation agents finish one bounded bundle around two hours, no later than
+four; their start/stop times are in checkpoint-0107.txt. Three Sol workers continue.
+
+All nine preview services remain healthy, with about7.4GiB available and no
+observed queue OOM flag. No preview promotion or container/volume removal.
+See coverage-b040.json/log and checkpoint-0107.txt. Next hourly02:07BST and
+rerank02:12BST. Original freeze/deadline and final test batch remain unchanged.
+No branch, tag, commit or push is authorized.
+
+#### Interim acceptance - 2026-09-10 01:35 BST
+
+B003t is accepted under DIV538 after the final five-test91-assertion check and
+seven actual indexed no-sort/no-temp plans. Create/update remain11/12SELECTs
+at10000 unrelated mappings. Exact accounting adds2.50code equivalents: code
+80.9070percent (4983.06/6159), overall74.9567percent (10587.64/14125).
+Canonical14125,mappings18647,missing0,pending1213 remain unchanged.
+
+Packets070/071 are applied and pass17 structural checks. B042/B043 focused
+behavior passes; query acceptance remains in progress. B044 clinical vectors
+pass, but its root join needs a bounded two-phase read to remove a measured
+filesort/temp plan. No index hints or weakened gate. B045 now owns same-event
+PCR source synchronization only, retaining the existing calculation and save.
+No score is claimed for these four open bundles. Temporary Astra workers still
+finish their single assignments within their recorded four-hour maxima.
+
+See b003t-main-integration.txt and coverage-b003t.json/log. The next hourly
+checkpoint stays02:07BST; rerank02:12BST and the fixed run deadline remain.
+
+#### Sixteenth implementation checkpoint - 2026-09-10 02:07 BST
+
+Accepted code coverage is80.9640percent (4986.57/6159), overall74.9816percent
+(10591.15/14125). B003t/B042/B043/B044/B045 add6.01 code equivalents since01:07.
+Strict coverage-b045.json/log passes with14125canonical18647mappings missing0
+pending1213 unownedcode0. DIV538-542 retain exact evidence and partial boundaries.
+
+PAS CommissioningBody and GP/practice associations pass focused behavior and
+bounded indexed query gates. DocMan metadata passes42focused cases plus the
+existing delivery regression, with18SELECTs at both fixture sizes and36plans
+without sort/temp. Visual Outcome passes45tests318assertions andseven indexed
+shapes after a covering root/bounded hydration correction without hints.
+PCR linked-source editing passes6JS cases26assertions andfiveVue compilations;
+invalid-risk coercion and saved manual-answer hydration were corrected first.
+
+Both temporary Astra agents have finished, each inaboutonehour, with no successor.
+The original three Sol workers continue. B046 profile identity has working
+mutation/history behavior and13green manifest tests;two fixture failures are
+being corrected before acceptance. B003u implements real procedure text
+insertion into correspondence, not unsupported automatic macro registration.
+Next rerank favors larger source-backed missing clinical/admin behavior.
+Therapy prior-status identity requires a later stable snapshot seam; CXL History
+is the next complete clinical aggregate candidate, distinct from Operation Note.
+
+Allnine previewservices arehealthy andunchanged;about6.3GiBmemoryavailable,
+runnerOOMfalse withzerorestarts. Previewqueuerestarts17withOOMfalse are recorded,
+not changed. No newcontainers,volumedeletion,hostinstall,commit,push orrefchange.
+Broad tests/builds/images/Playwright remainfinalfourhours. See checkpoint-0207.txt.
+Next hourly03:07BST;rerank02:12BST;originalscopefreeze/terminalguard unchanged.
+
+#### Interim acceptance and accounting correction - 2026-09-10 02:42 BST
+
+Strict coverage-b003u.json/log passes: code80.9513percent (4985.79/6159),
+overall74.9647percent (10588.77/14125), canonical14125 mappings18647 missing0
+pending1215 unownedcode0 reviewedplaceholders0. DIV543 withdraws1.37code and
+3.27overall equivalents from seven unrelated copied-documentation mappings;
+genuine higher mappings remain and no implementation was removed. Two genuinely
+unreviewed paths return to pending review. B046 and B003u separately add0.59code
+and0.89overall equivalents. The decrease is honest accounting, not lost behavior.
+
+B046 local profile identity passes four final tests77assertions and13manifest
+cases. Complete service reads are four SELECTs, including three user locks and
+the existing mailbox read, fixed at1vs10001users with indexed no-sort/temp plans.
+B003u procedure correspondence passes five final cases30assertions,13manifest
+cases and two consumer regressions25assertions. Eight actual plans pass after
+removing redundant child-id ordering from a unique element/sequence key. Date
+and latest-clinic reads remain six and two respectively. Both Vue/Pint gates
+pass; automatic macro expansion and browser acceptance remain partial.
+
+B047 now implements the retired cataract-management archive as a distinct
+read-only import/view, not a second current editor. Packet072 is applied to the
+bounded runner only. CXL History was traced and is already implemented; its
+unreferenced ocular-surface lookup is not being resurrected. Therapy prior-status
+remains a later stable-identity seam. B003v next closes emitted xAPI address-type
+and user code-system links under existing authorization, without global user
+enumeration. Administration is tracing a larger ordinary live-consumer cohort.
+
+Both temporary Astra assignments remain finished; original three Sol workers
+continue. Preview stays unchanged. No commit, push, ref change or volume removal.
+Next hourly03:07BST and rerank06:12BST; original freeze and terminal guard remain.
+
+#### Seventeenth implementation checkpoint - 2026-09-10 03:07 BST
+
+Recorded03:13BST. Strict coverage-b003v.json/log passes: code80.9651percent
+(4986.64/6159), overall74.9722percent (10589.82/14125), canonical14125,
+mappings18647, missing0, pending1215, unownedcode0, reviewedplaceholders0.
+New B046/B003u/B003v ports add1.44code and1.94overall equivalents since02:07;
+DIV543 removes1.37code and3.27overall unsupported older credit. Net code gain
+is0.07, not stalled implementation. No source files or working behavior removed.
+
+B003v closes emitted address-type/user xAPI links under existing authorization.
+Seven cases95assertions pass; four actual list/detail shapes use one SELECT
+each before/after10000inactive types and10000foreign users, no scan/sort/temp.
+B047 archive remains uncredited pending deleted-event rejection proof: final
+focused run1pass1fail101assertions. Its packet072 thirteen checks, Vue and
+small/large1read/10replay no-sort/temp query gates pass. B048 treatment-number
+correction is implementing, with packet073 four checks and default-off
+capability integrated; routes stay unstaged until the owned classes freeze.
+
+Next: close B047 authorization and integrate B048 clinical correction proof.
+After next: ordinary shared interop/core consumers and source-backed clinical
+aggregate. Deferred full suites/builds/images/Playwright remain finalfourhours.
+Preview stays healthy and unchanged;4944MiB available, no swap; runnerOOMfalse,
+zero restarts. Previewqueues18restarts/OOMfalse are recorded without changes.
+No commit/push/ref change or volume deletion. Both temporary Astra tasks are
+finished; originalthreeSol workers continue. See checkpoint-0307.txt.
+Next hourly04:07BST and rerank06:12BST; original freeze/terminal guard unchanged.
+
+#### Eighteenth implementation checkpoint - 2026-09-10 04:07 BST
+
+Strict coverage-b003x.json/log passes: code81.0003percent (4988.81/6159),
+overall74.9905percent (10592.41/14125), canonical14125, mappings18647,
+missing0, pending1215, unownedcode0 and reviewedplaceholders0. B047/B003w/B003x
+add2.95code and4.15overall equivalents since03:07. DIV550 removes0.78code and
+1.56overall unsupported clinical-history credit previously assigned to logging.
+Net code gain2.17; no source or working runtime removed.
+
+B047 immutable archive is accepted after authorization/fixture corrections,
+packet072 and fixed indexed small/large reads. B003w restores source diagnosis
+API record/confirmation and mandatory-response shapes:17cases325assertions,
+14complete-event SELECTs fixed1vs100children against10000unrelated real rows,
+five indexed no-sort/temp shapes. Tiny-catalogue scan evidence is retained.
+B003x restores three fixed reference types with no additional queries;
+13xAPI and13manifest cases pass. Generic DTO/repository behavior stays partial.
+
+B048 correction and B049 consent HTML now pass27focusedcases2718assertions
+including13manifest. B048 replaces two observed join-order sort/temp failures
+with the patient/eye ordered root and bounded linked-context PK batches.
+B049 enforces actual bounded signature streaming, safe paths, stored digest,
+consent tri-state and current live ownership. Their final query helpers remain
+pending; neither receives coverage yet. B049 controller score87 is preserved
+rather than credited against a lower secondary mapping.
+
+Memory fell below the four-GiB safety margin, so fixture work was held. Only the
+idle disposable test database was gracefully restarted under the runner lock;
+its volume was retained and connection/InnoDB health passed. Headroom recovered
+to about fiveGiB. Preview and host sessions were untouched; allninepreview
+services remain healthy. Previewqueues19restarts/OOMfalse are recorded only.
+
+Next: final B048/B049 query acceptance, then B003y bounded ClinicOutcome API
+entries and meaningful ordinary clinical/admin cohorts. Broad tests, builds,
+images and Playwright remain finalfourhours. No commit/push/ref changes or
+volume deletion. User progress remains10lines; see checkpoint-0407.txt.
+Next hourly05:07BST and rerank06:12BST; original freeze/terminal guard unchanged.
+
+#### Nineteenth implementation checkpoint - 2026-09-10 05:07 BST
+
+Strict coverage-b050.json/log passes: code 81.1094% (4995.53/6159),
+overall 75.0381% (10599.13/14125), 14125 canonical paths, 18647 mappings,
+zero missing paths, 1215 pending reviews and zero unowned code or reviewed
+placeholders. B048/B049/B003y/B050 add 6.72 code equivalents this hour.
+
+Required-diagnosis configuration now retains source rule states, row identity
+and history, with completed-year age handling in the current consumer. Its
+21 focused cases pass 2725 assertions. Thirty small/large plans have no
+filesort/temp; export uses five SELECTs and retained import ten. The global
+live count still reads a covering index and is not constant database work.
+Earlier correction, consent and Clinic Outcome query gates are accepted.
+
+B051 supporting-file collections, B003aa original-signature administration
+and B052 saved clinical print blocks remain implementing with zero new credit.
+Packets 074/075 pass 13/10 schema checks in the disposable runner only. Shared
+routes, capabilities and navigation await owned-file freezes before staging.
+No preview DDL or new external transmission is enabled.
+
+Next: integrate these three bounded slices, then rerank remaining useful
+behaviour at 06:12 BST. Broad suites, builds, images and Playwright stay in the
+final integration window. About four GiB remains available without swap;
+all nine preview services are healthy and unchanged. No containers or volumes
+were removed this hour; no commits, pushes or ref changes. Both temporary
+implementation assignments are finished; the original three workers continue.
+See checkpoint-0507.txt; user progress remains ten lines. Next hourly 06:07 BST.
+The original 11 September scope-freeze and dual terminal condition remain.
+
+#### Twentieth implementation checkpoint - 2026-09-10 06:07 BST
+
+Latest accepted strict coverage-b052.json/log: code 81.1380%
+(4997.29/6159), overall 75.0505% (10600.89/14125), 14125 canonical
+paths and zero missing paths. B052 saved medication/allergy/pupil print
+consumers add 1.76 code equivalents; unfinished slices receive no credit.
+
+Therapy supporting-file checks pass four cases with 134 assertions. The
+existing therapy and application-surface companions pass 22 cases with 2813
+assertions. CVI signing/import and request-forgery companions pass 37 cases
+with 417 assertions. Four staged Vue components compile. Packet076 adds
+the medication-risk association foundation and passes fourteen schema checks
+in the disposable runner only. No preview migration or new external delivery.
+
+Source review removed PDF reads from clinical-save locks, bounded protected
+file access, and ensured audit failures clean temporary downloads. Testing
+found that binary responses defaulted public despite supplied headers; both
+PDF and ZIP downloads now explicitly remain private/no-store. Keep this
+framework behavior in the later shared file-response review, not a new broad
+refactor in this tranche. Fixture and assertion corrections remain recorded.
+
+B051/B003aa await bounded query acceptance. Memory fluctuates around the
+four-GiB safety floor, so large fixture jobs are held when the under-lock
+preflight fails. Workers continue B053 medication allergy/risk suggestions
+and source-backed event-context behavior. Suggestions affect unsaved editors
+only and must not be dropped on configuration-load failure or cross-event
+navigation. Event-context work must preserve the distinct examination
+assignment namespace and establish exact source chronology before mutation.
+
+Next: finish the two query gates, reconcile source evidence and integrate
+the new slices. Broad suites/builds/images/Playwright stay in the final
+window. Both temporary implementation agents are finished; the original
+three workers continue. Preview remains healthy; no containers or volumes
+removed, commits, pushes or ref changes. See checkpoint-0607.txt; user progress
+is ten lines. Next hourly 07:07 BST; the original terminal condition remains.
+
+#### Twenty-first implementation checkpoint - 2026-09-10 07:07 BST
+
+Accepted coverage remains 81.1380% code (4997.29/6159) and 75.0505%
+overall (10600.89/14125). Canonical accounting is unchanged: 14125 paths,
+18647 mappings, zero missing paths. No unfinished slice receives credit.
+
+B053 medication safety and configuration history pass four focused cases;
+B051 protected collections pass four; the PAS adapter passes three. The
+combined log records 11 passes and four separate directory-import fixture
+failures. The thirteen manifest checks and two existing prescription allergy
+checks also pass. The tiny medication probe uses nine SELECTs with no sort or
+temporary table; its fifteen-row risk catalogue scan is recorded explicitly.
+
+Attachment selection is being corrected to discover bounded assignment IDs
+before ordered primary-key locks. This removes the global-order scan shape
+without hints; its declared selection budget becomes four reads. The directory
+import must retain objects on an uncertain commit and discard the uncertain
+connection before reuse. Its temporary manager/maintenance test wrapper must
+execute the command before restoring that state. Neither item is accepted yet.
+
+Event-context review corrected closed same-service/same-subspecialty episode
+retention and current-institution ownership. PAS accessibility now maintains
+its event timeline transactionally without a second generic webhook. Imported
+creation-time ties, the distinct examination workflow assignment and document
+footer hooks remain narrow deferrals, not guessed substitutions.
+
+Next: integrate named context routes and the existing event control, finish
+the file lifecycle checks, then reconcile proven source evidence. After-next:
+continue the workers' next source-backed consumers. Large fixture checks stay
+held below the four-GiB floor; host available memory is now about two GiB and
+most pressure was measured outside the rewrite containers. Host session cleanup
+approval is pending; no sessions or volumes were changed. See checkpoint-0707.txt.
+
+#### Twenty-second implementation checkpoint - 2026-09-10 08:07 BST
+
+Accepted coverage is 5005.21/6159 = 81.2666 percent code and
+10609.21/14125 = 75.1095 percent overall. B051, B054, B053 and B003ab completed
+focused and large-fixture proof. Their conservative ledger updates pass strict
+reconciliation after correcting one reviewed test placeholder and two target
+evidence path spellings; missing paths and unresolved evidence are zero. B003aa
+now uses root-ID-first indexed paging and bounded hydration; focused and large
+reruns are next. Two temporary
+Astra implementation lanes were added for roughly two hours each, capped at
+four hours: B055 Medication Management tapers and B011 Laser carry-forward
+preferences. They have isolated ownership and cannot change shared routes,
+schema packets or ledgers. Runner services are healthy and no cleanup, commit,
+push or ref change occurred. See checkpoint-0807.txt.
+The user progress file remains ten lines; next hourly 08:07 BST. Preview and
+the original freeze/deadline are unchanged. No commits, pushes or ref changes.
+
+#### Twenty-third implementation checkpoint - 2026-09-10 09:07 BST
+
+Accepted coverage is 5007.19/6159 = 81.2987 percent code and
+10611.59/14125 = 75.1263 percent overall. B003aa CVI signature-import review
+and B011 Laser carry-forward preferences are accepted. B011 preserves the two
+exact source settings, owner-only editing, scope precedence and independent
+both-eye behavior. Its 30-case 358-assertion focused pack, 11-case 130-assertion
+profile companion, 13-case manifest pack, migration policy, rollback/reapply and
+strict ledger gates pass. The rollback loop found during integration was removed.
+
+B055 Medication Management tapers remains uncredited after independent review
+found destructive rollback and unbounded retained-history risks. The rollback
+guard is applied. The Astra repair lane has added bounded live/source lineage
+selection and a pre-hydration 5000-stage/8-MiB safety gate; focused, schema and
+actual plan checks are next. B050 systemic diagnosis configuration and B056
+realtime-safe worklist wait presentation are active in two isolated Sol lanes.
+No browser, full-suite, build, image or migrated-scale result is claimed. The
+preview is unchanged and no commit, push or ref change occurred. See
+checkpoint-0907.txt.
+
+#### Twenty-fourth implementation checkpoint - 2026-09-10 10:02 BST
+
+Accepted coverage is 5010.84/6159 = 81.3580 percent code and
+10618.34/14125 = 75.1741 percent overall. Canonical accounting remains exact at
+14125 paths and 18647 mappings, with zero missing paths, zero unowned code and
+zero unresolved non-zero evidence. The target source manifest contains 6148
+tracked paths.
+
+B055 Medication Management taper history and B056 acceptable Worklist wait
+times are accepted. B056 adds versioned institution-owned site, subspecialty and
+firm rules, one bounded precedence read, a projected wait start and a
+browser-local clock without polling. Focused PHP, JavaScript, formatting,
+migration rollback/reapply and indexed-plan checks pass. Legacy mapping import
+and projection rebuild remain activation gates, and realistic concurrency stays
+in the final scale matrix.
+
+All child lanes are closed. The 14:00 transition remains a hard checkpoint;
+after it only the main Astra lane continues to the fixed tranche deadline. Next:
+port source-backed Injection Management cancel and stop behavior. Browser broad
+suites, full suite, build, images, migrated scale and clinical sign-off remain
+deferred. The preview is unchanged and no commit, push or ref change occurred.
+
+#### Twenty-fifth implementation checkpoint - 2026-09-10 11:17 BST
+
+Accepted coverage is 5013.03/6159 = 81.3936 percent code and
+10620.53/14125 = 75.1896 percent overall. Canonical accounting remains exact at
+14125 paths and 18647 mappings, with zero missing paths, zero unowned code and
+zero unresolved non-zero evidence. The target source manifest contains 6152
+tracked paths.
+
+B058 Injection Management cancellation and permanent stopping is accepted. It
+records immutable reason, prior-state and impacted-plan snapshots, maintains an
+indexed terminal-series summary, and supports deterministic undo. Authorization,
+validation, bilateral follow-up, constant query growth, schema rollback/reapply,
+formatting, strict accounting and 64 focused tests with 1074 assertions pass.
+Device-booking side effects, distinct switch/observe actions, migrated-data scale
+and browser parity remain explicit later gates.
+
+All child lanes remain closed. The 14:00 transition still leaves the main Astra
+lane alone through the fixed tranche deadline. Next: continue with a bounded,
+source-backed Injection Management action only if its clinical rules are fully
+authoritative; otherwise advance to another ordinary port. The preview is
+unchanged and no commit, push or ref change occurred.
+
+#### Twenty-sixth implementation checkpoint - 2026-09-10 12:01 BST
+
+Accepted coverage is 5013.43/6159 = 81.4001 percent code and
+10620.93/14125 = 75.1924 percent overall. Canonical accounting remains exact at
+14125 paths and 18647 mappings, with zero missing paths, zero unowned code and
+zero unresolved non-zero evidence. The target source manifest contains 6153
+tracked paths.
+
+B059 Injection Management Observe is accepted. It applies only to completed or
+cancelled treatment series, records one stable reason plus Other text when
+needed, validates bilateral follow-up rules on the server, maintains indexed
+action projections, and reverses to the exact prior terminal state. The final
+combined confidence pack passes 67 tests with 1143 assertions; 62 ledger tests
+with 35208 assertions, migration policy, Vue compilation, packet 081
+rollback/reapply and strict evidence also pass. Distinct Switch, source booking
+effects, migrated-data reconciliation, browser acceptance and exact geometry
+remain explicit later gates.
+
+All child lanes are closed. One bounded slice may be completed before 14:00 if
+it reaches a safe checkpoint. At 14:00 the main session becomes the sole Astra
+lane and continues without child agents through the fixed tranche deadline.
+The preview is unchanged and no commit, push or ref change occurred.
+
+#### Twenty-seventh implementation checkpoint - 2026-09-10 12:40 BST
+
+Accepted coverage is 5013.68/6159 = 81.4041 percent code and
+10622.18/14125 = 75.2013 percent overall. Canonical accounting remains exact at
+14125 paths and 18647 mappings, with zero missing paths, zero unowned code and
+zero unresolved non-zero evidence. The target source manifest contains 6154
+tracked paths.
+
+B060 Injection Management Switch Treatment is accepted. It permits a switch
+only from an eligible terminal series, rejects the current drug, records one
+stable switch reason plus Other text when needed, creates a linked replacement
+series, and preserves the complete predecessor state for exact undo. Small and
+large prior-plan fixtures both use 42 clinical queries. The final combined
+confidence pack passes 70 tests with 1208 assertions; 62 ledger tests with 35208
+assertions, migration policy, Pint, Vue compilation, packet 082 rollback and
+reapply, and strict evidence also pass. The lazy patient summary accepts and
+presents Observe and includes the source-backed treatment-switch indication.
+Source booking side effects,
+migrated-data reconciliation, browser acceptance and exact geometry remain
+explicit later gates.
+
+All child lanes remain closed. At 14:00 the main session is the sole Astra lane
+and continues without child agents through the fixed tranche deadline. The
+preview is unchanged and no commit, push or ref change occurred.
+
+#### Twenty-eighth implementation checkpoint - 2026-09-10 13:17 BST
+
+Accepted coverage is 5014.10/6159 = 81.4109 percent code and
+10622.60/14125 = 75.2042 percent overall. Canonical accounting remains exact at
+14125 paths and 18648 mappings, with zero missing paths, zero unowned code and
+zero unresolved non-zero evidence. The target source manifest contains 6158
+tracked paths.
+
+B061 restores the lazy prior-course expander from the legacy per-eye injection
+history widget. Its institution-scoped API uses an eye-bound opaque keyset
+cursor, returns ten courses by default with a hard maximum of twenty-five, and
+does not load neighbouring event or patient-summary data. Both initial and
+cursor query plans use the matching same-row series index without filesort,
+temporary tables or optimizer hints. The focused pack passes 86 tests with
+3830 assertions; 62 ledger tests with 35201 assertions, migration policy, Pint,
+Vue compilation, packet 083 rollback and reapply, and strict evidence also pass.
+Exact progress icons, last-injection treatment totals, browser acceptance,
+migrated-data scale and clinical sign-off remain explicit later gates.
+
+All child lanes are closed and no new child will be started. The remaining
+pre-14:00 work is checkpoint reconciliation only. At 14:00 the main session is
+the sole Astra lane and continues through the fixed tranche deadline. The
+preview is unchanged and no commit, push or ref change occurred.
+
+#### Twenty-ninth implementation checkpoint - 2026-09-10 14:02 BST
+
+The 14:00 transition is complete. All child lanes are closed and the main
+Astra lane is the sole implementation lane through the fixed tranche deadline.
+No further subagent will be started.
+
+Accepted coverage is 5014.74/6159 = 81.4213 percent code and
+10623.24/14125 = 75.2088 percent overall. Canonical accounting remains exact at
+14125 paths and 18648 mappings, with zero missing paths and zero unowned code.
+
+B062 restores the legacy C and S terminal meanings in the Injection Management
+progress timeline. The action date comes from the existing authoritative event
+foreign key, so no duplicate date or schema change was added. History
+presentation now reuses its eager-loaded aggregate graph instead of loading it
+again per element. The existing prior-series timeline lookup still needs a
+separate batch/projection design and receives no performance-closure claim.
+
+The complete focused Injection Management pack passes 46 tests with 732
+assertions. Six PHP syntax checks, Pint for six files, Vue compilation, and 62
+ledger tests with 35201 assertions pass. Exact icon geometry, browser parity,
+migrated-data scale and batch prior-series resolution remain later gates. The
+preview is unchanged and no commit, push or ref change occurred.
+
+#### Thirtieth implementation checkpoint - 2026-09-10 14:34 BST
+
+Accepted coverage is 5015.64/6159 = 81.4359 percent code and
+10624.14/14125 = 75.2152 percent overall. Canonical accounting remains exact at
+14125 paths and 18648 mappings, with zero missing paths, zero unowned code and
+zero unresolved non-zero evidence.
+
+B063 closes an accounting gap for the legacy conflicting codeable-concept
+exception. The active allergy, diagnosis and associated-contact XAPI writers
+already reject multiple distinct values for one required coding system before
+mutation. Explicit regression cases now prove all three boundaries. Laravel's
+field-specific validation response remains the public contract, so no unused
+exception wrapper or generic search abstraction was added.
+
+The three focused writer packs pass 33 tests with 295 assertions. Pint for five
+files, 62 ledger tests with 35201 assertions and the strict evidence command
+pass. Generic code-system search, browser acceptance, migrated-data scale and
+external-integration proof remain later gates. The main Astra lane continues
+alone through the fixed tranche deadline; no child agent, commit, push or ref
+change was introduced.
+
+#### Thirty-first implementation checkpoint - 2026-09-10 15:00 BST
+
+Accepted coverage is 5016.84/6159 = 81.4554 percent code and
+10628.14/14125 = 75.2435 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code
+and zero unresolved non-zero evidence.
+
+B064 restores the generic patient shortcode values used by real
+correspondence. Age-sensitive patient words, sex-sensitive pronouns, visible
+formatted local and global identifiers and the first-name initial are resolved
+through one bounded service. The draft event supplies institution and site
+context, so the service observes the same identifier display policy as the
+rest of the application without hidden model queries. The catalogue now lists
+24 supported rows. Arbitrary reflective dispatch, parameters, attachment
+discovery and the remaining specialty vocabulary remain uncredited.
+
+The 14 focused core cases pass with 164 assertions. Automatic Operation Note,
+Intravitreal Injection, DR Grading and attachment callers passed their focused
+packs. Six files pass Pint, identifier reads remain four queries with 2 or 102
+rows, 62 ledger tests pass with 35195 assertions and strict evidence is green.
+One broader DR Grading run exposed a pre-existing unordered fixture assertion;
+it is recorded separately and is not attributed to this change. The main Astra
+lane continues alone; no child agent, commit, push or ref change occurred.
+
+#### Thirty-second implementation checkpoint - 2026-09-10 15:25 BST
+
+Accepted coverage is 5021.59/6159 = 81.5326 percent code and
+10638.49/14125 = 75.3167 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code
+and zero unresolved non-zero evidence.
+
+B065 removes the prior accounting hold from the implemented patient hotlist.
+Authenticated users have owner-only open and date-filtered closed activity,
+explicit close, reopen and comment mutations, exact midnight semantics and
+private bounded patient projections. The manager-only nightly command closes
+only null-comment items, preserves activity timestamps, processes bounded sets
+and is scheduled once with overlap and multi-node ownership guards. The initial
+schema packet contains the final table, history twin and serving indexes.
+
+Twenty-eight focused cases pass with 200 assertions. Reads remain six domain
+queries at small and 1000-patient fixtures, and closing 1001 rows uses bounded
+set writes. Strict ledger evidence is green. Multi-module drafts, the unread
+message summary, exact visual fidelity, browser acceptance and historical data
+import remain uncredited under DIV-480. The main Astra lane continues alone;
+no child agent, commit, push or ref change occurred.
+
+#### Thirty-third implementation checkpoint - 2026-09-10 16:08 BST
+
+Accepted coverage is 5021.72/6159 = 81.5347 percent code and
+10638.74/14125 = 75.3185 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code
+and zero unresolved non-zero evidence.
+
+B066 restores the global discovery list for supported existing-event
+Examination restore points. The owner and current institution are enforced
+before reads, the API never returns the stored draft payload, and the panel
+loads a maximum of 25 rows through an opaque keyset cursor. Small and large
+fixtures use the same nine-or-fewer query shape. The ordered owner index is
+selected without filesort, temporary tables or optimizer hints.
+
+Five directory cases pass with 51 assertions, the related confidence pack
+passes 53 cases with 2928 assertions, query-plan verification passes five
+cases with 163 assertions, Vue compilation passes, and 62 ledger cases pass
+with 35125 assertions. New-event and non-Examination drafts, unread messages,
+browser acceptance, migrated import, exact UI and clinical sign-off remain
+uncredited under DIV-480. The main Astra lane continues alone; no child agent,
+commit, push or ref change occurred.
+
+#### Thirty-fourth implementation checkpoint - 2026-09-10 16:31 BST
+
+Accepted coverage is 5021.80/6159 = 81.5360 percent code and
+10638.82/14125 = 75.3191 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code
+and zero unresolved non-zero evidence.
+
+B067 restores the exact legacy unread and urgent message totals in the global
+hotlist. Accessible mailbox ids are resolved once and one aggregate reads the
+covering mailbox/read/urgent index. The two-query request remains fixed for
+three and 103 accessible mailboxes, returns no message or patient content, is
+private and no-store, and uses no cache or optimizer hint. A failed summary
+does not block the other hotlist sections.
+
+Fourteen messaging cases pass with 199 assertions, all 74 query-plan budgets
+pass in five cases with 165 assertions, the surface and migration-policy pack
+passes 15 cases with 2589 assertions, Vue compilation and migration
+rollback/reapply pass, and 62 ledger cases pass with 35125 assertions. Exact
+messaging UI, browser acceptance, migrated-scale proof and clinical sign-off
+remain later gates under DIV-460 and DIV-480. The main Astra lane continues
+alone; no child agent, commit, push or ref change occurred.
+
+#### Thirty-fifth implementation checkpoint - 2026-09-10 17:45 BST
+
+Accepted coverage is 5023.41/6159 = 81.5621 percent code and
+10640.43/14125 = 75.3305 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code
+and zero unresolved non-zero evidence. The target source manifest contains
+6166 tracked paths.
+
+B068 restores the current-firm Examination follow-up correspondence flow.
+Portable active firm assignments and a firm default drive a bounded picker;
+the server revalidates both firm and institution before the existing
+source-linked draft generator creates or returns the one live letter. The
+event view retains the legacy created-letter wording and supplies a direct
+link. One and 121 assignments use the same three configuration queries, and
+the two serving plans use no full scan, filesort, temporary table, waiver or
+optimizer hint.
+
+Thirty-three Clinical Outcome and correspondence cases pass with 688
+assertions. All 76 query plans, the schema and database-code verifiers, Vue
+compilation, and 62 ledger cases with 35118 assertions pass. The divergence
+record is uniquely numbered DIV-564. Optional post-save Edit navigation,
+recipient types without a verified address rule, clean seven-schema replay,
+browser acceptance, migrated-data scale and clinical sign-off remain later
+gates. The main Astra lane continues alone; no child agent, commit, push or ref
+change occurred.
+
+#### Thirty-sixth implementation checkpoint - 2026-09-10 18:25 BST
+
+Accepted coverage is 5023.62/6159 = 81.5655 percent code and
+10641.09/14125 = 75.3352 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code
+and zero unresolved non-zero evidence. The target source manifest contains
+6168 tracked paths.
+
+B069 completes the reachable Clinic Procedures ATC macro path. Stored
+`[atc]` and `[atc:nocomments]` tokens are detected only when needed and expand
+from the newest visible snapshot through the existing two bounded procedure
+reads. The output retains dates, procedures, optional comments and
+empty-newest behavior while escaping clinical values. Reusing
+PatientProcedureCorrespondence avoids a second query contract. A redundant
+secondary id sort was removed because the sequence key is unique, eliminating
+filesort without a hint or schema change.
+
+Nineteen focused cases pass with 313 assertions, all 78 query-plan budgets
+pass, and 62 ledger cases pass with 35118 assertions. Direct forElement use,
+exact legacy whitespace, browser document acceptance, migrated scale and
+arbitrary shortcode dispatch remain later gates under DIV-318 and DIV-508.
+The main Astra lane continues alone. The tranche's final task inventories
+project artifacts under /home/toukan and retains useful restart evidence,
+future plans, tools and documentation inputs in one checksummed OpenEyes
+rewrite work folder before exact redundant artifacts are removed. No child
+agent, commit, push or ref change occurred.
+
+#### Thirty-seventh implementation checkpoint - 2026-09-10 19:14 BST
+
+Accepted coverage is 5027.37/6159 = 81.6264 percent code and
+10644.84/14125 = 75.3617 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code
+and zero unresolved non-zero evidence. The target source manifest contains
+6174 tracked paths.
+
+B070 restores the shared referral lifecycle used by Operation Booking.
+Versioned referral, RTT, episode-assignment and referral-type storage supports
+bounded open choices plus the retained selected closed referral. Defaults use
+firm, then service assignment, then newest open precedence. Patient ownership,
+post-booking immutability and the optional required-referral scheduling gate are
+enforced. First scheduling snapshots only one unambiguous active RTT; zero or
+multiple active RTT rows are never guessed. Both new behavior switches default
+off.
+
+Twenty-three Operation Booking cases pass with 587 assertions. Small and
+110-row fixtures both use two choice queries; recent-referral, firm-default and
+active-RTT plans use matching indexes without filesort, temporary tables or
+hints. The Vue component compiles, strict evidence passes, and all 62 ledger
+cases pass with 35094 assertions. A fresh seven-schema replay proves both B070
+migrations, then stops at the unrelated existing CVI signature-import migration
+because no migration creates its referenced signature-evidence table. The
+disposable runner alone was advanced past that defect so remaining migrations
+and the tiny seed could run. Clean replay remains a final-gate blocker and is
+not claimed. Historical referral import, PAS write-through, standalone
+administration, browser acceptance and clinical sign-off remain later gates
+under DIV-416 and DIV-418. The main Astra lane continues alone; no child agent,
+commit, push or ref change occurred.
+
+#### Thirty-eighth implementation checkpoint - 2026-09-10 19:24 BST
+
+Accepted coverage is 5032.82/6159 = 81.7149 percent code and
+10650.29/14125 = 75.4003 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code
+and zero unresolved non-zero evidence. The target source manifest remains
+unchanged at 6174 tracked paths because this checkpoint reconciles exact
+contracts already present in the accepted application.
+
+B071 maps the six legacy GP, Practice and CommissioningBody generic service
+resources to the working bounded administration and authenticated PAS
+implementations. Create, update, prefix search, multiple-address history,
+external assignment and history-safe retirement behavior have focused proof.
+Patient association import remains separate from directory import, and NHS
+source refresh, generic legacy dispatch, browser acceptance and deployed-client
+acceptance retain partial scores under DIV-254, DIV-468, DIV-485 and DIV-538.
+
+Sixteen focused cases pass with 322 assertions, strict evidence passes, and all
+62 ledger cases pass with 35058 assertions. The reconciliation removed six
+paths from the zero/deferred shared-service cohort without adding a target
+source path or claiming absent behavior. The main Astra lane continues alone;
+no child agent, commit, push or ref change occurred.
+
+#### Thirty-ninth implementation checkpoint - 2026-09-10 19:43 BST
+
+Accepted coverage remains 5032.82/6159 = 81.7149 percent code and
+10650.29/14125 = 75.4003 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code
+and zero unresolved non-zero evidence. The target source manifest remains at
+6174 tracked paths.
+
+B072 fixes the clean-install defect exposed by B070. The CVI signature-import
+migration now belongs to the CVI module, so its signature-evidence dependency
+is created first under the deliberate application-then-module migration order.
+The move does not claim historical bulk signature transformation or add
+coverage. All ledger evidence references now use the module-owned path.
+
+A genuinely empty seven-schema namespace passes all 401 migrations, the tiny
+seed and schema verification. The five affected CVI packs pass 35 tests with
+511 assertions, Pint passes the two touched PHP files, strict evidence passes,
+and all 62 ledger cases pass with 35058 assertions. The prior provenance
+constraint failure does not recur on the clean schema. Historical CVI signature
+data migration, browser acceptance, migrated scale and clinical sign-off remain
+later gates under DIV-464 and DIV-556. The main Astra lane continues alone; no
+child agent, commit, push or ref change occurred.
+
+#### Fortieth implementation checkpoint - 2026-09-10 20:07 BST
+
+Accepted coverage is 5035.24/6159 = 81.7542 percent code and
+10653.46/14125 = 75.4227 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code
+and zero unresolved non-zero evidence. The target source manifest is 6179
+tracked paths with SHA-256
+`744ce7cc7caebe32d8e1fd5eae9b14558232aae76db4197dff780811e84957e0`.
+
+B073 ports the reachable local-password ageing contract as a default-off
+policy. Local accounts can become stale, expired or locked from their shared
+password-change timestamp, while LDAP and configured service accounts remain
+excluded. A stale reminder appears at most once per session. Expired sessions
+are confined to profile password recovery or logout, locked sessions are
+terminated, and local login keeps its generic denial. Profile changes and
+administrator-created local accounts maintain the timestamp. The set-based
+migration initializes existing local accounts without row loops or noisy
+output.
+
+Thirty-nine focused cases pass with 464 assertions, Pint passes 11 PHP files,
+and all seven schemas verify after migration 402. Strict evidence passes and
+all 64 ledger cases pass with 35024 assertions. Evidence is
+`b073-ledger.json`, SHA-256
+`b1843ce184f7007dcd43d59f82ea97cebc343e2b10246110afc860d6ac612d14`.
+Administrator recovery, browser acceptance, migrated-account ageing,
+deployment-specific threshold approval and clinical safety sign-off remain
+later gates under DIV-535. The main Astra lane continues alone; no child agent,
+commit, push or ref change occurred.
+
+#### Forty-first implementation checkpoint - 2026-09-10 20:53 BST
+
+Accepted coverage is 5038.16/6159 = 81.8016 percent code and
+10658.27/14125 = 75.4568 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code
+and zero unresolved non-zero evidence. The target source manifest is 6187
+tracked paths with SHA-256
+`38735327049fc889ebed3094b22f2eff647291d613302885907566472a848b06`.
+
+B074 restores the four legacy reusable Patient Ticketing transition modes and
+ordered destination event-type mappings through portable stable-code
+configuration. The worklist performs only a bounded presence query until the
+user requests Other moves. The authorized option read is capped, deduplicated
+and query-constant; a reusable move is revalidated under the ticket lock and
+uses the existing optimistic queue check, assignment history, clinical
+transaction and audit path. No optimizer hint is used.
+
+Fifteen Patient Ticketing cases pass with 118 assertions, including all four
+reuse modes, authorization, exclusive input validation, stale target rejection,
+history twins and natural index shapes. Query count is unchanged from one to
+26 options and remains within the declared budget of 15. The broader route and
+migration-policy gate passes 30 tests with 2713 assertions. Pint passes 67 PHP
+files, the Vue page compiles, all seven schemas and 403 migrations verify, the
+database-code policy passes, and all 62 ledger cases pass with 35022 assertions.
+Strict evidence is `b074-ledger.json`, SHA-256
+`a5eaca58c1bb4d955bd68acd137b0ede5f9e6376ec88d859363a67796ae9ece5`.
+Automatic event creation, historical import, exact legacy administration
+layout, browser acceptance and migrated-scale load remain later gates under
+DIV-015 and DIV-018. The main Astra lane continues alone; no child agent,
+commit, push or ref change occurred.
+
+#### Forty-second implementation checkpoint - 2026-09-10 21:09 BST
+
+Accepted coverage is 5041.16/6159 = 81.8503 percent code and
+10661.27/14125 = 75.4780 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code
+and zero unresolved non-zero evidence. The target source manifest remains
+6187 tracked paths with SHA-256
+`38735327049fc889ebed3094b22f2eff647291d613302885907566472a848b06`.
+
+B075 reconciles the identical V1, V2 and V3 nested PAS PatientId schemas with
+the typed appointment parser and institution-bounded adapter. The parser
+accepts one scalar positive Id and rejects missing, duplicate, nested,
+non-positive and out-of-range identities before database access. Full records
+require the resource; partial records may omit it. The adapter then resolves
+the patient only inside the authenticated institution.
+
+The combined parser and appointment adapter gate passes 27 tests with 237
+assertions, including all three versions. All 62 ledger cases pass with 35022
+assertions and strict evidence passes. Evidence is `b075-ledger.json`, SHA-256
+`bccb7688bb14bd3f071e3a184f2aea31eb28f52e4f8d3079fca76b71e534321e`.
+No query, schema or optimizer-hint change is introduced. Other PAS identity
+consumers and migrated-client acceptance remain later gates. The main Astra
+lane continues alone; no child agent, commit, push or ref change occurred.
+
+#### Forty-third implementation checkpoint - 2026-09-10 21:44 BST
+
+Accepted coverage is 5044.36/6159 = 81.9023 percent code and
+10664.47/14125 = 75.5007 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code,
+184 zero-score code paths, 238 deferred code paths and zero unresolved
+non-zero evidence. The target source manifest remains 6187 tracked paths with
+SHA-256 `38735327049fc889ebed3094b22f2eff647291d613302885907566472a848b06`.
+
+B076 corrects three registration conflict views that were incorrectly
+classified as patient-merge execution. Name and date warnings now include
+formatted identifiers visible in the current institution and site. Each
+identifier field has an accessible proactive check that shares save-time
+normalization, excludes the patient being edited, detects retired
+reservations, and never discloses an out-of-scope patient's details. Lookup
+failures state that they do not prove availability.
+
+Fifty-one registration, authorization, application-surface and query-plan
+cases pass with 3191 assertions. Query count remains eight at small and
+1000-row fixtures across both clinical and configuration connections. Both new
+reads pass the no-filesort and no-temporary-table gate without optimizer hints.
+The production frontend build passes, as do all 62 ledger cases with 35008
+assertions. Strict evidence is `b076-ledger.json`, SHA-256
+`aead80bdeff068c0d0e3376c592909ffcc2c71d4e9b91b7ffd546b5327957180`.
+Final Playwright execution, exact geometry and migrated-scale acceptance remain
+later gates under DIV-468. The main Astra lane continues alone; no child agent,
+commit, push or ref change occurred.
+
+#### Forty-fourth implementation checkpoint - 2026-09-10 22:17 BST
+
+Accepted coverage is 5045.41/6159 = 81.9193 percent code and
+10665.52/14125 = 75.5081 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code,
+183 zero-score code paths, 237 deferred code paths and zero unresolved
+non-zero evidence. The target source manifest is 6189 tracked paths with
+SHA-256 `d3008fed6dc969bdde9150a51cfb861c38f67bde109c069705f8940b697e3b19`.
+
+B077 restores the best per-eye CST baseline used by Medical Retinal History.
+The first completed injection establishes a strict next-calendar-day cutoff.
+The lowest later CST, its date, the latest CST and legacy percentage-change
+wording are produced from maintained right and left CST columns on the bounded
+assessment row. The migration backfill is set based and loop free. Three
+serving indexes support chronology and per-eye best-value reads without an
+optimizer hint.
+
+Twenty-three primary focused cases pass with 397 assertions, the migration
+policy passes, and all 87 query budgets pass without filesort or a temporary
+table. Query count is fixed at 13 for small and 60-row histories. Pint passes
+the ten touched PHP files, database-code and module verification pass, and all
+62 ledger cases pass with 35002 assertions. Strict evidence is
+`b077-ledger.json`, SHA-256
+`a9d7c920a39fa49298105bf928ac6972be1126be9a813b33ef2af86522e3b750`.
+Exact baseline chart geometry, migrated-volume plans, browser acceptance and
+clinical sign-off remain later gates. The main Astra lane continues alone; no
+child agent, commit, push or ref change occurred.
+
+#### Forty-fifth implementation checkpoint - 2026-09-10 22:54 BST
+
+Accepted coverage is 5047.11/6159 = 81.9469 percent code and
+10668.82/14125 = 75.5315 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code,
+183 zero-score code paths, 235 deferred code paths, one inventoried-deferred
+code path and zero unresolved non-zero evidence. The target source manifest is
+6190 tracked paths with SHA-256
+`ec75dec4806b19c8fbd5147e8141f1cadd8164259eae4e3222c40bdaef465892`.
+
+B078 restores the automatic diagnosis resolution triggered by a completed
+lens-removal procedure. Operation Note persistence replaces its own prior
+automatic record inside the event transaction, resolves only the operated
+eye, preserves verification and priority state, excludes final diagnoses and
+rebuilds the current diagnosis projection before selecting a replacement.
+Editing the operated eye moves the resolution and deleting the event removes
+it. Candidate work is bounded to the seven configured lens disorders.
+
+The lifecycle and small-versus-large history tests pass with 23 assertions.
+Twenty-five adjacent diagnosis, warning and database policy cases, six element
+registry cases and all 88 query-plan budgets pass. Query count remains fixed at
+41 for one and 50 history records, with no filesort, temporary table, full scan
+or optimizer hint. Pint passes the six touched PHP files and all 62 ledger
+cases pass with 35002 assertions. Strict evidence is `b078-ledger.json`,
+SHA-256 `1de752d49c18ebe298f58c01fb0b317f34285091081b995d1b62c01b5546eba8`.
+Query-plan evidence is `b078-query-plans.json`, SHA-256
+`310bdf1a3578f89bd3c78b563bfc646b1d547b8f89dde48aecb080f4b0f78d57`.
+Backdated and cross-user provenance, browser acceptance, migrated-scale plans
+and clinical sign-off remain later gates under DIV-077. The main Astra lane
+continues alone; no child agent, commit, push or ref change occurred.
+
+#### Forty-sixth implementation checkpoint - 2026-09-10 23:31 BST
+
+Accepted coverage is 5048.03/6159 = 81.9618 percent code and
+10671.44/14125 = 75.5500 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code,
+182 zero-score code paths, 234 deferred code paths, one inventoried-deferred
+code path and zero unresolved non-zero evidence. There are 1205 pending-review
+and 1273 unowned canonical paths. The target source manifest is 6193 tracked
+paths with SHA-256
+`da123166a90402afcecc9be9b78263413b1ffe9d63e9265ab204417627c2d2fe`.
+
+B079 restores the source-backed Concentric consent launch from the Consent
+start page. An institution-scoped setting controls availability. The named
+authenticated route resolves the identifier visible at the booking or current
+site, confines an optional Operation Booking to the same patient and
+institution, rejects unavailable or credential-bearing destinations and opens
+the external HTTP(S) target in a separate protected tab. Audit evidence records
+only bounded booking context and never the external URL or patient identifier.
+
+The 59 focused consent, route, authorization, documentation and query-plan
+tests pass with 3552 assertions. The real booking plan is index-safe and the
+launch remains at most 12 queries with zero and 50 unrelated bookings. All 88
+global query budgets, all 62 ledger cases with 34996 assertions, Pint on nine
+files and direct ConsentStart.vue compilation pass. Strict evidence is
+`b079-evidence/ledger.json`, SHA-256
+`b726408982737ae2f1fd4835885c5b9b470f32e0927e73442292abc3214728f4`.
+Query-plan evidence is `b079-evidence/query-plans.json`, SHA-256
+`310bdf1a3578f89bd3c78b563bfc646b1d547b8f89dde48aecb080f4b0f78d57`.
+The patient-wide Concentric shortcut, browser and external acceptance,
+migrated-scale plans and clinical sign-off remain later gates under DIV-100.
+The main Astra lane continues alone; no child agent, commit, push or ref change
+occurred.
+
+#### Forty-seventh implementation checkpoint - 2026-09-11 00:13 BST
+
+Accepted coverage is 5050.08/6159 = 81.9951 percent code and
+10673.94/14125 = 75.5677 percent overall. Canonical accounting remains exact
+at 14125 paths and 18648 mappings, with zero missing paths, zero unowned code,
+177 zero-score code paths, 229 deferred code paths, one inventoried-deferred
+code path and zero unresolved non-zero evidence. There are 1205 pending-review
+and 1273 unowned canonical paths. The target source manifest is 6198 tracked
+paths with SHA-256
+`3b0be0f082fc940e3a7afdb1715db61ab1b40f2ef43bae1477fe70f0cf1b976e`.
+
+B080 restores bounded read-only version history for explicitly supported live
+element roots. The named authorized API uses a two-part keyset cursor, batches
+editor labels and presents historical attributes through the normal bounded
+element DTO. The event page exposes a real accessible control only for supported
+saved elements and guards repeated or stale requests. The three-query read stays
+fixed from a small fixture to 50 versions and editors. The serving index is
+chosen by MariaDB without a hint and its real plan has no filesort or temporary
+table.
+
+The 110 focused route, history, authorization, manifest, query-plan and registry
+tests pass with 5774 assertions. All 89 global query plans pass. All 63 ledger
+tests pass with 35007 assertions, including exact bounded accounting for all six
+source paths. Pint passes the affected files, EventView.vue compiles and the new
+migration applied successfully in the shared runner. Strict evidence is
+`b080-evidence/ledger.json`, SHA-256
+`4c0749f0ab4a7244b5d7755fa11e8dba352c1e88d136dba8b9c90d7d42643e4e`.
+Focused evidence is `b080-evidence/focused.log`, SHA-256
+`e8c09e19b93601fbceae6e03f7d5b313f02205453d70cadfe63356c105faadee`.
+Query-plan evidence is `b080-evidence/query-plans.json`, SHA-256
+`a3c018aeebfe072f0d5e88fe6ef5ae211e6ff69454d719207359517a15aed272`.
+Deleted roots, previous-event browsing, copy-forward, event-wide reconstruction,
+historical child state, browser acceptance, migrated-scale proof and clinical
+sign-off remain later gates under DIV-550. The main Astra lane continues alone;
+no child agent, commit, push or ref change occurred.
+
+#### Forty-eighth implementation checkpoint - 2026-09-11 00:46 BST
+
+Accepted coverage is 5050.53/6159 = 82.0024 percent code and
+10674.39/14125 = 75.5709 percent overall. Canonical accounting remains exact at
+14125 paths and 18648 mappings, with zero missing paths, zero unowned code, 176
+zero-score code paths, 229 deferred code paths and zero unresolved non-zero
+evidence. There are 1205 pending-review and 1273 unowned canonical paths. The
+target source manifest is 6201 tracked paths with SHA-256
+`57a6747283f55d66754c353984315d844e975b1524330cf3804274480d430d23`.
+
+B081 restores safe manager-only recovery for active LOCAL accounts. The command
+defaults to help, accepts only the exact username as an argument and reads the
+new password and confirmation through hidden prompts. It applies the existing
+password policy and updates the account through one indexed lock plus atomic
+history, UserSaved outbox and privacy-bounded manager audit. Unknown, inactive
+and ineligible accounts return the same result. Write query count remains fixed
+and at most 15 with 1000 unrelated users; the account lookup uses the unique
+username index without filesort, temporary tables or hints.
+
+The legacy password-preserving unlock is not copied because it would make the
+old credential current again. The hard-coded temporary-password bootstrap is
+replaced by normal account and context administration. Persistent failed-attempt
+state, explicit unlock, session revocation, external providers, browser and
+deployed-policy acceptance remain later under DIV-535.
+
+The nine dedicated command cases pass with 60 assertions and the combined LOCAL
+authentication pack passes 42 tests with 426 assertions. All 63 ledger tests
+pass with 35003 assertions, strict evidence and the database-code verifier are
+green, and Pint passes the three affected PHP files. Strict ledger evidence is
+`b081-evidence/ledger.json`, SHA-256
+`d592d0f6438a7056071cfb36f5fbeaf909b247027e4bfa75007c716ebe83c866`.
+Focused evidence is `b081-evidence/focused.log`, SHA-256
+`d34584a4275ad0a4310f9ba59971f27aae6cf191c0ccb13cd204cecde52a87ab`.
+The main Astra lane continues alone; no child agent, commit, push or ref change
+occurred.
+
+#### Forty-ninth implementation checkpoint - 2026-09-11 01:03 BST
+
+Accepted coverage is 5050.93/6159 = 82.0089 percent code and
+10674.79/14125 = 75.5737 percent overall. Canonical accounting remains exact at
+14125 paths and 18648 mappings, with zero missing paths, zero unowned code, 176
+zero-score code paths, 228 deferred code paths and zero unresolved non-zero
+evidence. There are 1205 pending-review and 1273 unowned canonical paths. The
+target source manifest is 6202 tracked paths with SHA-256
+`127e623d3b705d84443dff510190bedd15680343ce78bcfdcb1decc8b34b782a`.
+
+B082 restores a safe terminal failed-import retry. The CSRF-protected named
+route requires both administration and device-import authority, remains bounded
+to the current institution and accepts only a ULID in the path. The service
+checks that the protected object still exists before taking a row lock, then
+atomically rechecks the dead state and resets only delivery state. Immutable
+intake identity and payload fields are not changed. A privacy-bounded audit event
+records the operation without a raw payload or patient identifier.
+
+Four dedicated retry cases pass, including repeat rejection, missing protected
+content and cross-institution isolation. The combined route, security and
+manifest pack passes 23 tests with 2839 assertions. All 63 ledger tests pass with
+35003 assertions; the database-code verifier and Pint are green, and the Vue
+component compiles. Strict ledger evidence is `b082-evidence/ledger.json`,
+SHA-256
+`c23b87043a15a36de7dab7e152ed035682b498df12dbfbb2bd469657a05410f9`.
+Focused evidence is `b082-evidence/focused.log`, SHA-256
+`88e66f3f91d9e393a708ec64c2a40706c17f35ec9aa05758a5d006376f27e1be`.
+Routine editing, execution logs, raw payload display, non-terminal reprocessing,
+browser proof, migrated-scale proof and integration acceptance remain later
+under DIV-499. The main Astra lane continues alone; no child agent, commit, push
+or ref change occurred.
+
+#### Fiftieth implementation checkpoint - 2026-09-11 01:28 BST
+
+Accepted coverage is 5053.93/6159 = 82.0576 percent code and
+10677.79/14125 = 75.5950 percent overall. Canonical accounting remains exact at
+14125 paths and 18648 mappings, with zero missing paths, zero unowned code, 176
+zero-score code paths, 228 deferred code paths and zero unresolved non-zero
+evidence. There are 1205 pending-review and 1273 unowned canonical paths. The
+target source manifest is 6212 tracked paths with SHA-256
+`1e1db49ebb5ead99d378a17f7adabc5d2ef8f7bbae0bbd8caa28dc7d1a0cd5e5`.
+
+B083 replaces the generic Yii HTML error views with standalone Laravel 403,
+404, generic 4xx, 500 and generic 5xx pages. They load no application data or
+JavaScript, escape deployment-owned support details, never render exception or
+request data, expose the opaque request ID when request telemetry ran, and meet
+the version 1 page-readiness contract. Known and unmatched errors use the same
+safe renderer. The pages issue zero database queries for the proved 403 and 404
+paths. No new application route or manifest operation is introduced.
+
+The combined error and request-telemetry pack passes eight tests with 80
+assertions. All 63 ledger tests pass with 34984 assertions; strict evidence, the
+database-code verifier and Pint are green. Strict ledger evidence is
+`b083-evidence/ledger.json`, SHA-256
+`e444c171b345ac6419bc7bc42a12f4d4910ba05efe1fbe491460d0b80e22da62`.
+Focused evidence is `b083-evidence/focused.log`, SHA-256
+`cc1be8aa509c2b48db3e9d1afe721547ef57b165b2a690952460ffadebba8d6d`.
+The PAS merged-record error remains unclaimed until an authoritative merged
+patient signal exists. Exact browser styling, migrated deployment support and
+external acceptance remain later under DIV-565. The main Astra lane continues
+alone; no child agent, commit, push or ref change occurred.
+
+#### Fifty-first implementation checkpoint - 2026-09-11 01:45 BST
+
+Accepted coverage is 5054.93/6159 = 82.0739 percent code and
+10678.79/14125 = 75.6021 percent overall. Canonical accounting remains exact at
+14125 paths and 18648 mappings, with zero missing paths, zero unowned code, 175
+zero-score code paths, 227 deferred code paths and zero unresolved non-zero
+evidence. There are 1205 pending-review and 1273 unowned canonical paths. The
+target source manifest is 6214 tracked paths with SHA-256
+`1a4bac85f5a7962f5eea466700786acae74267af50baa0c1364b95c9b42f6d9f`.
+
+B084 restores the complete legacy Therapy Application visual-acuity helper as
+one request-safe service. It returns the active Snellen Metre labels in source
+base-value order, the form key/value choices and the display-to-base mapping.
+The existing intervention presentation and validator now share the same
+contract; saved retired values remain editable only on their original row. The
+service performs two bounded queries, fails closed above 256 values and does
+not retain mutable state across persistent-worker requests.
+
+Three dedicated cases and the intervention lifecycle pass as four tests with
+104 assertions. Query count remains two with 2 and 1000 unrelated scale values,
+and the serving read uses no filesort, temporary table or optimizer hint. All
+63 ledger tests pass with 34984 assertions; strict evidence, the database-code
+verifier and Pint are green. Strict ledger evidence is
+`b084-evidence/ledger.json`, SHA-256
+`9f71b6140cadcc59f911e7b776a4b047e7d8164a52314842602f010166ba3681`.
+Focused evidence is `b084-evidence/focused.log`, SHA-256
+`5186986ac23470f19640e1e5eb5d6387170c9a25f29a80f9df239837d57207c3`.
+Executable patient-data decision defaults remain deferred under DIV-095.
+Browser, migrated-scale and clinical acceptance remain later. The main Astra
+lane continues alone; no child agent, commit, push or ref change occurred.
+
+#### Fifty-second implementation checkpoint - 2026-09-11 02:14 BST
+
+Accepted coverage is 5055.93/6159 = 82.0901 percent code and
+10679.79/14125 = 75.6091 percent overall. Canonical accounting remains exact at
+14125 paths and 18648 mappings, with zero missing paths, zero unowned code, 174
+zero-score code paths and 226 deferred code paths. There are 1205 pending-review
+and 1273 unowned canonical paths. The target source manifest is 6216 tracked
+paths with SHA-256
+`8a3555001e8c23a24459052c1bae01689f26a6a00dc4331b0f9ab0f53d1d3085`.
+
+B085 restores the legacy OESCAPE CVI eye indicator on its replacement Clinical
+Trends page. The page alone opts into a lazy current-status API read, so no CVI
+query is added to ordinary patient headers. Status IDs 1 and 2 retain the normal
+eye and every other value retains the crossed eye. Loading and failure states
+are accessible, and the client rejects malformed status responses. The existing
+single-row projection read is one indexed query with no filesort, temporary
+table or optimizer hint.
+
+The focused pack passes 17 PHP tests with 357 assertions and three JavaScript
+tests including compilation of all affected Vue components. All 63 ledger tests
+pass with 34984 assertions; the database-code verifier, focused Pint and staged
+whitespace checks are green. Evidence is in `b085-evidence/verification.txt`.
+Browser visual acceptance, migrated-data projection rebuild proof and clinical
+sign-off remain later under DIV-304. The diagnosis report remains deferred until
+its fuzzy observation-date filter has an explicit normalized and indexed target
+contract. The main Astra lane continues alone; no child agent, commit, push or
+ref change occurred.
+
+#### Fifty-third implementation checkpoint - 2026-09-11 02:36 BST
+
+Accepted coverage is 5056.85/6159 = 82.1050 percent code and
+10680.71/14125 = 75.6156 percent overall. Canonical accounting remains exact at
+14125 paths and 18648 mappings, with zero missing paths, zero unowned code, 173
+zero-score code paths and 225 deferred code paths. There are 1205 pending-review
+and 1273 unowned canonical paths. The target source manifest is 6217 tracked
+paths with SHA-256
+`d811d5619161e2b7703bd9254e11937f3fdf05ef0bfef4df4b040e26477f3536`.
+
+B086 accounts for the legacy Audit Log browser client against its named,
+permissioned, current-institution replacement. Search, pagination and expandable
+details remain backed by bounded keyset reads. The 30-second automatic refresh
+now rejects overlap while an earlier automatic request is still active. This
+preserves the operator workflow without reproducing the legacy five-second
+incremental animation or broad user autocomplete.
+
+Five focused PHP tests and one JavaScript Vue compilation and refresh-contract
+test pass. The existing query proof has fixed growth across small and large
+fixtures and selects an index without filesort, temporary table or optimizer
+hint. All 63 ledger tests pass with 34978 assertions; strict evidence, the
+database-code verifier, focused Pint and staged whitespace checks are green.
+Strict ledger evidence is `b086-evidence/ledger.json`, SHA-256
+`f9f8fc6af8d92dc55da3cf9db06587b2b6ee169ee3427dbd64654435c0b3d357`.
+Focused evidence is `b086-evidence/verification.txt`. Browser and migrated-volume
+acceptance remain later under DIV-098. The main Astra lane continues alone; no
+child agent, commit, push or ref change occurred.
+
+#### Fifty-fourth implementation checkpoint - 2026-09-11 02:58 BST
+
+Accepted coverage is 5058.65/6159 = 82.1343 percent code and
+10682.51/14125 = 75.6284 percent overall. Canonical accounting remains exact at
+14125 paths and 18648 mappings, with zero missing paths, zero unowned code, 171
+zero-score code paths and 223 deferred code paths. There are 1205 pending-review
+and 1273 unowned canonical paths. The target source manifest is 6221 tracked
+paths with SHA-256
+`9d899c72a23bc97887deb86bbf804b4e7b05ff4232388ec3f3286b4b2186aeb9`.
+
+B087 restores device-import execution history without copying the legacy
+unrestricted log text. Each claim creates a structured attempt containing its
+try number, timestamps, bounded result and failure code. Authorized operators
+can lazily expand the latest twenty attempts for a request in their current
+institution; raw payload, worker identity and free-text log data never enter the
+response. Lease-expiry recovery was changed from row-by-row writes to fixed bulk
+updates, and query count stays constant at one and one hundred expired rows.
+
+The focused pack passes 40 device-import, route-manifest, authorization,
+migration-policy and route-verifier tests with 2946 assertions plus one Vue
+compilation and privacy-contract test. All 63 ledger tests pass with 34978
+assertions; strict evidence, the database-code verifier, focused Pint and staged
+whitespace checks are green. Strict ledger evidence is
+`b087-evidence/ledger.json`, SHA-256
+`1e09549ad5e6aa7fbc59aac6fac1549c94b895ac310c5dc9d8ff81f56d8ae0b6`.
+Focused evidence is `b087-evidence/verification.txt`. Routine and queue
+configuration, browser acceptance, migrated-volume proof and external device
+worker integration remain later under DIV-479. The main Astra lane continues
+alone; no child agent, commit, push or ref change occurred.
+
+#### Fifty-fifth implementation checkpoint - 2026-09-11 03:13 BST
+
+Accepted coverage is 5061.10/6159 = 82.1741 percent code and
+10684.96/14125 = 75.6457 percent overall. Canonical accounting remains exact at
+14125 paths and 18648 mappings, with zero missing paths, zero unowned code, 170
+zero-score code paths and 222 deferred code paths. There are 1205 pending-review
+and 1273 unowned canonical paths. The target source manifest is 6225 tracked
+paths with SHA-256
+`ab357e363e20ab0542617d561eab98e754fd55240f7cf952d5fad4bb27350016`.
+
+B088 restores the two legacy unsupported-browser login paths and the optional
+installation-specific browser gate. Internet Explorer GET and direct POST login
+requests receive one accessible warning before authentication work and without
+database queries. Deployments may require one bounded literal user-agent token
+and a plain-text message. The replacement deliberately does not execute an
+administrator-provided regular expression or render administrator HTML.
+
+The focused pack passes 29 login, surface-manifest and route-verifier tests plus
+one Vue compilation and warning-contract test. All 63 ledger tests pass with
+34964 assertions; strict evidence, the database-code verifier, focused Pint and
+staged whitespace checks are green. Strict ledger evidence is
+`b088-evidence/ledger.json`, SHA-256
+`122e6f6ff02a1ce7334fa354a4633794820ae77bf4d70a4e6ac86aadf70851ae`.
+Focused evidence is `b088-evidence/verification.txt`. Browser fleet acceptance
+and deployment-specific token rollout remain later; the default modern-browser
+path is unchanged. The main Astra lane continues alone; no child agent, commit,
+push or ref change occurred.
+
+#### Fifty-sixth implementation checkpoint - 2026-09-11 03:31 BST
+
+Accepted coverage is 5064.10/6159 = 82.2228 percent code and
+10687.96/14125 = 75.6670 percent overall. Canonical accounting remains exact at
+14125 paths and 18648 mappings, with zero missing paths, zero unowned code, 167
+zero-score code paths and 220 deferred code paths. There are 1204 pending-review
+and 1273 unowned canonical paths. The target source manifest is 6227 tracked
+paths with SHA-256
+`111bd2fe610dbd9be33816fcac0976947da4af21dbd0d7c9a71406d7e2969fb8`.
+
+B089 records three evidence-backed retirements without creating fake product
+surfaces. The pinned Cornea model is an unregistered generated duplicate of the
+live Conclusion model and has no source table, view, controller or runtime
+caller. The Yii fixture manager is selected only by test configuration, and
+only tests populate or reset the process-global fake tracker. Reachable
+Conclusion behavior remains implemented and tested; Laravel and Pest own the
+replacement test harness.
+
+Ten Conclusion tests pass with 130 assertions and all 64 ledger tests pass with
+35008 assertions. Strict evidence, the database-code verifier, focused Pint and
+staged whitespace checks are green. Strict ledger evidence is
+`b089-evidence/ledger.json`, SHA-256
+`efeebf20ada73b8e9c6cce3c1c6898f899fe0e3a329665452b8021f9d08267c6`.
+Focused evidence is `b089-evidence/verification.txt`. Broad runtime SSO,
+analytics, external integration and protected-file gaps remain later. Only a
+bounded slice that can close before 06:12 may start; no child agent, commit,
+push or ref change occurred.
+
+#### Fifty-seventh implementation checkpoint - 2026-09-11 03:39 BST
+
+Accepted coverage is 5066.10/6159 = 82.2552 percent code and
+10689.96/14125 = 75.6811 percent overall. Canonical accounting remains exact at
+14125 paths and 18648 mappings, with zero missing paths, zero unowned code, 165
+zero-score code paths and 218 deferred code paths. There are 1204 pending-review
+and 1273 unowned canonical paths. The target source manifest is 6228 tracked
+paths with SHA-256
+`0ed03aaa4e94a999b6673f0b869d74355de27e976ae4e56740ed1a1a99ea64ca`.
+
+B090 retires two CVI development experiment controllers from production HTTP.
+The pinned actions expose hard-coded ODT and PDF data, application-tree writes
+and patient-shaped examples, have no production caller or user-facing link, and
+one depends on an example ODT that is absent from the pinned repository. The
+target exposes neither action while retaining the supported protected CVI
+consent and render behavior.
+
+Thirteen CVI consent and rendering tests pass with 168 assertions and all 65
+ledger tests pass with 35043 assertions. The test also proves neither controller
+appears in the target route actions. Strict evidence, the database-code
+verifier, focused Pint and staged whitespace checks are green. Strict ledger
+evidence is `b090-evidence/ledger.json`, SHA-256
+`1eaf567be0d3f5200eb1d59b0309aa74f720198c972ff506e46987fbd01d3ed1`.
+Focused evidence is `b090-evidence/verification.txt`. Statutory output fidelity
+and external delivery remain later. Only bounded pre-freeze work may continue;
+no child agent, commit, push or ref change occurred.
+
+#### Fifty-eighth implementation checkpoint - 2026-09-11 04:01 BST
+
+Accepted coverage is 5068.10/6159 = 82.2877 percent code and
+10691.96/14125 = 75.6953 percent overall. The configured conservative floor is
+75.6952 percent overall. Canonical accounting remains exact at 14125 paths and
+18648 mappings, with zero missing paths, zero unowned code, 163 zero-score code
+paths and 216 deferred code paths. There are 1204 pending-review and 1273
+unowned canonical paths. The target source manifest is 6230 tracked paths with
+SHA-256 `d959c00cb1262b81a3d14175817fee0c1a2009a8b8e15028bc9abec27e1d0bcb`.
+
+B091 retires the process-global `APICache` trait and global plaintext
+`UserSearchByPin` directory from the rewrite contract. All three cache consumers
+have explicit bounded readers or container-scoped request state. User selection
+remains institution-bound and authorization-bound, while a clinical signing PIN
+is stored as a one-way hash and checked only for the selected user.
+
+The five behavioral suites pass, including fixed-query context, refraction,
+visual-acuity and user-directory proof plus the signing-PIN authorization and
+rollback boundary. All 66 ledger tests pass with 35076 assertions. Strict
+evidence, the database-code verifier, focused Pint and whitespace checks are
+green. Strict ledger evidence is `b091-evidence/ledger.json`, SHA-256
+`c34a238dc3880f0ea927dc5df3b3cdda6182141c5891eaddca88429fe4b149a4`.
+The first ledger run exposed and then corrected one evidence-reference format
+and one stale cohort count; it is not represented as a passing run. Only a
+bounded slice that can close before 06:12 may start. Final integration then
+includes the requested `/home/toukan` artifact consolidation. No child agent,
+commit, push or ref change occurred.
+
+#### Fifty-ninth implementation checkpoint - 2026-09-11 04:15 BST
+
+Accepted coverage is 5069.10/6159 = 82.3039 percent code and
+10692.96/14125 = 75.7024 percent overall. The configured conservative floor is
+75.7023 percent overall. Canonical accounting remains exact at 14125 paths and
+18648 mappings, with zero missing paths, zero unowned code, 162 zero-score code
+paths and 215 deferred code paths. There are 1204 pending-review and 1273
+unowned canonical paths. The target source manifest is 6231 tracked paths with
+SHA-256 `32b53dbf70e28ac4c3a86c21783fa44d04e2fe87880b759c4f8d09705fdb8ff7`.
+
+B092 retires the loopback `apc_clear.php` HTTP endpoint. Target configuration
+is built at the release boundary before traffic, migrations remain
+manager-owned, and web requests do not discover or change schema. This avoids a
+cache-clear request affecting only one persistent worker and leaving other
+workers on different process state.
+
+All eight database-policy tests pass with 12 assertions and all 67 ledger tests
+pass with 35097 assertions. Strict evidence, focused Pint, the database-code
+verifier and both whitespace checks are green. Strict ledger evidence is
+`b092-evidence/ledger.json`, SHA-256
+`a1c649cd4af1bede316834f97eb91ebccb0d3760bab1a114f16137b33cd313f2`.
+The first ledger run exposed and then corrected one stale cohort count; it is
+not represented as a passing run. No broad functional slice starts now. Work
+reconciles accepted evidence until the 06:12 scope freeze, then runs final
+integration and the requested artifact consolidation. No child agent, commit,
+push or ref change occurred.
+
+#### Sixtieth implementation checkpoint - 2026-09-11 05:05 BST
+
+Coverage remains 5069.10/6159 = 82.3039 percent code and 10692.96/14125 =
+75.7024 percent overall. No new functional bundle is open. The exact eight-image
+final launcher, clean seven-schema deterministic milestone, private preview
+backup and promotion, and no-clinical-write preview smoke are prepared and pass
+syntax or dry working checks as applicable.
+
+The final artifact consolidation retains unique run evidence, reusable tools,
+documentation inputs, worker reports and recoverable source states under
+`/home/toukan/openeyes-rewrite`. It removes only exact duplicates,
+ignored generated runtime files, lockfile-recreatable dependencies, one
+downloaded audit binary and an empty scratch directory. Public and private move,
+deletion and checksum ledgers remain separate so no credential, cookie,
+environment or restricted-research hash enters the project folder. One old test
+secret directory was corrected from 0775/0664 to 0700/0600 before consolidation.
+All volumes and unrelated projects remain untouched. Scope freezes at 06:12,
+then the one final integration batch starts. No commit, push or ref change
+occurred.
+
+#### Sixty-first implementation checkpoint - 2026-09-11 06:05 BST
+
+Coverage remains 5069.10/6159 = 82.3039 percent code and 10692.96/14125 =
+75.7024 percent overall, with exact accounting for all 14125 pinned paths. B092,
+the target source identities and the consolidation preflight remain accepted.
+The nine-service preview is healthy and the host has about 12 GiB available
+memory. No new functional bundle is open.
+
+The single final integration batch is queued to start automatically at the
+06:12:21 scope freeze. It will build the exact eight images, migrate and seed a
+clean seven-schema database, run the bounded milestone, and promote only a
+verified build to the backed-up preview. After that, only owned temporary
+containers and an empty owned network are removed; volumes are preserved. The
+last artifact task moves useful project material into
+`/home/toukan/openeyes-rewrite` with public and private checksum
+ledgers. No commit, push or ref change occurred.
+
+#### Sixty-second implementation checkpoint - 2026-09-11 07:05 BST
+
+Coverage remains 5069.10/6159 = 82.3039 percent code and 10692.96/14125 =
+75.7024 percent overall. The exact images, clean seven-schema migration, full
+PHP and Pint gates, 114 JavaScript tests, production frontend build, dependency
+audits, 89 query budgets and individual image checks are green. The production
+image is 229018785 bytes, below its 230000000-byte ceiling.
+
+The first isolated Compose attempt correctly stopped because its default port
+8301 was already held by the permanent preview. The evidence is retained and
+the final launcher now assigns the isolated check port 18301. The full gate is
+rerunning without displacing the preview. Next are Helm and browser completion,
+exact preview promotion, staged evidence reconciliation, owned temporary
+container removal and final artifact consolidation. No commit, push or ref
+change occurred.
+
+#### Terminal integrated checkpoint - 2026-09-11 10:52 BST
+
+The terminal gate passed at 82.3039 percent code coverage and 75.7024 percent
+weighted overall coverage, with exact accounting across 14125 canonical paths
+and 18648 mappings. The final source digest passed 4450 PHP tests with 108113
+assertions, 407 clean migrations, 89 query-plan budgets, Pint, 114 JavaScript
+tests, the frontend build, dependency audits, eight images, isolated Compose,
+Helm and the browser milestone. The retained upgrade preview exposed and then
+received the idempotent correspondence macro schema repair; it now has 407
+migrations and nine healthy services at `http://127.0.0.1:8301`.
+
+The three closed test containers and their network were removed, the build
+worker was stopped, and 53 explicitly allowlisted volumes with zero remaining
+container references were deleted. No broad prune was used. Preview, uncertain
+and unrelated resources were retained. The later user-approved location correction
+keeps useful work artifacts below `/home/toukan/openeyes-rewrite`; source repositories,
+progress and the query note remain at their four explicit top-level paths.
+The location rule at the top of this plan governs all future work. Private files
+and `claude-kit` remain separate. Checksummed
+staged patches preserve the verified Laravel and Docker diffs. No commit, push
+or ref change occurred. Real-data migration, load, UAT, external integration and
+full output-fidelity claims remain deferred.
+
+### 16.145 Approved single-agent 48-hour completion run - 2026-09-11 to 2026-09-13
+
+Current authority, 13 September: the user permits early completion of this integrated run and requests evidence for a following 48-hour porting-first tranche. The old minimum finish is superseded. Runtime tests and preview are green; code remains 83.2062023055691%, with above 90 requiring another418.44 code equivalents. Next-work evidence and exact remaining path/target/test references are in `openeyes-rewrite/coverage-48h-20260911-174239/next-48h-porting-evidence.md` and `next-porting-candidates.json`. Prefer connected missing workflows; batch ordinary/full/browser/image testing and polished documentation, while retaining immediate narrow clinical/security/data-integrity checks. Do not start another functional slice in this closing run. Finish records, stage/review and stop the isolated verification services while preserving their volumes and the preview. The final checkpoint in that folder records the completion time and repository state. Earlier checkpoints and deadlines are historical.
+
+Current checkpoint: 13 September 13:22 BST. Full PHP passes 5323 tests/117588 assertions, no failures/errors/skips. Exact V4 dev/live roles, Compose, renderer and 105 query-plan budgets pass; the retained preview is backed up, promoted and verified without a seed reset or file-volume replacement. Code remains 83.2062023055691%, overall 76.13224778761062%; canonical 14125, mappings 18648, missing 0, pending 1199, unowned code 0; source 6644, migrations 440. Final disposition remains incomplete on 5880 code paths; the independent audit separates partial functionality from missing rationale/status/permanent evidence and records exact paths. Next preview sample-preservation and operational checks; after-next record reconciliation and run-owned cleanup. Scope is frozen and the earliest safe final remains 17:42:39. Today's sample refresh stays planned for later. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-1322.md and final-completion-audit.md. Earlier checkpoints are historical.
+
+Current checkpoint: 13 September 11:42 BST scope freeze. No new functional slices; finish integration and attributable repairs through at least17:42:39. Fresh440migrations/tinyseed/schema/10modules1100contracts/manager schedules pass, as do261JS/Vite/33docpages. First complete PHP run:5315tests116581assertions with46failures3errors and noOOM. Missing fresh-seed settings and duplicated header reads are under repair without relaxed budgets or permissions. Next repaired-seed and affected-test verification; after-next exact dev/live image rebuild, fullsuite and browser checks. Code83.2062023055691%, overall76.13224778761062%, canonical14125/mappings18648/missing0/pending1199/unowned1268/unowned-code0;source6644 migrations440. No coverage credit for repairs. Prior narrow deferrals and final acceptance remain open. Sample date refresh later-only; preview unchanged. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-1142.md. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 11:10 BST. DIV-636 closes the numeric-ticket break-glass bypass exposed by integration;48PHP416assertions and3Pint pass with4 indexed reads at1/1000tickets and0extra reads when disabled. Ledger reconciliation passes70tests34885assertions, retaining the immutable baseline and every source path without increasing coverage points. Code83.2062023055691%, overall76.13224778761062%;canonical14125/mappings18648/missing0/pending1199/unowned1268/unowned-code0;source6644 migrations440. Strict/schema/databaseguard3403files pass. Next fresh seven-schema migration/tiny seed; after-next fullsuite/frontend/affectedbrowser/immutableimage checks and attributable repairs through at least17:42. Prior narrow feature deferrals and final acceptance remain open; broader ticket and ledger failures are closed. Today's sample refresh stays later-only and preview unchanged. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-1110.md. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 10:40 BST. DIV-635 ports the default-off correspondence clinic-date default from the latest created Examination in the current episode and institution without overwriting saved dates. Code83.2062023055691% and overall76.13224778761062% unchanged; canonical14125/mappings18648/missing0/pending1199/unowned1268/unowned-code0; source6643 migrations440. Final24PHP360assertions,2JS,5Pint,Vue,source/strict/databaseguard3403files pass; disabled0reads and enabled2reads at1/1000rows with indexed no-sort/temp/hint plans. Source Visit Date versus existing separate target fields needs explicit form/import reconciliation. Broader BreakGlassTest ticket fixture missing expected_queue_id remains an integration failure to investigate. Next bounded core behavior before11:42; after-next focused integration repair and freshschema/fullsuite/frontend/browser/liveimage through at least17:42. Earlier narrow blockers remain; sample date refresh stays later-only and preview unchanged. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-1040.md. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 10:10 BST. DIV-634 restores source patient identifier status icons without changing number copying or patient-summary layout. Code 83.2062023055691% (5124.67/6159), overall 76.13224778761062%; canonical 14125/mappings 18648/missing 0/pending 1199/unowned 1268/unowned-code 0; source 6636, migrations 439. Final 41 PHP tests/3120 assertions, 12 JS, five PHP style checks, two Vue compiles, source/strict/schema/database guard (3400 files) pass. One bounded status/icon join preserves the original eight-query header budget at small/100-row fixtures; no checked filesort/temp. Full popup/banner placement, generic icon administration and historical import remain partial. Next remaining source-backed core behavior; after-next final integration from 11:42 through at least 17:42. Other narrow blockers and final full-suite/fresh-schema/browser/live-image gates remain. Today's sample refresh stays later-only; preview unchanged. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-1010.md. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 09:40 BST. DIV-633 visual-field template defaults now reach API creation, preset append and PAS bulk creation without replaying over clinician choices. Saved retired references and active-only explicit new choices retain different rules. Code83.20019483682415% (5124.30/6159), overall76.12184070796461%; canonical14125/mappings18648/missing0/pending1200/unowned1269/unowned-code0; source6632 migrations438. Over-broad PathwayTypeStep100to85 is corrected; VF view80to85 records inheritance. Pathway/PAS162PHP1641assertions and finalconfig/manifest/policy34PHP3208assertions plus3JS6Pint2Vue/source/strict/databaseguard3398files pass;2/64steps7indexed bounded reads and no sort/temp/hints;no DDL or dashboard read. Next remaining source-backed shared core behavior; after-next final integration after11:42 through17:42. Non-VF template state/status source import exact popup and prior narrow blockers plus final fullsuite/freshschema/browser/liveimage remain open. Today's sample refresh stays later-only; preview unchanged. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0940.md. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 09:15 BST. Visual-field worklist catalogue administration and patient configuration are functional (DIV-633), including optional SITA, institution scoping, retained choices and source transitions. Code83.2018184770255%; overall76.12254867256637%; canonical14125/mappings18648/missing0/pending1200/unowned1269/unowned-code0; source6630 migrations438. Unsupported orphan credit45 is corrected to0. Pathway144PHP1423assertions; visual-field/config/manifest/policy33PHP3695assertions;3JS;style/Vue/source/strict/current-schema/databaseguard3396files pass. The initial filesort/temp join was replaced with indexed mapping IDs and at most4 bounded batches without hints. Next inspect preconfigured pathway-template inheritance; after-next further source-backed porting until11:42 then final gates through17:42. Template inheritance, source state import, exact popup and earlier narrow deferrals remain. Today's sample refresh is deferred; preview unchanged. Evidence: openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0915.md. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 08:30 BST. Safe edit-only custom guidance and its admin/storage workflow are functional; toolbar/exact visual parity remain partial and unsupported prior credit is corrected. NHS migration enums found by the existing policy are replaced by bounded strings/CHECK without changing valid values or deleting synthetic data. Code83.1881798993343% (5123.56/6159), overall76.11058407079646%; canonical14125/mappings18648/missing0/pending1201/unowned1270/unowned-code0; source6612 migrations437. Guidance53PHP3388assertions and NHS/policy/guidance70PHP381assertions plus style/Vue/source/strict/current-schema/databaseguard3384files pass. Guidance1query remains indexed without small/1000 growth or checked sort/temp; event-page budgets unchanged. Next inspect and port a coherent visual-field worklist preset/configuration slice if it fits; after-next porting until11:42 then final integration through17:42. Earlier narrow blockers and final fresh-schema/full-suite/browser/live-image gates remain; no new SSO/load/UAT acceptance. Today's sample refresh stays later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0830.md`. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 07:58 BST. Site-logo direct fallback and profile institutions are functional and staged; current guidance sanitizer preparation is unstaged, unintegrated and uncredited. Code83.18915408345511% (5123.62/6159), overall76.11100884955752%; canonical14125/mappings18648/missing0/pending1201/unowned1270/unowned-code0; source6604 migrations436. Logo28PHP2911assertions and profile26PHP2896assertions plus style/Vue/strict/source/databaseguard3379files pass. Logo2queries and profile1/page<=10 remain bounded at small/1000 fixtures with indexed no-sort/no-temp plans. Next complete event/element guidance with safe edit-only clinical consumption; after-next remaining porting until11:42 then final integration through17:42. No new SSO acceptance. Specialized visual-field worklist presets, prior narrow blockers and final fresh-schema/full-suite/browser/live-image gates remain. Today's sample refresh stays later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0758.md`. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 07:00 BST. Assessment reset and shared Device Information/linked OCT measurement confirmation are functional with exact entry fingerprints and atomic history/audit/CST projections. Scalar More/Same/Less/None labels are corrected without changing data. Code83.18330897873031% (5123.26/6159), overall76.10846017699114%; canonical14125/mappings18648/missing0/pending1201/unowned1270/unowned-code0; source6600 migrations436. Affected99PHP912assertions;10JS;3Vue;style/source21checks/strict/databaseguard3378files and diff checks pass. Initial reads2 and context request<=40 show no small/1000 growth or checked sort/temp/hints; measurement-only save loads no graph. Next source-backed core profile/correspondence or branding gap; after-next scheduled integration. Historical negative measurements require explicit reconciliation; exact layout/import/sign-off and previous narrow blockers remain. Final fresh-schema/full-suite/browser/live-image and separate SSO/load gates remain pending. Today's sample refresh stays later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0700.md`. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 06:08 BST. Profile query budget10 is restored through a shared response-local settings batch; conflict merge-request editing and owner-bound list preference are restored without merge execution. Device Information configured findings now reuse the OCT state/context and clinical save path with exact ownership, stale guards, two-eye rollback and retained scalar/ABAC values; multiple applied specialties survive. Source credit is corrected for missing scalar/confirmation/reset workflows: code83.16268874817341% (5121.99/6159), overall76.09946902654868%; canonical14125/mappings18648/missing0/pending1201/unowned1270/unowned-code0; source6598 migrations436. Assessment60PHP556assertions; permissions/manifest36PHP2961assertions;6JS2Vue10PHPstyle and strict/source/databaseguard3377files pass. Initial reads2 and context request<=40 have no small/1000-row growth or checked sort/temp/hints. Next source reset action then remaining bounded clinical/core gaps; after-next scheduled integration. Scalar/confirmation controls, actual Lite, CXL and prior narrow blockers remain; final fresh-schema/full-suite/browser/live-image/SSO/load gates remain separate. Today's sample refresh stays later-only and preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0608.md`. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 05:20 BST. DIV-630 adds guarded session desktop-display state without claiming OE Lite layouts. Corrected source accounting: code83.1660983925962% (5122.20/6159), overall76.10095575221239%; canonical14125/mappings18648/missing0/pending1201/unowned1270/unowned-code0; source6597 migrations436. Focused13PHP102assertions and7JS plus style/Vue/strict/source/databaseguard3377files pass; warm PUT0SELECTs at small/1000-row fixtures. Related profile budget is12 instead of10 at both sizes and remains open, not weakened. Next attribute that regression then bounded source-backed porting; after-next scheduled integration. Actual OE Lite, CXL archive VA/export lifecycle, generic assessment editor and prior narrow blockers remain. Fullsuite/freshschema/browser/liveimage and separate SSO/load gates remain. Today's sample refresh is already recorded in master26.21, later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0520.md`. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 04:21 BST. DIV-629 restores the separate generic metadata element, raw fields, manual/imported rule, scoped details and default-off viewer actions. Code83.1915895437571% (5123.77/6159), overall76.11738053097345%; canonical14125/mappings18648/missing0/pending1201/unowned1270/unowned-code0; source6589 migrations436. Focused23PHP209assertions plus79PHP3228assertions,7JS,style/Vue,strict/source and databaseguard3374files pass. Narrow reads stay1 query at1/1001rows; warm detail/document requests stay within40queries with no growth and no checked scan/sort/temp/hints. Complete schema packet is applied only in dev; import must preserve raw provenance/history and resolve duplicate event elements losslessly. Four prior correction rows now have partial runtime credit. Next remaining generic controller/assessment behavior inspection; after-next remaining porting then final integration. External ingestion/native Windows/import and prior narrow blockers remain. Final fresh-schema/full-suite/browser/live-image/SSO/load gates remain open. Today's demo refresh remains later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0421.md`. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 03:47 BST. DIV-627 adds the source Biometry document launch. DIV-628 corrects four old generic-device metadata rows that were wrongly credited to OCT assessment. Code83.1347621367105% (5120.27/6159), overall76.09260176991151%; canonical14125/mappings18648/missing0/pending1201/unowned1270/unowned-code0; source6578 migrations435. No functionality was removed by the correction. Focused76PHP2997assertions and related59PHP810assertions,15JS,style/Vue,strict/source and databaseguard3368files pass. Document visibility adds0SQL; launch uses1indexed report query at1/1001reports. Next source-preserving generic device metadata and its actual consumers, with complete pre-import schema packet; after-next remaining functional porting then final integration. Native Windows security/version/browser and external device execution remain separate. Prior narrow blockers, remaining broader ledger failures and final fresh-schema/full-suite/browser/live-image/SSO/load gates remain open. Today's demo refresh remains later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0347.md`. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 03:27 BST. DIV-626 adds default-off desktop patient tracking, bounded explicit native-launch requests and a shared CITO identifier resolver. Code 83.19889592466309%; overall 76.12056637168142%; canonical 14125/mappings 18648/missing 0/pending 1201/unowned 1270/unowned-code 0; source 6569; migrations 435. Related 56 PHP tests/2918 assertions, 14 JS, ten style checks, Vue, strict/source and database guard 3365 files pass. Small/large identifier fixtures stay within six queries and checked plans avoid full scan/sort/temp. Native-client security and Windows protocol/browser compatibility remain separate enablement gates. Next source-backed Biometry document-launch inspection; after-next remaining functional porting then final integration. Prior narrow blockers and remaining broader ledger failures stay explicit. Full-suite/fresh-schema/browser/live-image/SSO/load gates remain open. Today's demo refresh remains later-only and preview is unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0327.md`. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 02:49 BST. DIV-624 explicit generic event-worklist context and DIV-625 Examination checkout-on-save are integrated, including source default-on settings and post-save recovery. Code 83.17161876928073%; overall 76.10442477876106%; canonical 14125/mappings 18648/missing 0/pending 1201/unowned 1270/unowned-code 0; source 6560; migrations 434. Related 199 PHP tests/4479 assertions, 7 JS, eight style checks, Vue, strict/source and database guard 3360 files pass. Six stale manifest expectations now reflect existing authority. New eligibility reads stay within nine warm-context queries and avoid full scan/sort/temp in the larger fixture; metadata-only settings installation adds no DDL. Next source-backed shared gaps, starting with desktop tracking inspection; after-next remaining porting then final integration. Prior narrow blockers, specialized appointment linkage/import and final full-suite/fresh-schema/browser/live-image/SSO/load gates remain open. Remaining broader ledger failures are not recounted. Today's demo refresh remains later-only and preview is unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0249.md`. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 02:08 BST. DIV-622 reconciles two upstream-retired templates; DIV-623 adds on-demand AIS details to worklist and booking lists with bounded queries and safe patient switching. Code 83.16577366455594%; overall 76.09550442477875%; canonical 14125/mappings 18648/missing 0/pending 1201/unowned 1270/unowned-code 0; source 6550; migrations 433. AIS/worklist 22 PHP/373 assertions, booking 3/311, 9 JS, four PHP style checks and source/retirement 4/1167 pass. Strict ledger and database guard 3356 files pass. AIS retains three queries and adds no per-row lookup. Next explicit event-worklist appointment context and Examination checkout-on-save; after-next remaining source-backed porting and final integration. The obsolete-count assertion is fixed; other broader ledger failures remain, with their remaining total not rerun. Prior narrow blockers and final fresh-schema/full-suite/browser/immutable-image/SSO/load gates remain open. Today's demo refresh remains later-only, already recorded in master 26.21; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0208.md`. Earlier checkpoints are historical.
+
+Current integrated checkpoint: 13 September 01:22 BST. Prescription risk-history automation (DIV-621) is functional with atomic signing, immutable copied snapshots, scoped history and batched mappings. Exact labels/import and wider browser coordination remain partial. IOP validation and sidebar isolation fixes add no score. Code 83.12079883097906%; overall 76.07589380530972%; canonical 14125/mappings 18648/missing 0/pending 1201/unowned 1270/unowned-code 0; source 6546; migrations 433. Related clinical 52/1255 plus final focused risk 11/91, IOP 29/280, sidebar 12 JS and 4 PHP/33 pass. Strict/source/style/database guard 3356 files pass. Mapping stays 3 queries at 1/100 medicines and finalisation has no SELECT growth at 1/100 risks within 50 clinical/configuration reads. Next source-backed Examination/core residuals and retired-feature successor checks; after-next remaining porting then final reconciliation. Prior narrow blockers plus 14 broader ledger failures remain open. Fresh schemas, full suite, browser, immutable image, SSO and migrated load are not claimed. Today's demo refresh stays later-only; preview untouched. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0122.md`. Earlier records below remain historical.
+
+13 September00:44 follow-through: IOP wildcard validation measured1/100queries at1/100readings and now stays1/1 using the existing request-local active catalogue. Fresh save-time lookup and clinical rules remain intact;29PHP280assertions3Pint pass; captured query uses its ordered index without sort/temp. Source6540; coverage unchanged. The source institution-mapping model/admin actions reveal a separate coordinated membership gap across manual/history/Phasing/injection/device/API consumers. Keep this explicit in the remaining queue and pre-load packet; do not deduplicate source instruments by name alone or infer installation authority for local editors. DIV-023 records evidence and boundaries.
+
+Current integrated checkpoint: 13 September 00:34 BST. DIV-617 on-demand identifier history; DIV-618 legacy spacing masks and original configuration width; DIV-619 bounded older episode access. Code83.11430427017373%; overall76.07306194690265%; canonical14125 mappings18648 missing0 pending1201 unowned1270 unowned-code0; source6539 migrations433. History23PHP303assertions16JS; spacing77PHP919assertions; episodes26PHP310assertions4JS; style/Vue/strict/source21checks/databaseguard3354files pass. History/episode continuation2queries at1/1001rows without checked sort/temp; formatting0SQL at1/100values. Consolidate new identifier index/width changes before bulk load and retain the explicit later numeric-mask import transform. Next source-backed core/clinical functionality; after-next remaining porting and scheduled reconciliation. Prior narrow blockers plus14broader ledger failures remain open. Fullsuite/freshschema/browser/liveimage/SSO/migrated-load deferred. Today's sample refresh stays later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260913-0034.md`. Earlier checkpoint paragraphs below are historical.
+
+Current integrated checkpoint: 12 September 23:40 BST. DIV-613 scopes checklist autosave and current-section reset; DIV-614 adds explicit newest-definition replacement with history and batched reads. DIV-615 batches manual identifier reservations; DIV-616 restores header usage/copy settings and excludes retired numbers and cancelled alert/CVI completions. Code83.09969150836174%; overall76.0578407079646%; canonical14125 mappings18648 missing0 pending1202 unowned1271 unowned-code0; source6524 migrations431. Checklist60tests1086assertions/12JS; identifier84tests693assertions; header29tests385assertions/10JS pass. Style/Vue/strict/source21checks/databaseguard3347files pass. Reservation reads1 at1/20types; checklist section reads bounded at1/20types; header reads fixed at1/100identifiers. Metadata installation performs no DDL. Next remaining patient-header identifier details and other core/clinical functionality; after-next final reconciliation. Prior narrow blockers and14broader ledger failures remain open. Fullsuite/freshschema/browser/liveimage/SSO/migrated-load gates deferred. Today's sample refresh stays later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-2340.md`. The22:42 checkpoint remains at `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-2242.md`; earlier paragraphs below are historical.
+
+12 September 21:42 BST historical checkpoint: DIV-608 attachment selection/polling and DIV-609 optional advisory variant syntax checks were integrated at code83.07030362071765%, overall76.0368849557522%, source6503 and migrations429. Evidence remains in `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-2142.md`.
+
+Current integrated checkpoint: 12 September 20:45 BST. DIV-607 adds CITO's real environment-configured patient launcher with server-owned raw identifier selection, source multipart token/JSON OTP formats and unchanged login-only authority plus current patient/break-glass checks. Calls and response writes are bounded; one browser request/window stays in flight; the server rate limit is per user. Launcher identifier configuration joins the existing git-seeded settings family. CITO DB transport settings/admin/import/aliases/live acceptance remain partial; HIE is deferred with its credential-bearing source audit finding recorded. Code83.05812631920767%;overall76.03157522123894%;canonical14125 mappings18648 missing0 pending1203 unowned1272 unowned-code0;source6490 migrations429. Combined49tests2849assertions pass,4JS,2Vue,10PHPstyle checks,strict/source21checks and databaseguard3340files. Identifier queries remain4 for1/100rows; checked query plan has no sort/temp. Next source-backed shared core/clinical workflow; after-next remaining porting then final reconciliation. Prior narrow blockers and14broader ledger failures remain open; browser/fullsuite/freshschema/liveimage/liveSSO/migrated-load gates deferred. No sample dates or preview changed. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-2045.md`. Earlier checkpoints below are historical.
+
+Current integrated checkpoint: 12 September 20:05 BST. DIV-606 implements queued service follow-up and referral charts with owned status polling, replay-safe result/cursor transactions, current patient windows/CSV and bounded manager recovery/pruning. Source fixed-day examination/calendar-ticket due dates and week rounding are proven; cross-patient referral waiting state is not copied. Code83.04757265789901%;overall76.02697345132744%;canonical14125 mappings18648 missing0 pending1203 unowned1272 unowned-code0;source6479 migrations429. Focused54tests4068assertions pass,17PHPstyle checks/Vue,strict/source21checks and databaseguard3334files pass. Query counts fixed at1/50patient batches within8 and1/100patient windows within18; checked timeline/appointment/picker/result streams avoid filesort/temp. LRN1261 and BUG814/815 record source arithmetic and query/state behavior. VF/full patient exports/source chart geometry/aliases/import/concurrent-edit snapshot proof remain open. Next source-backed core/clinical workflow, then remaining porting and final reconciliation. Prior sign-off/removed-events/draft/device/retained-files/FF1/NHS gaps and14broader ledger failures remain open. Fullsuite/freshschema/browser/liveimage/realSSO/fidelity/migrated-load gates deferred. Today sample refresh stays later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-2005.md`. Earlier checkpoint paragraphs below are historical.
+
+Current integrated checkpoint: 12 September 19:07 BST. DIV-605 adds typed therapy decision trees to real recording, saved views and generated display answers. Server calculates compliance; policy snapshots and valid hidden answers are retained. VA, clinical default functions, full policy administration/import and final browser/fidelity remain partial. Code83.02808897548303%;overall76.01847787610619%;canonical14125 mappings18648 missing0 pending1203 unowned1272 unowned-code0;source6466 migrations428. Integrated therapy62tests1290assertions pass, plus627actual pinned-browser comparisons,5JS,8Pint,Vue,strict/source21checks and databaseguard3325files. Tree evaluation adds0queries; configuration counts remain equal at7/128nodes within25SELECTs. No new routes or DDL. LRN1260 and BUG813 record actual browser-versus-PHP comparator evidence. Next source-backed shared core/clinical residual workflow, then remaining functional porting and final reconciliation. Sign-off, removed-event aggregates, draft-change reads, device executable contracts, retained-file compatibility,FF1 and14prior broader ledger failures remain open. Browser/full-suite/fresh-schema/live-image/output/realSSO/migrated-load gates deferred. Today demo refresh remains later-only; preview unchanged. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-1907.md`. Earlier checkpoints below are historical.
+
+Current checkpoint: 12 September 14:27 BST. DIV-593 directory membership and DIV-594 NHS direct GP/practice CSV validation/changed-only import are staged. Code 83.00308491638253 percent; overall 76.01394690265487 percent; canonical 14125, mappings 18648, missing 0, pending 1203, unowned 1272, unowned code 0, source 6409. Applied schema 424. NHS focused tests pass 62 tests/279 assertions, including preserved identity/history/local fields, validation, source ownership, resume and abandonment. A separate committed125-row probe proves independent visibility and fresh-connection recovery; all synthetic probe data were removed. One/100 new rows have equal database calls bounded by25; selective lookups among1100 contacts use indexes without sort/temp/full scans. Pint14, strict/source21checks and database-code guard3300files pass. The source command remains partial35 with all missing feed/provider/monitoring/retention/load gates recorded. Next: source-backed core workflow slice; after-next remaining core porting and final reconciliation. Public NHS body/header/download execution remains unverified because isolated DNS is unavailable. Standalone old-command note is staged in `knowledge/oe-hscic-gp-import-modernisation.md`. Fourteen broader ledger reconciliation failures and final fullsuite/browser/live-image/load gates remain open. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-1411.md` integrated update. All older checkpoints below are historical.
+
+Latest checkpoint: 12 September 11:54 BST. DIV-588 integrates ordered OEScape categories; DIV-589 adds bounded original-file OCT metadata and selected-eye display. Configuration19tests2731assertions and OCT/trends/manifest23tests2818assertions pass. Six OCT queries across clinical/config/sys remain fixed at1/31events without filesort/temp;7JS Vue5Pint and strict/source gates pass. Three old widget mappings wrongly credited an unrelated generated-preview gallery; correcting them removes0.94stale equivalents despite working code. Code82.94236077285274percent, overall75.98746902654867percent;canonical14125,mappings18648,pending1203,unowned1272,unownedcode0,source6388,schema422. The no-exemption table-lock guard passes20tests25assertions and runs before CI migrations; CI remains manual-only. Old mounted volumes and original bytes are now supported by the plan instead of mandatory object-store copying; no files or mounts changed. Next: configured generic-device image consumer, then remaining core functionality. Device categories hover assessment pane browser and import remain partial. Fourteen broader ledger reconciliation failures remain for final integration. FF1/key/exclusions/full-save/repair shared/new-event drafts and booking Follow-up/urgent-email dependencies remain open. Legacy sample/customer migration only after all core features. Patient summary and preview unchanged. SSO/fullsuite/browser/liveimage/migrated-load gates remain open. Isolated stack about629MiB; no commits/pushes/subagents. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-1154.md`.
+
+The user has said execute. T0 is 2026-09-11T17:42:39+01:00; the scope freeze is 2026-09-13T11:42:39+01:00; the terminal guard is 2026-09-13T17:42:39+01:00. A new durable goal records these exact times and requires a safe integrated checkpoint after the guard. Do not stop early because a bundle finishes; continue the next unblocked item. Use one agent with no subagents. Preserve the user's existing source/staged work and the nine-service preview. No commits, pushes or ref changes are authorized.
+
+Master 26.21 is the complete closed decision record, including all forty responses, retention of the JavaScript EyeDraw engine with an extractable Laravel adapter, and the two later additions: the faithful `legacy` sample profile and a post-rewrite retrospective. Earlier proposals that conflict with those decisions are superseded. Keep source repositories in place; all new runtime/evidence artifacts belong in `/home/toukan/openeyes-rewrite/coverage-48h-20260911-174239`. The top-level progress file remains at most ten lines and serves only the user.
+
+12 September later-only sample clarification: master26.21 now explicitly requires today's worklist examples and a repeatable manager date-refresh command backed by the bounded factory. Reference the old sample `sql/demo/post-migrate/45-GenerateDemoWorklists.sh` when implementing. Refresh only seed-owned current-date demo stories and their projections, with explicit date/timezone and disposable-target checks, without rebuilding large data or altering customer records. Preserve original dates in the separate faithful `legacy` profile. No sample or preview refresh is authorized by this planning addition; current priority remains core functionality.
+
+12 September filesystem correction: legacy protected files and event images must remain readable in their existing volumes without mandatory copies, renames, regeneration, recursive ownership changes or whole-tree hashing. Master26.21 now supersedes the old object-storage-only/copy-to-S3 requirements. Current protected keys support the legacy UID layout; retained JPEG/WebP event-image metadata, unknown checksums, shared/non-event ownership and explicit old volume mapping still need compatibility implementation before legacy sample migration. Keep current image consumers independent of new renderer cache keys and do not run filesystem migration now. Performance review must include full-file rehash on cache lookup, buffering/copying, PHP worker occupancy, safe internal file delivery, browser caching, shared storage and permissions. Evidence: `/home/toukan/openeyes-rewrite/coverage-48h-20260911-174239/legacy-files-in-place.md`.
+
+12 September source-guard addition: the existing database verifier now rejects LOCK TABLES in application/module/migration PHP, SQL and shell files, with no table-lock exception. Regression and optimizer-policy checks pass20tests25assertions; the standalone no-database scan passes3289files and4existing non-lock exceptions. CI invokes the guard before migrations but remains manual-dispatch only. Automatic PR triggers and later anti-pattern expansion remain release work; do not claim arbitrary dynamically assembled SQL is covered by a lexical guard. This earns no ported-code coverage.
+
+| Window | Work | Evidence to obtain |
+| --- | --- | --- |
+| T0 to T0+1h | Record pins, decisions, coverage, queue and bounded development runner; preserve preview and choose exact final commands | Existing repository state captured; new clock and hourly checkpoint present; test database isolated from preview |
+| T0+1h to T0+42h | Port ordered functional bundles, integrating continuously | Pinned source behavior, working implementation, honest per-path credit, brief before/after/reason and explicit deferred checks |
+| T0+42h to T0+48h | Freeze new features; consolidate verification, repair attributable failures, reconcile and safely promote | Focused critical checks, clean migrations when needed, one complete bounded PHP run, JS/build, final image/container and affected Playwright checks, coherent staged diffs |
+
+Ordered queue:
+
+1. Complete standard shared authorization and SSO functionality. Inspect existing gates and the pinned legacy graph before widening access. Implement secure provider/callback/session integration, but defer new SSO tests and the user's live test account to the later tranche; leave unverified SSO disabled in the preview. Keep existing auth regression checks for shared changes.
+2. Close worklist configuration and server-enforced authorization expiry within 60 seconds, preserving all 88 parity items and partitioned publishers. Default to ten configurable clinics with a tooltip; retain access to all appointments through bounded loading. Integrate the necessary EyeDraw host adapter and cheap device-queue polling boundary without rewriting external engines or workers.
+3. Fix homepage notification dropdown placement/size and legacy menu ordering using existing OpenEyes styles, accessibility and authorization. Do not open patient-summary optimization or redesign.
+4. Port missing shared clinical/event, examination, diagnosis, medication, history and configuration behavior with real consumers. Preserve calculations, signing, audit/history and clinical display semantics.
+5. Close surgery, booking, consent, therapy, correspondence and reporting gaps; queue heavy exports. Do not rework completed functionality merely for ledger score.
+6. Port remaining core APIs, administration, commands, scheduled and shared behavior, then perform residual path-by-path accounting. All existing features are required; an unpopular feature is not obsolete.
+7. Conditional successor authorized on 11 September: only after all core features are ported and residual functional gaps are resolved, create the faithful `legacy` sample database, then treat a legacy sample instance as a customer migration into the rewrite. Use source develop `ad2324084788608246a8250e817198c2f26a4fd6` and a pinned matching sample input, not an unreleased v27 version. This overrides the earlier blanket deferral of sample/converter implementation when its completion prerequisite is met. Preserve the six-hour scope freeze; if reached too late, this is the first next-tranche priority. Do not call a percentage functional completeness.
+
+12 September architecture-now addition: unique-code option3 is preferred, preserving the exact source six-character alphabet, printed Operation Note wrapper and all retained codes. DIV-586 now enforces shared Operation Note/CVI uniqueness with an actual registry unique index and composite ownership foreign keys, preserving module ids. Reservation/mapping/audit are atomic; no table lock, global named lock, counter hot row or availability query.55focused tests1375assertions pass; a narrow multi-connection FK-wait probe let an unrelated mapping commit in5.265ms. HMAC/random candidate calculation remains interim. Reviewed FF1 selection, immutable packed legacy exclusions and dedicated key deployment, automatic eligible save wiring, full-save recovery, non-event source consumers and coordinated event-first repair remain open. Neither the floating-point PHP candidate nor the alpha alternative was adopted. The32,795-check rank prototype is arithmetic evidence only. Three older portal-subset complete rows are corrected to partial90; current code82.84283162851112percent, overall75.94407079646018percent, source6376, schema420. Continue other porting while the crypto gate is unresolved. Full decision: `/home/toukan/openeyes-rewrite/coverage-48h-20260911-174239/unique-code-option-3-decision.md`; master26.21 records the user correction. Final integration must also reconcile the broader ledger test batch:14failures were exposed, including stale census counts and AnalyticsController feature-owner metadata; the strict source/evidence verifier is a separate gate.
+
+Starting code coverage is 5069.10/6159 = 82.303945445689235 percent; weighted overall coverage is 10692.96/14125 = 75.7024 percent. There are 18648 mappings, 14125 canonical paths, zero missing paths and zero unowned code paths. Aim above 90 percent and ideally complete code, but report an honest shortfall if reached. Never shrink the denominator, count inventory as progress or treat test/doc additions as runtime porting. Record actual new behavior separately from re-accounting. Every residual path needs purpose/callers, missing or replacement behavior, a path-specific reason, evidence and a next step. The audit found 3111 canonical code reasons blank: 2329 incomplete and 782 fully credited rows.
+
+Verification policy: ordinary tests can wait for the final batch; immediate narrow checks remain for authorization, patient isolation, clinical calculations/signing, audit/history, irreversible transforms and dangerous query shapes. SSO testing is explicitly deferred, not implicitly passed. No new Cypress. Avoid repeated full-suite, end-to-end and image checks on each bundle. Use the dev image throughout implementation and compare the immutable live image infrequently at final integration. Full migrated-data load, all renderer output fidelity, penetration testing, live SSO, real integrations, UAT and documentation completeness are not claims of this run.
+
+Runtime policy: keep the existing preview available and use one bounded development/test stack with a separate database. Serialize memory-heavy checks, monitor headroom, and stop/remove only positively identified disposable task resources. Retain uncertain volumes and never broad-prune. Save hourly durable records with current acceptance condition, completed evidence, current work, `next_item`, `after_next`, blockers, coverage/counts, query changes, `verification_state` and repository state. The brief user progress must stay within ten lines.
+
+The later order remains core porting, external/special-module and live SSO closure, storage consolidation and sample profiles, representative migration, measured performance/load and renderer closure, then security/UAT/documentation/release. Plan a 330 GB one-to-two-hour migration ambition including backup with a slower constrained-infrastructure path; implement no bulk converter now. Preserve all clinical work, including drafts. The `legacy` sample profile is a source-faithful matching-branch sample copy with original dates, not a random lookalike or current-date demo. Create the retrospective after the rewrite; capture only short supporting lessons now.
+
+Latest checkpoint, 12 September 02:30 BST: protected trial CSV intake and reviewed source-role identities are implemented. Patient identifier mapping and historical enrolment imports are next, then patient registration/diagnoses and the residual core queue. Coverage is 82.5947 percent code and 75.8274 percent overall; canonical 14125, mappings 18648, missing 0, pending 1204, unowned code 0. The new source manifest has 6320 paths and the isolated database 414 migrations. CSV 20 tests/105 assertions, authorization/trial 60 tests/427 assertions, two Vue compiles, source-manifest 1 test/21 assertions and strict evidence pass. Browser/full-suite/live-image/migrated-load gates remain deferred. False generic CSV claims were reduced; unfinished patient modes remain disabled. Preview unchanged; no commits or pushes. Full record: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-0230.md`.
+
+Initial checkpoint: no product edits at T0; Laravel contains the pre-existing untracked `public/frankenphp-worker.php`, which is not this run's work. Laravel HEAD is `65ae6a5321248f2c260c72ac39a78bd692c6d6ca`; Docker HEAD is `1d9f178f9fe99929d96e4b26781b5618700f2428`; pinned legacy remains `ad2324084788608246a8250e817198c2f26a4fd6`. The previous complete test milestone is historical evidence, not a new test run. Next item is the shared-auth/SSO source census; after-next is worklist grant expiry and configuration.
+
+11 September 18:33 BST checkpoint: the bounded three-service development stack has a fresh seven-schema database and tiny seed. The authentication schema packet, OIDC/SAML adapters, encrypted one-use login transactions and shared role capability reader are written. The role reader uses one indexed query per request user at small and larger fixture sizes; no examined plan needs filesort or a temporary table. Existing direct accounts keep their current behavior. Initial shared checks passed 47 tests/1226 assertions; consumer checks passed except an outdated route-manifest expectation, then the corrected focused gates passed 15 tests/177 assertions. SSO provider testing remains deferred and disabled. Next is reviewed role activation plus transactional SSO provisioning/configuration/routes; after-next is the worklist/EyeDraw/device queue. Code coverage remains 82.303945445689235 percent because this workflow is not yet complete. Evidence and resumable next steps are in `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260911-1833.md`; the preview is unchanged and no commit/push occurred.
+
+11 September 21:57 BST checkpoint: systemic diagnosis sides, new-row conversion and saved-state precedence are restored across form and XAPI. The history toggle now loads bounded live observations through a maintained chronology index: six queries with small and 1001-event fixtures, no sort/temp/hints, and no writes for unchanged timeline rows. Diagnosis/history/manifest checks passed38tests2935assertions; strict ledger and source-manifest gate passed. Coverage is82.31125182659524percent code and75.70555752212388percent overall; only evidenced partial mappings increased. Isolated database has411migrations and source manifest6291paths. Source review proves the original history_at_creation is used for historical event presentation, not merely disposable cumulative cache; snapshot preservation and the historic editor input remain open clinical gates under DIV-075. Auth linking/module permissions, new SSO tests/live IdP, browser, full-suite, migrated-data load and immutable-image gates remain open. Preview unchanged, host about16GiB available, no commits/pushes. Full queue and evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260911-2157.md`.
+
+11 September 22:42 BST checkpoint: Operation Note anaesthetic dependent controls and saves now follow the source General/None rules, Local delivery and given-by validation, and full1024-character Other descriptions with history. Typed option resolution is batched and its exact-pair query avoids the unnecessary Cartesian lookup found during plan checking. Personal template pages now show procedure names through one bounded lookup; existing exact multiset matching is explicitly reconciled to the old ProcedureSet helpers. Operation Note75tests1452assertions, template2tests99assertions,4JS checks, Vue/Pint and strict ledger pass. Code coverage is82.33658061373599percent and overall75.71660176991149percent;14125canonical paths and18648mappings remain unchanged. Source manifest6294paths and isolated412migrations are verified. Original diagnosis creation snapshots, removed-event aggregate history, anaesthetic witness, full template/import/browser parity and unfinished auth remain open. Continue shared event/clinical configuration then remaining core domains; no preview changes or commit/push. Detailed evidence and next steps: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260911-2242.md`.
+
+12 September 00:36 BST checkpoint: shared contact qualifications and the reviewed contact operation mapping are complete. A source-read diagnoses report now has a named page/API, bounded active-confirmed any/all/date reads, correct partial dates and eyes, surgeon or reviewed Report authority and explicitly current-page CSV. The report remains partial: full export, all-institution scope, shortlist and browser parity remain open. Covered streams avoid result filesort/materialization and disk temporary tables in fixtures, but counters expose one bounded internal membership memo table; strict zero-temporary-table performance is explicitly unfinished under DIV-572, with no hints or optimizer switches. Report/directory/catalogue/diagnosis/manifest49tests3068assertions, Vue and11PHP Pint checks pass. Strict coverage82.3967percent code and75.7428percent overall;14125canonical paths18648mappings;source6306paths and413isolated migrations. Next is remaining shared clinical/core behavior, then booking/consent/therapy/administration/APIs; original diagnosis snapshots, contact location bridge and unfinished auth remain open. Preview unchanged, about15GiB host memory available, no commits/pushes. Detailed evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-0036.md`.
+
+12 September 01:33 BST checkpoint: CVI current actor/context creation, observation-aware mandatory diagnosis warnings, local date/time checklist fields and three reviewed trial task mappings are implemented. Trial access now separates creation/view, assigned/global management, retirement and patient-side shortlist; existing scores do not increase for corrections. Code coverage82.5517percent and overall75.8104percent;14125canonical paths18648mappings;source6308 and413isolated migrations. Focused trial35tests388assertions and two Vue compiles pass; candidate reads stay at four across small/larger fixtures, with explicit broad-search limits. Public-list User-role identity, continuation, full reports, original diagnosis snapshots and coordinated CSV import remain open. Next is the residual core runtime queue, then clinical/booking/consent/therapy/APIs. Legacy sample/customer migration remains conditional on core completion. Preview unchanged; about15GiB available; one agent and no commits/pushes. Evidence: `openeyes-rewrite/coverage-48h-20260911-174239/checkpoint-20260912-0133.md`.
 
 ## Appendix A — Naming and pattern rules (enforced by lint/arch tests)
 

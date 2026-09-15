@@ -31,6 +31,42 @@ If a large operation repeatedly groups by local clinic day, an indexed
 `clinic_date` or a maintained projection may be justified. Its source timezone
 and update rule must be explicit.
 
+## Sargable and non-sargable date comparisons
+
+Sargable means a condition gives the database a usable place to start and stop
+in an index. Non-sargable means that condition cannot directly locate matching
+index entries; the database may read candidates and calculate a result for each.
+Other conditions can still use an index. Neither term alone tells you how many
+rows the query reads or how long it takes.
+
+| Predicate shape | Index behaviour |
+|---|---|
+| `starts_at >= :start AND starts_at < :next_start` | Direct interval on a compatible indexed timestamp |
+| `dob = :day` where dob is DATE | Direct lookup of a calendar date |
+| `DATE(starts_at) = '2001-02-03'` | MariaDB 11.1+ can rewrite an eligible indexed temporal comparison into an interval |
+| `DATE(starts_at) = DATE(:day)` | Wrapped constant can miss that rewrite; prefer explicit bounds |
+| `DATE_FORMAT(starts_at, '%Y-%m-%d') = :day` | Ordinary timestamp index cannot directly search the formatted result |
+| `CONVERT_TZ(starts_at, 'UTC', :zone) >= :local_start` | Convert lookup boundaries once instead of relying on per-row conversion |
+| `starts_at BETWEEN :start AND :next_start` | Can be sargable, but includes the next boundary and is wrong for adjacent day windows |
+
+The [MariaDB DATE/YEAR rule](https://mariadb.com/docs/server/ha-and-performance/optimization-and-tuning/query-optimizations/sargable-date-and-year)
+uses `CMP` to mean `=`, `<=>`, `<`, `<=`, `>` or `>=`. It requires an indexed
+DATE, DATETIME or TIMESTAMP column and a suitable constant operand. The hotlist's
+`=` is allowed. The implementation additionally checks the internal comparison
+type and whether the other operand is a simple constant; `DATE(:day)` can fail
+the latter check while it remains a function expression. Do not confuse the SQL
+operator with the internal comparison type, or claim all DATE predicates are
+unconditionally non-sargable.
+
+[Handling dates efficiently](oe-query-patterns-sorting-and-date-predicates.md)
+explains that limitation, includes the complete hotlist query and shows the PHP
+rewrite. [Reading EXPLAIN](oe-query-explain.md#ref-and-range-in-the-hotlist)
+explains how an index can serve a creator/status equality lookup while still
+missing the more selective date interval.
+
+An index cannot correct the meaning of stored time. Establish whether a value
+is a calendar date, local wall time or a UTC instant before calculating bounds.
+
 ## Why old OpenEyes needs an inventory first
 
 Old OpenEyes has several generations of date handling. Examples include normal

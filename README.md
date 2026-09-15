@@ -19,7 +19,8 @@ bash codex.sh               # run sandboxed host Codex in the current directory
 ├── lib/
 │   └── skills.sh           # shared skill policy, metadata, validation and link plumbing
 ├── radar/
-│   └── release-radar.md    # dated upstream-release digests, written by the release-radar skill
+│   ├── release-radar.md    # continuous, sourced product updates from the a-release-radar skill
+│   └── release-radar-legacy-2026.md # preserved run-by-run digests from 2026
 ├── todo/                   # queued tasks for Claude + the plans behind them (git-tracked, public)
 │   ├── TODO.md             #   the queue - one task per line, removed when done
 │   └── <slug>-plan.md      #   plans being developed / awaiting execution
@@ -77,10 +78,10 @@ bash codex.sh               # run sandboxed host Codex in the current directory
 │   ├── c-oe-iolmaster-import/ c-oe-payload-processor/           # OpenEyes file processors
 │   ├── c-bash-style/ c-yiic-command-style/ c-note-style/        # house style
 │   ├── c-claude-kit/ c-dblogin/ c-docbuilder-docset/ c-notes-app/   # kit/repo context
-│   ├── a-clarify/ a-pause/ a-pr-explainer/                      # user-authored actions
+│   ├── a-clarify/ a-pause/ a-pr-explainer/ a-release-radar/     # user-authored actions
 │   ├── c-performance-indexes-rollup/ c-oe-unit-tests/            # context-only references
 │   ├── create-pr/ create-oe-pr/ create-oe-module/ new-feature/   # imported or legacy workflows
-│   ├── teach/ release-radar/ compact-memories/ c-grill-me/ c-handoff/  # imported or legacy names
+│   ├── teach/ compact-memories/ c-grill-me/ c-handoff/  # imported or legacy names
 │   ├── oe-probe-playwright/                                     # OE UI probe shared by both clients
 │   ├── oe-probe-chrome/ oe-probe-codex-chrome/                  # client-specific interactive OE UI probes
 │   ├── jiramcp/ githubmcp/                                      # shared MCP preflight
@@ -357,7 +358,7 @@ Authentication is a **dedicated read-only IAM user's** access key, stored in
 policy still permits `secretsmanager:GetSecretValue`, `ssm:GetParameter`,
 `s3:GetObject` and `kms:Decrypt`; deny those explicitly if it matters. Full setup and
 the limitations that matter live in **[docs/aws.md](docs/aws.md)**; the environment it
-reads is described in `knowledge/aws-production-deployments.md`.
+reads is described in `knowledge/Infrastructure/aws-production-deployments.md`.
 
 Neither flag = the container and gate are left exactly as-is on re-runs.
 
@@ -385,7 +386,7 @@ calling them in one message. `codexmcp` is deliberately Claude-only because
 standalone Codex uses native collaboration tools. Run `/codexmcp` from Claude Code
 to preflight and for the fan-out + safety rules.
 
-install.sh pins general execution to **`gpt-5.6-sol` at `xhigh` reasoning effort**
+install.sh defaults to **`gpt-6-astra` at `xhigh` reasoning effort**
 and installs a read-only **`gpt-6-astra` at `max`** planner profile.
 `approval_policy=never` is used for unattended agents. The execution defaults are recorded
 (non-secretly) in `generated/.codex.env`, the same file the standalone runner uses. **The container is the safety floor:** an
@@ -520,7 +521,9 @@ own profile, permission, rule, MCP, memory, archive, skill, and TUI mechanisms. 
 `~/.codex/skills` synchronized prevents stale skills because current releases scan both.
 The launcher also applies the VS Code keyboard workaround without changing any other
 CLI environment. Non-trivial planning runs in the read-only Astra/max planner and
-approved implementation returns to the Sol/xhigh main thread. Usage, the feature
+approved implementation returns to the main thread, which defaults to Astra/xhigh.
+Fresh kit launches restore that default; `/model` can select Sol or Terra for the
+current session. Output defaults to medium detail. Usage, the feature
 table, permission translation, memory preservation, Docker limits, browser walker,
 and verification are in
 **[docs/codex-standalone.md](docs/codex-standalone.md)**.

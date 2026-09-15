@@ -58,7 +58,7 @@ Security handling:
 - Keep a tested local emergency login path under a documented break-glass process. Do not exempt that account from auditing.
 - Test sign-in, account creation, role removal, group removal, disabled users, institution selection, logout, session timeout, and cancelled Entra login.
 
-See separate note: `Setting up Single Sign-On (SSO) in OpenEyes` in `knowledge/oe-sso-setup.md`.
+See separate note: `Setting up Single Sign-On (SSO) in OpenEyes` in `knowledge/Openeyes/oe-sso-setup.md`.
 
 ## Option 2: patient-context deep-link handoff
 
@@ -183,7 +183,7 @@ Making it work would require all of the following:
 - Set `HttpOnly` on handshake cookies unless the existing OpenEyes login JavaScript must create or read that specific cookie. Never put patient context in a JavaScript-readable SSO cookie.
 - Do not change the global session cookie to solve a callback-state problem in a separate cookie.
 
-See separate note: `Cookie security in OpenEyes (2026-08, verified against v26)` in `knowledge/oe-cookie-security.md`.
+See separate note: `Cookie security in OpenEyes (2026-08, verified against v26)` in `knowledge/Openeyes/oe-cookie-security.md`.
 
 ## Security baseline for every design
 

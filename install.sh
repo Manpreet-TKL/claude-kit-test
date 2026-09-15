@@ -146,7 +146,7 @@ Usage: install.sh [-q] [-p <ultra-safe|standard|trusted|yolo>]
                       the host; a host `codex` binary is used only if Docker is
                       absent. Sign in once via the printed login command
                       (`... claude-kit-codex login --device-auth`; auth lands
-                      in ~/.codex). Pins execution to gpt-5.6-sol at xhigh and
+                      in ~/.codex). Defaults to gpt-6-astra at xhigh and
                       installs a read-only gpt-6-astra/max planner; sandbox
                       settings are tweakable in generated/.codex.env. With -y,
                       reads that file silently. Also wires codex compat:
@@ -1515,8 +1515,8 @@ applyCodex() {
         cx_approval="${CODEX_APPROVAL:-}"
         cx_threads="${CODEX_AGENT_THREADS:-}"
     fi
-    # Defaults: Sol/xhigh execution, workspace-write (network off -> no push).
-    cx_model="${cx_model:-gpt-5.6-sol}"
+    # Defaults: Astra/xhigh execution, workspace-write (network off -> no push).
+    cx_model="${cx_model:-gpt-6-astra}"
     cx_effort="${cx_effort:-xhigh}"
     cx_sandbox="${cx_sandbox:-workspace-write}"
     cx_threads="${AGENT_THREADS:-${cx_threads:-}}"
@@ -1572,7 +1572,7 @@ applyCodex() {
 
     # Build the launch args: `codex mcp-server` plus `-c key=value` config overrides
     # that become the default for every spawned agent. TOML strings are quoted so the
-    # parser treats e.g. gpt-5.6-sol as a string, not a malformed number. approval_policy
+    # parser treats e.g. gpt-6-astra as a string, not a malformed number. approval_policy
     # =never keeps agents non-interactive; for host workspace-write we also pin network
     # off so an agent can never `git push` (the API analogue of the never-push floor);
     # in docker mode push dies instead on the credential-free container.
@@ -1586,6 +1586,7 @@ applyCodex() {
         ["mcp-server",
          "-c", ("model=\"" + $model + "\""),
          "-c", ("model_reasoning_effort=\"" + $effort + "\""),
+         "-c", "model_verbosity=\"medium\"",
          "-c", ("sandbox_mode=\"" + $sandbox + "\""),
          "-c", "approval_policy=\"never\""]
         + (if $threads == ""

@@ -10,6 +10,30 @@ When loaded as context with no task, reply only `Context loaded.` This skill is 
 
 A **template, not a source of truth**: every instance is a `mv oe-deploy <env>` on the target host - **never `cp`** - with its own `.env`, `.oedeploy`, and generated `docker-compose.yml`. Upstream is a private repo **`oed`** - it holds the docs, the extra templates, and the advanced devops maintenance scripts; this `oe-deploy` is the trimmed template for deploying production-ready OpenEyes plus a little diagnostics. **Changes/PRs go to `oe-deploy` when they need to reach a working deployment** (setup/build scripts, compose templates, env scripts); `oed` only for docs and advanced maintenance tooling - **ask when unsure which repo a change targets.** **Sensitive values (DB passwords, API keys, GPG passphrases, ...) always go in Docker secrets** - the per-instance secret files keyed off `.oedeploy`/`keeper.csv` - **never in `.env` / environment variables.** Manpreet's hosts already have docker login, GPG, host-setup - don't re-check or re-run those. OE sample DBs ship `admin/admin` - never run `set_frontend_passwords.sh` on demo boxes. Detail: `subs/versions.md`, `subs/recipes.md`, `subs/build-gates.md`, `subs/first-run.md`; `.bash_aliases` house rules: `subs/aliases.md`.
 
+## Testing a code change
+
+Presume every existing environment is in use. Never reuse, modify, restart, stop
+or remove one for testing without an explicit instruction. Create a fresh instance
+dedicated to this change; keep it for further test iterations of the same change.
+
+Before provisioning, read CPU load, available RAM, disk headroom and current
+container resource use. Allow room for image pulls, database data and the tests
+themselves. If capacity is insufficient, report it and pause provisioning; never
+stop another environment or prune shared resources to make room.
+
+Use the test-up script below when available, or the documented first-run/dev-image
+route. Use a unique project name, unused ports and new volumes. Check out the
+intended revision in the dev image and apply the actual local changes, including
+uncommitted and new files, before testing. Verify that the files under test match
+the change; selecting an upstream branch alone does not include local edits.
+
+Plan cleanup before setup. For a one-off test, preserve requested evidence and
+tear down only this task's instance after success or setup/test failure. Run
+`docker compose -p <task-project> -f <instance>/docker-compose.yml down -v --remove-orphans`
+against its own project. Verify its containers, networks and disposable volumes
+are gone. Never use a global prune or delete shared/external resources. If the
+instance is intentionally retained for more testing, report its path and purpose.
+
 ## Pantry + recipe + chef
 
 Pantry: `templates/*.yml` (one compose fragment per service), with mods in `templates/modules/`, and `templates/healthchecks/` + `templates/awslogs/`. Recipe: four space-separated lists in `.env` - `SERVICES` -> `templates/<svc>.yml`, `MODS` -> `templates/modules/<mod>.yml`, `HEALTHCHECKS` -> `templates/healthchecks/<hc>.yml`, `AWSLOGS` -> `templates/awslogs/<svc>.yml`. Chef: `build.sh` runs `docker compose -f ... config` over the lot into `docker-compose.yml`. A new app is a new recipe - its own `templates/<app>.env` - not new pantry items. Current recipes (cross-check the per-app `.env`): openeyes = `db web`; notes = `db notes tfk`; openers = `db mc-ers ers min tfk-ers cla` - live detail in `subs/recipes.md`. `MASTER_TAG` (e.g. `26.0.0`) is the umbrella image tag; `OE_WEB_TAG`/`OE_MANAGER_TAG`/`OE_RTF_TAG`/`PAYLOAD_IMAGE_TAG`/... default to it. `.oedeploy` holds per-instance metadata (at minimum `appName`, every var must be non-empty); the scripts source it to pick the `.env` template, secret filenames, and keeper entries.
@@ -20,7 +44,9 @@ Named volume for data + bind mounts for logs/config; `${VAR:-default}` optional,
 
 ## Dev mod (oe-web-dev) gotchas
 
-The `dev` mod swaps `web` to `oe-web-dev`, which clones openeyes at first boot (dev-only init 42, skipped once `protected/modules/eyedraw/.git/HEAD` exists; needs `BUILD_BRANCH` plus the `SSH_PRIVATE_KEY` secret). **Never mount a volume inside `/var/www/openeyes`** - compose pre-creates the mount dir before init 42, git refuses to clone into the non-empty tree, and the container never comes up. The exception-handler volume's designed target is top-level `/OEExceptionHandlerLogs`: init 52 (in web AND manager images) symlinks it into `protected/runtime/` after the clone, so host-side logs work on live, dev, and manager alike - an in-tree target is exactly the clone-breaking bug (an existing dev host may carry the old workaround of stripping the mount from its rendered `docker-compose.yml`). `YII_DEBUG_BAR_IPS: ${YII_DEBUG_BAR_IPS:-'*'}` (the `debug.yml` pattern) turns on the Yii debug bar; openeyes reads it in `protected/config/core/main.php` only when `YII_DEBUG` is on (quotes stripped, comma-separated IPs or `*`), so it is inert on live images. `web.yml`'s `OE_EXCEPTION_HANDLER_FORCE_ENABLED` / `OE_EXCEPTION_HANDLER_LOG_PATH` **environment entries** have no consumer anywhere - dead config (the same-named variable still works as the mount-target override).
+The `dev` mod swaps `web` to `oe-web-dev`, which clones openeyes at first boot (dev-only init 42, skipped once `protected/modules/eyedraw/.git/HEAD` exists; needs `BUILD_BRANCH` plus the `SSH_PRIVATE_KEY` secret). **Never mount a volume inside `/var/www/openeyes`** - compose pre-creates the mount dir before init 42, git refuses to clone into the non-empty tree, and the container never comes up. The exception-handler volume's designed target is top-level `/OEExceptionHandlerLogs`: init 52 (in web AND manager images) symlinks it into `protected/runtime/` after the clone, so host-side logs work on live, dev, and manager alike - an in-tree target is exactly the clone-breaking bug (an existing dev host may carry the old workaround of stripping the mount from its rendered `docker-compose.yml`). `YII_DEBUG_BAR_IPS: ${YII_DEBUG_BAR_IPS:-'*'}` (the `debug.yml` pattern) turns on the Yii debug bar; openeyes reads it in `protected/config/core/main.php` only when `YII_DEBUG` is on (quotes stripped, comma-separated IPs or `*`), so it is inert on live images.
+
+The OEExceptionHandler module packaged in `oe-web-live:26.0.6` **does consume** `OE_EXCEPTION_HANDLER_FORCE_ENABLED` and `OE_EXCEPTION_HANDLER_LOG_PATH` in its `config/common.php`. The first enables the override when exactly `true` or when `YII_DEBUG` is off; the second configures the writer's directory, independently of compose's mount interpolation. Check the packaged module for other versions, rather than treating these environment entries as dead config. Report format and path resolution: [v26 diagnostics](../c-oeimagebuilder/subs/diagnostics-v26.md#oeexceptionhandler-reports).
 
 ## Build gates (abridged)
 

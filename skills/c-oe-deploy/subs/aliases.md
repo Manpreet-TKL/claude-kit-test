@@ -2,6 +2,8 @@
 
 Rules for writing or changing aliases in the repo-root `.bash_aliases`. The live shell sources `~/.bash_aliases`; a checkout copy is tested with `source ~/cat/.bash_aliases` (functions redefine cleanly in the same shell).
 
+When porting these host functions into an image's `Web-Base/profile.d/oe-shortcuts.sh`, read [v26 in-container diagnostics](../../c-oeimagebuilder/subs/diagnostics-v26.md). Host compose-project lookup and `docker exec` wrappers do not belong inside the image; session serializers, available utilities and client output modes also need checking against the target image.
+
 ## Shape
 
 - **Function, not alias**, for anything with an argument or logic. Plain `alias` only for shorthands onto a real function: `alias ttys=ttyss`, `alias vscodeusers='sshusers vscode'`.

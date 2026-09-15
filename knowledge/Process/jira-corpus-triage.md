@@ -86,7 +86,7 @@ obfuscates emails ("sami dot khan at ..."). Raw REST does neither.
 
 If the reducer is codex (not Haiku), two container gotchas bite every run - full
 detail in [[codex-docker-swarm-gotchas]] (auto-memory) and
-`knowledge/codex-compatibility.md`:
+`knowledge/Tooling/codex-compatibility.md`:
 
 1. Pass `sandbox: "danger-full-access"` per call - codex cannot nest its bwrap
    sandbox inside the container, which is already the boundary.

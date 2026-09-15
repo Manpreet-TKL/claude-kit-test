@@ -1,13 +1,15 @@
 ---
 name: c-ascii
-description: Non-ASCII pitfalls - load when non-ASCII appears in your output or edits
+description: Non-ASCII pitfalls in prose for public or team sharing
 ---
 
 # Non-ASCII: convert-or-keep pitfalls
 
-The global rule (`~/.claude/CLAUDE.md`): no em/en dashes (`-` is the only dash),
-`...` never the one-char ellipsis, new prose in basic ASCII. This skill is the
-judgment call for non-ASCII that already exists in a file or seems needed in output.
+Load only when non-ASCII appears in prose intended for public or team sharing:
+Jira/Confluence text, kit files, or changed OpenEyes comments, documentation and
+user-facing text. Private chat and unrelated source characters do not trigger it.
+Use plain hyphens, `...` and basic ASCII for new prose. The exceptions below
+preserve content whose characters carry meaning.
 
 ## First rule: scope
 

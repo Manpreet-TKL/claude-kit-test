@@ -125,15 +125,15 @@ The chart lags oe-deploy. Missing services: `bkp` (mariabackup backups), `db2`,
 (Traefik), `whi` (Whiskers). Missing cross-cutting features: DB backup
 CronJobs, encrypted secrets (git-secret/GPG), db-setup/bootstrap Jobs, K8s
 CronJobs, log shipping, WAIT_HOSTS init containers, monitoring. Full list:
-`~/claude-kit/knowledge/helm-vs-oe-deploy.md`.
+`~/claude-kit/knowledge/Infrastructure/helm-vs-oe-deploy.md`.
 
 ## Planning docs
 
 - `~/claude-kit/todo/helm-reorg-plan.md` - library-chart refactor + phased, golden-file-verified migration.
-- `~/claude-kit/knowledge/helm-vs-oe-deploy.md` - complete parity gap list.
-- `~/claude-kit/knowledge/helm-monitoring-integration.md` - Prometheus + Grafana integration design.
+- `~/claude-kit/knowledge/Infrastructure/helm-vs-oe-deploy.md` - complete parity gap list.
+- `~/claude-kit/knowledge/Infrastructure/helm-monitoring-integration.md` - Prometheus + Grafana integration design.
 - `~/charts-bugfix-analysis.md` - per-env bug fixes (LARAVEL_APP_KEY, zero-downtime rollout, configMap mountPath).
-- `~/claude-kit/knowledge/helm-scheduled-restarts.md` - scheduled container restarts (CronJob + oe-deploy parity).
+- `~/claude-kit/knowledge/Infrastructure/helm-scheduled-restarts.md` - scheduled container restarts (CronJob + oe-deploy parity).
 
 ## Deploy workflow
 

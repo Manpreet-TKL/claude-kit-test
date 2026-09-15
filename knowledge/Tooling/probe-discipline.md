@@ -106,7 +106,7 @@ derived facts say which ones were literal and which were swept.
 
 ## Related
 
-`knowledge/oe-cleardown-versions.md` section 9 ("Trust a probe only after proving
+`knowledge/Database/oe-cleardown-versions.md` section 9 ("Trust a probe only after proving
 it can return a positive") is the same rule discovered independently while
 instrumenting a live suite; section 7 there covers the timing variant, where the
 window being probed is shorter than the probe interval and every sample reads

@@ -1,0 +1,3 @@
+interface:
+  display_name: "a-release-radar"
+  short_description: "Track relevant upstream releases in continuous, sourced product sections in radar/"

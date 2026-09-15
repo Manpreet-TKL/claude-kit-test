@@ -44,16 +44,41 @@ available. It does not require Claude Code, a Codex MCP registration, or the
 Claude Code sessions. `codex-grill` uses the same native/MCP split. The
 `codexmcp` skill is Claude-only and is not linked into standalone Codex.
 
-The main thread stays on `gpt-5.6-sol` at `xhigh` for implementation. The
-installer links a custom read-only `planner` agent from
-`settings/codex/agents/planner.toml`; non-trivial planning uses
-`gpt-6-astra` at `max`, then returns its plan to the Sol main thread for
-execution. Codex does not currently expose a `plan_mode_model` setting, so the
-custom agent provides the automatic model boundary. The supported native
-`plan_mode_reasoning_effort` setting is also pinned to `max` for direct Plan
-mode work.
+The main thread defaults to `gpt-6-astra` at `xhigh`. The installer links the
+read-only `planner` from `settings/codex/agents/planner.toml`; every non-trivial
+plan uses Astra at `max`, then returns to the main thread. Direct Plan mode
+defaults to `max` in the profile.
 
 If Codex is missing, the installer uses OpenAI's standalone installer. A normal re-run updates Codex. If an existing global npm installation is root-owned, the installer uses `sudo npm install -g @openai/codex`; otherwise it uses `codex update`. Pass `-U` to leave an existing version unchanged; it does not suppress a required first install.
+
+## Models and controls
+
+Fresh launches through `codex.sh` start with Astra at `xhigh` and medium verbosity.
+The launcher resets only model and effort in `~/.codex/claude-kit.config.toml`.
+It leaves unrelated keys alone and uses an atomic replacement plus a lock to
+serialize simultaneous kit launches. The installer sets `model_verbosity = "medium"`;
+the writing instructions ask for simple English and brief explanations of technical terms.
+
+| Control | Effect |
+|---|---|
+| `/model` | Choose model and effort for the current session, including Sol or Terra. |
+| Alt+, or Shift+Down | Decrease reasoning effort. |
+| Alt+. or Shift+Up | Increase reasoning effort. |
+| Alt+P | Deferred: Codex 0.154.0 has no bindable model-picker action. Use `/model`. |
+| `/keymap` | Inspect the bindings available in the installed CLI. |
+
+For example, `bash /home/toukan/claude-kit/codex.sh --model gpt-5.6-sol` explicitly
+selects Sol. Explicit model/effort CLI arguments override defaults and can therefore
+produce the native override warning if changed through `/model` later. Environment
+values `CODEX_MODEL` and `CODEX_REASONING_EFFORT` can also select launch defaults;
+they take precedence over `generated/.codex.env` without adding CLI overrides.
+
+The warning "Saved default model and reasoning effort, but a higher-priority
+configuration layer overrides the saved value." came from the kit's unconditional
+CLI model/effort flags. Those flags are removed. A normal kit launch now lets
+`/model` save successfully; the next fresh launch restores the kit defaults.
+`resume`, `fork` and `/new` within an existing CLI follow native behavior. Other
+Codex launch methods and machine-managed configuration are outside this change.
 
 ## Feature mapping
 
@@ -68,7 +93,7 @@ If Codex is missing, the installer uses OpenAI's standalone installer. A normal 
 | Screen resilience | Managed aliases start each CLI inside GNU screen 5 and remain available without nesting from shells already inside screen. | Complete and idempotent |
 | Auto-compaction | `model_auto_compact_token_limit` in the Codex profile. | Native equivalent |
 | Native subagents | `CODEX_AGENT_THREADS` becomes `[agents].max_concurrent_threads_per_session` in the generated profile. | Configurable with `-t`; applies to new sessions. |
-| Planning model | `~/.codex/agents/claude-kit-planner.toml` links to the kit-managed custom agent. | Non-trivial plans use `gpt-6-astra` at `max`; implementation remains in the `gpt-5.6-sol` at `xhigh` main thread. |
+| Planning model | `~/.codex/agents/claude-kit-planner.toml` links to the kit-managed custom agent. | Non-trivial plans use `gpt-6-astra` at `max`; the main thread defaults to `gpt-6-astra` at `xhigh`. |
 | Session pruning | `-d` locates old rollout files and calls `codex archive`. | Complete |
 | Reset and fresh install | `-r` archives regenerable data; `-F` backs up and restores auth, history, sessions, and memory state. | Complete |
 | Memory | Native Codex memories are enabled. Raw memory remains in `~/.codex/memories/` and `~/.codex/memories_*.sqlite*`. | Preserved by reset/fresh; deliberately never copied into the git repository. |
@@ -93,7 +118,7 @@ settings/codex/rules/trusted.rules
 settings/codex/rules/yolo.rules
 ```
 
-The installer generates `~/.codex/claude-kit.config.toml` from its native base settings and the permission TOML fragments, then links `~/.codex/rules/claude-kit.rules` to the selected rule file. The global instructions, skills, custom planner, and selected static rules are symlinked back to the kit. The launcher maps the selected execution model, effort, mode, and permission tier at session start. It also maps the kit's `yolo` tier directly to Codex's `:danger-full-access` built-in because custom profiles cannot extend that built-in, so `codex.sh` remains required. The hard floor forbids `git push`, `git commit`, and direct AWS CLI calls. The `yolo` tier permits Docker access; narrower tiers deny the Docker socket.
+The installer generates `~/.codex/claude-kit.config.toml` from its native base settings and the permission TOML fragments, then links `~/.codex/rules/claude-kit.rules` to the selected rule file. The global instructions, skills, custom planner, and selected static rules are symlinked back to the kit. Before a fresh launch, the launcher writes model/effort defaults into the kit profile under a lock and replaces the file atomically. It preserves other keys and maps mode and permission tier at session start. It also maps the kit's `yolo` tier directly to Codex's `:danger-full-access` built-in because custom profiles cannot extend that built-in, so `codex.sh` remains required. The hard floor forbids `git push`, `git commit`, and direct AWS CLI calls. The `yolo` tier permits Docker access; narrower tiers deny the Docker socket.
 
 The AWS session gate governs compliant wrapper use rather than isolating AWS
 from a yolo session: direct Docker can bypass the wrapper. The read-only IAM

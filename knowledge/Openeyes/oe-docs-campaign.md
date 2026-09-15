@@ -1,7 +1,7 @@
 # OeDocumentation campaign - lessons, skill paths, ledger
 
 Working notes for the 2026-08-05 completeness/readability campaign. New bugs go
-to `knowledge/oe-documentation-bug-ledger.md` (next id BUG-534); this file holds
+to `knowledge/Openeyes/oe-documentation-bug-ledger.md` (next id BUG-534); this file holds
 everything else. BUG-001 through BUG-532 remain in the local historical archive
 at `~/openeyes_unverified_bugs.md` and must not be copied into the kit wholesale.
 
@@ -32,7 +32,7 @@ at `~/openeyes_unverified_bugs.md` and must not be copied into the kit wholesale
    HTTP status, controller action, log count, time, memory and DB timings. It is NOT
    `protected/views/base/_debug.php` - that partial emits an HTML comment and is
    invisible. Screenshots must hide `#yii2-debug`; the perf data it carries is
-   analysed elsewhere (see `knowledge/oe-debugbar-data-analysis.md`), so the toolbar
+   analysed elsewhere (see `knowledge/Openeyes/oe-debugbar-data-analysis.md`), so the toolbar
    itself stays on in the environment.
 
 5. **RTT is not the worklist Pathway.** `Pathway`/`PathwayStep` is the clinic-day

@@ -10,6 +10,11 @@ When loaded as context with no task, reply only `Context loaded.` This skill is 
 
 OpenEyes is event-based: every clinical interaction (examination, surgery, injection, letter, prescription, CVI, ...) is an event on an episode on a patient. Licence AGPL-3.0-only. Clinical safety: never change persistence, calculations, units, or display of clinical values without an explicit ask; never bypass `audit` writes - see `c-oe-coding-standards`.
 
+For testing code changes, load `c-oe-deploy`: check resources, create a fresh
+instance dedicated to the change, and clean up one-off tests even after failure.
+Presume every existing environment is in use; do not reuse or alter it for testing
+without explicit instruction.
+
 ## Three frameworks, one repo
 
 `index.php` is a 30-line router: a path starting `/xapi` or `/l/` -> Laravel (`index_laravel.php` -> `oe-laravel/`, namespace `OELaravel\` = `oe-laravel/app`), everything else -> Yii 1.1 (`index_yii.php` -> `protected/`, the legacy bulk). `/xapi` carries the live API routes; `/l/` is a **reserved** web prefix (only Horizon's dashboard, default `l/horizon` via `HORIZON_PATH`, registers on it). Don't bolt rewrite rules onto the router. `oe-shared/` (namespace `OEShared\` = `oe-shared/app`: `Contracts/ DTOs/ Repositories/ Services/ Enums/ Jobs/`) is the home for cross-framework code - new code both frameworks need goes there, not `protected/` or `oe-laravel/`. (Don't confuse it with root `shared/`, which is just static AssetManager images.) Both frameworks share one root `vendor/` and resolve the same `OEShared\Contracts\...` through their DI containers - Yii via a bespoke PSR-11 `YiiContainer` (the `container` component in `config/core/common.php`), Laravel via the native Illuminate container. Laravel is the growth area (ADR-12): prefer it for greenfield HTTP APIs; refactor Yii in place rather than mass-rewriting. CLI: `./protected/yiic` (see `c-yiic-command-style`) and `./oe-laravel/artisan` (Horizon, queues, Tinker) - see `subs/cli-jobs.md`.

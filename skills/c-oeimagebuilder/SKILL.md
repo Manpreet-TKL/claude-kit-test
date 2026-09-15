@@ -48,4 +48,8 @@ docker build -t toukanlabsdocker/oe-web-live:v26.0.0-rc3 \
 - Every image writes `/imageinfo.txt`, prefixed by which image it is (`oe-web-live. `, `oe-manager-`, `oe-web-dev. `, `DEBUG-`) - the one marker that separates all four types; the live checkout also writes `$WROOT/buildinfo.txt` (debug info panel), absent from dev. `DOCKER_CONTAINER=TRUE` is set in **every** image, dev included, so it never distinguishes them -> `subs/identify-image.md`.
 - Docker Hub tags are case-sensitive - lowercase `rc` always: `v26.0.0-RC3` pushes a wrong tag and manifest-not-founds on pull.
 
+## In-container aliases and diagnostics
+
+Image shortcuts live in `Web-Base/profile.d/oe-shortcuts.sh`; oe-deploy's host `.bash_aliases` needs adapting, not copying verbatim. For v26 session parsing, multiline log searches, OEExceptionHandler JSON, Apache config dumps, MariaDB metadata and Laravel diagnostics, read [subs/diagnostics-v26.md](subs/diagnostics-v26.md) before changing aliases. It records runtime constraints, not a guarantee that a proposed alias has shipped.
+
 Deployment work -> `oe-deploy` skill.

@@ -453,4 +453,4 @@ application, preserve clinical references and expose update health.
 ## References
 
 The supporting NHS, MariaDB, PHP, OpenEyes source and CR evidence is recorded in
-`knowledge/openeyes-dmd.md`.
+`knowledge/Openeyes/openeyes-dmd.md`.

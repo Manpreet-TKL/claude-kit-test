@@ -293,7 +293,7 @@ startNoVnc() {
 startChrome() {
     # --no-sandbox: Chrome's setuid sandbox needs a user-namespace privilege this container
     # doesn't grant (same class of failure as codex's bwrap-in-container issue, see
-    # knowledge/codex-compatibility.md) - the container boundary is the real sandbox here.
+    # knowledge/Tooling/codex-compatibility.md) - the container boundary is the real sandbox here.
     # --test-type suppresses the resulting "unsupported command-line flag" infobar; it's
     # purely cosmetic (Chrome's own automation-tooling flag for hiding that warning UI) -
     # no sandboxing behaviour changes, --no-sandbox is still in effect underneath.
