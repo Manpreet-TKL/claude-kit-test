@@ -2,11 +2,33 @@
 
 ## Current workspace locations - confirmed 11 September 2026
 
-Latest porting checkpoint: 15 September 04:53 BST, seventy-seven staged bundles. Strict ledger passes at code 84.3376% (5194.35/6159), overall 76.6908% (10832.57/14125); canonical 14125, mappings 18649, missing 0, pending 1190, unowned 1260, unowned code 0. Net gain 69.68 code equivalents. Bundle76 restores source-operation surgeon routing for optometrist messages: 30 PHP tests/350 assertions and six bounded recipient reads at 1/200 operations plus 1000 mailboxes; already-credited source paths receive zero new score. Bundle77 connects the header demographics popup: 13 PHP tests/185 assertions, 15 client checks, two Vue compilations and five Pint files pass; eight-query budget is constant at 1/1000 contacts. No filesort or temporary tables in the inspected new plans. Dev remains at 483 migrations through000048. Next: connect remaining source header actions to existing authorized popup readers; after next: another missing workflow before scope freeze. CERA/custom demographic fields, full popup geometry, generic raw xAPI, full Form.io, SNOMED tree imports and arbitrary LDAP provider options remain deferred. No final schema/browser/image/load acceptance yet. Nine prior-preview services healthy at04:51BST and three bounded dev services retained; no promotion, deletion, commits, pushes or subagents.
+### 26.22 Active coverage-first tranche - 15 to 17 September 2026
 
-Current execution authority: the user approved execution of the next 48-hour porting-first run on 13 September. Actual start is 2026-09-13 14:27:49 BST; new functional scope freezes at 2026-09-15 08:27:49 BST; finish only at a safe integrated checkpoint at or after 2026-09-15 14:27:49 BST. One agent, no subagents, no commits or pushes. The previous closing Git exception is exhausted. Opening baselines are Laravel `a3df583c1503009c1ac326fbc109feca5ff8311e`, Docker `58877a2a2e95bbde30eae53097776be3c0e89883` and legacy `ad2324084788608246a8250e817198c2f26a4fd6`. Code starts at 5124.67/6159 = 83.2062023055691%; above 90 needs another 418.44 weighted equivalents and is an aim, not a guarantee. Current evidence belongs in `openeyes-rewrite/coverage-48h-20260913-142749`. Sections 26.21 and active 16.145 remain historical evidence for the completed preceding run.
+Planning-only addition, 17 September: section 21, "Login overlay and session expiry - shared lifecycle", records central server/client contracts and a later integration gate. Do not copy overlay requests, expiry polling or session policy into each page. This does not resume porting or change the pause.
 
-Porting-first execution: follow the approved `coverage-48h-20260911-174239/next-48h-porting-evidence.md` rolling queue and its exact source-path candidates. Select connected missing shared patient/event/authorization consumers, then administration/examination/diagnoses, reports/analytics, surgery/booking/correspondence/therapy, worklist/device consumers and CVI/shared glue. Reorder around narrow evidenced blockers, not business priority. Implement actual behavior before claiming functional credit; review source callers instead of relying on generic framework mappings or stale divergence prose. Preserve short before/after/reason/gap records for later documentation. Batch ordinary tests, broad browser/image checks and finished prose near the end, retaining immediate focused clinical/security/data-integrity proof and bounded query design. Reuse the bounded dev stack and preserve the nine-service preview. Hourly checkpoints include next_item, after_next, blockers and verification_state; the user progress file stays at most ten lines. No new SSO integration/testing, production-scale proof, special-module port, sample work or migration project unless the core queue actually completes. Then the faithful legacy sample and pinned-develop sample customer migration are next.
+Planning-only update, 17 September: section 5.8.7 and canonical rule 17 now govern short transactions and medication/event lock ownership. The user-requested pause remains in force; this addition authorizes no code work, tests or timed restart.
+
+User override, 16 September 01:48 BST: receive the current three worker implementations, then use only the lead, with no new or resumed worker assignments. Prioritize direct functional porting and necessary source/safety integration review. Test creation and execution, browser/image/build checks, polished documentation and unrelated work move to the later verification phase. Retain existing proof and label new unverified implementation honestly. Minimal hourly progress and essential source/divergence/residual records remain. Existing scope-freeze and final deadline stay fixed; the older worker count and immediate-test requirements below no longer govern this run.
+
+T12 review, 16 September 01:30 BST: code 85.5194 percent, gain 71.09 weighted equivalents, leaves 583.92 for strictly above 95. This target is at risk at the measured pace. Keep all three lanes on whole connected missing families and source-proved stale partial mappings; no score padding, denominator change or unsupported retirement. Batch ordinary broad acceptance near integration while retaining immediate clinical, authorization, isolation, history and query-risk checks. Atomic ticket configuration restore now passes; diagnostic-image assessments, nested clinical teams and event history follow. Saved-date correction must first distinguish event-derived chronology from real measurement timestamps. T40/T42/T48 remain unchanged. Run checkpoint hour-12 records exact evidence and residuals.
+
+Current execution authority: approved plan starts 2026-09-15 13:28:44 BST and ends at the fixed 2026-09-17 13:28:44 BST deadline, even if above 95% remains unmet. Stop opening bundles at 05:28:44 BST on 17 September (T40), integrate or isolate open work by 07:28:44 BST (T42), then verify and repair. Early finish is allowed only after T42 with target and integrated acceptance complete. Older deadlines and single-agent instructions below are historical. A durable goal is active.
+
+Lead exactly three long-lived Sol xhigh workers: clinical recording/history/episodes/medications; clinical output/surgery/files; platform/admin/auth/reports/integrations. Lead owns shared entrypoints, schema ordering, manifests, ledgers, Docker, resource admission and integration. Each worker receives a fresh context packet, exact target ownership, an ordered continuous queue and at least two unblocked successors. No overlapping shared-file edits, nested agents or new active checkouts. Source bundles and source/target evidence take priority over repeated small refinements; ordinary exhaustive tests, browser checks, images and polished docs batch, while clinical/auth/isolation/signing/history/irreversible/query-risk proof remains immediate.
+
+Baselines: legacy ad2324084788608246a8250e817198c2f26a4fd6, Laravel 6dbae430f8024f0294e3641a920cdd1cb56c587b, Docker 8e90ec23ce5c591b6b9336c4f8f2deeac25bb110. Weighted code starts at 5196.05/6159 = 84.36515668127943%; above 95% requires 655.01 additional equivalents. Canonical paths 14125, mappings 18649, missing 0; overall 76.7028%. Preserve denominator and highest supported score per unique pinned path. Inventory/relabeling/unsupported retirement cannot inflate progress. The target is ambitious, not a guarantee.
+
+User-approved scope includes functional clinical printing and necessary existing EyeDraw adapters, not engine modernization or pixel-perfect tuning. Existing authorization role materialization must be extended, not rebuilt. Preserve patient-summary appearance, current permissions, all 88 worklist parity requirements, old protected/image files and volumes. Code may proceed when memory prevents heavy verification; keep the 4 GiB guard, one heavy job, one fresh shared dev stack and the retained preview. No commits or pushes this run; the preceding one-off exception is exhausted. Stage completed work at the terminal checkpoint.
+
+Run context, worker briefs and resumable evidence: /home/toukan/openeyes-rewrite/coverage-48h-20260915-132844. Hourly progress remains at most 10 lines in /home/toukan/openeyes-rewrite-progress.md. Reprioritize at T12/T24/T36 from actual residual obligations. Full load/large migration, sample, live SSO, external ingestion repositories, special modules and polished documentation remain later. Above 95% does not establish whole-app completeness or deployment acceptance.
+
+Closing checkpoint, 15 September 12:18 BST: integrated verification is complete and this run stops after the scope freeze, as requested. No next phase is authorized. There are 82 completed bundles; weighted code porting is 5196.05/6159 = 84.3652 percent, overall 76.7028 percent, canonical 14125 and mappings 18649. Above 90 remains unmet. Final V9 passes 5874 PHP tests/124346 assertions, 426 client checks, all 16 browser scenarios, fresh 484 migrations and image/Compose checks. The preview is promoted and all nine services are healthy; core navigation and 24 additional pages pass, while LDAP, SSO and patient-merge-request pages deny the current account. All 1063 existing clinical/history/archive tables preserve old rows and columns; protected mounts are unchanged. The live image remains 235833692 bytes against the unchanged 235000000-byte ceiling, requiring the recorded run-local exception. Development containers and builder are stopped; retained volumes remain. Laravel and Docker changes are staged, not committed or pushed. See openeyes-rewrite/coverage-48h-20260913-142749/closing-checkpoint.md, final-completion-audit.md and next-phase-evidence.md. Older queues and deadlines below are historical; plan the next phase before executing more work.
+
+Pre-freeze porting checkpoint (historical): 15 September 06:51 BST, eighty-two staged bundles. Strict ledger passes at code 84.3652% (5196.05/6159), overall 76.7028% (10834.27/14125); canonical 14125, mappings 18649, missing 0, pending 1190, unowned 1260, unowned code 0. Net gain 71.38 code equivalents. Bundle80 connects management panels and same-context problems/plans updates: 18 PHP tests/295 assertions and 16 client checks. Bundle81 connects the genetics summary: 44 PHP/3315 assertions, 12 client checks, two Vue compilations and five Pint files pass. Its bounded candidate windows plus one authoritative batch replace episode-first temporary/filesort plans without hints; null-owner families and incomplete windows are explicit. Bundle82 restores attachment groups and confirmed removal: 16 PHP/2782 assertions plus four contract tests/109 assertions, 21 client checks and one Vue compilation. No new schema after484 migrations through000049. The retained dev DB restarted safely at05:57BST; all nine preview services are healthy and headroom is about5.5GiB at06:50BST. Next: inspect the remaining connected patient episode/navigation gap and port a bounded source-proved slice before08:27:49BST. After next: consolidated schema/seed, suite, browser, frontend and immutable-image integration. Source PDF embedding stays deferred without weakening the protected sandbox. No final image/load acceptance, preview promotion, deletion, commits, pushes or subagents.
+
+Completed run authority (historical): the user approved execution of the next 48-hour porting-first run on 13 September. Actual start is 2026-09-13 14:27:49 BST; new functional scope freezes at 2026-09-15 08:27:49 BST; The user update on 15 September supersedes the former 14:27:49 BST minimum: stop at the first completed safe integration checkpoint after the 2026-09-15 08:27:49 BST scope freeze, even if early. One agent, no subagents, no commits or pushes. The previous closing Git exception is exhausted. Opening baselines are Laravel `a3df583c1503009c1ac326fbc109feca5ff8311e`, Docker `58877a2a2e95bbde30eae53097776be3c0e89883` and legacy `ad2324084788608246a8250e817198c2f26a4fd6`. Code starts at 5124.67/6159 = 83.2062023055691%; above 90 needs another 418.44 weighted equivalents and is an aim, not a guarantee. Current evidence belongs in `openeyes-rewrite/coverage-48h-20260913-142749`. Sections 26.21 and active 16.145 remain historical evidence for the completed preceding run.
+
+Completed run approach (historical): follow the approved `coverage-48h-20260911-174239/next-48h-porting-evidence.md` rolling queue and its exact source-path candidates. Select connected missing shared patient/event/authorization consumers, then administration/examination/diagnoses, reports/analytics, surgery/booking/correspondence/therapy, worklist/device consumers and CVI/shared glue. Reorder around narrow evidenced blockers, not business priority. Implement actual behavior before claiming functional credit; review source callers instead of relying on generic framework mappings or stale divergence prose. Preserve short before/after/reason/gap records for later documentation. Batch ordinary tests, broad browser/image checks and finished prose near the end, retaining immediate focused clinical/security/data-integrity proof and bounded query design. Reuse the bounded dev stack and preserve the nine-service preview. Hourly checkpoints include next_item, after_next, blockers and verification_state; the user progress file stays at most ten lines. No new SSO integration/testing, production-scale proof, special-module port, sample work or migration project unless the core queue actually completes. Then the faithful legacy sample and pinned-develop sample customer migration are next.
 
 This location rule overrides every earlier consolidation or dated-folder instruction in this plan. Use `/home/toukan/openeyes-rewrite` for all project work artifacts: run folders, evidence, tools, builds, notes, documentation inputs and scratch files. Do not create another top-level rewrite work folder or recreate `openeyes-rewrite-20260909`.
 
@@ -829,6 +851,8 @@ The deep sections of this plan (§5.8 below, plus §17 Developer Notes, §18 Cri
 
 16. **Do not force optimizer choices.** Runtime SQL and query builders must not use index or join-order hints. MariaDB releases, data distributions and concurrent workloads can legitimately change the cheapest plan, while a hint freezes an assumption in application code. CI rejects `FORCE INDEX`, `USE INDEX`, `IGNORE INDEX`, `STRAIGHT_JOIN` and framework equivalents. If production-scale evidence proves there is no schema or query-shape alternative, the exception must be a visible CI registry entry with the operation ID, owner, rationale, exact hint, high-data evidence, concurrency evidence and an expiry or review trigger. Query-plan gates record the index selected by the optimizer but fail on bounded cost properties, not on a required index name.
 
+17. **Short transactions are a concurrency contract.** Apply section 5.8.7 to all clinical write paths, especially event and medication saves: minimize outer transaction duration and lock ownership, not merely query count. Preserve atomic clinical/history/audit and decision-bearing updates; moving reads outside requires in-transaction freshness/conflict checks. Display-only retrieval, rendering and external work must not prolong the write transaction. Existing managed transaction helpers are not proof of bounded scope.
+
 ### 5.8.1 The ruleset (28 rules)
 
 **(A) Retrieval-first design — design the hot queries, then the indexes, then the tables.**
@@ -1087,6 +1111,80 @@ A hot-path query or migration that trips any rule **fails the build** (the schem
 11. **One collation per join/identifier key; all IDs `BIGINT UNSIGNED`** — a migration introducing a mismatched collation or ID type on a join key fails (Rule 25).
 12. **Maintenance pointer/flag columns sit on the history-writer exclusion list (§5.3); derived "latest" projection *tables* have no history twin and are absent from backups-of-record** (Rule 7); a `UNIQUE` that includes the PK alongside a partial-style key (e.g. `UNIQUE(gen_col, id)`) is a fail (enforces nothing); a projection with a history twin is a fail.
 13. **No function wrapped around an indexed column in a hot predicate** (`DATE(col) =`, `YEAR(col) =`, `DATE_FORMAT(col, ...)`, `LOWER(col) =`, arithmetic on the column side) - rewrite as a half-open range or a `STORED` generated column (Rules 26-27, §5.8.5); caught by the #7 EXPLAIN-in-CI gate plus a SQL lint on captured hot queries.
+
+### 5.8.7 Short transactions and bounded lock ownership - recorded 17 September 2026
+
+Classification: architecture now when porting resumes; retrospective review,
+instrumentation and tests belong to the later verification/performance tranche.
+This planning-only addition does not lift the user's pause.
+
+Reported risk, not a newly confirmed diagnosis: an event UPDATE can happen early
+in a medication save, followed by slow medication retrieval and application work
+before commit. A quick UPDATE or a low query count does not prove a short
+transaction. InnoDB row locks can remain held until the transaction ends.
+Trace the actual outer transaction, observers and callers before attributing the
+legacy incident to one query. See [MariaDB row-lock lifetime](https://mariadb.com/docs/server/reference/sql-statements/data-manipulation/selecting-data/for-update).
+
+1. **Keep the atomic write window small.** Prepare bounded inputs, independent
+   catalogue reads and expensive pure calculations before opening the write
+   transaction where safe. Inside it, revalidate mutable prerequisites, write the
+   required clinical rows/history/audit and immediate decision-bearing updates,
+   then commit. Response medication loading, relationship expansion, DTO/HTML
+   rendering and other display-only work happen after the actual outer commit.
+   Do not wrap an entire request or page load in a transaction by default.
+2. **Shorter must not mean racy.** Reads moved earlier are preparation, not
+   authority to save stale data. Use primary-connection version checks,
+   conditional writes, unique constraints and narrowly scoped row locks where
+   required. Cover every mutable dependency used by the decision, including
+   medication changes from other events, not just the event's version. Use a
+   consistent lock order and bounded retries after rollback, recomputing stale
+   decisions. Never solve duration by splitting one clinical atomic operation,
+   weakening audit/history/signing, or making a decision-bearing projection
+   eventually consistent. Avoid unnecessary patient-wide serialization.
+3. **Audit the whole call chain, medications first.** Review event create/update,
+   medication history and chain linking, prescribing/tapers/signing, observers,
+   synchronous listeners and serializers. Inventory every read/write inside
+   the outer transaction and why it must be there. Remove unnecessary early or
+   repeated event updates; expensive required medication linkage needs a bounded
+   algorithm, not a whole-history traversal under an event lock. Also cover
+   API/queue writers sharing those rows. Review existing medication performance
+   PRs as evidence candidates, not proof that the target is already safe.
+4. **Keep unrelated waits outside.** No renderer, HTTP/device/email delivery,
+   slow file copying, sleep or retry backoff while holding a clinical transaction.
+   Record required delivery intent atomically in the existing outbox and perform
+   delivery after commit. Separate failure/retry semantics must not duplicate
+   clinical saves or external effects. A queued job is not permission to keep
+   one large transaction open; chunk only independently committable work.
+   Nested transaction helpers/savepoints do not establish an outer commit.
+5. **Measure transaction time, not only SQL time.** Plan operation-specific
+   transaction-duration and lock-wait budgets, including p95/p99 and maximum
+   observed duration, on declared hardware and fixture sizes. Measure outer
+   begin-to-commit/rollback wall time, first write/locking-read to completion,
+   query count/database time inside it, deadlocks, retries and timeouts. The
+   first-write interval is a proxy, not an exact lock-duration measurement;
+   correlate with supported database wait diagnostics in the later load phase.
+   Privacy-bounded telemetry uses operation/request IDs and scalar timings,
+   never patient IDs, SQL, bindings or medication payloads.
+6. **Guarantee cleanup and visible failure.** Use the existing managed
+   transaction boundary on the correct connection; every exception, conflict and
+   retry must end in commit or rollback. No open transaction may survive into
+   the next persistent-worker request/job. Review timeout/cancellation handling;
+   a lock-wait timeout is not a transaction-duration limit. Do not hide scope
+   problems by increasing timeouts or adding broad/advisory/table locks.
+   Laravel's managed closure commits/rolls back and offers deadlock retries, but
+   does not make the work inside it short:
+   [Laravel transactions](https://laravel.com/framework/docs/13.x/database#database-transactions).
+
+Later acceptance: capture the real legacy medication call chain; inspect already
+ported shared write boundaries; then add regression checks with deliberately slow
+display-only medication retrieval and large histories. Overlapping saves on the
+same event and different events for one patient must preserve medication state,
+versions, signing and audit without lost updates or duplicate effects. Unrelated
+patients must not share unnecessary locks. Verify rollback and worker reuse after
+errors. Record duration/wait distributions and reviewed budget exceptions during
+realistic synthetic and migrated-data load testing. Query-plan checks and static
+detection of external work in transactions complement, but do not replace, this
+runtime proof. No zero-deadlock or duration guarantee is claimed before evidence.
 
 ### 5.9 Schema inventory by family (v26.0.9) and the stable core
 
@@ -4015,6 +4113,121 @@ exception); browser-session cookie lifetime with a short server-side idle timeou
 value; no remember-me; session id rotated on login and on privilege change; legacy cookie names kept
 only where a golden master depends on them (§7.2 strips them). §27 entry for the cookie attributes
 and the mandatory key.
+
+**Login overlay and session expiry - shared lifecycle (17 September 2026).**
+
+Classification: seam now, implementation later. Record the shared contract now so ongoing
+porting does not copy session timers, login markup or authentication polling into each page.
+Implement centrally in the shared shell, request transport and server middleware before
+authentication/UAT/release acceptance; do not interrupt functional breadth for this work.
+This is a planning-only addition during the user-requested pause, not authority to resume.
+
+Source evidence at legacy commit `ad2324084788608246a8250e817198c2f26a4fd6`:
+`protected/assets/js/script.js` prepares a hidden overlay on each non-login page.
+`script-utils.js::createLoginOverlay` makes a synchronous HTTP request for its configuration;
+`queueLoginOverlay` makes another request for the expiry timestamp, then uses a timer.
+These are per-page/recovery requests, not continuous expiry polling on every page.
+`SiteController::actionGetOverlayPrepopulationData` loads institution/site labels, and
+`UserController::actionGetSessionExpireTimestamp` queries `user_session`.
+The legacy SSO recovery loop additionally performs synchronous authentication checks every
+ten seconds while active. Even the `extend_session=false` path in `OESession` can read/write
+the database session. These costs are source-confirmed; their elapsed time is not measured.
+
+Current target integration points are `resources/js/app.js`, `Layouts/OeLayout.vue`,
+`elementForm.js`, `HandleInertiaRequests`, the authentication/context services and central
+middleware. Inertia has global lifecycle/error hooks, but these do not cover arbitrary
+`fetch()` calls. A static scan found 141 JS/Vue files containing `fetch(`; this is an audit
+candidate count, not 141 confirmed affected pages. Classify protected callers and adopt one
+shared request adapter in a bounded integration pass. Do not monkey-patch native fetch or
+require every clinical component to implement its own expiry handling.
+
+Planned contract and decisions:
+
+1. One application-level session controller owns active, warning, locked, reauthenticating
+   and unavailable states, with one timer/listener set per document. A shared accessible
+   overlay is mounted on demand; expiry immediately covers and disables the clinical view.
+   Session recovery must not unmount a dirty form just to render a login page. Modules use
+   this same contract. No synchronous XHR, hidden-overlay bootstrap endpoint or per-page
+   expiry request is permitted in the replacement design.
+2. Piggyback small, non-sensitive session metadata on existing authenticated responses:
+   contract version, server time, applicable expiry deadlines and an opaque session/context
+   generation, never the session identifier or credentials. Reuse already-loaded state,
+   not extra clinical/context queries. The client schedules against server time and handles
+   clock changes, sleep and browser throttling. A stale visible/woken tab may make one
+   coalesced status check; an idle or hidden tab does not poll continuously.
+3. The server remains authoritative and rejects expired sessions before protected work.
+   Define idle, absolute and provider expiry explicitly; storage TTL/garbage collection is
+   not the authorization policy. Keep timeout values configurable and record any deliberate
+   change from legacy behaviour. Server-owned operation classification distinguishes user
+   actions from worklist refreshes, notification polls, prefetch and realtime renewals:
+   background traffic and status checks must not extend user activity. Warn while editing
+   and offer an explicit Continue session action, not a request on every keystroke.
+4. Use the existing local/LDAP/SSO providers, lockouts, audit and context services. Resume
+   only after server confirmation of the same user and permitted institution/site/firm
+   context. Rotate credentials as required and refresh CSRF handling, including realtime
+   authorizers. Different identity/context, revoked access or explicit logout must not
+   reveal the previous user's retained form. Keep drafts in memory only by default; any
+   server draft uses the existing authorized mechanism. Do not introduce patient data in
+   localStorage, sessionStorage or unprotected browser history. A visual cover is not a
+   security boundary against XSS or someone inspecting browser memory.
+5. Give central handlers stable error reasons: expired/revoked authentication, permission
+   denial, CSRF failure and authentication-service outage are different conditions.
+   Preserve normal full-page login redirects, while SPA/JSON requests get a recoverable
+   authentication response rather than a login page replacing their form. Do not convert
+   every 403 or 419 into session expiry. Never automatically replay a save, signature,
+   upload or other mutation after re-login; reconcile an uncertain outcome before retry.
+   Safe reads may resume after fresh authorization. Existing clinical version/conflict
+   checks still apply.
+6. Pause protected refreshes and private subscriptions while locked/unavailable to prevent
+   retry storms; server authorization and bounded channel leases remain mandatory.
+   Cross-tab messages may carry logout/generation/deadline hints, never patient data,
+   passwords or tokens, and cannot grant access without server validation. Coalesce
+   simultaneous recovery attempts where possible, ignore stale responses and cover expired
+   content on visibility/history restoration. Network errors must never dismiss the cover.
+7. SSO recovery uses the existing provider flow. Prefer a validated popup/callback completion
+   signal followed by server session confirmation, not synchronous polling or IdP iframes.
+   Validate message origin and correlation. If popup/browser policy prevents this, provide
+   a full-page recovery fallback with an explicit unsaved-work warning or an authorized
+   server draft. Any necessary fallback polling is bounded to an active recovery attempt.
+   Preserve the separate, deferred SSO test tranche; no claim that recovery is already proven.
+8. Keep revocation, account-disable, password-age and permission checks authoritative.
+   Current `EnforceSsoSession` performs a configuration/identity freshness query per SSO
+   request; do not remove it merely to meet a zero-query slogan. Budget shared auth work
+   separately and cache only with proven invalidation and authoritative failure behaviour.
+   The target is zero additional overlay-specific database queries on an ordinary page,
+   not zero authorization checks. Resolve the target's database/file session fallback versus
+   deployment Redis settings explicitly, including a shared store across web nodes.
+9. Avoid serializing every request with a long-held session lock. Laravel allows concurrent
+   same-session requests and warns about concurrent session writes. Review rotation,
+   logout and activity updates for stale writes/lost updates: an old in-flight response
+   must not resurrect a revoked session. Use narrowly scoped atomic/versioned changes or
+   short locks for those transitions, never hold them through clinical queries, rendering,
+   remote authentication or user interaction. Link this review to section 5.8.7.
+
+Later acceptance, not work for this paused session: verify no synchronous XHR, no extra
+overlay bootstrap requests, no overlay-specific SQL on ordinary navigation, bounded shared
+auth query count, no duplicate timers across navigation and no continuous idle-check load.
+Exercise expiry during typing/save/sign/upload, slow or uncertain responses, long-lived
+worklists, several tabs, logout/context changes, SSO recovery, provider/session-store outage,
+clock skew, browser sleep and history restoration. Check no unauthorized reveal, silent loss
+of drafts, automatic mutation replay or background-driven perpetual sessions. Include
+multi-node concurrency and many idle tabs in the later realistic load gate, not a new
+concurrency-proof project now. Add future forbidden-code detection for synchronous XHR and
+new page-local auth pollers, with reviewed third-party exceptions.
+
+Sequencing: adopt these shared boundaries when porting resumes; the later implementation
+starts with server expiry/error metadata, then shared client recovery and transport adoption,
+then background/SSO integrations and consolidated verification. Domain queries, clinical
+DTOs and individual page business logic should not need redesign. Existing raw-request and
+draft/history consumers still require an explicit integration audit; do not claim zero
+per-file edits or that current authentication is already accepted.
+
+References: [Inertia global events](https://inertiajs.com/docs/v3/advanced/events) provide
+shared interception points; [Laravel session concurrency](https://laravel.com/framework/docs/13.x/session#session-blocking)
+explains concurrent session writes and opt-in blocking;
+[OWASP session guidance](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)
+supports server-enforced expiry and client warnings as assistance, not authorization.
+The architecture above is the rewrite decision, not a claim that those sources implement it.
 
 **Secrets.** Legacy: about 20 secrets accept the `/run/secrets/<NAME>` file form with env fallback
 (`DATABASE_PASSWORD`, `OE_COOKIE_VALIDATION_KEY`, `OE_DOCMAN_USER`/`OE_DOCMAN_PASSWORD`,

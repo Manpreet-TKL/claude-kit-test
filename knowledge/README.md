@@ -40,6 +40,8 @@ here is loaded automatically.
 ## Openeyes
 
 - [iolmaster-import.md](Openeyes/iolmaster-import.md)
+- [oe-adha-my-health-record.md](Openeyes/oe-adha-my-health-record.md)
+- [oe-community-portal.md](Openeyes/oe-community-portal.md)
 - [oe-cookie-security.md](Openeyes/oe-cookie-security.md)
 - [oe-debugbar-data-analysis.md](Openeyes/oe-debugbar-data-analysis.md)
 - [oe-deprecated-element-types.md](Openeyes/oe-deprecated-element-types.md)
@@ -50,13 +52,16 @@ here is loaded automatically.
 - [oe-documentation-bug-ledger.md](Openeyes/oe-documentation-bug-ledger.md)
 - [oe-event-image-performance-analysis.md](Openeyes/oe-event-image-performance-analysis.md)
 - [oe-event-image-pipeline.md](Openeyes/oe-event-image-pipeline.md)
+- [oe-ghostscript-conversion-improvements.md](Openeyes/oe-ghostscript-conversion-improvements.md)
 - [oe-hscic-gp-import-modernisation.md](Openeyes/oe-hscic-gp-import-modernisation.md)
+- [oe-login-overlay-performance.md](Openeyes/oe-login-overlay-performance.md)
 - [oe-nodaudit-validation.md](Openeyes/oe-nodaudit-validation.md)
 - [oe-page-benchmarking.md](Openeyes/oe-page-benchmarking.md)
 - [oe-patient-search.md](Openeyes/oe-patient-search.md)
 - [oe-sharepoint-entra-integration.md](Openeyes/oe-sharepoint-entra-integration.md)
 - [oe-sso-setup.md](Openeyes/oe-sso-setup.md)
 - [oe-tmp-file-origins.md](Openeyes/oe-tmp-file-origins.md)
+- [oe-v10-typical-usage-and-load-profile.md](Openeyes/oe-v10-typical-usage-and-load-profile.md)
 - [oe-worklist-fix-patterns.md](Openeyes/oe-worklist-fix-patterns.md)
 - [openeyes-api-families.md](Openeyes/openeyes-api-families.md)
 - [openeyes-dmd.md](Openeyes/openeyes-dmd.md)
@@ -76,10 +81,12 @@ here is loaded automatically.
 - [oe-deploy-portainer.md](Infrastructure/oe-deploy-portainer.md)
 - [oe-horizon-redis.md](Infrastructure/oe-horizon-redis.md)
 - [oe-laravel-startup-config-cache.md](Infrastructure/oe-laravel-startup-config-cache.md)
+- [oeimagebuilder-apache-logging-and-performance.md](Infrastructure/oeimagebuilder-apache-logging-and-performance.md)
 - [oeimagebuilder-node-puppeteer-regression.md](Infrastructure/oeimagebuilder-node-puppeteer-regression.md)
 
 ## Tooling
 
+- [corpus-indexing.md](Tooling/corpus-indexing.md)
 - [claude-in-chrome-permission-persistence.md](Tooling/claude-in-chrome-permission-persistence.md)
 - [code-mapping-tools.md](Tooling/code-mapping-tools.md)
 - [codex-compatibility.md](Tooling/codex-compatibility.md)
@@ -90,6 +97,7 @@ here is loaded automatically.
 
 ## Process
 
+- [corpus-downloads.md](Process/corpus-downloads.md)
 - [jira-corpus-triage.md](Process/jira-corpus-triage.md)
 - [jira-devops-dashboard.md](Process/jira-devops-dashboard.md)
 - [jira-support-dashboard.md](Process/jira-support-dashboard.md)
