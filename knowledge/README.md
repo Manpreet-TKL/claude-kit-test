@@ -58,6 +58,7 @@ here is loaded automatically.
 - [oe-nodaudit-validation.md](Openeyes/oe-nodaudit-validation.md)
 - [oe-page-benchmarking.md](Openeyes/oe-page-benchmarking.md)
 - [oe-patient-search.md](Openeyes/oe-patient-search.md)
+- [oe-sample-data-generation.md](Openeyes/oe-sample-data-generation.md)
 - [oe-sharepoint-entra-integration.md](Openeyes/oe-sharepoint-entra-integration.md)
 - [oe-sso-setup.md](Openeyes/oe-sso-setup.md)
 - [oe-tmp-file-origins.md](Openeyes/oe-tmp-file-origins.md)

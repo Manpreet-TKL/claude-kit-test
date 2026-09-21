@@ -2,11 +2,19 @@
 
 Saved: 2026-09-17. Original plan presented: 2026-09-15.
 
-Status: setup queued. Amended on 2026-09-17 to require the latest release/26.1.x, frontend reproduction steps and idempotent regeneration using the sample repository's current SQL/shell patterns. New yiic PHP is conditional, as defined in section 4. Section 6 records download attempts and local execution options. Implementation and acceptance tests remain outstanding.
+Status: clinical reproduction is the active priority on 2026-09-17. The retained preview, 14 patient links and same-input script replay are verified. DCM and billing are parked. The separately requested TKLS-10347 preview now runs the latest inspected release with both packs present. Native and generated shared identities passed all four local imaging launches. Guarded trust/shared-identity replay, DNA export, native virtual review, prescribing, IVT planning and reporting controls are verified within their documented limits. A paired checkpoint was restored and checked; independent SQL replay for the new clinical references remains pending. The current operator entry point is `/home/toukan/tkls-10347-demo-guide.md`.
 
 This is a client-neutral copy for the public task repository. The project-specific plan, including this amendment, is stored outside the repository at [the private plan](/home/toukan/oe-dcm-demo-plan-private.md). Organisation labels, the deployment directory and the research API prefix below are neutral placeholders; use the private plan to recover the agreed project-specific values before implementation. Keep credentials, issued access URLs, patient-shaped fixtures and client-specific exports outside this repository.
 
 The original workflow assessment and capacity readings are the 2026-09-15 planning snapshot. Section 4 adds release and sample-source checks performed on 2026-09-17. Recheck capacity, versions and local paths before setup. Current public demo-access findings and a prepared supplier request are in section 6.
+
+## Current priority and preview
+
+The active priority is reproducible clinical scenarios. DCM acquisition, billing and OpenMRS work are parked and no longer gate clinical acceptance or clinically reviewed variation. Earlier financial sections remain historical planning material.
+
+The [clinical operator guide](/home/toukan/oe-clinical-demo-guide.md) is the current entry point for the retained preview, all 14 verified patient links, human workflows, exact script commands, count/date limits and checkpoint recovery. The extra rehearsal and task support runtimes were archived and retired; preserve their evidence without reviving them as another preview.
+
+The later TKLS-10347 request explicitly authorizes a separate requirements instance. Keep that new instance isolated from this clinical preview while making its optional data pack compatible with these scenarios. Patient details and deployment-specific evidence stay outside this repository.
 
 ## 1. Recommended approach and evidence
 
@@ -16,7 +24,7 @@ I found an official **DCM online trial offer** on its [Ophthalmic Specialists pa
 
 **For the initial setup, use sample PAS messages and a test receiver for outgoing clinical information.** These will demonstrate the OpenEyes side of the integration. DCM screens, financial processing and compatibility with DCM's actual messages remain pending trial access.
 
-This assessment uses the supplied scenarios, local OpenEyes documentation and source, and DCM's published documentation. No new instance has been created or connected to DCM during this planning work.
+This assessment uses the supplied scenarios, local OpenEyes documentation and source, and DCM's published documentation. The new sample instance has now been created. It is not yet connected to a DCM test system.
 
 | Area | Planned responsibility |
 |---|---|
@@ -55,7 +63,7 @@ DCM documents quotations through **Informed Financial Consent**, including out-o
 
 ### Scenario 2: Finance and reporting
 
-**Both requested reports belong in DCM.** OpenEyes can supply the clinical activity that supports billing, but it should not become the financial ledger.
+**Both requested reports belong in the finance system.** DCM remains the intended system. OpenMRS was assessed as an interim option and is on hold under the limited-rework condition in section 7. OpenEyes supplies the clinical activity that supports billing.
 
 | Requested report | Setup and acceptance criteria |
 |---|---|
@@ -101,9 +109,11 @@ For the demo, use a read-only account against the isolated sample database. A pr
 
 #### Bonus: the organisation software pulls yesterday's diabetic-retinopathy cases
 
-Add a **new research API**, separate from stock xAPI:
+Add a **new research endpoint** using the existing xAPI routing, authentication and request patterns:
 
-`GET /research/v1/diabetic-retinopathy-cases?from=...&to=...&cursor=...`
+`GET /xapi/research/v1/diabetic-retinopathy-cases?from=...&to=...&cursor=...`
+
+Execution adjustment: the existing front controller already routes this prefix to Laravel. Reusing it avoids an extra routing mechanism. Deliver a bounded daily snapshot with payload revisions and window reconciliation; this does not imply a complete incremental change feed.
 
 The demo default will mean:
 
@@ -209,7 +219,7 @@ Published DCM licensing descriptions: [Ophthalmic Specialists](https://www.direc
 | **Failed logins** | The inspected local-login defaults are ten failures followed by a ten-minute soft lock. Deployment settings and an external identity provider can change this behaviour. Test the actual configuration. |
 | **Access and account history** | OpenEyes records successful/failed logins and clinical access activity. A complete account-lifecycle history, including all permission changes, needs a coverage check before making an unqualified claim. |
 | **Timestamped and attributable audit** | OpenEyes records user, time, action, target and contextual details, with clinical version history available for supported records. Validate coverage using the demo's create, view, edit, print and delete cases. |
-| **Can users or administrators alter audit entries?** | The reviewed audit screen provides no edit/delete controls. Privileged database or system access remains relevant. A requirement for stronger protection against administrators needs independently controlled append-only audit storage and monitoring. |
+| **Can users or administrators alter audit entries?** | The reviewed audit screen provides no edit/delete controls, but that does not establish immutability. The legacy Document API hard-delete helper deletes all Audit rows linked to the target event before deleting the event. Its soft-delete branch differs. No delete was executed during this assessment. Review access to that API and use independently controlled append-only storage if retained audit must survive privileged or application-level deletion. [Installed Document delete implementation](/home/toukan/openeyes-demo-26.1/protected/modules/Api/controllers/v2/DocumentController.php:79) |
 | **Retention** | Retention for at least the associated record's lifetime must be an explicit operational policy, supported by backups and retention tests. It is not established merely by having an audit table. |
 | **Search, filter, sort and export** | The audit screen supports filters and newest-first results. Arbitrary sorting and a complete native export were not verified. Include a controlled audit export if required by the organisation. |
 | **Complete subject or data-element history** | Combine access audit with event and element version history. Validate a subject export against known changes and deletions. Do not assume a single existing screen provides the complete package. |
@@ -291,6 +301,21 @@ Refresh these branches when implementation begins and record the actual commits 
 9. Make file copies and message replays repeatable using the existing import paths, stable names/references and content checks. Use database transactions for related writes where supported; verify interruption recovery for files and messages separately.
 10. Retain the run manifest and read-only verification queries already required by this plan. Record source commits, anchor, timezone, resolved IDs, expected counts/cohorts and results as ordinary run artifacts outside source control. No new persistent registry or metadata framework is required.
 
+#### Adjustable patient counts
+
+Accept a count per scenario through the existing shell argument pattern. Assign stable scenario-and-sequence identifiers so that the same counts reuse the same patients and increasing a count adds only the missing patients. Validate non-negative whole numbers and reject ambiguous identifiers before writing. Reducing a requested count must not delete previously generated records; report those records and use the clean checkpoint when a smaller complete rebuild is required. Apply the same anchor-date rules to every patient in a scenario. Verify a multi-patient run, an identical rerun, and an increased-count run, including clinical relationships and expected research cohorts.
+
+#### Realistic variation after the base scenarios pass
+
+User amendment, 2026-09-17: confirm and reproduce every base scenario before considering a larger, more varied dataset. Increasing counts in a repeatability test does not establish clinical variation. Under the latest priority, clinical acceptance is independent of the parked financial demonstration.
+
+1. Finish the base acceptance matrix, frontend recipes, clean restoration, identical reruns and date-adjustment checks first. Record remaining clinical limits explicitly. Parked DCM workflows do not block this clinical gate.
+2. After that gate passes, assess a small useful set of varied examples. Use realistic fictional names and internally consistent age, laterality, measurements, diagnoses, treatment, procedure and follow-up dates. Keep synthetic identity clear in the demo.
+3. Reuse a patient only where the added scenario forms a coherent longitudinal history. Otherwise create a different named patient with a new stable identity. Never rename a prepared patient or randomise clinical facts during a rerun.
+4. Extend the current SQL/shell patterns and deterministic ordinal selection. Retain count adjustment, source checks, collision/drift rejection and checkpoint recovery. Do not introduce a new seed framework or PHP solely to vary names.
+5. Verify each added variant through its frontend recipe and expected research/integration results before increasing its volume.
+6. Save reusable verified lessons in the existing knowledge structure. Keep patient-shaped fixtures, screenshots, exports, signatures and credentials outside this task repository. The method is recorded in [sample-data generation lessons](/home/toukan/claude-kit/knowledge/Openeyes/oe-sample-data-generation.md).
+
 #### Conditional yiic fallback
 
 1. Before adding PHP, document the exact failed case with the existing scripts or an existing sample-owned command that provides a suitable precedent. A shell hook that invokes a core yiic command does not establish a sample-owned PHP pattern.
@@ -303,7 +328,7 @@ Refresh these branches when implementation begins and record the actual commits 
 |---|---|
 | Cataract journey | Declare the timeline offsets for referral, consultation, operation, day-one and month-one follow-up. Provide checkpoints for the live steps and completed history, preserving chronological order when the anchor moves. |
 | Daily diabetic-retinopathy feed | Place positive cases in the calendar day before the anchor in Australia/Perth, with cases just outside both boundaries. Derive query boundaries and expected output from that same calendar. |
-| Glaucoma and Latanoprost history | Include the exact 20-calendar-year boundary and cases on either side, along with the required diagnosis/prescription states and IOP history. Use calendar arithmetic with an explicit leap-day rule. |
+| Glaucoma and Latanoprost history | Use current-clinic prescriptions for generated clinical charts. Verify the exact 20-calendar-year boundary and either side in isolated query tests. Identify supplied legacy finalized prescriptions separately from genuinely signed new records. Use calendar arithmetic with an explicit leap-day rule. |
 | Appointments, worklists and theatre sessions | Generate dates and availability from the anchor; preserve links when moved. Repeating a shift must not add another offset or another booking. |
 | Demographics and provenance | Keep synthetic dates of birth fixed unless a scenario explicitly defines an age-relative case. Do not rewrite audit creation times or fabricate historical signatures to make the dataset appear older. |
 
@@ -429,7 +454,15 @@ The request now prioritises a downloadable evaluation that can run beside the lo
 | [Changing Server guide](https://support.directcontrol.com.au/hc/en-au/articles/7765290403343-Changing-Server) | Identifies a legacy setup.exe inside the installed customer's shared server-files directory. That is a local distribution path, not a public demo download. |
 | [January 2026 release notes](https://support.directcontrol.com.au/hc/en-au/articles/14506978056335-January-Version-26-0-0-0) | Specify .NET Framework 4.8 and MSI deployment. The general specifications still list 4.7.2; use the requirements for the actual installer supplied. |
 
-The downloaded evidence consists of documentation screenshots only. No EXE/MSI, trial licence or DCM sample database has been obtained. Exact URL checks and results are retained outside the repository at `/home/toukan/.claude/dcm-evaluation/research/download-investigation.json`.
+The initial checks downloaded documentation screenshots. Subsequent archive research recovered an EXE and identified it by static inspection as a Flash product presentation. No PAS installer, trial licence or DCM sample database has been obtained. Exact checks and results are retained privately in the research records below.
+
+#### Installer filename clues
+
+The confirmed legacy client path is `\\DirectCONTROLServerFiles\DirectCONTROLapp\setup.exe`, published in the [Changing Server guide](https://support.directcontrol.com.au/hc/en-au/articles/7765290403343-Changing-Server). This is an existing installation's server share. The January 2026 notes introduce MSI deployment but do not publish the MSI basename. Search patterns such as `*DirectControl*.msi` and `*DCM*.msi` are clues only.
+
+`DirectCONTROLAddin\setup.exe` is the separate Outlook add-in; `Why Direct CONTROL.exe` is a marketing presentation. Neither supplies the PAS. A final search using the exact client-directory and setup-window names found no authentic package. One archive lookup returned HTTP 503 and remains inconclusive.
+
+A local installer is optional if the vendor issues hosted access with the required billing and integration facilities. Actual DCM access is required to verify DCM workflows and compatibility; the OpenEyes demonstration and simulated PAS messages can proceed independently. A supplied installer may also need companion server files, prerequisites, activation and an empty or synthetic database.
 
 #### Local execution approach after obtaining the package
 
@@ -450,7 +483,7 @@ The current host is Linux x86_64 and has no `/dev/kvm` device. The read-only che
 
 ### Initial access request to use
 
-Prepared for the human to send. No form submission, email, registration, licence acceptance or supplier contact has been performed.
+The user authorised submission on 2026-09-17 and completed the vendor's human verification. The hospital trial form accepted the request with HTTP 200 and displayed "Log on details to explore DCM will be sent shortly." The submission receipt, contact details and exact request are stored privately outside this repository. No DCM licence acceptance or trial login has occurred.
 
 **Recipient:** support@directcontrol.com.au, or the enquiry box on the ophthalmology trial form.
 
@@ -468,10 +501,77 @@ Prepared for the human to send. No form submission, email, registration, licence
 
 ### Next actions and completion boundary
 
-1. Obtain a complete downloadable evaluation package through the published routes or the prepared supplier request. The human can send that request, or explicitly authorise supplier contact. Keep interface requirements separate from the initial installer/licence/database request.
+1. Continue looking for a complete downloadable evaluation package through public vendor, partner and archive routes while awaiting the accepted trial request. Keep interface requirements separate from the initial installer/licence/database request.
 2. If the vendor does not reply, follow up through its published telephone contact and request the advertised free demonstration. Use the documented partner routes for an introduction if needed.
 3. On receipt, keep credentials, issued access URLs and connection details outside this repository in a machine-local private directory. Record expiry, permitted use, available modules and reset arrangements.
 4. Use even a basic UI trial to rehearse DCM workflow and compare it with the supplied scenarios. Keep the sample-message integration fallback until a supported interface connection is available.
 5. Obtain and test the existing OpenEyes connector and remaining interfaces separately. Mark unsupported or unavailable functions as pending in the acceptance evidence.
 
-**Status:** the download investigation and local container/VM options are recorded. No executable installer, demo database or DCM evaluation licence has been obtained. The prepared supplier request now asks for those specific items; local execution and live integration remain untested.
+**Status:** the vendor has accepted the trial request. Public research covered 139 help articles and 435 image attachments across 71 relevant articles. Further checks covered archived vendor pages, 37 embedded presentation payloads, Common Crawl, the vendor's public site search and software catalogues. The combined index records 249 source URLs; failed archive requests are recorded separately from successful negative checks. The old Downloads page supplied brochures. Identity-confirmed MYOB and SourceForge listings link to the vendor without supplying a package.
+
+An archived vendor EXE was downloaded and identified by static inspection as a Flash product presentation. No usable PAS installer, demo database or evaluation licence has been obtained. The next concrete dependency is an issued installer with evaluation activation/database setup, or hosted credentials. The user will report further email. Local DCM execution and live integration remain untested.
+
+Detailed private evidence: `/home/toukan/.claude/dcm-evaluation/research/execution-research-20260917.json`, `continuation-research-20260917.json` and `final-catalogue-pass-20260917.json`. Public referral evidence: [MYOB marketplace](https://www.myob.com/nz/apps/direct-control), [SourceForge product listing](https://sourceforge.net/software/product/Direct-CONTROL/).
+
+
+## 7. Interim OpenMRS billing and documented data flow
+
+User amendment, 2026-09-17: consider the previous OpenMRS implementation while DCM access remains unavailable. Proceed only if switching to DCM would require limited rework and similar messages can be reused. Pause OpenMRS-specific billing work until that portability check passes. Continue the DCM acquisition work in parallel. OpenMRS does not close DCM-specific acceptance checks.
+
+The read-only local assessment found the existing oe-deploy application-registration implementation and the earlier OpenMRS templates. The cached OpenMRS O3 backend already contains its native billing module, and its paired frontend contains invoice, payment and receipt screens. The official Billing 2.4.0 module has also been downloaded and verified. These are inspected capabilities; the new isolated runtime and billing workflows still need verification. See the [private capability assessment](/home/toukan/oe-openmrs-billing-assessment.md).
+
+| Scenario | Interim treatment |
+| --- | --- |
+| Bill, service lines, partial/full payment and receipt | Rehearse through native OpenMRS billing screens and supported REST resources. |
+| Refund and discount | Verify backend permissions and native workflow; the cached frontend lacks the dedicated refund screen, so test a compatible published frontend update if required. |
+| Quote and financial consent | No distinct quotation/acceptance lifecycle was established. A pending bill must not be described as a completed quote workflow. |
+| Provider and hospital allocation | Preserve clinical provider and service context; verify explicit financial ownership. A cashier or cash point is not a billing practitioner. |
+| Weekly financial report | Reconcile bills, payments, refunds and corrections against persisted financial records, with dates and transaction classes explicit. Ready-made requested reports remain unverified. |
+| Medicare, ECLIPSE, fund contracts and remittance | Pending the intended Australian finance system and its supported integrations. OpenMRS currency or payment-mode configuration does not demonstrate claiming. |
+
+1. Compare the shared patient, visit and clinical-service message fields against OpenMRS resources and published DCM interfaces. Proceed only with a bounded connector that reuses the clinical workflow and common message contract. Record unverified DCM fields and stop if a separate billing engine, substantial workflow fork or large destination-specific implementation would be required. After this gate passes, use the existing oe-deploy application-registration branch and OpenMRS templates, isolated storage, pinned images and unused local ports.
+2. Reuse the distribution's Initializer CSV/XML domains for service, price, cash-point and payment-mode metadata. Verify the installed Initializer version supports each selected domain. Capture the clean billing checkpoint before transactional examples.
+3. Prove one patient, one invoice, partial payment, balance settlement and receipt through the frontend. Record each exact manual recipe, its API/script counterpart and resulting identities. Extend only after those controls pass.
+4. Recover the prior FHIR2/appointment polling and PAS IN mapping before claiming that OpenMRS patient administration is connected. If the old poller source cannot be recovered, first assess whether a small explicit bridge using the current fixture runner is sufficient; do not build a new polling framework for the interim system. Preserve external patient, visit and OpenEyes encounter references; use the existing BridgeLink secret and channel patterns.
+5. Connect explicitly reviewed clinical services to supported OpenMRS billing resources. Define the charge mapping and duplicate-delivery rule before creating bills. Test correction, cancellation and refund separately; an amended clinical note must not silently create another charge or reverse a paid bill.
+6. Retain DCM as the intended target. Reuse the same acceptance scenarios once hosted access or a licensed evaluation package arrives. Do not submit claims or connect a live payment service during this rehearsal.
+
+### Portability decision: hold OpenMRS billing
+
+The read-only comparison did not establish that an OpenMRS billing demonstration would transfer to DCM with limited rework. Patient and visit identity fields fit the shared message model, but billing needs OpenMRS-specific cash-point, cashier, billable-service, price and transaction references. Its payment/refund workflow is destination-specific. The HealthLink DCM integration guide shows ADT/DFT controls, including invoice/visit identifiers and item, fee, provider and date mapping. This supports a possible common financial-message direction, but the complete supported profile, duplicate-charge behavior and reversal rules are not established by those controls. The current evidence does not yet demonstrate that the destination change would be small.
+
+OpenMRS billing is therefore on hold under the user's condition. Only a fresh checkout and existing templates were prepared; no OpenMRS runtime, database, volumes, network or secrets were created. The downloaded official module remains available privately. Continue the current neutral clinical-service envelope and BridgeLink review receiver, which preserve reusable source fields and replay/correction tests without committing to an interim financial workflow. Reconsider OpenMRS only when a concrete interface comparison demonstrates a small destination-connector change.
+
+### Data-flow documentation and current verification boundary
+
+The [private data-flow document](/home/toukan/oe-dcm-demo-data-flow.md) records the live channel names and identifiers, system ownership, endpoints, authentication roles, transformations, source triggers, application acknowledgements, replay/correction rules, error review and evidence locations. It includes the proposed OpenMRS branch and distinguishes it from the working fixture flow.
+
+| Direction | Current evidence |
+| --- | --- |
+| Synthetic PAS -> BridgeLink -> OpenEyes PASAPI | Patient registration/update, appointments, arrival, cancellation and merge exercised. |
+| OpenEyes -> explicit export -> BridgeLink -> local review receiver | Saved clinical context, durable encounter/sub-provider references, duplicate delivery and revisions exercised. This creates review items, not invoices. |
+| Appointment cancellation after a clinical save | Saved event and encounter survive; removed appointment links become null and the copied PAS visit reference remains. |
+| OpenMRS -> BridgeLink -> OpenEyes | Previous implementation identified; fresh deployment held by the portability gate. |
+| OpenEyes -> BridgeLink -> OpenMRS billing | Held by the portability gate; no billing connector has been deployed. |
+| DCM connection | Pending trial access and supported interface contract. |
+
+The outgoing trigger is currently an explicit export command, not every clinical save. BridgeLink transports and transforms messages; the financial application owns bills, payments and refunds. A message identifier proves engine acceptance only. Application response and persisted state establish success. The demo channels use explicit replays, with automatic destination queueing and retries disabled; production scheduling, retention and retry policy require a separate agreement.
+
+### Clinical-data correction and reproduction contract
+
+The review found that historical-date prescription controls conflicted with current episode and genuine signature/item-start dates. The generated clinical prescriptions now use current-clinic drafts; all three existing signed examples were corrected through native amendment and genuine re-signing. Preserve the old audit trail and mark its prior evidence superseded. Exact 20-year boundary checks belong in isolated query tests. Supplied legacy finalized prescriptions remain labelled legacy data and do not acquire invented electronic signatures.
+
+Document each imported data unit beside its human workflow: demographics, service/episode selection, assessment date, History, IOP values and exact reading times, diagnosis state/observation date, prescription draft, genuine signing and PDF verification. Creation/audit timestamps can differ; clinical values and relationships must match the declared recipe. Full cataract surgery and follow-up now have verified repeatable script coverage beside their native frontend recipes; preserve the documented difference between imported historical records and genuine native signatures.
+
+
+### Current execution evidence
+
+The corrected initial clinical pack passed clean regeneration, identical full-row reruns, count increase/reduction, unsigned leap-day rebase/restore and chronology refusals. Signed reruns at the same anchor preserve clinical content, signatures and checked audit/version rows. The final research export repeats with identical dataset hashes. The daily research pull reconciles four cases and produces no further changes on the second run.
+
+Both running application images now contain the reviewed encounter and research changes, with matching source-file hashes. Native View, Edit and PDF evidence covers all four encounter Sub-provider options. Authenticated Swagger and OpenAPI are available in the private demo build. Prepared OpenEyes database and actual protected-file snapshots are retained outside this repository.
+
+The completed cataract pack contains consultation, booking, manual biometry, linked manual OCT, surgery assessment, Operation Note, day-one and 30-day review. Its final eight-event SQL/shell version passed isolated full-database reruns, count/capacity tests, late-collision rollback, past leap-day rebase/restoration and lookup-ID remapping. All eight events passed native View, Edit without Save and PDF comparisons, subject to the documented stock OCT assessment-table print omission. The relevant patient-summary caches use maintained application SQL only for actual imports or date changes; visible cache refresh and the post-browser full-pack unchanged rerun passed. The main count-one historical journey import also passed: all pre-existing rows were preserved and an identical rerun left every database row unchanged, including retained health-check sessions. Runtime source hashes match the frozen review package. Preserve actual entry provenance and disclose the unavailable historical offer date. Varied named-patient expansion follows the clinical acceptance gate; parked external financial scenarios no longer block it.
+
+An unmodified FDA retinal phantom OCT image is ingested and byte-verified through native attachments. Its source, reuse terms, hash, human upload steps and repeatable browser helper are documented. Clean creation, unchanged repeat and changed-metadata refusal passed on the separate rehearsal target. The main first Save exposed a stock description limit mismatch and required a recorded recovery of the existing attachment; the corrected description and same-attachment Save then passed. The phantom does not supply the separate manually entered clinical measurements, and PNG upload does not establish device or DICOM ingestion. Optional image attachment follows final clinical generation/date adjustment and has its own replay and checkpoint boundary because native Save normalizes some stored fields.
+
+For a complete cataract PAS rehearsal, import registration, appointment and arrival before creating native clinical events. The inspected PASAPI identifies appointments by their PAS assignment and external visit ID; it cannot adopt an existing walk-in appointment by matching patient and date. Keep the established reference intact and use the recorded clean order rather than creating a duplicate visit.
